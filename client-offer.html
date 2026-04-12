@@ -4,328 +4,690 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oferta - GetMyPermit</title>
-    <meta name="theme-color" content="#050505">
+    <meta name="theme-color" content="#ffffff">
     <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { background: #050505; color: #e5e5e5; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::selection { background: #10b981; color: white; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --accent: #05f;
+            --accent-light: #3377ff;
+            --accent-soft: rgba(0, 85, 255, 0.1);
+            --black: #000;
+            --dark: #1f2124;
+            --gray: #54595f;
+            --light-gray: #f1f2f3;
+            --white: #fff;
+            --border: #e5e7eb;
+            --success: #22c55e;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --font: 'Wix Madefor Text', -apple-system, sans-serif;
+            --radius: 20px;
+            --radius-sm: 12px;
+            --radius-xs: 8px;
+            --shadow: 0 4px 24px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 25px 50px -12px rgba(0,0,0,0.15);
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--white);
+            color: var(--dark);
+            font-family: var(--font);
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+        h1, h2, h3 { font-weight: 700; line-height: 1.2; color: var(--black); }
+        h1 { font-size: clamp(28px, 4vw, 42px); }
+        h2 { font-size: clamp(22px, 3vw, 32px); }
+        h3 { font-size: 18px; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-enter { animation: fadeIn 0.5s ease-out forwards; }
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+        .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+        .stagger-5 { animation-delay: 0.5s; opacity: 0; }
 
-        @keyframes staggerIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-        .stagger-enter { animation: staggerIn 0.6s ease-out forwards; opacity: 0; }
-        .stagger-1 { animation-delay: 0.1s; }
-        .stagger-2 { animation-delay: 0.2s; }
-        .stagger-3 { animation-delay: 0.3s; }
-        .stagger-4 { animation-delay: 0.4s; }
-        .stagger-5 { animation-delay: 0.5s; }
-
-        .glass-card {
-            background: rgba(24, 24, 27, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
 
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+        }
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: var(--radius-xs);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--black);
+        }
+        .logo-sub {
+            font-size: 12px;
+            color: var(--gray);
+            font-weight: 400;
+        }
+        .validity-badge {
+            font-size: 13px;
+            color: var(--gray);
+            background: var(--light-gray);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+        }
+        .validity-badge strong {
+            color: var(--black);
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 28px;
+            font-family: var(--font);
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: var(--white);
+            box-shadow: 0 4px 14px rgba(0, 85, 255, 0.3);
+        }
+        .btn-primary:hover {
+            background: var(--accent-light);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 85, 255, 0.4);
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--dark);
+            border: 2px solid var(--border);
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .btn-success {
+            background: var(--success);
+            color: var(--white);
+        }
+        .btn-success:hover {
+            background: #1db954;
+        }
+        .btn svg { width: 20px; height: 20px; }
+
+        /* Cards */
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 32px;
+        }
+        .card-accent {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, var(--accent-soft) 0%, var(--white) 50%);
+        }
+
+        /* Input */
         .input-field {
-            background: #0a0a0a;
-            border: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            padding: 16px 18px;
+            font-family: var(--font);
+            font-size: 16px;
+            color: var(--dark);
+            background: var(--light-gray);
+            border: 2px solid transparent;
+            border-radius: var(--radius-sm);
             transition: all 0.2s;
         }
         .input-field:focus {
-            border-color: rgba(16, 185, 129, 0.5);
             outline: none;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            border-color: var(--accent);
+            background: var(--white);
+        }
+        .input-field.error {
+            border-color: var(--error);
+            background: #fef2f2;
+        }
+        .input-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        .input-error {
+            color: var(--error);
+            font-size: 14px;
+            margin-top: 8px;
         }
 
-        .milestone-step {
-            position: relative;
+        /* Milestones */
+        .milestone {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
             cursor: pointer;
+            transition: background 0.2s;
         }
-        .milestone-step:not(:last-child)::after {
-            content: '';
-            position: absolute;
-            left: 15px;
-            top: 32px;
-            bottom: -8px;
-            width: 2px;
-            background: linear-gradient(to bottom, rgba(16, 185, 129, 0.3), transparent);
+        .milestone:last-child { border-bottom: none; }
+        .milestone:hover { background: var(--light-gray); margin: 0 -20px; padding-left: 20px; padding-right: 20px; border-radius: var(--radius-xs); }
+        .milestone-number {
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
         }
-
-        .milestone-content {
+        .milestone-content { flex: 1; }
+        .milestone-title {
+            font-weight: 600;
+            color: var(--black);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .milestone-chevron {
+            width: 20px;
+            height: 20px;
+            color: var(--gray);
+            transition: transform 0.2s;
+        }
+        .milestone-chevron.open { transform: rotate(180deg); }
+        .milestone-desc {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out, opacity 0.2s ease-out, padding 0.2s ease-out;
+            transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.2s ease;
             opacity: 0;
-            padding-top: 0;
+            color: var(--gray);
+            font-size: 15px;
+            line-height: 1.6;
         }
-        .milestone-content.expanded {
+        .milestone-desc.expanded {
             max-height: 200px;
             opacity: 1;
-            padding-top: 0.5rem;
+            margin-top: 10px;
         }
 
-        .milestone-chevron {
-            transition: transform 0.2s ease-out;
+        /* Price display */
+        .price-display {
+            text-align: right;
         }
-        .milestone-chevron.rotated {
-            transform: rotate(180deg);
+        .price-label {
+            font-size: 13px;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .price-value {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 800;
+            color: var(--accent);
+            line-height: 1;
+        }
+        .price-currency {
+            font-size: 16px;
+            color: var(--gray);
+            font-weight: 500;
         }
 
-        .glow-green {
-            box-shadow: 0 0 40px rgba(16, 185, 129, 0.15);
+        /* Info box */
+        .info-box {
+            display: flex;
+            gap: 16px;
+            padding: 20px;
+            background: var(--accent-soft);
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--accent);
         }
+        .info-box svg {
+            width: 24px;
+            height: 24px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .info-box h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .info-box p {
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        /* Success message */
+        .success-box {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: var(--radius);
+            padding: 32px;
+            text-align: center;
+        }
+        .success-box svg {
+            width: 56px;
+            height: 56px;
+            color: var(--success);
+            margin-bottom: 16px;
+        }
+        .success-box h4 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        .success-box p {
+            color: var(--gray);
+        }
+
+        /* Contact */
+        .contact-card {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 28px;
+            background: var(--light-gray);
+            border-radius: var(--radius);
+        }
+        @media (min-width: 640px) {
+            .contact-card {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+        }
+        .contact-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .contact-avatar {
+            width: 56px;
+            height: 56px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .contact-avatar svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+        .contact-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+            padding: 12px 20px;
+            font-size: 14px;
+        }
+        .btn-whatsapp:hover { background: #20bd5a; }
+        .btn-email {
+            background: var(--dark);
+            color: white;
+            padding: 12px 20px;
+            font-size: 14px;
+        }
+        .btn-email:hover { background: var(--black); }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 32px 24px;
+            color: var(--gray);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 48px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            border-radius: var(--radius);
+            max-width: 420px;
+            width: 100%;
+            box-shadow: var(--shadow-lg);
+            padding: 32px;
+            text-align: center;
+        }
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--accent-soft);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .modal-icon svg {
+            width: 32px;
+            height: 32px;
+            color: var(--accent);
+        }
+        .modal h3 {
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+        .modal p {
+            color: var(--gray);
+            margin-bottom: 28px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .modal-buttons .btn { flex: 1; }
+
+        /* Screens */
+        .screen { display: none; }
+        .screen.active { display: block; }
+        .screen-center {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        /* Utility */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-4 { margin-bottom: 16px; }
+        .mb-6 { margin-bottom: 24px; }
+        .mb-8 { margin-bottom: 32px; }
+        .gap-4 { gap: 16px; }
     </style>
 </head>
-<body class="min-h-screen font-sans antialiased">
+<body>
 
     <!-- Loading State -->
-    <div id="loading" class="min-h-screen flex items-center justify-center">
+    <div id="loading" class="screen active screen-center">
         <div class="text-center">
-            <div class="w-12 h-12 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin mb-4 mx-auto"></div>
-            <p class="text-zinc-500">Wczytywanie oferty...</p>
+            <div class="spinner" style="margin: 0 auto 20px;"></div>
+            <p style="color: var(--gray);">Wczytywanie oferty...</p>
         </div>
     </div>
 
-    <!-- Login Screen (Email Verification) -->
-    <div id="login-screen" class="hidden min-h-screen flex items-center justify-center px-4">
-        <div class="w-full max-w-md animate-enter">
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen screen-center">
+        <div style="max-width: 400px; width: 100%;" class="animate-enter">
             <div class="text-center mb-8">
-                <div class="w-14 h-14 bg-green-500 text-white rounded-xl flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                    <i class="ph-bold ph-scales text-2xl"></i>
+                <div class="logo-icon" style="margin: 0 auto 16px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12l9-9 9 9"/><path d="M3 12h18"/></svg>
                 </div>
-                <h1 class="text-2xl font-bold text-white mb-2">Twoja spersonalizowana oferta</h1>
-                <p class="text-zinc-400">Wprowadź swój adres e-mail, aby zobaczyć szczegóły</p>
+                <h1 style="margin-bottom: 8px;">Twoja oferta</h1>
+                <p style="color: var(--gray);">Wprowadź swój adres e-mail, aby zobaczyć szczegoly</p>
             </div>
 
-            <div class="glass-card rounded-2xl border border-white/10 p-6">
+            <div class="card">
                 <div class="mb-4">
-                    <label class="block text-zinc-400 text-xs font-medium mb-2">Adres e-mail</label>
-                    <input type="email" id="email-input"
-                           class="input-field w-full rounded-xl px-4 py-3 text-white text-base"
-                           placeholder="jan@firma.pl"
-                           autofocus>
+                    <label class="input-label">Adres e-mail</label>
+                    <input type="email" id="email-input" class="input-field" placeholder="jan@firma.pl" autofocus>
+                    <div id="login-error" class="input-error hidden"></div>
                 </div>
-                <div id="login-error" class="text-red-400 text-sm mb-4 hidden"></div>
-                <button id="login-btn" onclick="verifyEmail()"
-                        class="w-full bg-green-500 hover:bg-green-400 text-white px-4 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
-                    <span>Zobacz ofertę</span>
-                    <i class="ph ph-arrow-right"></i>
+                <button id="login-btn" onclick="verifyEmail()" class="btn btn-primary" style="width: 100%;">
+                    <span>Zobacz oferte</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
             </div>
 
-            <p class="text-center text-zinc-600 text-xs mt-6">
-                Link jest ważny do: <span id="valid-until-preview" class="text-zinc-400">-</span>
+            <p class="text-center" style="margin-top: 24px; font-size: 13px; color: var(--gray);">
+                Oferta wazna do: <strong id="valid-until-preview">-</strong>
             </p>
         </div>
     </div>
 
     <!-- Error State -->
-    <div id="error" class="hidden min-h-screen flex items-center justify-center p-4">
-        <div class="text-center max-w-md animate-enter">
-            <div class="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
-                <i class="ph ph-warning text-3xl text-red-400"></i>
+    <div id="error" class="screen screen-center">
+        <div class="text-center animate-enter" style="max-width: 400px;">
+            <div style="width: 80px; height: 80px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
             </div>
-            <h1 class="text-xl font-semibold text-white mb-2">Nie znaleziono oferty</h1>
-            <p id="error-message" class="text-zinc-500">Oferta nie istnieje lub wygasła.</p>
+            <h2 style="margin-bottom: 12px;">Nie znaleziono oferty</h2>
+            <p id="error-message" style="color: var(--gray);">Oferta nie istnieje lub wygasla.</p>
         </div>
     </div>
 
     <!-- Expired State -->
-    <div id="expired" class="hidden min-h-screen flex items-center justify-center p-4">
-        <div class="text-center max-w-md animate-enter">
-            <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
-                <i class="ph ph-clock-countdown text-3xl text-amber-400"></i>
+    <div id="expired" class="screen screen-center">
+        <div class="text-center animate-enter" style="max-width: 400px;">
+            <div style="width: 80px; height: 80px; background: #fffbeb; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
             </div>
-            <h1 class="text-xl font-semibold text-white mb-2">Oferta wygasła</h1>
-            <p class="text-zinc-500 mb-6">Ta oferta była ważna do <span id="expired-date" class="text-white"></span>.</p>
-            <a href="tel:+48123456789" id="contact-link" class="inline-flex items-center gap-2 bg-white text-black hover:bg-zinc-200 px-6 py-3 rounded-lg font-medium transition-colors">
-                <i class="ph ph-phone"></i>
-                Skontaktuj się z nami
+            <h2 style="margin-bottom: 12px;">Oferta wygasla</h2>
+            <p style="color: var(--gray); margin-bottom: 24px;">Ta oferta byla wazna do <strong id="expired-date"></strong>.</p>
+            <a href="tel:+48123456789" class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                Skontaktuj sie z nami
             </a>
         </div>
     </div>
 
     <!-- Main Content -->
-    <div id="content" class="hidden">
+    <div id="content" class="screen">
         <!-- Header -->
-        <header class="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur-xl border-b border-white/5">
-            <div class="max-w-4xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-                        <i class="ph ph-scales text-green-400 text-xl"></i>
+        <header class="header">
+            <div class="container">
+                <div class="header-inner">
+                    <div class="logo">
+                        <div class="logo-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12l9-9 9 9"/><path d="M3 12h18"/></svg>
+                        </div>
+                        <div>
+                            <div class="logo-text">GetMyPermit</div>
+                            <div class="logo-sub">Kancelaria Prawna</div>
+                        </div>
                     </div>
-                    <div>
-                        <h1 class="text-white font-semibold">GetMyPermit</h1>
-                        <p class="text-zinc-500 text-xs">Kancelaria Prawna</p>
+                    <div class="validity-badge">
+                        Wazna do: <strong id="valid-until"></strong>
                     </div>
-                </div>
-                <div id="validity-badge" class="text-xs text-zinc-500 bg-zinc-900 border border-white/5 px-3 py-1.5 rounded-full">
-                    Ważna do: <span id="valid-until" class="text-white"></span>
                 </div>
             </div>
         </header>
 
-        <!-- Offer Content -->
-        <main class="p-4 md:p-8 lg:p-12">
-            <div class="max-w-4xl mx-auto">
+        <!-- Main -->
+        <main style="padding: 40px 0;">
+            <div class="container">
                 <!-- Greeting -->
-                <div class="mb-8 stagger-enter stagger-1">
-                    <p class="text-zinc-500 mb-1">Oferta dla:</p>
-                    <h2 id="client-name" class="text-2xl md:text-3xl font-bold text-white"></h2>
+                <div class="mb-8 animate-enter stagger-1">
+                    <p style="color: var(--gray); margin-bottom: 4px;">Oferta dla:</p>
+                    <h1 id="client-name"></h1>
                 </div>
 
                 <!-- Price Card -->
-                <div class="glass-card rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/5 to-transparent p-5 sm:p-8 mb-8 stagger-enter stagger-2">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                        <div>
-                            <h3 id="offer-name" class="text-xl md:text-2xl font-semibold text-white mb-2"></h3>
-                            <p id="offer-description" class="text-zinc-400 text-sm"></p>
+                <div class="card card-accent mb-8 animate-enter stagger-2">
+                    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 24px;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <h2 id="offer-name" style="margin-bottom: 8px;"></h2>
+                            <p id="offer-description" style="color: var(--gray);"></p>
                         </div>
-                        <div class="sm:text-right">
-                            <div class="text-zinc-500 text-xs sm:text-sm mb-1">Wartość usługi</div>
-                            <div id="offer-price" class="text-3xl sm:text-4xl font-bold text-green-400"></div>
-                            <div class="text-zinc-500 text-sm">PLN brutto</div>
+                        <div class="price-display">
+                            <div class="price-label">Wartosc uslugi</div>
+                            <div class="price-value" id="offer-price"></div>
+                            <div class="price-currency">PLN brutto</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Milestones Section -->
-                <div id="milestones-section" class="glass-card rounded-2xl border border-white/10 overflow-hidden mb-8 stagger-enter stagger-3">
-                    <div class="p-4 sm:p-6 border-b border-white/5">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="ph ph-list-checks text-lg sm:text-xl text-green-400"></i>
-                            </div>
-                            <h2 class="text-base sm:text-lg font-semibold text-white">Etapy realizacji</h2>
-                        </div>
+                <!-- Milestones -->
+                <div id="milestones-section" class="card mb-8 animate-enter stagger-3">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                        <h3>Etapy realizacji</h3>
                     </div>
-                    <div class="p-4 sm:p-6">
-                        <div id="milestones-list" class="space-y-4">
-                            <!-- Milestones will be rendered here -->
-                        </div>
-                    </div>
+                    <div id="milestones-list"></div>
                 </div>
 
                 <!-- Info Box -->
-                <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-5 mb-8 flex items-start gap-4 stagger-enter stagger-4">
-                    <i class="ph ph-info text-blue-400 text-xl flex-shrink-0 mt-0.5"></i>
+                <div class="info-box mb-8 animate-enter stagger-4">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                     <div>
-                        <h4 class="text-white font-medium mb-1">Jak to działa?</h4>
-                        <p class="text-zinc-400 text-sm">Po akceptacji oferty skontaktujemy się z Tobą w celu omówienia szczegółów i rozpoczęcia współpracy. Płatność możliwa w ratach.</p>
+                        <h4>Jak to dziala?</h4>
+                        <p>Po akceptacji oferty skontaktujemy sie z Toba w celu omowienia szczegolom i rozpoczecia wspolpracy. Platnosc mozliwa w ratach.</p>
                     </div>
                 </div>
 
                 <!-- Actions -->
-                <div class="flex flex-col sm:flex-row gap-4 mb-8 stagger-enter stagger-5">
-                    <button id="accept-btn" onclick="acceptOffer()" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20">
-                        <i class="ph ph-check-circle text-xl"></i>
-                        Akceptuję ofertę
+                <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px;" class="animate-enter stagger-5">
+                    <button id="accept-btn" onclick="acceptOffer()" class="btn btn-primary" style="width: 100%; padding: 20px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                        Akceptuje oferte
                     </button>
-                    <a id="phone-btn" href="tel:+48123456789" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white border border-white/10 px-8 py-4 rounded-xl font-medium text-lg transition-all flex items-center justify-center gap-2">
-                        <i class="ph ph-phone text-xl"></i>
-                        Zadzwoń
+                    <a id="phone-btn" href="tel:+48123456789" class="btn btn-outline" style="width: 100%;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                        Zadzwon do nas
                     </a>
                 </div>
 
-                <!-- Already Accepted -->
-                <div id="accepted-message" class="hidden mb-8 bg-green-500/10 border border-green-500/20 rounded-xl p-6 text-center">
-                    <i class="ph ph-check-circle text-4xl text-green-400 mb-3"></i>
-                    <h4 class="text-white font-semibold text-lg mb-2">Oferta zaakceptowana!</h4>
-                    <p class="text-zinc-400">Dziękujemy za zaufanie. Skontaktujemy się z Tobą wkrótce.</p>
+                <!-- Accepted Message -->
+                <div id="accepted-message" class="success-box hidden mb-8">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                    <h4>Oferta zaakceptowana!</h4>
+                    <p>Dziekujemy za zaufanie. Skontaktujemy sie z Toba wkrotce.</p>
                 </div>
 
-                <!-- Contact Section -->
-                <div class="glass-card rounded-2xl border border-white/10 p-5 sm:p-8 stagger-enter stagger-5">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                                <i class="ph ph-user text-2xl text-green-400"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-base sm:text-lg font-semibold text-white mb-1">Masz pytania?</h3>
-                                <p class="text-zinc-400 text-sm">Skontaktuj się bezpośrednio z nami.</p>
-                            </div>
+                <!-- Contact -->
+                <div class="contact-card animate-enter stagger-5">
+                    <div class="contact-info">
+                        <div class="contact-avatar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         </div>
-                        <div class="flex gap-2">
-                            <a href="https://wa.me/48123456789" target="_blank" id="whatsapp-btn" class="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm shadow-lg shadow-[#25D366]/20">
-                                <i class="ph ph-whatsapp-logo"></i>
-                                WhatsApp
-                            </a>
-                            <a href="mailto:kontakt@getmypermit.pl" id="email-btn" class="inline-flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm border border-white/10">
-                                <i class="ph ph-envelope"></i>
-                                Email
-                            </a>
+                        <div>
+                            <h3 style="font-size: 16px; margin-bottom: 2px;">Masz pytania?</h3>
+                            <p style="color: var(--gray); font-size: 14px;">Skontaktuj sie bezposrednio z nami</p>
                         </div>
+                    </div>
+                    <div class="contact-buttons">
+                        <a href="https://wa.me/48123456789" target="_blank" class="btn btn-whatsapp">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            WhatsApp
+                        </a>
+                        <a href="mailto:kontakt@getmypermit.pl" class="btn btn-email">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            Email
+                        </a>
                     </div>
                 </div>
             </div>
         </main>
 
         <!-- Footer -->
-        <footer class="border-t border-white/5 py-6 px-4 md:px-8 mt-12">
-            <div class="max-w-4xl mx-auto text-center text-zinc-500 text-sm">
-                <p>GetMyPermit - Kancelaria Prawna</p>
-                <p class="mt-1">Specjalizacja: prawo imigracyjne, pozwolenia na pobyt</p>
-            </div>
+        <footer class="footer">
+            <p><strong>GetMyPermit</strong> - Kancelaria Prawna</p>
+            <p>Specjalizacja: prawo imigracyjne, pozwolenia na pobyt</p>
         </footer>
     </div>
 
     <!-- Confirmation Modal -->
-    <div id="confirm-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-zinc-950 border border-white/10 rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div class="p-6 text-center">
-                <div class="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
-                    <i class="ph ph-check-circle text-3xl text-green-400"></i>
-                </div>
-                <h3 class="text-xl font-semibold text-white mb-2">Potwierdzenie akceptacji</h3>
-                <p class="text-zinc-400 mb-6">Czy na pewno chcesz zaakceptować tę ofertę? Po akceptacji skontaktujemy się z Tobą w celu omówienia szczegółów.</p>
-                <div class="flex gap-3">
-                    <button onclick="closeConfirmModal()" class="flex-1 text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 px-4 py-3 rounded-lg font-medium transition-all">
-                        Anuluj
-                    </button>
-                    <button onclick="confirmAcceptance()" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white px-4 py-3 rounded-lg font-medium transition-all">
-                        Tak, akceptuję
-                    </button>
-                </div>
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+            </div>
+            <h3>Potwierdzenie akceptacji</h3>
+            <p>Czy na pewno chcesz zaakceptowac te oferte? Po akceptacji skontaktujemy sie z Toba w celu omowienia szczegolom.</p>
+            <div class="modal-buttons">
+                <button onclick="closeConfirmModal()" class="btn btn-outline">Anuluj</button>
+                <button onclick="confirmAcceptance()" class="btn btn-primary">Tak, akceptuje</button>
             </div>
         </div>
     </div>
 
     <script>
         // ===========================================
-        // CONFIGURATION - GMP SPECIFIC
+        // CONFIGURATION
         // ===========================================
         const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Table names - GMP prefixed for isolation
         const TABLE_CLIENT_OFFERS = 'gmp_client_offers';
         const TABLE_OFFERS = 'gmp_offers';
         const TABLE_LEADS = 'permit_leads';
@@ -338,12 +700,9 @@
         // SCREEN MANAGEMENT
         // ===========================================
         function showScreen(screenId) {
-            ['loading', 'login-screen', 'error', 'expired', 'content'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
-            });
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
             const screen = document.getElementById(screenId);
-            if (screen) screen.classList.remove('hidden');
+            if (screen) screen.classList.add('active');
         }
 
         function formatDate(dateStr) {
@@ -363,7 +722,6 @@
             }
 
             try {
-                // Load client offer by token
                 const { data: clientOfferData, error: clientOfferError } = await supabaseClient
                     .from(TABLE_CLIENT_OFFERS)
                     .select(`*, ${TABLE_OFFERS}(*), ${TABLE_LEADS}(*)`)
@@ -379,7 +737,6 @@
                 offer = clientOfferData[TABLE_OFFERS];
                 lead = clientOfferData[TABLE_LEADS];
 
-                // Check if expired
                 const validUntil = new Date(clientOffer.valid_until);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -389,20 +746,16 @@
                     return;
                 }
 
-                // Show validity date on login screen
                 document.getElementById('valid-until-preview').textContent = formatDate(clientOffer.valid_until);
-
-                // Show login screen
                 showScreen('login-screen');
 
-                // Setup enter key for email input
                 document.getElementById('email-input').addEventListener('keyup', (e) => {
                     if (e.key === 'Enter') verifyEmail();
                 });
 
             } catch (err) {
                 console.error('Error loading offer:', err);
-                showError('Wystąpił błąd podczas ładowania oferty.');
+                showError('Wystapil blad podczas ladowania oferty.');
             }
         }
 
@@ -414,24 +767,24 @@
             const email = emailInput.value.trim().toLowerCase();
             const errorDiv = document.getElementById('login-error');
 
+            errorDiv.classList.add('hidden');
+            emailInput.classList.remove('error');
+
             if (!email) {
-                errorDiv.textContent = 'Wprowadź adres e-mail';
+                errorDiv.textContent = 'Wprowadz adres e-mail';
                 errorDiv.classList.remove('hidden');
                 return;
             }
 
             if (!lead || email !== lead.email.toLowerCase()) {
-                errorDiv.textContent = 'Nieprawidłowy adres e-mail';
+                errorDiv.textContent = 'Nieprawidlowy adres e-mail';
                 errorDiv.classList.remove('hidden');
-                emailInput.classList.add('border-red-500');
+                emailInput.classList.add('error');
                 return;
             }
 
-            // Track view
             const token = new URLSearchParams(window.location.search).get('token');
             await trackView(token);
-
-            // Render content
             renderOffer();
         }
 
@@ -441,10 +794,7 @@
         async function trackView(token) {
             const now = new Date().toISOString();
             const viewHistory = clientOffer.view_history || [];
-            viewHistory.push({
-                timestamp: now,
-                userAgent: navigator.userAgent
-            });
+            viewHistory.push({ timestamp: now, userAgent: navigator.userAgent });
 
             await supabaseClient
                 .from(TABLE_CLIENT_OFFERS)
@@ -463,41 +813,28 @@
         function renderOffer() {
             showScreen('content');
 
-            // Client name
             const clientName = lead ? (lead.name || lead.email) : 'Klient';
             document.getElementById('client-name').textContent = clientName;
-
-            // Validity
             document.getElementById('valid-until').textContent = formatDate(clientOffer.valid_until);
-
-            // Offer details
             document.getElementById('offer-name').textContent = offer?.name || 'Oferta';
             document.getElementById('offer-description').textContent = offer?.description || '';
 
-            // Price
             const price = clientOffer.custom_price || offer?.price;
             document.getElementById('offer-price').textContent = price
                 ? parseFloat(price).toLocaleString('pl-PL')
                 : 'Do ustalenia';
 
-            // Milestones with expand/collapse
             const milestones = offer?.milestones || [];
             if (milestones.length > 0) {
                 document.getElementById('milestones-list').innerHTML = milestones.map((m, i) => `
-                    <div class="milestone-step flex items-start gap-4" onclick="toggleMilestone(${i})">
-                        <div class="w-8 h-8 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center text-green-400 text-sm font-semibold flex-shrink-0">
-                            ${i + 1}
-                        </div>
-                        <div class="flex-1 pt-1">
-                            <div class="flex items-center justify-between">
-                                <h5 class="text-white font-medium">${escapeHtml(m.name)}</h5>
-                                ${m.description ? `<i class="ph ph-caret-down text-zinc-500 milestone-chevron" id="chevron-${i}"></i>` : ''}
+                    <div class="milestone" onclick="toggleMilestone(${i})">
+                        <div class="milestone-number">${i + 1}</div>
+                        <div class="milestone-content">
+                            <div class="milestone-title">
+                                <span>${escapeHtml(m.name)}</span>
+                                ${m.description ? `<svg class="milestone-chevron" id="chevron-${i}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>` : ''}
                             </div>
-                            ${m.description ? `
-                                <div class="milestone-content" id="milestone-content-${i}">
-                                    <p class="text-zinc-500 text-sm">${escapeHtml(m.description)}</p>
-                                </div>
-                            ` : ''}
+                            ${m.description ? `<div class="milestone-desc" id="milestone-content-${i}">${escapeHtml(m.description)}</div>` : ''}
                         </div>
                     </div>
                 `).join('');
@@ -505,7 +842,6 @@
                 document.getElementById('milestones-section').classList.add('hidden');
             }
 
-            // Check if already accepted
             if (clientOffer.status === 'accepted') {
                 document.getElementById('accept-btn').classList.add('hidden');
                 document.getElementById('accepted-message').classList.remove('hidden');
@@ -517,7 +853,7 @@
             const chevron = document.getElementById(`chevron-${index}`);
             if (content) {
                 content.classList.toggle('expanded');
-                if (chevron) chevron.classList.toggle('rotated');
+                if (chevron) chevron.classList.toggle('open');
             }
         }
 
@@ -529,13 +865,8 @@
         function showExpired(date) {
             showScreen('expired');
             document.getElementById('expired-date').textContent = formatDate(date);
-
-            // Update status to expired
             if (clientOffer?.id) {
-                supabaseClient
-                    .from(TABLE_CLIENT_OFFERS)
-                    .update({ status: 'expired' })
-                    .eq('id', clientOffer.id);
+                supabaseClient.from(TABLE_CLIENT_OFFERS).update({ status: 'expired' }).eq('id', clientOffer.id);
             }
         }
 
@@ -560,15 +891,13 @@
 
             if (error) {
                 console.error('Error accepting offer:', error);
-                alert('Wystąpił błąd. Spróbuj ponownie.');
+                alert('Wystapil blad. Sprobuj ponownie.');
                 return;
             }
 
             clientOffer.status = 'accepted';
             document.getElementById('accept-btn').classList.add('hidden');
             document.getElementById('accepted-message').classList.remove('hidden');
-
-            // Scroll to message
             document.getElementById('accepted-message').scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -582,9 +911,7 @@
             return div.innerHTML;
         }
 
-        // ===========================================
-        // START
-        // ===========================================
+        // Start
         init();
     </script>
 </body>
