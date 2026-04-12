@@ -89,20 +89,21 @@
     .lang-current {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      background: var(--light-gray);
-      border: none;
-      border-radius: var(--radius-xs);
+      gap: 8px;
+      padding: 14px 16px;
+      background: var(--white);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
       cursor: pointer;
       font-family: var(--font);
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--dark);
       transition: all 0.2s;
     }
     .lang-current:hover {
-      background: var(--border);
+      border-color: var(--accent);
+      background: var(--accent-soft);
     }
     .lang-current img {
       width: 20px;
@@ -527,7 +528,6 @@
     }
 
     /* Hero Cards */
-    .hero-lawyer-card,
     .hero-clients-card,
     .hero-langs-card {
       background: var(--light-gray);
@@ -535,47 +535,49 @@
       border: 1px solid transparent;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .hero-lawyer-card:hover,
     .hero-clients-card:hover,
     .hero-langs-card:hover {
-      transform: translateY(-6px) scale(1.02);
+      transform: translateY(-4px);
       background: white;
       border-color: rgba(0, 85, 255, 0.15);
-      box-shadow: 0 20px 40px rgba(0, 85, 255, 0.12);
+      box-shadow: 0 15px 30px rgba(0, 85, 255, 0.1);
     }
 
-    /* Lawyer card - special gradient border */
+    /* Lawyer card - gold theme (managing partner) */
     .hero-lawyer-card {
-      position: relative;
-      background: linear-gradient(white, white) padding-box,
-                  linear-gradient(135deg, var(--accent), #3377ff, var(--accent)) border-box;
-      border: 2px solid transparent;
+      background: linear-gradient(135deg, #b99451, #d4a853);
+      border-radius: var(--radius);
+      color: white;
+      box-shadow: 0 8px 25px rgba(185, 148, 81, 0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    .hero-lawyer-card::before {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      border-radius: calc(var(--radius) + 2px);
-      background: linear-gradient(135deg, var(--accent), #3377ff, var(--accent));
-      background-size: 200% 200%;
-      animation: gradientRotate 4s linear infinite;
-      z-index: -1;
-      opacity: 0.6;
-    }
-    @keyframes gradientRotate {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    .hero-lawyer-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 35px rgba(185, 148, 81, 0.4);
     }
 
-    /* Clients card - accent highlight */
+    /* Clients card - green theme (success) */
     .hero-clients-card {
-      background: linear-gradient(135deg, rgba(0, 85, 255, 0.05), rgba(0, 85, 255, 0.1));
-      border: 1px solid rgba(0, 85, 255, 0.15);
+      background: linear-gradient(135deg, #00c853, #00a844);
+      border: none;
+      color: white;
+      box-shadow: 0 8px 25px rgba(0, 200, 83, 0.3);
     }
     .hero-clients-card:hover {
-      background: linear-gradient(135deg, rgba(0, 85, 255, 0.08), rgba(0, 85, 255, 0.15));
-      box-shadow: 0 20px 40px rgba(0, 85, 255, 0.2);
+      background: linear-gradient(135deg, #00c853, #00a844);
+      box-shadow: 0 12px 35px rgba(0, 200, 83, 0.4);
+    }
+
+    /* Languages card - navy theme */
+    .hero-langs-card {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: none;
+      color: white;
+      box-shadow: 0 8px 25px rgba(26, 26, 46, 0.3);
+    }
+    .hero-langs-card:hover {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      box-shadow: 0 12px 35px rgba(26, 26, 46, 0.4);
     }
 
     /* Lawyer Card */
@@ -597,67 +599,57 @@
       flex-shrink: 0;
     }
     .hero-lawyer-card img {
-      width: 64px;
-      height: 64px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
       object-fit: cover;
       object-position: top center;
-      border: 2px solid var(--accent);
-      animation: borderGlow 2s ease-in-out infinite;
-    }
-    @keyframes borderGlow {
-      0%, 100% {
-        box-shadow: 0 0 0 0 transparent;
-      }
-      50% {
-        box-shadow: 0 0 6px 1px rgba(0, 85, 255, 0.5);
-      }
-    }
-    .hero-lawyer-card:hover img {
-      transform: scale(1.05);
-      animation: none;
+      border: 3px solid rgba(255,255,255,0.9);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     .hero-lawyer-badge {
       position: absolute;
-      bottom: -2px;
-      right: -2px;
-      background: var(--accent);
-      color: white;
+      bottom: 0;
+      right: -4px;
+      background: white;
+      color: #b99451;
       font-size: 9px;
       font-weight: 700;
-      padding: 2px 6px;
+      padding: 3px 8px;
       border-radius: 10px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .hero-lawyer-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
     }
     .hero-lawyer-title {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
-      color: var(--accent);
+      color: rgba(255,255,255,0.85);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     .hero-lawyer-info h4 {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 700;
-      color: var(--black);
+      color: white;
       line-height: 1.2;
     }
     .hero-lawyer-exp {
       display: flex;
       align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      color: var(--gray);
-      margin-top: 2px;
+      gap: 6px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+      margin-top: 4px;
     }
     .hero-lawyer-exp svg {
-      color: var(--accent);
+      color: white;
+      opacity: 0.8;
     }
 
     /* Clients Card */
@@ -671,31 +663,18 @@
       gap: 6px;
     }
     .hero-clients-icon {
-      color: var(--accent);
-      opacity: 0.8;
-      transition: all 0.4s ease;
-    }
-    .hero-clients-card:hover .hero-clients-icon {
-      transform: scale(1.1);
-      opacity: 1;
+      color: white;
+      opacity: 0.9;
     }
     .hero-clients-number {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 800;
-      color: var(--accent);
-      background: linear-gradient(135deg, var(--accent), #3377ff);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: white;
       line-height: 1;
-      transition: all 0.4s ease;
-    }
-    .hero-clients-card:hover .hero-clients-number {
-      color: var(--accent);
     }
     .hero-clients-label {
       font-size: 11px;
-      color: var(--gray);
+      color: rgba(255,255,255,0.85);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -707,39 +686,30 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
     }
     .hero-langs-icon {
-      color: var(--accent);
-      opacity: 0.8;
-      transition: all 0.4s ease;
-    }
-    .hero-langs-card:hover .hero-langs-icon {
-      transform: scale(1.1);
-      opacity: 1;
+      color: white;
+      opacity: 0.9;
     }
     .hero-langs-row {
       display: flex;
-      gap: 8px;
-      transition: transform 0.4s ease;
-    }
-    .hero-langs-card:hover .hero-langs-row {
-      transform: scale(1.05);
+      gap: 10px;
     }
     .hero-langs-row img {
-      width: 28px;
-      height: 20px;
+      width: 32px;
+      height: 22px;
       border-radius: 3px;
       object-fit: cover;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       transition: transform 0.2s;
     }
     .hero-langs-row img:hover {
-      transform: scale(1.15);
+      transform: scale(1.1);
     }
     .hero-langs-card > span {
-      font-size: 11px;
-      color: var(--gray);
+      font-size: 12px;
+      color: rgba(255,255,255,0.85);
       font-weight: 500;
     }
     @media (max-width: 480px) {
@@ -981,18 +951,21 @@
     .svc-flip-front {
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
-      padding: 28px;
+      padding: 24px;
+    }
+    .svc-flip-front .svc-icon {
+      margin-bottom: 0;
     }
     .svc-flip-front h3 {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
       line-height: 1.3;
+      margin-top: auto;
     }
     .svc-flip-front p {
-      font-size: 15px;
+      font-size: 14px;
       opacity: 0.85;
-      margin-top: 8px;
+      margin-top: 6px;
       line-height: 1.5;
     }
     .svc-flip-back {
@@ -3823,10 +3796,10 @@
           <div class="hero-lawyer-card">
             <div class="hero-lawyer-photo">
               <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-255-kw-2.jpg" alt="adw. Paweł Stachurski" width="80" height="80">
-              <span class="hero-lawyer-badge">Lead</span>
+              <span class="hero-lawyer-badge">Partner</span>
             </div>
             <div class="hero-lawyer-info">
-              <span class="hero-lawyer-title">Lead Attorney</span>
+              <span class="hero-lawyer-title">Managing Partner</span>
               <h4>adw. Paweł Stachurski</h4>
               <span class="hero-lawyer-exp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 11 years experience</span>
             </div>
@@ -5545,11 +5518,11 @@
         heroTitle: "Legalization of stay in <span class=\"text-gradient\">Poland</span>",
         heroSubtitle: "Residence permits, work permits, citizenship - we handle your case from start to finish",
         heroCta: "Get Free Assessment",
-        heroLawyerTitle: "Lead Attorney",
+        heroLawyerTitle: "Managing Partner",
         heroLawyerExp: "11 years experience",
         heroClientsLabel: "satisfied clients",
         heroLangsLabel: "We speak your language",
-        heroLawyerBadge: "Lead",
+        heroLawyerBadge: "Partner",
         // Form
         formTitle: "Free Case Assessment",
         formTime: "1 minute",
@@ -5735,11 +5708,11 @@
         heroTitle: "Легалізація перебування в <span class=\"text-gradient\">Польщі</span>",
         heroSubtitle: "Посвідки на проживання, дозволи на роботу, громадянство — ведемо вашу справу від початку до кінця",
         heroCta: "Отримати безкоштовну оцінку",
-        heroLawyerTitle: "Провідний адвокат",
+        heroLawyerTitle: "Керуючий партнер",
         heroLawyerExp: "11 років досвіду",
         heroClientsLabel: "задоволених клієнтів",
         heroLangsLabel: "Ми говоримо вашою мовою",
-        heroLawyerBadge: "Lead",
+        heroLawyerBadge: "Partner",
         formTitle: "Безкоштовна оцінка справи",
         formTime: "1 хвилина",
         step1Title: "Яка ваша ситуація?",
@@ -5904,11 +5877,11 @@
         heroTitle: "Legalizacja pobytu w <span class=\"text-gradient\">Polsce</span>",
         heroSubtitle: "Karty pobytu, pozwolenia na pracę, obywatelstwo — prowadzimy sprawę od początku do końca",
         heroCta: "Darmowa wycena",
-        heroLawyerTitle: "Główny adwokat",
+        heroLawyerTitle: "Partner zarządzający",
         heroLawyerExp: "11 lat doświadczenia",
         heroClientsLabel: "zadowolonych klientów",
         heroLangsLabel: "Mówimy Twoim językiem",
-        heroLawyerBadge: "Lead",
+        heroLawyerBadge: "Partner",
         formTitle: "Darmowa wycena sprawy",
         formTime: "1 minuta",
         step1Title: "Jaka jest Twoja sytuacja?",
@@ -6073,11 +6046,11 @@
         heroTitle: "Legalización de estancia en <span class=\"text-gradient\">Polonia</span>",
         heroSubtitle: "Permisos de residencia, permisos de trabajo, ciudadanía — gestionamos tu caso de principio a fin",
         heroCta: "Obtener evaluación gratuita",
-        heroLawyerTitle: "Abogado principal",
+        heroLawyerTitle: "Socio Director",
         heroLawyerExp: "11 años de experiencia",
         heroClientsLabel: "clientes satisfechos",
         heroLangsLabel: "Hablamos tu idioma",
-        heroLawyerBadge: "Lead",
+        heroLawyerBadge: "Partner",
         formTitle: "Evaluación gratuita del caso",
         formTime: "1 minuto",
         step1Title: "¿Cuál es tu situación?",
@@ -6242,11 +6215,11 @@
         heroTitle: "Légalisation du séjour en <span class=\"text-gradient\">Pologne</span>",
         heroSubtitle: "Permis de séjour, permis de travail, citoyenneté — nous gérons votre dossier de A à Z",
         heroCta: "Obtenir une évaluation gratuite",
-        heroLawyerTitle: "Avocat principal",
+        heroLawyerTitle: "Associé Gérant",
         heroLawyerExp: "11 ans d'expérience",
         heroClientsLabel: "clients satisfaits",
         heroLangsLabel: "Nous parlons votre langue",
-        heroLawyerBadge: "Lead",
+        heroLawyerBadge: "Partner",
         formTitle: "Évaluation gratuite du dossier",
         formTime: "1 minute",
         step1Title: "Quelle est votre situation?",
