@@ -67,6 +67,14 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }
+        .pipeline-card.dragging {
+            opacity: 0.5;
+            transform: rotate(2deg);
+        }
+        .pipeline-drop-zone.drag-over {
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px dashed rgba(59, 130, 246, 0.5);
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans text-sm antialiased">
@@ -253,45 +261,45 @@
                         <!-- Pipeline Tab -->
                         <div id="pipelineTab" class="hidden">
                             <div class="flex gap-4 overflow-x-auto pb-4">
-                                <div class="pipeline-column flex-shrink-0">
+                                <div class="pipeline-column flex-shrink-0" data-status="new">
                                     <div class="flex items-center gap-2 mb-3 px-1">
                                         <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
                                         <span class="text-zinc-300 font-medium text-sm">Nowe</span>
                                         <span class="text-zinc-600 text-xs ml-auto" id="newPipelineCount">0</span>
                                     </div>
-                                    <div id="pipelineNew" class="space-y-3 min-h-[200px]"></div>
+                                    <div id="pipelineNew" class="pipeline-drop-zone space-y-3 min-h-[200px] rounded-lg transition-colors" data-status="new"></div>
                                 </div>
-                                <div class="pipeline-column flex-shrink-0">
+                                <div class="pipeline-column flex-shrink-0" data-status="contacted">
                                     <div class="flex items-center gap-2 mb-3 px-1">
                                         <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
                                         <span class="text-zinc-300 font-medium text-sm">Skontaktowany</span>
                                         <span class="text-zinc-600 text-xs ml-auto" id="contactedPipelineCount">0</span>
                                     </div>
-                                    <div id="pipelineContacted" class="space-y-3 min-h-[200px]"></div>
+                                    <div id="pipelineContacted" class="pipeline-drop-zone space-y-3 min-h-[200px] rounded-lg transition-colors" data-status="contacted"></div>
                                 </div>
-                                <div class="pipeline-column flex-shrink-0">
+                                <div class="pipeline-column flex-shrink-0" data-status="qualified">
                                     <div class="flex items-center gap-2 mb-3 px-1">
                                         <div class="w-2 h-2 bg-violet-500 rounded-full"></div>
                                         <span class="text-zinc-300 font-medium text-sm">Zakwalifikowany</span>
                                         <span class="text-zinc-600 text-xs ml-auto" id="qualifiedPipelineCount">0</span>
                                     </div>
-                                    <div id="pipelineQualified" class="space-y-3 min-h-[200px]"></div>
+                                    <div id="pipelineQualified" class="pipeline-drop-zone space-y-3 min-h-[200px] rounded-lg transition-colors" data-status="qualified"></div>
                                 </div>
-                                <div class="pipeline-column flex-shrink-0">
+                                <div class="pipeline-column flex-shrink-0" data-status="converted">
                                     <div class="flex items-center gap-2 mb-3 px-1">
                                         <div class="w-2 h-2 bg-green-500 rounded-full"></div>
                                         <span class="text-zinc-300 font-medium text-sm">Skonwertowany</span>
                                         <span class="text-zinc-600 text-xs ml-auto" id="convertedPipelineCount">0</span>
                                     </div>
-                                    <div id="pipelineConverted" class="space-y-3 min-h-[200px]"></div>
+                                    <div id="pipelineConverted" class="pipeline-drop-zone space-y-3 min-h-[200px] rounded-lg transition-colors" data-status="converted"></div>
                                 </div>
-                                <div class="pipeline-column flex-shrink-0">
+                                <div class="pipeline-column flex-shrink-0" data-status="lost">
                                     <div class="flex items-center gap-2 mb-3 px-1">
                                         <div class="w-2 h-2 bg-zinc-600 rounded-full"></div>
                                         <span class="text-zinc-300 font-medium text-sm">Stracony</span>
                                         <span class="text-zinc-600 text-xs ml-auto" id="lostPipelineCount">0</span>
                                     </div>
-                                    <div id="pipelineLost" class="space-y-3 min-h-[200px]"></div>
+                                    <div id="pipelineLost" class="pipeline-drop-zone space-y-3 min-h-[200px] rounded-lg transition-colors" data-status="lost"></div>
                                 </div>
                             </div>
                         </div>
@@ -595,7 +603,7 @@
                 }
 
                 container.innerHTML = leads.map(lead => `
-                    <div class="pipeline-card rounded-lg p-4" onclick="openLeadModal('${lead.id}')">
+                    <div class="pipeline-card rounded-lg p-4" draggable="true" data-id="${lead.id}" onclick="openLeadModal('${lead.id}')">
                         <div class="flex items-start justify-between mb-2">
                             <span class="text-white font-medium text-sm">${lead.phone}</span>
                             ${getLeadBadge(lead.lead_type)}
@@ -607,6 +615,12 @@
                         </div>
                     </div>
                 `).join('');
+
+                // Add drag events to cards
+                container.querySelectorAll('.pipeline-card').forEach(card => {
+                    card.addEventListener('dragstart', handleDragStart);
+                    card.addEventListener('dragend', handleDragEnd);
+                });
             });
         }
 
@@ -787,6 +801,71 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeLeadModal();
         });
+
+        // ========== DRAG & DROP ==========
+        let draggedLeadId = null;
+
+        function handleDragStart(e) {
+            draggedLeadId = e.target.dataset.id;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.pipeline-drop-zone').forEach(zone => {
+                zone.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        async function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+
+            const newStatus = e.currentTarget.dataset.status;
+            if (!draggedLeadId || !newStatus) return;
+
+            // Update in database
+            const { error } = await db
+                .from('permit_leads')
+                .update({ status: newStatus })
+                .eq('id', draggedLeadId);
+
+            if (!error) {
+                // Update local data
+                const lead = allLeads.find(l => l.id === draggedLeadId);
+                if (lead) {
+                    lead.status = newStatus;
+                }
+                updateStats();
+                renderLeads();
+                renderPipeline();
+            }
+
+            draggedLeadId = null;
+        }
+
+        // Initialize drop zones
+        function initDropZones() {
+            document.querySelectorAll('.pipeline-drop-zone').forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('dragleave', handleDragLeave);
+                zone.addEventListener('drop', handleDrop);
+            });
+        }
+
+        // Call after DOM is ready
+        document.addEventListener('DOMContentLoaded', initDropZones);
     </script>
 </body>
 </html>
