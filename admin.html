@@ -790,8 +790,6 @@
 
         function switchTab(tab) {
             currentTab = tab;
-            document.getElementById('tabLeads').classList.toggle('active', tab === 'leads');
-            document.getElementById('tabPipeline').classList.toggle('active', tab === 'pipeline');
             document.getElementById('leadsTab').classList.toggle('hidden', tab !== 'leads');
             document.getElementById('pipelineTab').classList.toggle('hidden', tab !== 'pipeline');
 
@@ -822,25 +820,13 @@
             }
 
             allLeads = data || [];
-            updateStats();
             renderLeads();
             renderPipeline();
             loadLawyers();
-            loadDashboardStats();
         }
 
         function updateStats() {
-            const total = allLeads.length;
-            const hot = allLeads.filter(l => l.lead_type === 'HOT').length;
-            const warm = allLeads.filter(l => l.lead_type === 'WARM').length;
-            const cold = allLeads.filter(l => l.lead_type === 'COLD').length;
-            const converted = allLeads.filter(l => l.status === 'converted').length;
-
-            document.getElementById('hotCount').textContent = hot;
-            document.getElementById('warmCount').textContent = warm;
-            document.getElementById('coldCount').textContent = cold;
-            document.getElementById('convertedCount').textContent = converted;
-            document.getElementById('sidebarLeadsCount').textContent = total;
+            // Stats section removed - function kept for compatibility
         }
 
         async function loadLawyers() {
@@ -863,30 +849,6 @@
             const select = document.getElementById('filterLawyer');
             select.innerHTML = '<option value="">Wszyscy prawnicy</option>' +
                 lawyers.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join('');
-        }
-
-        async function loadDashboardStats() {
-            // Load today's events count
-            const today = new Date().toISOString().split('T')[0];
-            const { data: events, error: eventsError } = await db
-                .from('gmp_calendar_events')
-                .select('id', { count: 'exact' })
-                .gte('start_date', today)
-                .lt('start_date', today + 'T23:59:59');
-
-            if (!eventsError) {
-                document.getElementById('todayEventsCount').textContent = events?.length || 0;
-            }
-
-            // Load pending offers count
-            const { data: offers, error: offersError } = await db
-                .from('gmp_client_offers')
-                .select('id', { count: 'exact' })
-                .in('status', ['pending', 'viewed']);
-
-            if (!offersError) {
-                document.getElementById('pendingOffersCount').textContent = offers?.length || 0;
-            }
         }
 
         function escapeHtml(str) {
