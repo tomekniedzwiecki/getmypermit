@@ -12,6 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="img/favicon-192.png">
   <link rel="apple-touch-icon" href="img/favicon-192.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://flagcdn.com">
@@ -959,33 +960,37 @@
       position: relative;
       z-index: 2;
     }
-    /* Abstract gradient blob in corner */
-    .svc-flip-front .svc-blob {
+    /* Animated gradient orb in corner */
+    .svc-flip-front .svc-orb {
       position: absolute;
-      bottom: -40px;
-      right: -40px;
-      width: 140px;
-      height: 140px;
-      background: linear-gradient(135deg, #0055ff 0%, #00d4ff 50%, #7c3aed 100%);
-      border-radius: 60% 40% 70% 30% / 40% 50% 60% 50%;
-      opacity: 0.15;
+      bottom: -30px;
+      right: -30px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(0, 85, 255, 0.4), rgba(99, 102, 241, 0.2) 50%, transparent 70%);
+      opacity: 0.5;
       z-index: 1;
       pointer-events: none;
-      filter: blur(1px);
+      animation: orbPulse 4s ease-in-out infinite;
       transition: opacity 0.4s ease, transform 0.5s ease;
     }
-    .svc-flip:hover .svc-flip-front .svc-blob {
-      opacity: 0.25;
-      transform: scale(1.1) rotate(10deg);
+    .svc-flip:hover .svc-flip-front .svc-orb {
+      opacity: 0.7;
+      transform: scale(1.15);
     }
-    /* Blob variations */
-    .svc-flip:nth-child(2) .svc-blob { border-radius: 40% 60% 30% 70% / 50% 40% 60% 50%; }
-    .svc-flip:nth-child(3) .svc-blob { border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%; background: linear-gradient(135deg, #7c3aed 0%, #0055ff 100%); }
-    .svc-flip:nth-child(4) .svc-blob { border-radius: 70% 30% 50% 50% / 30% 60% 40% 70%; }
-    .svc-flip:nth-child(5) .svc-blob { border-radius: 30% 70% 60% 40% / 50% 50% 50% 50%; background: linear-gradient(135deg, #00d4ff 0%, #0055ff 100%); }
-    .svc-flip:nth-child(6) .svc-blob { border-radius: 50% 50% 30% 70% / 40% 60% 50% 50%; }
-    .svc-flip:nth-child(7) .svc-blob { border-radius: 40% 60% 50% 50% / 60% 30% 70% 40%; background: linear-gradient(135deg, #0055ff 0%, #7c3aed 100%); }
-    .svc-flip:nth-child(8) .svc-blob { border-radius: 60% 40% 40% 60% / 50% 50% 50% 50%; }
+    @keyframes orbPulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.08); opacity: 0.65; }
+    }
+    /* Orb color variations */
+    .svc-flip:nth-child(2) .svc-orb { background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.4), rgba(0, 85, 255, 0.2) 50%, transparent 70%); animation-delay: -1s; }
+    .svc-flip:nth-child(3) .svc-orb { background: radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.4), rgba(0, 85, 255, 0.2) 50%, transparent 70%); animation-delay: -2s; }
+    .svc-flip:nth-child(4) .svc-orb { background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.4), rgba(99, 102, 241, 0.2) 50%, transparent 70%); animation-delay: -0.5s; }
+    .svc-flip:nth-child(5) .svc-orb { background: radial-gradient(circle at 30% 30%, rgba(245, 158, 11, 0.4), rgba(251, 191, 36, 0.2) 50%, transparent 70%); animation-delay: -1.5s; }
+    .svc-flip:nth-child(6) .svc-orb { background: radial-gradient(circle at 30% 30%, rgba(239, 68, 68, 0.4), rgba(249, 115, 22, 0.2) 50%, transparent 70%); animation-delay: -2.5s; }
+    .svc-flip:nth-child(7) .svc-orb { background: radial-gradient(circle at 30% 30%, rgba(139, 92, 246, 0.4), rgba(99, 102, 241, 0.2) 50%, transparent 70%); animation-delay: -3s; }
+    .svc-flip:nth-child(8) .svc-orb { background: radial-gradient(circle at 30% 30%, rgba(20, 184, 166, 0.4), rgba(16, 185, 129, 0.2) 50%, transparent 70%); animation-delay: -3.5s; }
     .svc-flip-back {
       transform: rotateY(180deg);
       display: flex;
@@ -2348,8 +2353,8 @@
 
     /* Animations */
     .fade-in {
-      opacity: 0;
-      transform: translateY(20px);
+      opacity: 1;
+      transform: translateY(0);
       transition: all 0.6s ease;
     }
     .fade-in.visible {
@@ -3830,7 +3835,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-gray">
-              <div class="svc-blob"></div>
+              <div class="svc-orb"></div>
               <h3>Temporary residence</h3>
               <p>For study, family, or business</p>
             </div>
@@ -3843,7 +3848,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-white">
-              <div class="svc-blob"></div>
+              <div class="svc-orb"></div>
               <h3>Residence & work</h3>
               <p>Single permit for stay and job</p>
             </div>
@@ -3858,7 +3863,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-gray">
-              <div class="svc-blob"></div>
+              <div class="svc-orb"></div>
               <h3>Permanent residence</h3>
               <p>Unlimited stay in Poland</p>
             </div>
@@ -3871,7 +3876,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-white">
-              <div class="svc-blob"></div>
+              <div class="svc-orb"></div>
               <h3>Long-term EU resident</h3>
               <p>Free movement across Europe</p>
             </div>
@@ -3884,7 +3889,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-white">
-              <div class="svc-blob"></div>
+              <div class="svc-orb"></div>
               <h3>Polish citizenship</h3>
               <p>Recognition or granting</p>
             </div>
@@ -3897,7 +3902,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-gray">
-              <div class="svc-blob"></div>
+              <div class="svc-orb"></div>
               <h3>Case expediting</h3>
               <p>We fight delays and speed up decisions</p>
             </div>
@@ -3912,7 +3917,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-white">
-              <div class="svc-blob"></div>
+              <div class="svc-orb"></div>
               <h3>Appeal of refusal</h3>
               <p>We defend your right to stay</p>
             </div>
@@ -3925,7 +3930,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-gray">
-              <div class="svc-blob"></div>
+              <div class="svc-orb"></div>
               <h3>Case takeover</h3>
               <p>We handle your ongoing case</p>
             </div>
@@ -5316,13 +5321,22 @@
 
       const leadType = score >= 60 ? 'HOT' : score >= 35 ? 'WARM' : 'COLD';
       console.log('Lead score:', score, '(' + leadType + ')');
-      console.log('Scoring breakdown:', {
-        situation: situation,
-        rejectionTiming: rejectionTiming,
-        waitingTime: waitingTime,
-        location: location,
-        intent: intent,
-        permitType: permitType
+
+      // Save to Supabase
+      saveLeadToSupabase({
+        phone,
+        details: form.querySelector('textarea[name="details"]')?.value || '',
+        situation,
+        location,
+        intent,
+        waiting_time: waitingTime,
+        rejection_timing: rejectionTiming,
+        permit_type: permitType,
+        lead_score: score,
+        lead_type: leadType,
+        language: currentLang || 'en',
+        user_agent: navigator.userAgent,
+        referrer: document.referrer
       });
 
       // Show success
@@ -5331,6 +5345,27 @@
       // Mark form as submitted (for lead magnet logic)
       sessionStorage.setItem('formSubmitted', 'true');
     });
+
+    // Supabase configuration
+    const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function saveLeadToSupabase(leadData) {
+      try {
+        const { data, error } = await supabase
+          .from('permit_leads')
+          .insert([leadData]);
+
+        if (error) {
+          console.error('Error saving lead:', error);
+        } else {
+          console.log('Lead saved successfully:', data);
+        }
+      } catch (err) {
+        console.error('Supabase error:', err);
+      }
+    }
   </script>
 
   <!-- LEAD MAGNET WIDGET (Desktop) -->

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Leads - GetMyPermit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: #050505; color: #e5e5e5; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::selection { background: white; color: black; }
+
+        .glass-header {
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-enter { animation: fadeIn 0.4s ease-out forwards; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 0.8s linear infinite; }
+
+        .filter-input {
+            background: #0a0a0a;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .filter-input:focus {
+            border-color: rgba(255,255,255,0.25);
+            outline: none;
+        }
+
+        .tab-btn {
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .pipeline-column { min-width: 280px; }
+        .pipeline-card {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .pipeline-card:hover {
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .modal-backdrop {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+        }
+
+        .detail-label {
+            color: #71717a;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden font-sans text-sm antialiased">
+
+    <!-- Auth Screen -->
+    <div class="fixed inset-0 bg-black z-50 flex items-center justify-center p-4" id="authScreen">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-md">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                    <i class="ph ph-user-list text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-white">Panel Leads</h1>
+                    <p class="text-zinc-500 text-sm">GetMyPermit.pl</p>
+                </div>
+            </div>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1.5">Email</label>
+                    <input type="email" id="email" required
+                        class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+                        placeholder="twoj@email.com">
+                </div>
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1.5">Haslo</label>
+                    <input type="password" id="password" required
+                        class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+                        placeholder="********">
+                </div>
+                <button type="submit" class="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-zinc-200 transition-colors">
+                    Zaloguj sie
+                </button>
+                <p class="text-red-400 text-sm text-center hidden" id="errorMsg"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="hidden flex-col h-full" id="dashboard">
+        <!-- Header -->
+        <header class="glass-header h-16 flex items-center justify-between px-6 flex-shrink-0">
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <i class="ph ph-user-list text-white"></i>
+                    </div>
+                    <span class="text-white font-medium">GetMyPermit</span>
+                </div>
+                <!-- Tabs -->
+                <div class="flex items-center gap-1 bg-zinc-900 rounded-lg p-1">
+                    <button onclick="switchTab('leads')" id="tabLeads" class="tab-btn active px-4 py-1.5 rounded-md text-zinc-400 hover:text-white text-sm font-medium flex items-center gap-2">
+                        <i class="ph ph-list-bullets"></i>
+                        Leady
+                    </button>
+                    <button onclick="switchTab('pipeline')" id="tabPipeline" class="tab-btn px-4 py-1.5 rounded-md text-zinc-400 hover:text-white text-sm font-medium flex items-center gap-2">
+                        <i class="ph ph-kanban"></i>
+                        Pipeline
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="loadLeads()" class="text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2">
+                    <i class="ph ph-arrows-clockwise text-base" id="refreshIcon"></i>
+                </button>
+                <button onclick="logout()" class="text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 px-3 py-2 rounded-lg text-xs font-medium transition-all">
+                    Wyloguj
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="flex-1 overflow-auto p-6">
+            <div class="max-w-7xl mx-auto animate-enter">
+                <!-- Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                        <div class="text-3xl font-bold text-white" id="totalCount">-</div>
+                        <div class="text-zinc-500 text-xs">Wszystkie</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-red-500/20 rounded-xl p-4">
+                        <div class="text-3xl font-bold text-red-400" id="hotCount">-</div>
+                        <div class="text-zinc-500 text-xs">HOT</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-amber-500/20 rounded-xl p-4">
+                        <div class="text-3xl font-bold text-amber-400" id="warmCount">-</div>
+                        <div class="text-zinc-500 text-xs">WARM</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+                        <div class="text-3xl font-bold text-zinc-400" id="coldCount">-</div>
+                        <div class="text-zinc-500 text-xs">COLD</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-green-500/20 rounded-xl p-4">
+                        <div class="text-3xl font-bold text-green-400" id="convertedCount">-</div>
+                        <div class="text-zinc-500 text-xs">Skonwertowane</div>
+                    </div>
+                </div>
+
+                <!-- Leads Tab -->
+                <div id="leadsTab">
+                    <!-- Filters -->
+                    <div class="flex flex-wrap gap-3 mb-6">
+                        <div class="relative flex-1 min-w-[200px] max-w-md">
+                            <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-zinc-500"></i>
+                            <input type="text" id="searchInput" placeholder="Szukaj telefon..."
+                                class="filter-input w-full rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-zinc-600">
+                        </div>
+                        <select id="filterLeadType" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
+                            <option value="">Wszystkie typy</option>
+                            <option value="HOT">HOT</option>
+                            <option value="WARM">WARM</option>
+                            <option value="COLD">COLD</option>
+                        </select>
+                        <select id="filterStatus" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
+                            <option value="">Wszystkie statusy</option>
+                            <option value="new">Nowy</option>
+                            <option value="contacted">Skontaktowany</option>
+                            <option value="qualified">Zakwalifikowany</option>
+                            <option value="converted">Skonwertowany</option>
+                            <option value="lost">Stracony</option>
+                        </select>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-zinc-950">
+                                <tr class="text-left text-xs text-zinc-500 uppercase">
+                                    <th class="px-4 py-3 font-medium">Data</th>
+                                    <th class="px-4 py-3 font-medium">Telefon</th>
+                                    <th class="px-4 py-3 font-medium">Lead</th>
+                                    <th class="px-4 py-3 font-medium">Punkty</th>
+                                    <th class="px-4 py-3 font-medium">Sytuacja</th>
+                                    <th class="px-4 py-3 font-medium hidden md:table-cell">Lokalizacja</th>
+                                    <th class="px-4 py-3 font-medium">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leadsTable" class="divide-y divide-zinc-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pipeline Tab -->
+                <div id="pipelineTab" class="hidden">
+                    <div class="flex gap-4 overflow-x-auto pb-4">
+                        <!-- New -->
+                        <div class="pipeline-column flex-shrink-0">
+                            <div class="flex items-center gap-2 mb-3 px-1">
+                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span class="text-zinc-300 font-medium text-sm">Nowe</span>
+                                <span class="text-zinc-600 text-xs ml-auto" id="newPipelineCount">0</span>
+                            </div>
+                            <div id="pipelineNew" class="space-y-3 min-h-[200px]"></div>
+                        </div>
+                        <!-- Contacted -->
+                        <div class="pipeline-column flex-shrink-0">
+                            <div class="flex items-center gap-2 mb-3 px-1">
+                                <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                                <span class="text-zinc-300 font-medium text-sm">Skontaktowany</span>
+                                <span class="text-zinc-600 text-xs ml-auto" id="contactedPipelineCount">0</span>
+                            </div>
+                            <div id="pipelineContacted" class="space-y-3 min-h-[200px]"></div>
+                        </div>
+                        <!-- Qualified -->
+                        <div class="pipeline-column flex-shrink-0">
+                            <div class="flex items-center gap-2 mb-3 px-1">
+                                <div class="w-2 h-2 bg-violet-500 rounded-full"></div>
+                                <span class="text-zinc-300 font-medium text-sm">Zakwalifikowany</span>
+                                <span class="text-zinc-600 text-xs ml-auto" id="qualifiedPipelineCount">0</span>
+                            </div>
+                            <div id="pipelineQualified" class="space-y-3 min-h-[200px]"></div>
+                        </div>
+                        <!-- Converted -->
+                        <div class="pipeline-column flex-shrink-0">
+                            <div class="flex items-center gap-2 mb-3 px-1">
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span class="text-zinc-300 font-medium text-sm">Skonwertowany</span>
+                                <span class="text-zinc-600 text-xs ml-auto" id="convertedPipelineCount">0</span>
+                            </div>
+                            <div id="pipelineConverted" class="space-y-3 min-h-[200px]"></div>
+                        </div>
+                        <!-- Lost -->
+                        <div class="pipeline-column flex-shrink-0">
+                            <div class="flex items-center gap-2 mb-3 px-1">
+                                <div class="w-2 h-2 bg-zinc-600 rounded-full"></div>
+                                <span class="text-zinc-300 font-medium text-sm">Stracony</span>
+                                <span class="text-zinc-600 text-xs ml-auto" id="lostPipelineCount">0</span>
+                            </div>
+                            <div id="pipelineLost" class="space-y-3 min-h-[200px]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lead Detail Modal -->
+    <div id="leadModal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-backdrop absolute inset-0" onclick="closeLeadModal()"></div>
+        <div class="absolute right-0 top-0 bottom-0 w-full max-w-lg bg-zinc-900 border-l border-zinc-800 overflow-y-auto animate-enter">
+            <div class="sticky top-0 bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between z-10">
+                <h2 class="text-lg font-semibold text-white">Szczegoly leada</h2>
+                <button onclick="closeLeadModal()" class="text-zinc-400 hover:text-white">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            <div id="leadModalContent" class="p-6"></div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase config
+        const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allLeads = [];
+        let currentTab = 'leads';
+        let selectedLead = null;
+
+        // Check auth on load
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                showDashboard();
+                loadLeads();
+            }
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                errorMsg.textContent = 'Bledny email lub haslo';
+                errorMsg.classList.remove('hidden');
+            } else {
+                showDashboard();
+                loadLeads();
+            }
+        });
+
+        async function logout() {
+            await supabase.auth.signOut();
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('flex');
+        }
+
+        function showDashboard() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('flex');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tabLeads').classList.toggle('active', tab === 'leads');
+            document.getElementById('tabPipeline').classList.toggle('active', tab === 'pipeline');
+            document.getElementById('leadsTab').classList.toggle('hidden', tab !== 'leads');
+            document.getElementById('pipelineTab').classList.toggle('hidden', tab !== 'pipeline');
+        }
+
+        async function loadLeads() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('animate-spin');
+
+            const { data, error } = await supabase
+                .from('permit_leads')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            icon.classList.remove('animate-spin');
+
+            if (error) {
+                console.error('Error loading leads:', error);
+                return;
+            }
+
+            allLeads = data || [];
+            updateStats();
+            renderLeads();
+            renderPipeline();
+        }
+
+        function updateStats() {
+            document.getElementById('totalCount').textContent = allLeads.length;
+            document.getElementById('hotCount').textContent = allLeads.filter(l => l.lead_type === 'HOT').length;
+            document.getElementById('warmCount').textContent = allLeads.filter(l => l.lead_type === 'WARM').length;
+            document.getElementById('coldCount').textContent = allLeads.filter(l => l.lead_type === 'COLD').length;
+            document.getElementById('convertedCount').textContent = allLeads.filter(l => l.status === 'converted').length;
+        }
+
+        function getFilteredLeads() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const leadType = document.getElementById('filterLeadType').value;
+            const status = document.getElementById('filterStatus').value;
+
+            return allLeads.filter(lead => {
+                if (search && !lead.phone?.toLowerCase().includes(search)) return false;
+                if (leadType && lead.lead_type !== leadType) return false;
+                if (status && lead.status !== status) return false;
+                return true;
+            });
+        }
+
+        function renderLeads() {
+            const tbody = document.getElementById('leadsTable');
+            const filtered = getFilteredLeads();
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-12 text-center text-zinc-500">Brak leadow</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(lead => `
+                <tr class="hover:bg-zinc-800/50 transition-colors cursor-pointer" onclick="openLeadModal('${lead.id}')">
+                    <td class="px-4 py-3 text-zinc-500 text-xs">${formatDate(lead.created_at)}</td>
+                    <td class="px-4 py-3">
+                        <span class="text-blue-400 font-medium">${lead.phone}</span>
+                    </td>
+                    <td class="px-4 py-3">${getLeadBadge(lead.lead_type)}</td>
+                    <td class="px-4 py-3 text-zinc-400 font-mono text-xs">${lead.lead_score || 0}</td>
+                    <td class="px-4 py-3 text-zinc-400 text-xs">${formatSituation(lead.situation)}</td>
+                    <td class="px-4 py-3 text-zinc-500 text-xs hidden md:table-cell">${formatLocation(lead.location)}</td>
+                    <td class="px-4 py-3">${getStatusBadge(lead.status)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPipeline() {
+            const statuses = ['new', 'contacted', 'qualified', 'converted', 'lost'];
+            const containerIds = ['pipelineNew', 'pipelineContacted', 'pipelineQualified', 'pipelineConverted', 'pipelineLost'];
+            const countIds = ['newPipelineCount', 'contactedPipelineCount', 'qualifiedPipelineCount', 'convertedPipelineCount', 'lostPipelineCount'];
+
+            statuses.forEach((status, i) => {
+                const container = document.getElementById(containerIds[i]);
+                const countEl = document.getElementById(countIds[i]);
+                const leads = allLeads.filter(l => (l.status || 'new') === status);
+
+                countEl.textContent = leads.length;
+
+                if (leads.length === 0) {
+                    container.innerHTML = '<div class="text-zinc-700 text-xs text-center py-8 border border-dashed border-zinc-800 rounded-lg">Brak</div>';
+                    return;
+                }
+
+                container.innerHTML = leads.map(lead => `
+                    <div class="pipeline-card rounded-lg p-4" onclick="openLeadModal('${lead.id}')">
+                        <div class="flex items-start justify-between mb-2">
+                            <span class="text-white font-medium text-sm">${lead.phone}</span>
+                            ${getLeadBadge(lead.lead_type)}
+                        </div>
+                        <div class="text-zinc-500 text-xs mb-2">${formatSituation(lead.situation)}</div>
+                        <div class="flex items-center justify-between text-zinc-600 text-xs">
+                            <span>${formatDate(lead.created_at)}</span>
+                            <span class="font-mono">${lead.lead_score || 0} pkt</span>
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function openLeadModal(id) {
+            selectedLead = allLeads.find(l => l.id === id);
+            if (!selectedLead) return;
+
+            const content = document.getElementById('leadModalContent');
+            content.innerHTML = `
+                <!-- Header info -->
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <a href="tel:${selectedLead.phone}" class="text-2xl font-bold text-white hover:text-blue-400 transition-colors flex items-center gap-2">
+                            <i class="ph ph-phone"></i>
+                            ${selectedLead.phone}
+                        </a>
+                        <div class="text-zinc-500 text-sm mt-1">${formatDateFull(selectedLead.created_at)}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        ${getLeadBadge(selectedLead.lead_type)}
+                        <span class="text-zinc-400 font-mono text-sm">${selectedLead.lead_score || 0} pkt</span>
+                    </div>
+                </div>
+
+                <!-- Pipeline Status -->
+                <div class="mb-6">
+                    <div class="detail-label">Status Pipeline</div>
+                    <div class="flex gap-2 flex-wrap">
+                        ${['new', 'contacted', 'qualified', 'converted', 'lost'].map(s => `
+                            <button onclick="changeStatus('${s}')"
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedLead.status === s || (!selectedLead.status && s === 'new')
+                                    ? getStatusButtonClass(s, true)
+                                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}">
+                                ${getStatusLabel(s)}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-zinc-800/50 rounded-lg p-3">
+                        <div class="detail-label">Sytuacja</div>
+                        <div class="text-white">${formatSituation(selectedLead.situation)}</div>
+                    </div>
+                    <div class="bg-zinc-800/50 rounded-lg p-3">
+                        <div class="detail-label">Lokalizacja</div>
+                        <div class="text-white">${formatLocation(selectedLead.location)}</div>
+                    </div>
+                    <div class="bg-zinc-800/50 rounded-lg p-3">
+                        <div class="detail-label">Czas oczekiwania</div>
+                        <div class="text-white">${formatWaitingTime(selectedLead.waiting_time)}</div>
+                    </div>
+                    <div class="bg-zinc-800/50 rounded-lg p-3">
+                        <div class="detail-label">Typ pozwolenia</div>
+                        <div class="text-white">${formatPermitType(selectedLead.permit_type)}</div>
+                    </div>
+                    <div class="bg-zinc-800/50 rounded-lg p-3">
+                        <div class="detail-label">Odmowa - timing</div>
+                        <div class="text-white">${formatRejectionTiming(selectedLead.rejection_timing)}</div>
+                    </div>
+                    <div class="bg-zinc-800/50 rounded-lg p-3">
+                        <div class="detail-label">Intencja</div>
+                        <div class="text-white">${formatIntent(selectedLead.intent)}</div>
+                    </div>
+                </div>
+
+                <!-- Details text -->
+                ${selectedLead.details ? `
+                <div class="mb-6">
+                    <div class="detail-label">Szczegoly od klienta</div>
+                    <div class="bg-zinc-800/50 rounded-lg p-4 text-zinc-300 text-sm whitespace-pre-wrap">${selectedLead.details}</div>
+                </div>
+                ` : ''}
+
+                <!-- Notes -->
+                <div class="mb-6">
+                    <div class="detail-label">Notatki</div>
+                    <textarea id="modalNotes" rows="4"
+                        class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none resize-none"
+                        placeholder="Dodaj notatki...">${selectedLead.notes || ''}</textarea>
+                    <button onclick="saveNotes()" class="mt-2 bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Zapisz notatki
+                    </button>
+                </div>
+
+                <!-- Meta info -->
+                <div class="border-t border-zinc-800 pt-4 text-xs text-zinc-600 space-y-1">
+                    <div><span class="text-zinc-500">Jezyk:</span> ${selectedLead.language || 'en'}</div>
+                    <div><span class="text-zinc-500">Referrer:</span> ${selectedLead.referrer || '-'}</div>
+                    <div class="truncate"><span class="text-zinc-500">UA:</span> ${selectedLead.user_agent || '-'}</div>
+                </div>
+            `;
+
+            document.getElementById('leadModal').classList.remove('hidden');
+        }
+
+        function closeLeadModal() {
+            document.getElementById('leadModal').classList.add('hidden');
+            selectedLead = null;
+        }
+
+        async function changeStatus(status) {
+            if (!selectedLead) return;
+
+            const { error } = await supabase
+                .from('permit_leads')
+                .update({ status })
+                .eq('id', selectedLead.id);
+
+            if (!error) {
+                selectedLead.status = status;
+                const lead = allLeads.find(l => l.id === selectedLead.id);
+                if (lead) lead.status = status;
+                updateStats();
+                renderLeads();
+                renderPipeline();
+                openLeadModal(selectedLead.id); // Refresh modal
+            }
+        }
+
+        async function saveNotes() {
+            if (!selectedLead) return;
+            const notes = document.getElementById('modalNotes').value;
+
+            const { error } = await supabase
+                .from('permit_leads')
+                .update({ notes })
+                .eq('id', selectedLead.id);
+
+            if (!error) {
+                selectedLead.notes = notes;
+                const lead = allLeads.find(l => l.id === selectedLead.id);
+                if (lead) lead.notes = notes;
+            }
+        }
+
+        // Helpers
+        function getLeadBadge(type) {
+            if (type === 'HOT') return '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-500/20 text-red-400 border border-red-500/30">HOT</span>';
+            if (type === 'WARM') return '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">WARM</span>';
+            return '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">COLD</span>';
+        }
+
+        function getStatusBadge(status) {
+            const s = status || 'new';
+            const styles = {
+                new: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                contacted: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                qualified: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+                converted: 'bg-green-500/10 text-green-400 border-green-500/20',
+                lost: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+            };
+            return `<span class="px-2 py-0.5 rounded text-[10px] font-medium border ${styles[s] || styles.new}">${getStatusLabel(s)}</span>`;
+        }
+
+        function getStatusButtonClass(status, active) {
+            if (!active) return '';
+            const styles = {
+                new: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
+                contacted: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
+                qualified: 'bg-violet-500/20 text-violet-400 border border-violet-500/30',
+                converted: 'bg-green-500/20 text-green-400 border border-green-500/30',
+                lost: 'bg-zinc-600/20 text-zinc-300 border border-zinc-500/30'
+            };
+            return styles[status] || '';
+        }
+
+        function getStatusLabel(status) {
+            const labels = { new: 'Nowy', contacted: 'Skontaktowany', qualified: 'Zakwalifikowany', converted: 'Skonwertowany', lost: 'Stracony' };
+            return labels[status] || status;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }) + ' ' +
+                   d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatDateFull(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleString('pl-PL');
+        }
+
+        function formatSituation(s) {
+            const map = { 'no-fingerprints': 'Brak odciskow 12+ mies.', 'rejected': 'Odmowa', 'stuck': 'Utkniety', 'letter': 'List z urzedu', 'new': 'Nowy wniosek' };
+            return map[s] || s || '-';
+        }
+
+        function formatLocation(l) {
+            const map = { wroclaw: 'Wroclaw', dolnoslaskie: 'Dolnoslaskie', other: 'Inne' };
+            return map[l] || l || '-';
+        }
+
+        function formatWaitingTime(w) {
+            const map = { '18+': '18+ miesiecy', '12-18': '12-18 miesiecy', '6-12': '6-12 miesiecy', 'under-6': 'Ponizej 6 mies.' };
+            return map[w] || w || '-';
+        }
+
+        function formatPermitType(p) {
+            const map = { temporary: 'Czasowy', permanent: 'Staly', citizenship: 'Obywatelstwo', 'eu-resident': 'Rezydent UE', work: 'Praca', residence: 'Pobyt' };
+            return map[p] || p || '-';
+        }
+
+        function formatRejectionTiming(r) {
+            const map = { '0-7': '0-7 dni', '7-14': '7-14 dni', 'not-sure': 'Nie wiem' };
+            return map[r] || r || '-';
+        }
+
+        function formatIntent(i) {
+            const map = { ready: 'Gotowy wynajac', 'hire-lawyer': 'Chce prawnika', 'just-info': 'Tylko info', diy: 'Sam to zrobie' };
+            return map[i] || i || '-';
+        }
+
+        // Filter listeners
+        document.getElementById('searchInput').addEventListener('input', renderLeads);
+        document.getElementById('filterLeadType').addEventListener('change', renderLeads);
+        document.getElementById('filterStatus').addEventListener('change', renderLeads);
+
+        // Close modal on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLeadModal();
+        });
+    </script>
+</body>
+</html>
