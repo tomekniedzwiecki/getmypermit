@@ -12,6 +12,10 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230055ff'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-family='Arial,sans-serif' font-size='12' font-weight='bold' fill='white'%3EPS%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://flagcdn.com">
+  <link rel="preconnect" href="https://adwokaci-sg.pl">
+  <link rel="dns-prefetch" href="https://flagcdn.com">
+  <link rel="dns-prefetch" href="https://adwokaci-sg.pl">
   <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -527,57 +531,51 @@
       }
     }
 
-    /* Hero Cards */
+    /* Hero Cards - base */
+    .hero-lawyer-card,
     .hero-clients-card,
     .hero-langs-card {
-      background: var(--light-gray);
       border-radius: var(--radius);
-      border: 1px solid transparent;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .hero-clients-card:hover,
-    .hero-langs-card:hover {
-      transform: translateY(-4px);
-      background: white;
-      border-color: rgba(0, 85, 255, 0.15);
-      box-shadow: 0 15px 30px rgba(0, 85, 255, 0.1);
+      transition: all 0.3s ease;
     }
 
-    /* Lawyer card - gold theme (managing partner) */
+    /* Lawyer card - white with accent border */
     .hero-lawyer-card {
-      background: linear-gradient(135deg, #b99451, #d4a853);
+      background: white;
       border-radius: var(--radius);
-      color: white;
-      box-shadow: 0 8px 25px rgba(185, 148, 81, 0.3);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 2px solid rgba(0, 85, 255, 0.15);
+      color: var(--dark);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     }
     .hero-lawyer-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 35px rgba(185, 148, 81, 0.4);
+      transform: translateY(-3px);
+      border-color: rgba(0, 85, 255, 0.3);
+      box-shadow: 0 8px 30px rgba(0, 85, 255, 0.1);
     }
 
-    /* Clients card - green theme (success) */
+    /* Clients card - accent blue (featured) */
     .hero-clients-card {
-      background: linear-gradient(135deg, #00c853, #00a844);
+      background: linear-gradient(135deg, var(--accent), #3377ff);
       border: none;
       color: white;
-      box-shadow: 0 8px 25px rgba(0, 200, 83, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 85, 255, 0.2);
     }
     .hero-clients-card:hover {
-      background: linear-gradient(135deg, #00c853, #00a844);
-      box-shadow: 0 12px 35px rgba(0, 200, 83, 0.4);
+      box-shadow: 0 8px 30px rgba(0, 85, 255, 0.3);
     }
 
-    /* Languages card - navy theme */
+    /* Languages card - light gray (neutral) */
     .hero-langs-card {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      border: none;
-      color: white;
-      box-shadow: 0 8px 25px rgba(26, 26, 46, 0.3);
+      background: var(--light-gray);
+      border: 1px solid var(--border);
+      color: var(--dark);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
     }
     .hero-langs-card:hover {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      box-shadow: 0 12px 35px rgba(26, 26, 46, 0.4);
+      background: white;
+      border-color: rgba(0, 85, 255, 0.2);
+      box-shadow: 0 8px 25px rgba(0, 85, 255, 0.08);
     }
 
     /* Lawyer Card */
@@ -599,44 +597,43 @@
       flex-shrink: 0;
     }
     .hero-lawyer-card img {
-      width: 72px;
-      height: 72px;
+      width: 68px;
+      height: 68px;
       border-radius: 50%;
       object-fit: cover;
       object-position: top center;
-      border: 3px solid rgba(255,255,255,0.9);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      border: 3px solid var(--accent);
+      box-shadow: 0 4px 12px rgba(0, 85, 255, 0.15);
     }
     .hero-lawyer-badge {
       position: absolute;
       bottom: 0;
       right: -4px;
-      background: white;
-      color: #b99451;
+      background: var(--accent);
+      color: white;
       font-size: 9px;
       font-weight: 700;
       padding: 3px 8px;
       border-radius: 10px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .hero-lawyer-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
     .hero-lawyer-title {
       font-size: 11px;
       font-weight: 600;
-      color: rgba(255,255,255,0.85);
+      color: var(--accent);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     .hero-lawyer-info h4 {
       font-size: 16px;
       font-weight: 700;
-      color: white;
+      color: var(--black);
       line-height: 1.2;
     }
     .hero-lawyer-exp {
@@ -644,12 +641,11 @@
       align-items: center;
       gap: 6px;
       font-size: 13px;
-      color: rgba(255,255,255,0.9);
-      margin-top: 4px;
+      color: var(--gray);
+      margin-top: 2px;
     }
     .hero-lawyer-exp svg {
-      color: white;
-      opacity: 0.8;
+      color: var(--accent);
     }
 
     /* Clients Card */
@@ -689,19 +685,18 @@
       gap: 10px;
     }
     .hero-langs-icon {
-      color: white;
-      opacity: 0.9;
+      color: var(--accent);
     }
     .hero-langs-row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
     .hero-langs-row img {
-      width: 32px;
-      height: 22px;
+      width: 30px;
+      height: 21px;
       border-radius: 3px;
       object-fit: cover;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
       transition: transform 0.2s;
     }
     .hero-langs-row img:hover {
@@ -709,7 +704,7 @@
     }
     .hero-langs-card > span {
       font-size: 12px;
-      color: rgba(255,255,255,0.85);
+      color: var(--gray);
       font-weight: 500;
     }
     @media (max-width: 480px) {
@@ -3705,7 +3700,7 @@
     <div class="container">
       <div class="header-inner">
         <a href="#" class="logo">
-          <img src="img/logo.png" alt="Kancelaria Migracyjna Paweł Sadkowski" class="logo-img">
+          <img src="img/logo.png" alt="Kancelaria Migracyjna Paweł Sadkowski" class="logo-img" width="160" height="40" fetchpriority="high">
         </a>
         <div class="header-cta">
           <div class="lang-selector" id="langSelector">
@@ -3716,31 +3711,31 @@
             </button>
             <div class="lang-dropdown">
               <button class="lang-option active" data-lang="en" onclick="setLanguage('en')">
-                <img src="https://flagcdn.com/w40/gb.png" alt="">English
+                <img data-src="https://flagcdn.com/w40/gb.png" alt="">English
               </button>
               <button class="lang-option" data-lang="uk" onclick="setLanguage('uk')">
-                <img src="https://flagcdn.com/w40/ua.png" alt="">Українська
+                <img data-src="https://flagcdn.com/w40/ua.png" alt="">Українська
               </button>
               <button class="lang-option" data-lang="pl" onclick="setLanguage('pl')">
-                <img src="https://flagcdn.com/w40/pl.png" alt="">Polski
+                <img data-src="https://flagcdn.com/w40/pl.png" alt="">Polski
               </button>
               <button class="lang-option" data-lang="es" onclick="setLanguage('es')">
-                <img src="https://flagcdn.com/w40/es.png" alt="">Español
+                <img data-src="https://flagcdn.com/w40/es.png" alt="">Español
               </button>
               <button class="lang-option" data-lang="fr" onclick="setLanguage('fr')">
-                <img src="https://flagcdn.com/w40/fr.png" alt="">Français
+                <img data-src="https://flagcdn.com/w40/fr.png" alt="">Français
               </button>
               <button class="lang-option" data-lang="hi" onclick="setLanguage('hi')">
-                <img src="https://flagcdn.com/w40/in.png" alt="">हिन्दी
+                <img data-src="https://flagcdn.com/w40/in.png" alt="">हिन्दी
               </button>
               <button class="lang-option" data-lang="bn" onclick="setLanguage('bn')">
-                <img src="https://flagcdn.com/w40/bd.png" alt="">বাংলা
+                <img data-src="https://flagcdn.com/w40/bd.png" alt="">বাংলা
               </button>
               <button class="lang-option" data-lang="id" onclick="setLanguage('id')">
-                <img src="https://flagcdn.com/w40/id.png" alt="">Bahasa Indonesia
+                <img data-src="https://flagcdn.com/w40/id.png" alt="">Bahasa Indonesia
               </button>
               <button class="lang-option" data-lang="ru" onclick="setLanguage('ru')">
-                <img src="https://flagcdn.com/w40/ru.png" alt="">Русский
+                <img data-src="https://flagcdn.com/w40/ru.png" alt="">Русский
               </button>
             </div>
           </div>
@@ -3795,7 +3790,7 @@
           <!-- Lawyer Card -->
           <div class="hero-lawyer-card">
             <div class="hero-lawyer-photo">
-              <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-255-kw-2.jpg" alt="adw. Paweł Stachurski" width="80" height="80">
+              <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-255-kw-2.jpg" alt="adw. Paweł Stachurski" width="80" height="80" fetchpriority="high">
               <span class="hero-lawyer-badge">Partner</span>
             </div>
             <div class="hero-lawyer-info">
@@ -4005,7 +4000,7 @@
       <div class="team-bento">
         <!-- Row 1: Partner + Stats + Partner + Stats -->
         <div class="team-partner fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-255-kw-2.jpg" alt="Paweł Stachurski">
+          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-255-kw-2.jpg" alt="Paweł Stachurski" loading="lazy" width="200" height="200">
           <div class="team-partner-overlay">
             <div class="team-badge">Managing Partner</div>
             <div class="team-partner-name">Paweł Stachurski</div>
@@ -4017,7 +4012,7 @@
           <div class="team-stat-label">Years of<br>experience</div>
         </div>
         <div class="team-partner fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-315-kw-2.jpg" alt="Katarzyna Grzybowska-Jagódka">
+          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-315-kw-2.jpg" alt="Katarzyna Grzybowska-Jagódka" loading="lazy" width="200" height="200">
           <div class="team-partner-overlay">
             <div class="team-badge">Managing Partner</div>
             <div class="team-partner-name">Katarzyna Grzybowska-Jagódka</div>
@@ -4037,14 +4032,14 @@
           <div class="team-stat-label"><strong>4.9</strong> on Google<br>144 reviews</div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-10.jpg" alt="Michał Kuźniar">
+          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-10.jpg" alt="Michał Kuźniar" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Michał Kuźniar</div>
             <div class="team-member-role">Permanent Residence</div>
           </div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-8.jpg" alt="Oleksandr Polisada">
+          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-8.jpg" alt="Oleksandr Polisada" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Oleksandr Polisada</div>
             <div class="team-member-role">Ukrainian Clients</div>
@@ -4059,7 +4054,7 @@
 
         <!-- Row 3: Team + Languages + 24h + Team -->
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-7.jpg" alt="Anastasiia Hosudarska">
+          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-7.jpg" alt="Anastasiia Hosudarska" loading="lazy" width="200" height="200">
           <div class="team-member-info">
             <div class="team-member-name">Anastasiia Hosudarska</div>
             <div class="team-member-role">Citizenship Cases</div>
@@ -4084,7 +4079,7 @@
           <div class="team-stat-label" style="color: var(--black);">We respond within<br><strong style="font-size: 24px; color: var(--accent);">24 hours</strong></div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-5.jpg" alt="Julia Szczych">
+          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-5.jpg" alt="Julia Szczych" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Julia Szczych</div>
             <div class="team-member-role">Illegal Stay Cases</div>
@@ -4097,14 +4092,14 @@
           <div class="team-stat-label">Legal experts<br>in our team</div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-6.jpg" alt="Michał Kukielka">
+          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-6.jpg" alt="Michał Kukielka" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Michał Kukielka</div>
             <div class="team-member-role">EU Long-term Resident</div>
           </div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-4.jpg" alt="Krzysztof Strużyński">
+          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-4.jpg" alt="Krzysztof Strużyński" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Krzysztof Strużyński</div>
             <div class="team-member-role">Work Permits</div>
@@ -4285,7 +4280,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             144 verified reviews
           </div>
-          <img class="rv-google-logo" src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png" alt="Google" width="92" height="30">
+          <img class="rv-google-logo" src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png" alt="Google" width="92" height="30" loading="lazy">
         </div>
       </div>
     </div>
@@ -6384,11 +6379,11 @@
         heroTitle: "<span class=\"text-gradient\">पोलैंड</span> में रहने का वैधीकरण",
         heroSubtitle: "निवास परमिट, कार्य परमिट, नागरिकता — हम शुरू से अंत तक आपके मामले को संभालते हैं",
         heroCta: "मुफ्त मूल्यांकन प्राप्त करें",
-        heroLawyerTitle: "प्रमुख वकील",
+        heroLawyerTitle: "प्रबंध भागीदार",
         heroLawyerExp: "11 वर्षों का अनुभव",
         heroClientsLabel: "संतुष्ट ग्राहक",
         heroLangsLabel: "हम आपकी भाषा बोलते हैं",
-        heroLawyerBadge: "Lead",
+        heroLawyerBadge: "Partner",
         formTitle: "मुफ्त केस मूल्यांकन",
         formTime: "1 मिनट",
         step1Title: "आपकी स्थिति क्या है?",
@@ -6553,11 +6548,11 @@
         heroTitle: "<span class=\"text-gradient\">পোল্যান্ডে</span> থাকার বৈধতা",
         heroSubtitle: "রেসিডেন্স পারমিট, ওয়ার্ক পারমিট, নাগরিকত্ব — আমরা শুরু থেকে শেষ পর্যন্ত আপনার কেস পরিচালনা করি",
         heroCta: "বিনামূল্যে মূল্যায়ন পান",
-        heroLawyerTitle: "প্রধান অ্যাটর্নি",
+        heroLawyerTitle: "ম্যানেজিং পার্টনার",
         heroLawyerExp: "১১ বছরের অভিজ্ঞতা",
         heroClientsLabel: "সন্তুষ্ট ক্লায়েন্ট",
         heroLangsLabel: "আমরা আপনার ভাষায় কথা বলি",
-        heroLawyerBadge: "Lead",
+        heroLawyerBadge: "Partner",
         formTitle: "বিনামূল্যে কেস মূল্যায়ন",
         formTime: "১ মিনিট",
         step1Title: "আপনার পরিস্থিতি কী?",
@@ -6722,11 +6717,11 @@
         heroTitle: "Legalisasi tinggal di <span class=\"text-gradient\">Polandia</span>",
         heroSubtitle: "Izin tinggal, izin kerja, kewarganegaraan — kami tangani kasus Anda dari awal hingga akhir",
         heroCta: "Dapatkan penilaian gratis",
-        heroLawyerTitle: "Pengacara utama",
+        heroLawyerTitle: "Managing Partner",
         heroLawyerExp: "11 tahun pengalaman",
         heroClientsLabel: "klien puas",
         heroLangsLabel: "Kami berbicara bahasa Anda",
-        heroLawyerBadge: "Lead",
+        heroLawyerBadge: "Partner",
         formTitle: "Penilaian kasus gratis",
         formTime: "1 menit",
         step1Title: "Apa situasi Anda?",
@@ -6891,11 +6886,11 @@
         heroTitle: "Легализация пребывания в <span class=\"text-gradient\">Польше</span>",
         heroSubtitle: "Вид на жительство, разрешение на работу, гражданство — ведём ваше дело от начала до конца",
         heroCta: "Получить бесплатную оценку",
-        heroLawyerTitle: "Ведущий адвокат",
+        heroLawyerTitle: "Управляющий партнёр",
         heroLawyerExp: "11 лет опыта",
         heroClientsLabel: "довольных клиентов",
         heroLangsLabel: "Мы говорим на вашем языке",
-        heroLawyerBadge: "Lead",
+        heroLawyerBadge: "Partner",
         formTitle: "Бесплатная оценка дела",
         formTime: "1 минута",
         step1Title: "Какова ваша ситуация?",
@@ -7072,8 +7067,18 @@
     let currentLang = 'en';
 
     // Toggle language dropdown
+    let flagsLoaded = false;
     function toggleLangDropdown() {
-      document.getElementById('langSelector').classList.toggle('open');
+      const selector = document.getElementById('langSelector');
+      selector.classList.toggle('open');
+
+      // Lazy load flag images on first open
+      if (!flagsLoaded) {
+        document.querySelectorAll('.lang-dropdown img[data-src]').forEach(img => {
+          img.src = img.dataset.src;
+        });
+        flagsLoaded = true;
+      }
     }
 
     // Close dropdown when clicking outside
