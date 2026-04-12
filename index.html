@@ -945,46 +945,47 @@
       overflow: hidden;
     }
     .svc-flip-front h3 {
-      font-size: 18px;
+      font-size: 24px;
       font-weight: 700;
-      line-height: 1.3;
+      line-height: 1.2;
       position: relative;
       z-index: 2;
     }
     .svc-flip-front p {
-      font-size: 14px;
-      opacity: 0.85;
-      margin-top: 6px;
+      font-size: 16px;
+      opacity: 0.75;
+      margin-top: 10px;
       line-height: 1.5;
       position: relative;
       z-index: 2;
     }
-    /* Large decorative icon in bottom right */
-    .svc-flip-front .svc-icon {
+    /* Abstract gradient blob in corner */
+    .svc-flip-front .svc-blob {
       position: absolute;
-      bottom: -15px;
-      right: -15px;
-      width: 100px;
-      height: 100px;
-      background: none;
-      box-shadow: none;
-      opacity: 0.12;
+      bottom: -40px;
+      right: -40px;
+      width: 140px;
+      height: 140px;
+      background: linear-gradient(135deg, #0055ff 0%, #00d4ff 50%, #7c3aed 100%);
+      border-radius: 60% 40% 70% 30% / 40% 50% 60% 50%;
+      opacity: 0.15;
       z-index: 1;
-      margin: 0;
-      border-radius: 0;
       pointer-events: none;
+      filter: blur(1px);
+      transition: opacity 0.4s ease, transform 0.5s ease;
     }
-    .svc-flip-front .svc-icon svg {
-      width: 100%;
-      height: 100%;
-      stroke: var(--accent);
-      stroke-width: 1.5;
-      fill: none;
+    .svc-flip:hover .svc-flip-front .svc-blob {
+      opacity: 0.25;
+      transform: scale(1.1) rotate(10deg);
     }
-    .svc-white .svc-icon svg,
-    .svc-gray .svc-icon svg {
-      stroke: var(--accent);
-    }
+    /* Blob variations */
+    .svc-flip:nth-child(2) .svc-blob { border-radius: 40% 60% 30% 70% / 50% 40% 60% 50%; }
+    .svc-flip:nth-child(3) .svc-blob { border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%; background: linear-gradient(135deg, #7c3aed 0%, #0055ff 100%); }
+    .svc-flip:nth-child(4) .svc-blob { border-radius: 70% 30% 50% 50% / 30% 60% 40% 70%; }
+    .svc-flip:nth-child(5) .svc-blob { border-radius: 30% 70% 60% 40% / 50% 50% 50% 50%; background: linear-gradient(135deg, #00d4ff 0%, #0055ff 100%); }
+    .svc-flip:nth-child(6) .svc-blob { border-radius: 50% 50% 30% 70% / 40% 60% 50% 50%; }
+    .svc-flip:nth-child(7) .svc-blob { border-radius: 40% 60% 50% 50% / 60% 30% 70% 40%; background: linear-gradient(135deg, #0055ff 0%, #7c3aed 100%); }
+    .svc-flip:nth-child(8) .svc-blob { border-radius: 60% 40% 40% 60% / 50% 50% 50% 50%; }
     .svc-flip-back {
       transform: rotateY(180deg);
       display: flex;
@@ -2298,6 +2299,11 @@
       padding: 12px 16px;
       box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
       z-index: 998;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+    .sticky-cta-mobile.visible {
+      transform: translateY(0);
     }
     @media (max-width: 767px) {
       .sticky-cta-mobile { display: block; }
@@ -3824,9 +3830,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-gray">
-              <div class="svc-icon">
-                <svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
-              </div>
+              <div class="svc-blob"></div>
               <h3>Temporary residence</h3>
               <p>For study, family, or business</p>
             </div>
@@ -3839,9 +3843,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-white">
-              <div class="svc-icon">
-                <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-              </div>
+              <div class="svc-blob"></div>
               <h3>Residence & work</h3>
               <p>Single permit for stay and job</p>
             </div>
@@ -3856,9 +3858,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-gray">
-              <div class="svc-icon">
-                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/><path d="M12 7v4"/><circle cx="12" cy="7" r="1"/></svg>
-              </div>
+              <div class="svc-blob"></div>
               <h3>Permanent residence</h3>
               <p>Unlimited stay in Poland</p>
             </div>
@@ -3871,9 +3871,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-white">
-              <div class="svc-icon">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M4.93 4.93l14.14 14.14"/></svg>
-              </div>
+              <div class="svc-blob"></div>
               <h3>Long-term EU resident</h3>
               <p>Free movement across Europe</p>
             </div>
@@ -3886,9 +3884,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-white">
-              <div class="svc-icon">
-                <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              </div>
+              <div class="svc-blob"></div>
               <h3>Polish citizenship</h3>
               <p>Recognition or granting</p>
             </div>
@@ -3901,9 +3897,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-gray">
-              <div class="svc-icon">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
+              <div class="svc-blob"></div>
               <h3>Case expediting</h3>
               <p>We fight delays and speed up decisions</p>
             </div>
@@ -3918,9 +3912,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-white">
-              <div class="svc-icon">
-                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              </div>
+              <div class="svc-blob"></div>
               <h3>Appeal of refusal</h3>
               <p>We defend your right to stay</p>
             </div>
@@ -3933,9 +3925,7 @@
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
             <div class="svc-flip-front svc-gray">
-              <div class="svc-icon">
-                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </div>
+              <div class="svc-blob"></div>
               <h3>Case takeover</h3>
               <p>We handle your ongoing case</p>
             </div>
@@ -4981,6 +4971,22 @@
     }, { threshold: 0.1 });
 
     document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Sticky CTA - show after hero scrolls out of view
+    const stickyCta = document.querySelector('.sticky-cta-mobile');
+    const heroSection = document.querySelector('.hero');
+    if (stickyCta && heroSection) {
+      const stickyObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            stickyCta.classList.remove('visible');
+          } else {
+            stickyCta.classList.add('visible');
+          }
+        });
+      }, { threshold: 0 });
+      stickyObserver.observe(heroSection);
+    }
 
     // Animated counter for statistics
     const countUpObserver = new IntersectionObserver((entries) => {
