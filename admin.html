@@ -7,13 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     }
                 }
             }
@@ -76,56 +77,200 @@
             border: 2px dashed rgba(59, 130, 246, 0.5);
         }
 
-        /* Modal tabs */
-        .modal-tab {
-            padding: 8px 16px;
-            font-size: 13px;
-            color: #71717a;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .modal-tab:hover { color: #a1a1aa; }
-        .modal-tab.active {
-            color: white;
-            border-bottom-color: #3b82f6;
+        /* Glass header */
+        .glass-header {
+            background: rgba(5, 5, 5, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
 
-        /* Pipeline stepper */
-        .pipeline-stepper {
+        /* Input field */
+        .input-field {
+            background: #0a0a0a;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: rgba(255,255,255,0.25);
+            outline: none;
+        }
+        .input-field:hover:not(:focus) {
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        /* Pipeline Mini Styles (like TN CRM) */
+        .pipeline-mini {
             display: flex;
             gap: 4px;
+            flex-wrap: nowrap;
             overflow-x: auto;
             padding-bottom: 4px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
-        .pipeline-step {
-            flex: 1;
-            min-width: 100px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            background: #18181b;
-            border: 1px solid rgba(255,255,255,0.05);
+        .pipeline-mini::-webkit-scrollbar {
+            display: none;
+        }
+        .stage-pill {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: rgba(39, 39, 42, 0.5);
             cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
+            transition: all 0.2s ease;
+            opacity: 0.5;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
-        .pipeline-step:hover { border-color: rgba(255,255,255,0.15); }
-        .pipeline-step.active {
-            background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2));
-            border-color: rgba(59,130,246,0.4);
-            box-shadow: 0 0 20px rgba(59,130,246,0.2);
+        .stage-pill:hover {
+            opacity: 0.85;
+            background: rgba(39, 39, 42, 0.8);
+            transform: translateY(-1px);
         }
-        .pipeline-step.completed {
-            background: rgba(34,197,94,0.1);
-            border-color: rgba(34,197,94,0.3);
+        .stage-pill:hover .stage-icon {
+            transform: scale(1.05);
         }
-        .pipeline-step.terminal-won {
-            background: rgba(34,197,94,0.15);
-            border-color: rgba(34,197,94,0.4);
+        .stage-pill .stage-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: transform 0.2s ease;
         }
-        .pipeline-step.terminal-lost {
-            background: rgba(239,68,68,0.15);
-            border-color: rgba(239,68,68,0.4);
+        .stage-pill .stage-name {
+            font-size: 11px;
+            font-weight: 500;
+            color: #a1a1aa;
+        }
+        .stage-pill .stage-check {
+            display: none;
+            font-size: 9px;
+        }
+
+        /* Completed stages */
+        .stage-pill.completed {
+            opacity: 0.6;
+        }
+        .stage-pill.completed .stage-check {
+            display: block;
+            color: #22c55e;
+        }
+
+        /* Current stage - highlighted */
+        .stage-pill.current {
+            opacity: 1;
+            border-color: currentColor;
+            box-shadow: 0 0 12px var(--glow-color, rgba(255,255,255,0.2));
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .stage-pill.current .stage-name {
+            color: white;
+            font-weight: 600;
+        }
+        .stage-pill.current .stage-icon {
+            transform: scale(1.05);
+        }
+
+        /* Terminal states */
+        .stage-pill.terminal-won {
+            opacity: 1;
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.5);
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.25);
+        }
+        .stage-pill.terminal-won .stage-icon {
+            background: rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+        }
+        .stage-pill.terminal-won .stage-name {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .stage-pill.terminal-lost {
+            opacity: 1;
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
+        }
+        .stage-pill.terminal-lost .stage-icon {
+            background: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+        .stage-pill.terminal-lost .stage-name {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        /* When in terminal state, fade regular stages more */
+        #pipelineStepper.terminal-state .stage-pill:not(.terminal-won):not(.terminal-lost) {
+            opacity: 0.3;
+        }
+        #pipelineStepper.terminal-state .stage-pill:not(.terminal-won):not(.terminal-lost):hover {
+            opacity: 0.6;
+        }
+
+        /* Tab Navigation (like TN CRM) */
+        .tab-nav {
+            display: flex;
+            gap: 4px;
+            background: rgba(39, 39, 42, 0.3);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #71717a;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn:hover {
+            color: #a1a1aa;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .tab-btn.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .tab-btn i {
+            font-size: 16px;
+        }
+        .tab-btn .tab-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .tab-btn.active .tab-badge {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Timeline line */
+        .timeline-line {
+            position: absolute;
+            left: 11px;
+            top: 28px;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
         }
 
         /* Activity timeline */
@@ -425,17 +570,18 @@
     <!-- Lead Detail Modal -->
     <div id="leadModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-zinc-950 border border-white/10 rounded-xl w-full max-w-3xl shadow-2xl max-h-[90vh] flex flex-col">
-            <!-- Header with Avatar -->
-            <div class="flex items-center gap-4 px-6 py-5 border-b border-white/5 flex-shrink-0">
+            <!-- Header with Avatar (glass style like TN CRM) -->
+            <div class="glass-header flex items-center gap-4 px-6 py-5 rounded-t-xl flex-shrink-0">
                 <div id="modalAvatar" class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0"></div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-3 mb-1">
-                        <span id="modalPhone" class="text-xl font-bold text-white"></span>
+                        <span id="modalPhone" class="text-xl font-semibold text-white tracking-tight"></span>
                         <span id="modalLeadBadge"></span>
                         <span id="modalScore" class="text-zinc-500 font-mono text-xs"></span>
                     </div>
-                    <div class="flex items-center gap-4 text-xs text-zinc-500">
-                        <span><i class="ph ph-calendar-blank mr-1"></i><span id="modalDate"></span></span>
+                    <div class="flex items-center gap-3 text-xs text-zinc-500">
+                        <span class="font-mono">Dodany: <span id="modalDate"></span></span>
+                        <span class="text-zinc-700">•</span>
                         <span id="modalSourceBadge"></span>
                     </div>
                 </div>
@@ -461,43 +607,55 @@
                 </a>
             </div>
 
-            <!-- Pipeline Stepper -->
+            <!-- Pipeline Mini (TN CRM style) -->
             <div class="px-6 py-4 border-b border-white/5">
-                <div class="pipeline-stepper" id="pipelineStepper">
-                    <div class="pipeline-step" data-status="new" onclick="changeLeadStatus('new')">
-                        <i class="ph ph-star text-blue-400 text-sm"></i>
-                        <div class="text-xs mt-1">Nowy</div>
+                <div class="pipeline-mini" id="pipelineStepper">
+                    <div class="stage-pill" data-status="new" onclick="changeLeadStatus('new')" style="--glow-color: rgba(59, 130, 246, 0.3)">
+                        <div class="stage-icon bg-blue-500/20 text-blue-400"><i class="ph ph-star"></i></div>
+                        <span class="stage-name">Nowy</span>
+                        <i class="ph ph-check stage-check"></i>
                     </div>
-                    <div class="pipeline-step" data-status="contacted" onclick="changeLeadStatus('contacted')">
-                        <i class="ph ph-phone-outgoing text-amber-400 text-sm"></i>
-                        <div class="text-xs mt-1">Skontaktowany</div>
+                    <div class="stage-pill" data-status="contacted" onclick="changeLeadStatus('contacted')" style="--glow-color: rgba(251, 191, 36, 0.3)">
+                        <div class="stage-icon bg-amber-500/20 text-amber-400"><i class="ph ph-phone-outgoing"></i></div>
+                        <span class="stage-name">Skontaktowany</span>
+                        <i class="ph ph-check stage-check"></i>
                     </div>
-                    <div class="pipeline-step" data-status="qualified" onclick="changeLeadStatus('qualified')">
-                        <i class="ph ph-check-circle text-violet-400 text-sm"></i>
-                        <div class="text-xs mt-1">Zakwalifikowany</div>
+                    <div class="stage-pill" data-status="qualified" onclick="changeLeadStatus('qualified')" style="--glow-color: rgba(139, 92, 246, 0.3)">
+                        <div class="stage-icon bg-violet-500/20 text-violet-400"><i class="ph ph-check-circle"></i></div>
+                        <span class="stage-name">Zakwalifikowany</span>
+                        <i class="ph ph-check stage-check"></i>
                     </div>
-                    <div class="pipeline-step" data-status="converted" onclick="changeLeadStatus('converted')">
-                        <i class="ph ph-trophy text-green-400 text-sm"></i>
-                        <div class="text-xs mt-1">Wygrany</div>
+                    <div class="stage-pill" data-status="converted" onclick="changeLeadStatus('converted')">
+                        <div class="stage-icon bg-green-500/20 text-green-400"><i class="ph ph-trophy"></i></div>
+                        <span class="stage-name">Wygrany</span>
+                        <i class="ph ph-check stage-check"></i>
                     </div>
-                    <div class="pipeline-step" data-status="lost" onclick="changeLeadStatus('lost')">
-                        <i class="ph ph-x-circle text-zinc-400 text-sm"></i>
-                        <div class="text-xs mt-1">Stracony</div>
+                    <div class="stage-pill" data-status="lost" onclick="changeLeadStatus('lost')">
+                        <div class="stage-icon bg-zinc-500/20 text-zinc-400"><i class="ph ph-x-circle"></i></div>
+                        <span class="stage-name">Stracony</span>
+                        <i class="ph ph-check stage-check"></i>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab Navigation -->
-            <div class="flex gap-1 px-6 border-b border-white/5">
-                <button class="modal-tab active" data-tab="info" onclick="switchModalTab('info')">
-                    <i class="ph ph-info mr-1.5"></i>Informacje
-                </button>
-                <button class="modal-tab" data-tab="notes" onclick="switchModalTab('notes')">
-                    <i class="ph ph-note mr-1.5"></i>Notatki
-                </button>
-                <button class="modal-tab" data-tab="activity" onclick="switchModalTab('activity')">
-                    <i class="ph ph-clock-counter-clockwise mr-1.5"></i>Aktywnosc
-                </button>
+            <!-- Tab Navigation (TN CRM style) -->
+            <div class="px-6 py-3 border-b border-white/5">
+                <div class="tab-nav">
+                    <button class="tab-btn active" data-tab="info" onclick="switchModalTab('info')">
+                        <i class="ph ph-user-circle"></i>
+                        <span>Informacje</span>
+                    </button>
+                    <button class="tab-btn" data-tab="notes" onclick="switchModalTab('notes')">
+                        <i class="ph ph-note-pencil"></i>
+                        <span>Notatki</span>
+                        <span class="tab-badge" id="notesBadge">0</span>
+                    </button>
+                    <button class="tab-btn" data-tab="activity" onclick="switchModalTab('activity')">
+                        <i class="ph ph-clock-counter-clockwise"></i>
+                        <span>Aktywnosc</span>
+                        <span class="tab-badge" id="activityBadge">0</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Tab Content -->
@@ -552,16 +710,16 @@
                         </h3>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-zinc-500 text-[10px] font-mono uppercase mb-1">Telefon</label>
-                                <input type="tel" id="modalPhoneEdit" class="w-full text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-2.5 rounded-lg outline-none focus:border-blue-500/50 transition-colors" placeholder="+48...">
+                                <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Telefon</label>
+                                <input type="tel" id="modalPhoneEdit" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white" placeholder="+48...">
                             </div>
                             <div>
-                                <label class="block text-zinc-500 text-[10px] font-mono uppercase mb-1">Email</label>
-                                <input type="email" id="modalEmailEdit" class="w-full text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-2.5 rounded-lg outline-none focus:border-blue-500/50 transition-colors" placeholder="email@example.com">
+                                <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Email</label>
+                                <input type="email" id="modalEmailEdit" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white" placeholder="email@example.com">
                             </div>
                             <div class="col-span-2">
-                                <label class="block text-zinc-500 text-[10px] font-mono uppercase mb-1">Imie i nazwisko</label>
-                                <input type="text" id="modalNameEdit" class="w-full text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-2.5 rounded-lg outline-none focus:border-blue-500/50 transition-colors" placeholder="Jan Kowalski">
+                                <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Imie i nazwisko</label>
+                                <input type="text" id="modalNameEdit" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white" placeholder="Jan Kowalski">
                             </div>
                         </div>
                     </div>
@@ -587,7 +745,7 @@
                     <!-- Add new note -->
                     <div class="mb-6">
                         <div class="flex gap-2">
-                            <textarea id="newNoteInput" rows="2" class="flex-1 text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-2.5 rounded-lg outline-none focus:border-blue-500/50 resize-none transition-colors" placeholder="Dodaj notatke..."></textarea>
+                            <textarea id="newNoteInput" rows="2" class="input-field flex-1 text-sm text-white rounded-lg px-3 py-2.5 resize-none" placeholder="Dodaj notatke..."></textarea>
                             <button onclick="addNote()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors self-end">
                                 <i class="ph ph-plus mr-1"></i>Dodaj
                             </button>
@@ -915,6 +1073,12 @@
             // Render activity timeline
             renderActivityTimeline();
 
+            // Update tab badges
+            const notesCount = (selectedLead.notes_history || []).length;
+            const activityCount = (selectedLead.activity_log || []).length;
+            document.getElementById('notesBadge').textContent = notesCount;
+            document.getElementById('activityBadge').textContent = activityCount;
+
             // Clear new note input
             document.getElementById('newNoteInput').value = '';
 
@@ -933,7 +1097,7 @@
         // Modal tab switching
         function switchModalTab(tab) {
             currentModalTab = tab;
-            document.querySelectorAll('.modal-tab').forEach(t => {
+            document.querySelectorAll('.tab-btn').forEach(t => {
                 t.classList.toggle('active', t.dataset.tab === tab);
             });
             document.getElementById('tabInfo').classList.toggle('hidden', tab !== 'info');
@@ -945,9 +1109,17 @@
         function updatePipelineStepper(currentStatus) {
             const statuses = ['new', 'contacted', 'qualified', 'converted', 'lost'];
             const currentIndex = statuses.indexOf(currentStatus);
+            const container = document.getElementById('pipelineStepper');
 
-            document.querySelectorAll('#pipelineStepper .pipeline-step').forEach((step, i) => {
-                step.classList.remove('active', 'completed', 'terminal-won', 'terminal-lost');
+            // Add/remove terminal-state class for fading non-terminal pills
+            if (currentStatus === 'converted' || currentStatus === 'lost') {
+                container.classList.add('terminal-state');
+            } else {
+                container.classList.remove('terminal-state');
+            }
+
+            document.querySelectorAll('#pipelineStepper .stage-pill').forEach((step, i) => {
+                step.classList.remove('current', 'completed', 'terminal-won', 'terminal-lost');
                 const stepStatus = step.dataset.status;
 
                 if (stepStatus === currentStatus) {
@@ -956,7 +1128,7 @@
                     } else if (stepStatus === 'lost') {
                         step.classList.add('terminal-lost');
                     } else {
-                        step.classList.add('active');
+                        step.classList.add('current');
                     }
                 } else if (currentStatus !== 'lost' && statuses.indexOf(stepStatus) < currentIndex) {
                     step.classList.add('completed');
@@ -1086,6 +1258,8 @@
                 noteInput.value = '';
                 renderNotesHistory();
                 addActivity('note', noteText.substring(0, 50) + (noteText.length > 50 ? '...' : ''));
+                // Update notes badge count
+                document.getElementById('notesBadge').textContent = notesHistory.length;
                 showSaveIndicator('saved');
             } else {
                 showSaveIndicator('error');
@@ -1151,6 +1325,8 @@
                 .then(() => {
                     selectedLead.activity_log = activityLog;
                     renderActivityTimeline();
+                    // Update activity badge count
+                    document.getElementById('activityBadge').textContent = activityLog.length;
                 });
         }
 
