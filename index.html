@@ -4980,7 +4980,7 @@
   </div>
 
   <script>
-    console.log('SCRIPT START');
+    alert('SKRYPT STARTUJE!');
     // FAQ Accordion
     document.querySelectorAll('.faq-question').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -5359,7 +5359,10 @@
         lead_type: leadType,
         language: currentLang || 'en',
         user_agent: navigator.userAgent,
-        referrer: document.referrer
+        referrer: document.referrer,
+        utm_source: getUtmParam('utm_source'),
+        utm_medium: getUtmParam('utm_medium'),
+        utm_campaign: getUtmParam('utm_campaign')
       });
 
       // Show success
@@ -5368,6 +5371,12 @@
       // Mark form as submitted (for lead magnet logic)
       sessionStorage.setItem('formSubmitted', 'true');
     });
+
+    // UTM parameter helper
+    function getUtmParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param) || null;
+    }
 
     // Supabase configuration
     const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';

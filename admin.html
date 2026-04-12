@@ -75,6 +75,119 @@
             background: rgba(59, 130, 246, 0.1);
             border: 2px dashed rgba(59, 130, 246, 0.5);
         }
+
+        /* Modal tabs */
+        .modal-tab {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #71717a;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .modal-tab:hover { color: #a1a1aa; }
+        .modal-tab.active {
+            color: white;
+            border-bottom-color: #3b82f6;
+        }
+
+        /* Pipeline stepper */
+        .pipeline-stepper {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .pipeline-step {
+            flex: 1;
+            min-width: 100px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: #18181b;
+            border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .pipeline-step:hover { border-color: rgba(255,255,255,0.15); }
+        .pipeline-step.active {
+            background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2));
+            border-color: rgba(59,130,246,0.4);
+            box-shadow: 0 0 20px rgba(59,130,246,0.2);
+        }
+        .pipeline-step.completed {
+            background: rgba(34,197,94,0.1);
+            border-color: rgba(34,197,94,0.3);
+        }
+        .pipeline-step.terminal-won {
+            background: rgba(34,197,94,0.15);
+            border-color: rgba(34,197,94,0.4);
+        }
+        .pipeline-step.terminal-lost {
+            background: rgba(239,68,68,0.15);
+            border-color: rgba(239,68,68,0.4);
+        }
+
+        /* Activity timeline */
+        .activity-item {
+            position: relative;
+            padding-left: 28px;
+            padding-bottom: 16px;
+        }
+        .activity-item::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 20px;
+            bottom: 0;
+            width: 1px;
+            background: rgba(255,255,255,0.1);
+        }
+        .activity-item:last-child::before { display: none; }
+        .activity-icon {
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+        }
+
+        /* Save indicator */
+        .save-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+        .save-indicator.saving {
+            background: rgba(59,130,246,0.15);
+            color: #60a5fa;
+        }
+        .save-indicator.saved {
+            background: rgba(34,197,94,0.15);
+            color: #4ade80;
+        }
+        .save-indicator.error {
+            background: rgba(239,68,68,0.15);
+            color: #f87171;
+        }
+
+        /* Note card */
+        .note-card {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans text-sm antialiased">
@@ -311,109 +424,204 @@
 
     <!-- Lead Detail Modal -->
     <div id="leadModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-zinc-950 border border-white/10 rounded-lg w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
-                <h2 class="text-sm font-medium text-white flex items-center gap-2">
-                    <i class="ph ph-user text-blue-400"></i>
-                    Szczegoly leada
-                </h2>
-                <button onclick="closeLeadModal()" class="text-zinc-500 hover:text-white transition-colors">
+        <div class="bg-zinc-950 border border-white/10 rounded-xl w-full max-w-3xl shadow-2xl max-h-[90vh] flex flex-col">
+            <!-- Header with Avatar -->
+            <div class="flex items-center gap-4 px-6 py-5 border-b border-white/5 flex-shrink-0">
+                <div id="modalAvatar" class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3 mb-1">
+                        <span id="modalPhone" class="text-xl font-bold text-white"></span>
+                        <span id="modalLeadBadge"></span>
+                        <span id="modalScore" class="text-zinc-500 font-mono text-xs"></span>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs text-zinc-500">
+                        <span><i class="ph ph-calendar-blank mr-1"></i><span id="modalDate"></span></span>
+                        <span id="modalSourceBadge"></span>
+                    </div>
+                </div>
+                <div id="saveIndicator" class="save-indicator hidden">
+                    <span class="indicator-icon"></span>
+                    <span class="indicator-text"></span>
+                </div>
+                <button onclick="closeLeadModal()" class="text-zinc-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg">
                     <i class="ph ph-x text-lg"></i>
                 </button>
             </div>
 
-            <div class="p-5 overflow-y-auto flex-1">
-                <!-- Header info -->
-                <div class="flex items-start justify-between mb-6">
-                    <div>
-                        <div id="modalPhone" class="text-2xl font-bold text-white mb-1"></div>
-                        <div id="modalDate" class="text-zinc-500 text-sm font-mono"></div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span id="modalLeadBadge"></span>
-                        <span id="modalScore" class="text-zinc-400 font-mono text-sm"></span>
-                    </div>
-                </div>
+            <!-- Quick Actions -->
+            <div class="flex gap-2 px-6 py-3 border-b border-white/5 bg-zinc-900/30">
+                <a id="modalCallBtn" href="#" class="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 rounded-lg text-sm font-medium transition-colors">
+                    <i class="ph ph-phone"></i> Zadzwon
+                </a>
+                <a id="modalWhatsAppBtn" href="#" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 rounded-lg text-sm font-medium transition-colors">
+                    <i class="ph ph-whatsapp-logo"></i> WhatsApp
+                </a>
+                <a id="modalEmailBtn" href="#" class="flex items-center gap-2 px-4 py-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 hover:bg-violet-500/20 rounded-lg text-sm font-medium transition-colors hidden">
+                    <i class="ph ph-envelope"></i> Email
+                </a>
+            </div>
 
-                <!-- Quick actions -->
-                <div class="flex gap-2 mb-6">
-                    <a id="modalCallBtn" href="#" class="flex-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                        <i class="ph ph-phone"></i> Zadzwon
-                    </a>
-                    <a id="modalWhatsAppBtn" href="#" target="_blank" class="flex-1 bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                        <i class="ph ph-whatsapp-logo"></i> WhatsApp
-                    </a>
-                </div>
-
-                <!-- Status -->
-                <div class="mb-6">
-                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-2">Status Pipeline</label>
-                    <select id="modalStatus" class="w-full text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-3 rounded-lg outline-none focus:border-zinc-600">
-                        <option value="new">Nowy</option>
-                        <option value="contacted">Skontaktowany</option>
-                        <option value="qualified">Zakwalifikowany</option>
-                        <option value="converted">Skonwertowany</option>
-                        <option value="lost">Stracony</option>
-                    </select>
-                </div>
-
-                <!-- Details Grid -->
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
-                        <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Sytuacja</div>
-                        <div id="modalSituation" class="text-white text-sm"></div>
+            <!-- Pipeline Stepper -->
+            <div class="px-6 py-4 border-b border-white/5">
+                <div class="pipeline-stepper" id="pipelineStepper">
+                    <div class="pipeline-step" data-status="new" onclick="changeLeadStatus('new')">
+                        <i class="ph ph-star text-blue-400 text-sm"></i>
+                        <div class="text-xs mt-1">Nowy</div>
                     </div>
-                    <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
-                        <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Lokalizacja</div>
-                        <div id="modalLocation" class="text-white text-sm"></div>
+                    <div class="pipeline-step" data-status="contacted" onclick="changeLeadStatus('contacted')">
+                        <i class="ph ph-phone-outgoing text-amber-400 text-sm"></i>
+                        <div class="text-xs mt-1">Skontaktowany</div>
                     </div>
-                    <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
-                        <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Czas oczekiwania</div>
-                        <div id="modalWaitingTime" class="text-white text-sm"></div>
+                    <div class="pipeline-step" data-status="qualified" onclick="changeLeadStatus('qualified')">
+                        <i class="ph ph-check-circle text-violet-400 text-sm"></i>
+                        <div class="text-xs mt-1">Zakwalifikowany</div>
                     </div>
-                    <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
-                        <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Typ pozwolenia</div>
-                        <div id="modalPermitType" class="text-white text-sm"></div>
+                    <div class="pipeline-step" data-status="converted" onclick="changeLeadStatus('converted')">
+                        <i class="ph ph-trophy text-green-400 text-sm"></i>
+                        <div class="text-xs mt-1">Wygrany</div>
                     </div>
-                    <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
-                        <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Odmowa timing</div>
-                        <div id="modalRejectionTiming" class="text-white text-sm"></div>
+                    <div class="pipeline-step" data-status="lost" onclick="changeLeadStatus('lost')">
+                        <i class="ph ph-x-circle text-zinc-400 text-sm"></i>
+                        <div class="text-xs mt-1">Stracony</div>
                     </div>
-                    <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
-                        <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Intencja</div>
-                        <div id="modalIntent" class="text-white text-sm"></div>
-                    </div>
-                </div>
-
-                <!-- Details text -->
-                <div id="modalDetailsSection" class="mb-6 hidden">
-                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-2">Szczegoly od klienta</label>
-                    <div id="modalDetails" class="bg-zinc-900/50 rounded-lg p-4 text-zinc-300 text-sm border border-white/5 whitespace-pre-wrap"></div>
-                </div>
-
-                <!-- Notes -->
-                <div class="mb-6">
-                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-2">Notatki</label>
-                    <textarea id="modalNotes" rows="3" class="w-full text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-3 rounded-lg outline-none focus:border-zinc-600 resize-none" placeholder="Dodaj notatki..."></textarea>
-                </div>
-
-                <!-- Meta info -->
-                <div class="border-t border-white/5 pt-4 text-xs text-zinc-600 space-y-1">
-                    <div><span class="text-zinc-500">Jezyk:</span> <span id="modalLanguage"></span></div>
-                    <div><span class="text-zinc-500">Referrer:</span> <span id="modalReferrer"></span></div>
                 </div>
             </div>
 
-            <div class="flex gap-3 px-5 py-4 border-t border-white/5 bg-zinc-900/50">
-                <button onclick="deleteLead()" class="text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/40 px-4 py-2 rounded-lg text-sm transition-colors">
-                    <i class="ph ph-trash mr-1"></i> Usun
+            <!-- Tab Navigation -->
+            <div class="flex gap-1 px-6 border-b border-white/5">
+                <button class="modal-tab active" data-tab="info" onclick="switchModalTab('info')">
+                    <i class="ph ph-info mr-1.5"></i>Informacje
+                </button>
+                <button class="modal-tab" data-tab="notes" onclick="switchModalTab('notes')">
+                    <i class="ph ph-note mr-1.5"></i>Notatki
+                </button>
+                <button class="modal-tab" data-tab="activity" onclick="switchModalTab('activity')">
+                    <i class="ph ph-clock-counter-clockwise mr-1.5"></i>Aktywnosc
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="flex-1 overflow-y-auto">
+                <!-- Info Tab -->
+                <div id="tabInfo" class="p-6">
+                    <!-- Lead Qualification Data -->
+                    <div class="mb-6">
+                        <h3 class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <i class="ph ph-clipboard-text"></i> Dane z formularza
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
+                                <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Sytuacja</div>
+                                <div id="modalSituation" class="text-white text-sm font-medium"></div>
+                            </div>
+                            <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
+                                <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Lokalizacja</div>
+                                <div id="modalLocation" class="text-white text-sm font-medium"></div>
+                            </div>
+                            <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
+                                <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Czas oczekiwania</div>
+                                <div id="modalWaitingTime" class="text-white text-sm font-medium"></div>
+                            </div>
+                            <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
+                                <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Typ pozwolenia</div>
+                                <div id="modalPermitType" class="text-white text-sm font-medium"></div>
+                            </div>
+                            <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
+                                <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Odmowa timing</div>
+                                <div id="modalRejectionTiming" class="text-white text-sm font-medium"></div>
+                            </div>
+                            <div class="bg-zinc-900/50 rounded-lg p-3 border border-white/5">
+                                <div class="text-zinc-500 text-[10px] font-mono uppercase mb-1">Intencja</div>
+                                <div id="modalIntent" class="text-white text-sm font-medium"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details from client -->
+                    <div id="modalDetailsSection" class="mb-6 hidden">
+                        <h3 class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <i class="ph ph-chat-text"></i> Szczegoly od klienta
+                        </h3>
+                        <div id="modalDetails" class="bg-zinc-900/50 rounded-lg p-4 text-zinc-300 text-sm border border-white/5 whitespace-pre-wrap"></div>
+                    </div>
+
+                    <!-- Contact Info (editable) -->
+                    <div class="mb-6">
+                        <h3 class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <i class="ph ph-address-book"></i> Dane kontaktowe
+                        </h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-zinc-500 text-[10px] font-mono uppercase mb-1">Telefon</label>
+                                <input type="tel" id="modalPhoneEdit" class="w-full text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-2.5 rounded-lg outline-none focus:border-blue-500/50 transition-colors" placeholder="+48...">
+                            </div>
+                            <div>
+                                <label class="block text-zinc-500 text-[10px] font-mono uppercase mb-1">Email</label>
+                                <input type="email" id="modalEmailEdit" class="w-full text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-2.5 rounded-lg outline-none focus:border-blue-500/50 transition-colors" placeholder="email@example.com">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-zinc-500 text-[10px] font-mono uppercase mb-1">Imie i nazwisko</label>
+                                <input type="text" id="modalNameEdit" class="w-full text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-2.5 rounded-lg outline-none focus:border-blue-500/50 transition-colors" placeholder="Jan Kowalski">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tracking Data -->
+                    <div>
+                        <h3 class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <i class="ph ph-chart-line"></i> Dane sledzenia
+                        </h3>
+                        <div class="bg-zinc-900/30 rounded-lg border border-white/5 p-4 grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                            <div class="flex justify-between"><span class="text-zinc-500">Jezyk:</span><span id="modalLanguage" class="text-zinc-300 font-mono"></span></div>
+                            <div class="flex justify-between"><span class="text-zinc-500">Referrer:</span><span id="modalReferrer" class="text-zinc-300 font-mono truncate max-w-[150px]"></span></div>
+                            <div class="flex justify-between"><span class="text-zinc-500">UTM Source:</span><span id="modalUtmSource" class="text-zinc-300 font-mono"></span></div>
+                            <div class="flex justify-between"><span class="text-zinc-500">UTM Medium:</span><span id="modalUtmMedium" class="text-zinc-300 font-mono"></span></div>
+                            <div class="flex justify-between"><span class="text-zinc-500">UTM Campaign:</span><span id="modalUtmCampaign" class="text-zinc-300 font-mono"></span></div>
+                            <div class="flex justify-between"><span class="text-zinc-500">User Agent:</span><span id="modalUserAgent" class="text-zinc-300 font-mono truncate max-w-[150px]" title=""></span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes Tab -->
+                <div id="tabNotes" class="p-6 hidden">
+                    <!-- Add new note -->
+                    <div class="mb-6">
+                        <div class="flex gap-2">
+                            <textarea id="newNoteInput" rows="2" class="flex-1 text-sm text-white bg-zinc-900 border border-zinc-800 px-3 py-2.5 rounded-lg outline-none focus:border-blue-500/50 resize-none transition-colors" placeholder="Dodaj notatke..."></textarea>
+                            <button onclick="addNote()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors self-end">
+                                <i class="ph ph-plus mr-1"></i>Dodaj
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Notes history -->
+                    <div id="notesHistory">
+                        <div class="text-zinc-600 text-sm text-center py-8">
+                            <i class="ph ph-note-blank text-2xl mb-2 block"></i>
+                            Brak notatek
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Tab -->
+                <div id="tabActivity" class="p-6 hidden">
+                    <div id="activityTimeline">
+                        <div class="text-zinc-600 text-sm text-center py-8">
+                            <i class="ph ph-clock text-2xl mb-2 block"></i>
+                            Brak aktywnosci
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex gap-3 px-6 py-4 border-t border-white/5 bg-zinc-900/50 flex-shrink-0">
+                <button onclick="deleteLead()" class="text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2">
+                    <i class="ph ph-trash"></i> Usun
                 </button>
                 <div class="flex-1"></div>
-                <button onclick="closeLeadModal()" class="text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 px-4 py-2 rounded-lg text-sm transition-colors">
-                    Anuluj
-                </button>
-                <button onclick="saveLead()" class="bg-white text-black hover:bg-zinc-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Zapisz zmiany
+                <button onclick="closeLeadModal()" class="text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 px-5 py-2.5 rounded-lg text-sm transition-colors">
+                    Zamknij
                 </button>
             </div>
         </div>
@@ -624,27 +832,61 @@
             });
         }
 
+        let currentModalTab = 'info';
+        let saveTimeout = null;
+
         function openLeadModal(id) {
             selectedLead = allLeads.find(l => l.id === id);
             if (!selectedLead) return;
 
+            // Reset to info tab
+            currentModalTab = 'info';
+            switchModalTab('info');
+
+            // Avatar with first letter
+            const avatarLetter = (selectedLead.phone || '?').replace(/[^a-zA-Z0-9]/g, '')[0] || '?';
+            document.getElementById('modalAvatar').textContent = avatarLetter.toUpperCase();
+
+            // Header info
             document.getElementById('modalPhone').textContent = selectedLead.phone;
             document.getElementById('modalDate').textContent = formatDateFull(selectedLead.created_at);
             document.getElementById('modalLeadBadge').innerHTML = getLeadBadge(selectedLead.lead_type);
             document.getElementById('modalScore').textContent = (selectedLead.lead_score || 0) + ' pkt';
+
+            // Source badge
+            const sourceEl = document.getElementById('modalSourceBadge');
+            if (selectedLead.utm_source || selectedLead.referrer) {
+                const source = selectedLead.utm_source || (selectedLead.referrer?.includes('google') ? 'Google' : 'Direct');
+                sourceEl.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-violet-500/20 text-violet-400 border border-violet-500/30">${source}</span>`;
+            } else {
+                sourceEl.innerHTML = '';
+            }
+
+            // Quick action buttons
             document.getElementById('modalCallBtn').href = 'tel:' + selectedLead.phone;
             document.getElementById('modalWhatsAppBtn').href = 'https://wa.me/' + (selectedLead.phone?.replace(/[^0-9]/g, '') || '');
-            document.getElementById('modalStatus').value = selectedLead.status || 'new';
+
+            // Email button (show if email exists)
+            const emailBtn = document.getElementById('modalEmailBtn');
+            if (selectedLead.email) {
+                emailBtn.href = 'mailto:' + selectedLead.email;
+                emailBtn.classList.remove('hidden');
+            } else {
+                emailBtn.classList.add('hidden');
+            }
+
+            // Pipeline stepper
+            updatePipelineStepper(selectedLead.status || 'new');
+
+            // Form data
             document.getElementById('modalSituation').textContent = formatSituation(selectedLead.situation);
             document.getElementById('modalLocation').textContent = formatLocation(selectedLead.location);
             document.getElementById('modalWaitingTime').textContent = formatWaitingTime(selectedLead.waiting_time);
             document.getElementById('modalPermitType').textContent = formatPermitType(selectedLead.permit_type);
             document.getElementById('modalRejectionTiming').textContent = formatRejectionTiming(selectedLead.rejection_timing);
             document.getElementById('modalIntent').textContent = formatIntent(selectedLead.intent);
-            document.getElementById('modalNotes').value = selectedLead.notes || '';
-            document.getElementById('modalLanguage').textContent = selectedLead.language || 'en';
-            document.getElementById('modalReferrer').textContent = selectedLead.referrer || '-';
 
+            // Details section
             if (selectedLead.details) {
                 document.getElementById('modalDetailsSection').classList.remove('hidden');
                 document.getElementById('modalDetails').textContent = selectedLead.details;
@@ -652,39 +894,341 @@
                 document.getElementById('modalDetailsSection').classList.add('hidden');
             }
 
+            // Editable contact fields
+            document.getElementById('modalPhoneEdit').value = selectedLead.phone || '';
+            document.getElementById('modalEmailEdit').value = selectedLead.email || '';
+            document.getElementById('modalNameEdit').value = selectedLead.name || '';
+
+            // Tracking data
+            document.getElementById('modalLanguage').textContent = selectedLead.language || 'en';
+            document.getElementById('modalReferrer').textContent = selectedLead.referrer || '-';
+            document.getElementById('modalReferrer').title = selectedLead.referrer || '';
+            document.getElementById('modalUtmSource').textContent = selectedLead.utm_source || '-';
+            document.getElementById('modalUtmMedium').textContent = selectedLead.utm_medium || '-';
+            document.getElementById('modalUtmCampaign').textContent = selectedLead.utm_campaign || '-';
+            document.getElementById('modalUserAgent').textContent = selectedLead.user_agent ? selectedLead.user_agent.substring(0, 30) + '...' : '-';
+            document.getElementById('modalUserAgent').title = selectedLead.user_agent || '';
+
+            // Render notes history
+            renderNotesHistory();
+
+            // Render activity timeline
+            renderActivityTimeline();
+
+            // Clear new note input
+            document.getElementById('newNoteInput').value = '';
+
+            // Hide save indicator
+            document.getElementById('saveIndicator').classList.add('hidden');
+
             document.getElementById('leadModal').classList.remove('hidden');
         }
 
         function closeLeadModal() {
             document.getElementById('leadModal').classList.add('hidden');
             selectedLead = null;
+            if (saveTimeout) clearTimeout(saveTimeout);
         }
 
-        async function saveLead() {
-            if (!selectedLead) return;
+        // Modal tab switching
+        function switchModalTab(tab) {
+            currentModalTab = tab;
+            document.querySelectorAll('.modal-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tab);
+            });
+            document.getElementById('tabInfo').classList.toggle('hidden', tab !== 'info');
+            document.getElementById('tabNotes').classList.toggle('hidden', tab !== 'notes');
+            document.getElementById('tabActivity').classList.toggle('hidden', tab !== 'activity');
+        }
 
-            const status = document.getElementById('modalStatus').value;
-            const notes = document.getElementById('modalNotes').value;
+        // Pipeline stepper
+        function updatePipelineStepper(currentStatus) {
+            const statuses = ['new', 'contacted', 'qualified', 'converted', 'lost'];
+            const currentIndex = statuses.indexOf(currentStatus);
+
+            document.querySelectorAll('#pipelineStepper .pipeline-step').forEach((step, i) => {
+                step.classList.remove('active', 'completed', 'terminal-won', 'terminal-lost');
+                const stepStatus = step.dataset.status;
+
+                if (stepStatus === currentStatus) {
+                    if (stepStatus === 'converted') {
+                        step.classList.add('terminal-won');
+                    } else if (stepStatus === 'lost') {
+                        step.classList.add('terminal-lost');
+                    } else {
+                        step.classList.add('active');
+                    }
+                } else if (currentStatus !== 'lost' && statuses.indexOf(stepStatus) < currentIndex) {
+                    step.classList.add('completed');
+                }
+            });
+        }
+
+        // Change lead status via stepper
+        async function changeLeadStatus(newStatus) {
+            if (!selectedLead || selectedLead.status === newStatus) return;
+
+            const oldStatus = selectedLead.status;
+            showSaveIndicator('saving');
 
             const { error } = await db
                 .from('permit_leads')
-                .update({ status, notes })
+                .update({ status: newStatus })
                 .eq('id', selectedLead.id);
 
             if (!error) {
-                selectedLead.status = status;
-                selectedLead.notes = notes;
+                selectedLead.status = newStatus;
                 const lead = allLeads.find(l => l.id === selectedLead.id);
-                if (lead) {
-                    lead.status = status;
-                    lead.notes = notes;
-                }
+                if (lead) lead.status = newStatus;
+
+                // Add to activity
+                addActivity('status_change', `Zmiana statusu: ${formatStatusLabel(oldStatus)} → ${formatStatusLabel(newStatus)}`);
+
+                updatePipelineStepper(newStatus);
                 updateStats();
                 renderLeads();
                 renderPipeline();
-                closeLeadModal();
+                showSaveIndicator('saved');
+            } else {
+                showSaveIndicator('error');
             }
         }
+
+        function formatStatusLabel(status) {
+            const labels = { new: 'Nowy', contacted: 'Skontaktowany', qualified: 'Zakwalifikowany', converted: 'Wygrany', lost: 'Stracony' };
+            return labels[status] || status;
+        }
+
+        // Auto-save with debounce
+        function autoSave() {
+            if (saveTimeout) clearTimeout(saveTimeout);
+            showSaveIndicator('saving');
+
+            saveTimeout = setTimeout(async () => {
+                if (!selectedLead) return;
+
+                const phone = document.getElementById('modalPhoneEdit').value;
+                const email = document.getElementById('modalEmailEdit').value;
+                const name = document.getElementById('modalNameEdit').value;
+
+                const { error } = await db
+                    .from('permit_leads')
+                    .update({ phone, email, name })
+                    .eq('id', selectedLead.id);
+
+                if (!error) {
+                    selectedLead.phone = phone;
+                    selectedLead.email = email;
+                    selectedLead.name = name;
+                    const lead = allLeads.find(l => l.id === selectedLead.id);
+                    if (lead) {
+                        lead.phone = phone;
+                        lead.email = email;
+                        lead.name = name;
+                    }
+                    renderLeads();
+                    renderPipeline();
+                    showSaveIndicator('saved');
+                } else {
+                    showSaveIndicator('error');
+                }
+            }, 1000);
+        }
+
+        function showSaveIndicator(state) {
+            const indicator = document.getElementById('saveIndicator');
+            const iconEl = indicator.querySelector('.indicator-icon');
+            const textEl = indicator.querySelector('.indicator-text');
+
+            indicator.classList.remove('hidden', 'saving', 'saved', 'error');
+            indicator.classList.add(state);
+
+            if (state === 'saving') {
+                iconEl.innerHTML = '<div class="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>';
+                textEl.textContent = 'Zapisuje...';
+            } else if (state === 'saved') {
+                iconEl.innerHTML = '<i class="ph ph-check"></i>';
+                textEl.textContent = 'Zapisano';
+                setTimeout(() => indicator.classList.add('hidden'), 2000);
+            } else if (state === 'error') {
+                iconEl.innerHTML = '<i class="ph ph-x"></i>';
+                textEl.textContent = 'Blad';
+            }
+        }
+
+        // Notes functionality
+        async function addNote() {
+            if (!selectedLead) return;
+            const noteInput = document.getElementById('newNoteInput');
+            const noteText = noteInput.value.trim();
+            if (!noteText) return;
+
+            const newNote = {
+                text: noteText,
+                created_at: new Date().toISOString(),
+                status: selectedLead.status
+            };
+
+            // Get existing notes or initialize
+            const notesHistory = selectedLead.notes_history || [];
+            notesHistory.unshift(newNote);
+
+            showSaveIndicator('saving');
+
+            const { error } = await db
+                .from('permit_leads')
+                .update({ notes_history: notesHistory, notes: noteText })
+                .eq('id', selectedLead.id);
+
+            if (!error) {
+                selectedLead.notes_history = notesHistory;
+                selectedLead.notes = noteText;
+                noteInput.value = '';
+                renderNotesHistory();
+                addActivity('note', noteText.substring(0, 50) + (noteText.length > 50 ? '...' : ''));
+                showSaveIndicator('saved');
+            } else {
+                showSaveIndicator('error');
+            }
+        }
+
+        function renderNotesHistory() {
+            const container = document.getElementById('notesHistory');
+            const notes = selectedLead?.notes_history || [];
+
+            // Fallback: if no notes_history but has notes field, show that
+            if (notes.length === 0 && selectedLead?.notes) {
+                container.innerHTML = `
+                    <div class="note-card">
+                        <div class="text-zinc-300 text-sm whitespace-pre-wrap">${escapeHtml(selectedLead.notes)}</div>
+                        <div class="flex items-center gap-2 mt-2 text-xs text-zinc-500">
+                            <i class="ph ph-clock"></i>
+                            <span>Zapisano wczesniej</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (notes.length === 0) {
+                container.innerHTML = `
+                    <div class="text-zinc-600 text-sm text-center py-8">
+                        <i class="ph ph-note-blank text-2xl mb-2 block"></i>
+                        Brak notatek
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = notes.map(note => `
+                <div class="note-card">
+                    <div class="text-zinc-300 text-sm whitespace-pre-wrap">${escapeHtml(note.text)}</div>
+                    <div class="flex items-center gap-3 mt-2 text-xs text-zinc-500">
+                        <span><i class="ph ph-clock mr-1"></i>${formatRelativeTime(note.created_at)}</span>
+                        ${note.status ? `<span>${getStatusBadge(note.status)}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Activity tracking
+        function addActivity(type, description) {
+            if (!selectedLead) return;
+
+            const activity = {
+                type,
+                description,
+                created_at: new Date().toISOString()
+            };
+
+            const activityLog = selectedLead.activity_log || [];
+            activityLog.unshift(activity);
+
+            // Save to database (async, don't wait)
+            db.from('permit_leads')
+                .update({ activity_log: activityLog })
+                .eq('id', selectedLead.id)
+                .then(() => {
+                    selectedLead.activity_log = activityLog;
+                    renderActivityTimeline();
+                });
+        }
+
+        function renderActivityTimeline() {
+            const container = document.getElementById('activityTimeline');
+            const activities = selectedLead?.activity_log || [];
+
+            // Always show creation event
+            const createdActivity = {
+                type: 'created',
+                description: 'Lead utworzony z formularza',
+                created_at: selectedLead?.created_at
+            };
+
+            const allActivities = [...activities];
+            if (!allActivities.find(a => a.type === 'created')) {
+                allActivities.push(createdActivity);
+            }
+
+            if (allActivities.length === 0) {
+                container.innerHTML = `
+                    <div class="text-zinc-600 text-sm text-center py-8">
+                        <i class="ph ph-clock text-2xl mb-2 block"></i>
+                        Brak aktywnosci
+                    </div>
+                `;
+                return;
+            }
+
+            const iconMap = {
+                created: { icon: 'ph-plus', bg: 'bg-blue-500' },
+                status_change: { icon: 'ph-arrows-left-right', bg: 'bg-violet-500' },
+                note: { icon: 'ph-note', bg: 'bg-amber-500' },
+                call: { icon: 'ph-phone', bg: 'bg-green-500' },
+                email: { icon: 'ph-envelope', bg: 'bg-cyan-500' }
+            };
+
+            container.innerHTML = allActivities.map(activity => {
+                const config = iconMap[activity.type] || { icon: 'ph-circle', bg: 'bg-zinc-500' };
+                return `
+                    <div class="activity-item">
+                        <div class="activity-icon ${config.bg} text-white">
+                            <i class="ph ${config.icon}"></i>
+                        </div>
+                        <div class="text-sm text-zinc-300">${escapeHtml(activity.description)}</div>
+                        <div class="text-xs text-zinc-600 mt-1">${formatRelativeTime(activity.created_at)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Helper: relative time
+        function formatRelativeTime(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+
+            if (diff < 60) return 'przed chwila';
+            if (diff < 3600) return `${Math.floor(diff / 60)} min temu`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} godz. temu`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)} dni temu`;
+            return formatDate(dateStr);
+        }
+
+        // Helper: escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // Attach auto-save listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            ['modalPhoneEdit', 'modalEmailEdit', 'modalNameEdit'].forEach(id => {
+                document.getElementById(id)?.addEventListener('input', autoSave);
+            });
+        });
 
         async function deleteLead() {
             if (!selectedLead) return;

@@ -24,6 +24,17 @@ CREATE TABLE IF NOT EXISTS permit_leads (
   -- Status tracking
   status VARCHAR(20) DEFAULT 'new', -- new, contacted, qualified, converted, lost
   notes TEXT,
+  notes_history JSONB DEFAULT '[]'::jsonb, -- Array of {text, created_at, status}
+  activity_log JSONB DEFAULT '[]'::jsonb, -- Array of {type, description, created_at}
+
+  -- Additional contact info
+  email VARCHAR(255),
+  name VARCHAR(255),
+
+  -- UTM tracking
+  utm_source VARCHAR(100),
+  utm_medium VARCHAR(100),
+  utm_campaign VARCHAR(255),
 
   -- Metadata
   language VARCHAR(5) DEFAULT 'en',
@@ -53,3 +64,22 @@ CREATE POLICY "Allow authenticated read" ON permit_leads
 CREATE POLICY "Allow authenticated update" ON permit_leads
   FOR UPDATE TO authenticated
   USING (true);
+
+-- Policy: Allow authenticated users to delete
+CREATE POLICY "Allow authenticated delete" ON permit_leads
+  FOR DELETE TO authenticated
+  USING (true);
+
+-- ============================================================
+-- MIGRATION FOR EXISTING TABLES (run if table already exists)
+-- ============================================================
+-- Run these ALTER TABLE statements if you already have the table:
+
+-- ALTER TABLE permit_leads ADD COLUMN IF NOT EXISTS notes_history JSONB DEFAULT '[]'::jsonb;
+-- ALTER TABLE permit_leads ADD COLUMN IF NOT EXISTS activity_log JSONB DEFAULT '[]'::jsonb;
+-- ALTER TABLE permit_leads ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+-- ALTER TABLE permit_leads ADD COLUMN IF NOT EXISTS name VARCHAR(255);
+-- ALTER TABLE permit_leads ADD COLUMN IF NOT EXISTS utm_source VARCHAR(100);
+-- ALTER TABLE permit_leads ADD COLUMN IF NOT EXISTS utm_medium VARCHAR(100);
+-- ALTER TABLE permit_leads ADD COLUMN IF NOT EXISTS utm_campaign VARCHAR(255);
+-- CREATE POLICY IF NOT EXISTS "Allow authenticated delete" ON permit_leads FOR DELETE TO authenticated USING (true);
