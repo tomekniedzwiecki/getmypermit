@@ -5259,6 +5259,38 @@
     var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340";
     var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // === UTM TRACKING ===
+    var TRACKING_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid", "ref"];
+
+    function captureTrackingParams() {
+      var urlParams = new URLSearchParams(window.location.search);
+      var stored = {};
+      try { stored = JSON.parse(sessionStorage.getItem("tracking_params") || "{}"); } catch(e) {}
+
+      TRACKING_PARAMS.forEach(function(param) {
+        var value = urlParams.get(param);
+        if (value) stored[param] = value;
+      });
+
+      if (!stored.landing_page) stored.landing_page = window.location.href;
+      if (!stored.referrer && document.referrer) stored.referrer = document.referrer;
+
+      sessionStorage.setItem("tracking_params", JSON.stringify(stored));
+      return stored;
+    }
+
+    function getTrackingData() {
+      var stored = {};
+      try { stored = JSON.parse(sessionStorage.getItem("tracking_params") || "{}"); } catch(e) {}
+      return {
+        utm_source: stored.utm_source || null,
+        utm_medium: stored.utm_medium || null,
+        utm_campaign: stored.utm_campaign || null
+      };
+    }
+
+    captureTrackingParams();
+
     function saveLeadToSupabase(leadData) {
       db.from("permit_leads").insert([leadData]).then(function(result) {
         if (result.error) {
@@ -5335,7 +5367,10 @@
 
       var detailsEl = form.querySelector("textarea[name=\"details\"]");
 
+      var tracking = getTrackingData();
       saveLeadToSupabase({
+        name: name,
+        email: email,
         phone: phone,
         details: detailsEl ? detailsEl.value : "",
         situation: situation,
@@ -5348,7 +5383,10 @@
         lead_type: leadType,
         language: window.currentLang || "en",
         user_agent: navigator.userAgent,
-        referrer: document.referrer
+        referrer: document.referrer,
+        utm_source: tracking.utm_source,
+        utm_medium: tracking.utm_medium,
+        utm_campaign: tracking.utm_campaign
       });
 
       window.showStep("success");
@@ -5504,6 +5542,25 @@
       const phone = e.target.lm_phone.value;
 
       console.log('Lead Magnet submission:', { email, phone });
+
+      // Save lead magnet submission to Supabase
+      var tracking = getTrackingData();
+      db.from("permit_leads").insert([{
+        email: email,
+        phone: phone,
+        situation: "lead_magnet",
+        lead_type: "WARM",
+        lead_score: 30,
+        language: window.currentLang || "en",
+        user_agent: navigator.userAgent,
+        referrer: document.referrer,
+        utm_source: tracking.utm_source,
+        utm_medium: tracking.utm_medium,
+        utm_campaign: tracking.utm_campaign
+      }]).then(function(result) {
+        if (result.error) console.error("Error saving lead magnet:", result.error);
+        else console.log("Lead magnet saved:", result.data);
+      });
 
       // Mark as submitted & hide widget
       sessionStorage.setItem('leadMagnetSubmitted', 'true');
