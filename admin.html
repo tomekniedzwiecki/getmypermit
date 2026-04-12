@@ -390,7 +390,7 @@
     <script>
         const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let allLeads = [];
         let currentTab = 'leads';
@@ -398,7 +398,7 @@
 
         // Check auth on load
         document.addEventListener('DOMContentLoaded', async () => {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await db.auth.getSession();
             if (session) {
                 showDashboard();
                 loadLeads();
@@ -412,7 +412,7 @@
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            const { data, error } = await db.auth.signInWithPassword({ email, password });
 
             if (error) {
                 errorMsg.textContent = 'Bledny email lub haslo';
@@ -424,7 +424,7 @@
         });
 
         async function logout() {
-            await supabase.auth.signOut();
+            await db.auth.signOut();
             document.getElementById('authScreen').classList.remove('hidden');
             document.getElementById('dashboard').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('flex');
@@ -450,7 +450,7 @@
             document.getElementById('loadingState').classList.remove('hidden');
             document.getElementById('emptyState').classList.add('hidden');
 
-            const { data, error } = await supabase
+            const { data, error } = await db
                 .from('permit_leads')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -618,7 +618,7 @@
             const status = document.getElementById('modalStatus').value;
             const notes = document.getElementById('modalNotes').value;
 
-            const { error } = await supabase
+            const { error } = await db
                 .from('permit_leads')
                 .update({ status, notes })
                 .eq('id', selectedLead.id);
@@ -642,7 +642,7 @@
             if (!selectedLead) return;
             if (!confirm('Na pewno usunac tego leada?')) return;
 
-            const { error } = await supabase
+            const { error } = await db
                 .from('permit_leads')
                 .delete()
                 .eq('id', selectedLead.id);
