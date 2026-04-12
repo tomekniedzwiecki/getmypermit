@@ -3370,48 +3370,56 @@
 
     /* RESPONSIVE - Mobile */
     @media (max-width: 520px) {
-      .form-section { padding: 60px 0; }
+      .form-section { padding: 0; background: var(--white); }
       .form-wrapper {
-        margin: 0 16px;
-        border-radius: 20px;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        max-width: 100%;
       }
-      .form-header { padding: 24px; }
-      .form-header h2 { font-size: 20px; }
-      .form-body { padding: 28px 24px 32px; }
-      .step-icon { width: 48px; height: 48px; }
-      .step-title { font-size: 22px; }
-      .giant-choice { padding: 24px 20px; }
-      .choice-icon { width: 32px; height: 32px; }
-      .giant-choice-title { font-size: 16px; }
-      .giant-choice-desc { font-size: 13px; }
-      .form-input { padding: 16px 18px; font-size: 16px; }
-      .form-input-large { padding: 18px 20px; font-size: 18px; }
-      .choice-small { padding: 12px 16px; }
-      .choice-small span { font-size: 14px; }
-      .btn-next { padding: 16px 24px; font-size: 16px; }
-      .btn-back { padding: 16px; }
-    }
-    @media (max-width: 380px) {
-      .form-wrapper { margin: 0 12px; border-radius: 18px; }
-      .form-header { padding: 20px; }
+      .form-header { padding: 20px 16px; }
       .form-header h2 { font-size: 18px; }
-      .form-body { padding: 24px 20px 28px; }
-      .step-icon { width: 40px; height: 40px; margin-bottom: 12px; }
+      .form-header p { font-size: 13px; }
+      .form-progress { margin: 12px 16px 0; }
+      .form-body { padding: 24px 16px 32px; }
+      .step-icon { width: 44px; height: 44px; }
       .step-title { font-size: 20px; }
-      .step-hint { font-size: 14px; }
-      .choice-stack { gap: 14px; }
-      .giant-choice { padding: 20px 18px; border-radius: 14px; }
-      .giant-choice-content { gap: 14px; padding-right: 36px; }
+      .choice-stack { gap: 12px; }
+      .giant-choice { padding: 16px; border-radius: 12px; }
       .choice-icon { width: 28px; height: 28px; }
       .giant-choice-title { font-size: 15px; }
-      .giant-choice.selected::after { width: 24px; height: 24px; right: 16px; font-size: 12px; }
+      .giant-choice-desc { font-size: 12px; }
+      .giant-choice-content { gap: 12px; padding-right: 32px; }
+      .form-input { padding: 14px 16px; font-size: 16px; }
       .form-input-large { padding: 16px 18px; font-size: 17px; }
-      .choice-small { padding: 11px 14px; }
+      .choice-small { padding: 12px 14px; }
+      .choice-small span { font-size: 14px; }
+      .btn-next { padding: 14px 20px; font-size: 15px; }
+      .btn-back { padding: 14px; }
+      .form-nav { margin-top: 24px; }
+    }
+    @media (max-width: 380px) {
+      .form-header { padding: 18px 14px; }
+      .form-header h2 { font-size: 17px; }
+      .form-progress { margin: 10px 14px 0; }
+      .form-body { padding: 20px 14px 28px; }
+      .step-icon { width: 40px; height: 40px; margin-bottom: 10px; }
+      .step-title { font-size: 18px; }
+      .step-hint { font-size: 13px; }
+      .choice-stack { gap: 10px; }
+      .giant-choice { padding: 14px; border-radius: 10px; }
+      .giant-choice-content { gap: 10px; padding-right: 28px; }
+      .choice-icon { width: 26px; height: 26px; }
+      .giant-choice-title { font-size: 14px; }
+      .giant-choice-desc { font-size: 11px; }
+      .giant-choice.selected::after { width: 22px; height: 22px; right: 12px; font-size: 11px; }
+      .form-input-large { padding: 14px 16px; font-size: 16px; }
+      .choice-small { padding: 10px 12px; }
       .choice-small span { font-size: 13px; }
       .choice-stack-small { gap: 8px; }
-      .form-nav { margin-top: 28px; }
-      .btn-next { padding: 15px 20px; font-size: 15px; border-radius: 10px; }
-      .btn-back { padding: 15px; border-radius: 10px; }
+      .form-nav { margin-top: 20px; }
+      .btn-next { padding: 13px 18px; font-size: 14px; border-radius: 10px; }
+      .btn-back { padding: 13px; border-radius: 10px; }
     }
 
     /* ========== LEAD MAGNET POPUP ========== */
