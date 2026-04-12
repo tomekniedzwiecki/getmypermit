@@ -371,8 +371,10 @@
       }
     }
     .hero-tag {
-      display: inline-block;
-      background: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--accent), #3377ff);
       color: white;
       padding: 8px 18px;
       border-radius: 100px;
@@ -382,11 +384,48 @@
       letter-spacing: 0.5px;
       margin-bottom: 24px;
       width: fit-content;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-tag::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: tagShine 3s ease-in-out infinite;
+    }
+    @keyframes tagShine {
+      0%, 100% { left: -100%; }
+      50%, 60% { left: 100%; }
+    }
+    .hero-tag svg {
+      width: 14px;
+      height: 14px;
     }
     .hero-headline h1 {
       font-size: clamp(32px, 5vw, 52px);
       line-height: 1.1;
       margin-bottom: 20px;
+      position: relative;
+      display: inline-block;
+    }
+    .hero-headline h1::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), #3377ff);
+      border-radius: 2px;
+      animation: underlineGrow 1s ease-out forwards;
+    }
+    @keyframes underlineGrow {
+      from { width: 0; }
+      to { width: 80px; }
     }
     .hero-subtitle {
       font-size: 18px;
@@ -481,6 +520,40 @@
       background: white;
       border-color: rgba(0, 85, 255, 0.15);
       box-shadow: 0 20px 40px rgba(0, 85, 255, 0.12);
+    }
+
+    /* Lawyer card - special gradient border */
+    .hero-lawyer-card {
+      position: relative;
+      background: linear-gradient(white, white) padding-box,
+                  linear-gradient(135deg, var(--accent), #3377ff, var(--accent)) border-box;
+      border: 2px solid transparent;
+    }
+    .hero-lawyer-card::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: calc(var(--radius) + 2px);
+      background: linear-gradient(135deg, var(--accent), #3377ff, var(--accent));
+      background-size: 200% 200%;
+      animation: gradientRotate 4s linear infinite;
+      z-index: -1;
+      opacity: 0.6;
+    }
+    @keyframes gradientRotate {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Clients card - accent highlight */
+    .hero-clients-card {
+      background: linear-gradient(135deg, rgba(0, 85, 255, 0.05), rgba(0, 85, 255, 0.1));
+      border: 1px solid rgba(0, 85, 255, 0.15);
+    }
+    .hero-clients-card:hover {
+      background: linear-gradient(135deg, rgba(0, 85, 255, 0.08), rgba(0, 85, 255, 0.15));
+      box-shadow: 0 20px 40px rgba(0, 85, 255, 0.2);
     }
 
     /* Lawyer Card */
@@ -587,7 +660,11 @@
     .hero-clients-number {
       font-size: 28px;
       font-weight: 800;
-      color: var(--black);
+      color: var(--accent);
+      background: linear-gradient(135deg, var(--accent), #3377ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
       line-height: 1;
       transition: all 0.4s ease;
     }
@@ -1023,33 +1100,93 @@
       color: var(--black);
     }
 
+    /* Featured card - accent gradient with glow */
+    .svc-featured {
+      background: linear-gradient(135deg, var(--accent), #0044cc);
+      color: white !important;
+      position: relative;
+      overflow: hidden;
+    }
+    .svc-featured::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .svc-featured h3, .svc-featured p, .svc-featured .svc-stat, .svc-featured .svc-stat-label {
+      color: white;
+    }
+    .svc-featured .svc-stat {
+      text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+    .svc-featured:hover {
+      box-shadow: 0 20px 50px rgba(0, 85, 255, 0.4);
+    }
+
+    /* Highlight card - for citizenship */
+    .svc-highlight {
+      background: linear-gradient(135deg, #1a1a2e, #0f172a);
+      color: white !important;
+      position: relative;
+    }
+    .svc-highlight::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(255,255,255,0.1);
+      pointer-events: none;
+    }
+    .svc-highlight h3, .svc-highlight p {
+      color: white;
+    }
+    .svc-highlight .svc-icon {
+      background: linear-gradient(135deg, var(--accent), #3377ff);
+    }
+    .svc-highlight .svc-icon svg {
+      stroke: white;
+    }
+    .svc-highlight:hover {
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    }
+
     /* Icon in card */
     .svc-icon {
-      width: 44px;
-      height: 44px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 10px;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent), #3377ff);
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 16px;
+      box-shadow: 0 4px 15px rgba(0, 85, 255, 0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .svc-flip:hover .svc-icon {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0, 85, 255, 0.4);
     }
     .svc-white .svc-icon,
     .svc-gray .svc-icon,
     .svc-gray-dark .svc-icon {
-      background: var(--accent-soft);
+      background: linear-gradient(135deg, var(--accent), #3377ff);
     }
     .svc-icon svg {
-      width: 22px;
-      height: 22px;
-      stroke: currentColor;
+      width: 24px;
+      height: 24px;
+      stroke: white;
       fill: none;
       stroke-width: 2;
     }
     .svc-white .svc-icon svg,
     .svc-gray .svc-icon svg,
     .svc-gray-dark .svc-icon svg {
-      stroke: var(--accent);
+      stroke: white;
     }
 
     /* Quote card in services bento */
@@ -3619,8 +3756,8 @@
       </div>
 
       <div class="svc-bento">
-        <!-- Row 1: Large gray + 2 cards -->
-        <div class="svc-card svc-large svc-gray-dark fade-in">
+        <!-- Row 1: Large featured + 2 cards -->
+        <div class="svc-card svc-large svc-featured fade-in">
           <h3>Residence permits</h3>
           <div class="svc-stat">10 000+</div>
           <div class="svc-stat-label">foreigners helped in Lower Silesia</div>
@@ -3689,7 +3826,7 @@
         </div>
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
-            <div class="svc-flip-front svc-gray-dark">
+            <div class="svc-flip-front svc-highlight">
               <div class="svc-icon">
                 <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </div>
@@ -5276,6 +5413,7 @@
         heroLawyerExp: "11 years experience",
         heroClientsLabel: "satisfied clients",
         heroLangsLabel: "We speak your language",
+        heroLawyerBadge: "Lead",
         // Form
         formTitle: "Free Case Assessment",
         formTime: "1 minute",
@@ -5465,6 +5603,7 @@
         heroLawyerExp: "11 років досвіду",
         heroClientsLabel: "задоволених клієнтів",
         heroLangsLabel: "Ми говоримо вашою мовою",
+        heroLawyerBadge: "Lead",
         formTitle: "Безкоштовна оцінка справи",
         formTime: "1 хвилина",
         step1Title: "Яка ваша ситуація?",
@@ -5633,6 +5772,7 @@
         heroLawyerExp: "11 lat doświadczenia",
         heroClientsLabel: "zadowolonych klientów",
         heroLangsLabel: "Mówimy Twoim językiem",
+        heroLawyerBadge: "Lead",
         formTitle: "Darmowa wycena sprawy",
         formTime: "1 minuta",
         step1Title: "Jaka jest Twoja sytuacja?",
@@ -5801,6 +5941,7 @@
         heroLawyerExp: "11 años de experiencia",
         heroClientsLabel: "clientes satisfechos",
         heroLangsLabel: "Hablamos tu idioma",
+        heroLawyerBadge: "Lead",
         formTitle: "Evaluación gratuita del caso",
         formTime: "1 minuto",
         step1Title: "¿Cuál es tu situación?",
@@ -5969,6 +6110,7 @@
         heroLawyerExp: "11 ans d'expérience",
         heroClientsLabel: "clients satisfaits",
         heroLangsLabel: "Nous parlons votre langue",
+        heroLawyerBadge: "Lead",
         formTitle: "Évaluation gratuite du dossier",
         formTime: "1 minute",
         step1Title: "Quelle est votre situation?",
@@ -6137,6 +6279,7 @@
         heroLawyerExp: "11 वर्षों का अनुभव",
         heroClientsLabel: "संतुष्ट ग्राहक",
         heroLangsLabel: "हम आपकी भाषा बोलते हैं",
+        heroLawyerBadge: "Lead",
         formTitle: "मुफ्त केस मूल्यांकन",
         formTime: "1 मिनट",
         step1Title: "आपकी स्थिति क्या है?",
@@ -6305,6 +6448,7 @@
         heroLawyerExp: "১১ বছরের অভিজ্ঞতা",
         heroClientsLabel: "সন্তুষ্ট ক্লায়েন্ট",
         heroLangsLabel: "আমরা আপনার ভাষায় কথা বলি",
+        heroLawyerBadge: "Lead",
         formTitle: "বিনামূল্যে কেস মূল্যায়ন",
         formTime: "১ মিনিট",
         step1Title: "আপনার পরিস্থিতি কী?",
@@ -6473,6 +6617,7 @@
         heroLawyerExp: "11 tahun pengalaman",
         heroClientsLabel: "klien puas",
         heroLangsLabel: "Kami berbicara bahasa Anda",
+        heroLawyerBadge: "Lead",
         formTitle: "Penilaian kasus gratis",
         formTime: "1 menit",
         step1Title: "Apa situasi Anda?",
@@ -6641,6 +6786,7 @@
         heroLawyerExp: "11 лет опыта",
         heroClientsLabel: "довольных клиентов",
         heroLangsLabel: "Мы говорим на вашем языке",
+        heroLawyerBadge: "Lead",
         formTitle: "Бесплатная оценка дела",
         formTime: "1 минута",
         step1Title: "Какова ваша ситуация?",
@@ -6877,6 +7023,7 @@
       setText('.hero-headline h1', 'heroTitle', true);
       setText('.hero-subtitle', 'heroSubtitle');
       setText('.hero-cta-btn', 'heroCta');
+      setText('.hero-lawyer-badge', 'heroLawyerBadge');
       setText('.hero-lawyer-title', 'heroLawyerTitle');
       setText('.hero-lawyer-exp', 'heroLawyerExp');
       setText('.hero-clients-label', 'heroClientsLabel');
@@ -7010,6 +7157,39 @@
       setText('.problem-section .section-header h2', 'problemsTitle', true);
       setText('.problem-section .section-header p', 'problemsSubtitle');
       setText('.hot-badge', 'problemMostCommon');
+
+      // Problem cards
+      const problemCards = document.querySelectorAll('.problem-card');
+      problemCards.forEach((card, i) => {
+        const h3 = card.querySelector('h3');
+        const p = card.querySelector('p');
+
+        if (i === 0) { // Fingerprints card (highlight)
+          if (h3 && t.problem1Title) h3.textContent = t.problem1Title;
+          if (p && t.problem1Text) p.textContent = t.problem1Text;
+          const statLabel = card.querySelector('.stat-label');
+          if (statLabel && t.problem1Stat) statLabel.innerHTML = t.problem1Stat;
+          const cta = card.querySelector('.highlight-cta');
+          if (cta && t.problem1Cta) cta.textContent = t.problem1Cta;
+        } else if (i === 1) { // No response card
+          if (h3 && t.problem2Title) h3.textContent = t.problem2Title;
+          if (p && t.problem2Text) p.textContent = t.problem2Text;
+          const statSpan = card.querySelector('.problem-stat span');
+          if (statSpan && t.problem2Stat) statSpan.textContent = t.problem2Stat;
+        } else if (i === 2) { // Letter card
+          if (h3 && t.problem3Title) h3.textContent = t.problem3Title;
+          if (p && t.problem3Text) p.textContent = t.problem3Text;
+          const statSpan = card.querySelector('.problem-stat span');
+          if (statSpan && t.problem3Stat) statSpan.innerHTML = t.problem3Stat;
+        } else if (i === 3) { // Rejected card
+          if (h3 && t.problem4Title) h3.textContent = t.problem4Title;
+          if (p && t.problem4Text) p.textContent = t.problem4Text;
+          const counterLabel = card.querySelector('.counter-label');
+          if (counterLabel && t.problem4Counter) counterLabel.textContent = t.problem4Counter;
+        } else if (i === 4) { // Region card
+          if (h3 && t.regionTitle) h3.textContent = t.regionTitle;
+        }
+      });
 
       // Lead magnet
       setText('.lm-widget-btn', 'lmWidgetBtn');
