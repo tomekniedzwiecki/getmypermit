@@ -464,7 +464,7 @@
             showScreen('content');
 
             // Client name
-            const clientName = lead ? [lead.first_name, lead.last_name].filter(Boolean).join(' ') || lead.email : 'Klient';
+            const clientName = lead ? (lead.name || lead.email) : 'Klient';
             document.getElementById('client-name').textContent = clientName;
 
             // Validity
