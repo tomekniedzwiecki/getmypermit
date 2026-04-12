@@ -19,9 +19,9 @@
   <link rel="dns-prefetch" href="https://flagcdn.com">
   <link rel="dns-prefetch" href="https://adwokaci-sg.pl">
   <link rel="preload" as="image" href="img/office1.webp" fetchpriority="high">
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap&subset=latin-ext">
-  <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet"></noscript>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=optional&subset=latin-ext">
+  <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=optional&subset=latin-ext" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=optional&subset=latin-ext" rel="stylesheet"></noscript>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -272,22 +272,24 @@
     .hero::before {
       content: '';
       position: absolute;
-      top: -50%;
-      right: -20%;
+      top: -300px;
+      right: -120px;
       width: 600px;
       height: 600px;
       background: radial-gradient(circle, rgba(0, 85, 255, 0.04) 0%, transparent 70%);
       pointer-events: none;
+      will-change: transform;
     }
     .hero::after {
       content: '';
       position: absolute;
-      bottom: -30%;
-      left: -10%;
+      bottom: -150px;
+      left: -50px;
       width: 500px;
       height: 500px;
       background: radial-gradient(circle, rgba(0, 85, 255, 0.03) 0%, transparent 70%);
       pointer-events: none;
+      will-change: transform;
     }
     .hero-bento {
       display: grid;
@@ -984,6 +986,7 @@
       height: 100%;
       stroke: var(--accent);
       stroke-width: 1.5;
+      fill: none;
     }
     .svc-white .svc-icon svg,
     .svc-gray .svc-icon svg {
@@ -1224,51 +1227,6 @@
     }
     .svc-featured:hover::before {
       opacity: 1;
-    }
-
-    /* Gold card - for citizenship (from team colors) */
-    .svc-gold {
-      background: linear-gradient(135deg, #b99451, #d4a853);
-      color: white !important;
-    }
-    .svc-gold h3, .svc-gold p {
-      color: white;
-    }
-    .svc-gold .svc-icon {
-      background: rgba(255,255,255,0.2);
-    }
-    .svc-gold .svc-icon svg {
-      stroke: white;
-    }
-
-    /* Green card - for success/expediting (from team colors) */
-    .svc-green {
-      background: linear-gradient(135deg, #00c853, #00a844);
-      color: white !important;
-    }
-    .svc-green h3, .svc-green p {
-      color: white;
-    }
-    .svc-green .svc-icon {
-      background: rgba(255,255,255,0.2);
-    }
-    .svc-green .svc-icon svg {
-      stroke: white;
-    }
-
-    /* Dark card (from team colors) */
-    .svc-navy {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      color: white !important;
-    }
-    .svc-navy h3, .svc-navy p {
-      color: white;
-    }
-    .svc-navy .svc-icon {
-      background: rgba(255,255,255,0.15);
-    }
-    .svc-navy .svc-icon svg {
-      stroke: white;
     }
 
     /* Auto-flip animation triggered by JS */
