@@ -23,6 +23,10 @@ ALTER TABLE gmp_lawyers ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies first (idempotent)
 DROP POLICY IF EXISTS "Authenticated users can view gmp_lawyers" ON gmp_lawyers;
+DROP POLICY IF EXISTS "Authenticated users can insert gmp_lawyers" ON gmp_lawyers;
+DROP POLICY IF EXISTS "Authenticated users can update gmp_lawyers" ON gmp_lawyers;
+DROP POLICY IF EXISTS "Authenticated users can delete gmp_lawyers" ON gmp_lawyers;
+-- Also drop old policy names
 DROP POLICY IF EXISTS "Admins can insert gmp_lawyers" ON gmp_lawyers;
 DROP POLICY IF EXISTS "Admins can update gmp_lawyers" ON gmp_lawyers;
 DROP POLICY IF EXISTS "Admins can delete gmp_lawyers" ON gmp_lawyers;
@@ -32,26 +36,19 @@ CREATE POLICY "Authenticated users can view gmp_lawyers"
     ON gmp_lawyers FOR SELECT
     USING (auth.role() = 'authenticated');
 
--- Only admins can create/update/delete lawyers
-CREATE POLICY "Admins can insert gmp_lawyers"
+-- Simplified for development: any authenticated user can manage lawyers
+CREATE POLICY "Authenticated users can insert gmp_lawyers"
     ON gmp_lawyers FOR INSERT
-    WITH CHECK (
-        EXISTS (SELECT 1 FROM gmp_lawyers WHERE user_id = auth.uid() AND role = 'admin')
-        OR NOT EXISTS (SELECT 1 FROM gmp_lawyers) -- Allow first user to create themselves
-    );
+    WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Admins can update gmp_lawyers"
+-- Simplified for development: any authenticated user can manage lawyers
+CREATE POLICY "Authenticated users can update gmp_lawyers"
     ON gmp_lawyers FOR UPDATE
-    USING (
-        EXISTS (SELECT 1 FROM gmp_lawyers WHERE user_id = auth.uid() AND role = 'admin')
-        OR user_id = auth.uid() -- Users can update their own profile
-    );
+    USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Admins can delete gmp_lawyers"
+CREATE POLICY "Authenticated users can delete gmp_lawyers"
     ON gmp_lawyers FOR DELETE
-    USING (
-        EXISTS (SELECT 1 FROM gmp_lawyers WHERE user_id = auth.uid() AND role = 'admin')
-    );
+    USING (auth.role() = 'authenticated');
 
 -- ============ GMP_CALENDAR_EVENTS TABLE ============
 CREATE TABLE IF NOT EXISTS gmp_calendar_events (

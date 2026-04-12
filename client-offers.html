@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wysłane oferty - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: #050505; color: #e5e5e5; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::selection { background: white; color: black; }
+
+        .glass-header {
+            background: rgba(5, 5, 5, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-link {
+            transition: all 0.15s;
+        }
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-viewed { background: #dbeafe; color: #1e40af; }
+        .status-accepted { background: #dcfce7; color: #166534; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
+        .status-expired { background: #f4f4f5; color: #52525b; }
+    </style>
+</head>
+<body class="h-screen font-sans text-sm tracking-tight antialiased overflow-hidden">
+
+    <script src="components/sidebar.js" data-active="client-offers"></script>
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <div id="sidebar-placeholder"></div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="h-16 glass-header flex items-center justify-between px-4 md:px-6 flex-shrink-0">
+                <div class="flex items-center gap-2 text-zinc-500">
+                    <i class="ph ph-paper-plane-tilt text-green-400 text-xl"></i>
+                    <span class="text-white font-medium">Wysłane oferty</span>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="flex-1 overflow-auto p-6">
+                <!-- Stats -->
+                <div class="grid grid-cols-5 gap-4 mb-6">
+                    <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+                        <div class="text-zinc-500 text-xs mb-1">Wszystkie</div>
+                        <div class="text-2xl font-bold" id="stat-total">0</div>
+                    </div>
+                    <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+                        <div class="text-zinc-500 text-xs mb-1 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-amber-400"></span> Oczekujące
+                        </div>
+                        <div class="text-2xl font-bold text-amber-400" id="stat-pending">0</div>
+                    </div>
+                    <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+                        <div class="text-zinc-500 text-xs mb-1 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-blue-400"></span> Obejrzane
+                        </div>
+                        <div class="text-2xl font-bold text-blue-400" id="stat-viewed">0</div>
+                    </div>
+                    <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+                        <div class="text-zinc-500 text-xs mb-1 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-green-400"></span> Zaakceptowane
+                        </div>
+                        <div class="text-2xl font-bold text-green-400" id="stat-accepted">0</div>
+                    </div>
+                    <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+                        <div class="text-zinc-500 text-xs mb-1">Współczynnik</div>
+                        <div class="text-2xl font-bold" id="stat-rate">0%</div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 mb-6">
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <label class="text-zinc-500 text-xs">Status:</label>
+                            <select id="filter-status" onchange="applyFilters()" class="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-zinc-600">
+                                <option value="">Wszystkie</option>
+                                <option value="pending">Oczekujące</option>
+                                <option value="viewed">Obejrzane</option>
+                                <option value="accepted">Zaakceptowane</option>
+                                <option value="rejected">Odrzucone</option>
+                                <option value="expired">Wygasłe</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-zinc-500 text-xs">Prawnik:</label>
+                            <select id="filter-lawyer" onchange="applyFilters()" class="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-zinc-600">
+                                <option value="">Wszyscy</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-zinc-500 text-xs">Wygasa:</label>
+                            <select id="filter-expiring" onchange="applyFilters()" class="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-zinc-600">
+                                <option value="">Wszystkie</option>
+                                <option value="3">Za 3 dni</option>
+                                <option value="7">Za 7 dni</option>
+                                <option value="expired">Wygasłe</option>
+                            </select>
+                        </div>
+                        <div class="flex-1"></div>
+                        <div class="relative">
+                            <input type="text" id="search" placeholder="Szukaj klienta..." oninput="applyFilters()" class="bg-zinc-800 border border-zinc-700 rounded-lg pl-8 pr-4 py-1.5 text-xs w-48 focus:outline-none focus:border-zinc-600">
+                            <i class="ph ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500 text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-zinc-800 text-left text-zinc-500 text-xs uppercase tracking-wider">
+                                <th class="px-4 py-3 font-medium">Klient</th>
+                                <th class="px-4 py-3 font-medium">Oferta</th>
+                                <th class="px-4 py-3 font-medium">Kwota</th>
+                                <th class="px-4 py-3 font-medium">Status</th>
+                                <th class="px-4 py-3 font-medium">Wyświetlenia</th>
+                                <th class="px-4 py-3 font-medium">Ważna do</th>
+                                <th class="px-4 py-3 font-medium">Utworzona</th>
+                                <th class="px-4 py-3 font-medium"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="offers-table" class="divide-y divide-zinc-800">
+                            <tr>
+                                <td colspan="8" class="px-4 py-12 text-center text-zinc-500">
+                                    <i class="ph ph-spinner animate-spin text-2xl"></i>
+                                    <p class="mt-2">Ładowanie...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty state -->
+                <div id="empty-state" class="hidden bg-zinc-900/50 border border-zinc-800 rounded-xl p-12 text-center">
+                    <i class="ph ph-paper-plane-tilt text-4xl text-zinc-600 mb-4"></i>
+                    <h3 class="text-lg font-medium mb-2">Brak wysłanych ofert</h3>
+                    <p class="text-zinc-500 text-sm">Wyślij pierwszą ofertę z poziomu szczegółów leada</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-lg shadow-xl hidden transition-all transform translate-y-2 opacity-0">
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allOffers = [];
+        let lawyers = [];
+        let lawyersMap = {};
+
+        async function init() {
+            await loadLawyers();
+            await loadOffers();
+        }
+
+        async function loadLawyers() {
+            const { data } = await supabaseClient.from('gmp_lawyers').select('*');
+            lawyers = data || [];
+            lawyersMap = {};
+            lawyers.forEach(l => lawyersMap[l.id] = l);
+
+            const select = document.getElementById('filter-lawyer');
+            lawyers.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.id;
+                opt.textContent = l.name;
+                select.appendChild(opt);
+            });
+        }
+
+        async function loadOffers() {
+            const { data, error } = await supabaseClient
+                .from('gmp_client_offers')
+                .select(`
+                    *,
+                    permit_leads(id, name, email, phone),
+                    gmp_offers(id, name, price)
+                `)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading offers:', error);
+                showToast('Błąd ładowania ofert', 'error');
+                return;
+            }
+
+            allOffers = data || [];
+            updateStats();
+            applyFilters();
+        }
+
+        function updateStats() {
+            const total = allOffers.length;
+            const pending = allOffers.filter(o => o.status === 'pending').length;
+            const viewed = allOffers.filter(o => o.status === 'viewed').length;
+            const accepted = allOffers.filter(o => o.status === 'accepted').length;
+            const rate = total > 0 ? Math.round((accepted / total) * 100) : 0;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-viewed').textContent = viewed;
+            document.getElementById('stat-accepted').textContent = accepted;
+            document.getElementById('stat-rate').textContent = rate + '%';
+        }
+
+        function applyFilters() {
+            const status = document.getElementById('filter-status').value;
+            const lawyer = document.getElementById('filter-lawyer').value;
+            const expiring = document.getElementById('filter-expiring').value;
+            const search = document.getElementById('search').value.toLowerCase();
+
+            let filtered = allOffers;
+
+            if (status) {
+                filtered = filtered.filter(o => o.status === status);
+            }
+
+            if (lawyer) {
+                filtered = filtered.filter(o => o.created_by === lawyer);
+            }
+
+            if (expiring) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (expiring === 'expired') {
+                    filtered = filtered.filter(o => new Date(o.valid_until) < today);
+                } else {
+                    const days = parseInt(expiring);
+                    const futureDate = new Date(today);
+                    futureDate.setDate(futureDate.getDate() + days);
+                    filtered = filtered.filter(o => {
+                        const validDate = new Date(o.valid_until);
+                        return validDate >= today && validDate <= futureDate;
+                    });
+                }
+            }
+
+            if (search) {
+                filtered = filtered.filter(o => {
+                    const lead = o.permit_leads;
+                    if (!lead) return false;
+                    return (lead.name || '').toLowerCase().includes(search) ||
+                           (lead.email || '').toLowerCase().includes(search);
+                });
+            }
+
+            renderTable(filtered);
+        }
+
+        function renderTable(offers) {
+            const tbody = document.getElementById('offers-table');
+            const emptyState = document.getElementById('empty-state');
+            const tableContainer = tbody.closest('.bg-zinc-900\\/50');
+
+            if (offers.length === 0) {
+                tbody.innerHTML = '';
+                tableContainer.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            tableContainer.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            tbody.innerHTML = offers.map(offer => {
+                const lead = offer.permit_leads;
+                const template = offer.gmp_offers;
+                const lawyer = lawyersMap[offer.created_by];
+                const price = offer.custom_price || template?.price;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const validDate = new Date(offer.valid_until);
+                const isExpiringSoon = validDate > today && (validDate - today) / (1000 * 60 * 60 * 24) <= 3;
+                const isExpired = validDate < today;
+
+                return `
+                    <tr class="hover:bg-zinc-800/50 transition-colors">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 text-xs">
+                                    <i class="ph ph-user"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-white">${escapeHtml(lead?.name || 'Nieznany')}</div>
+                                    <div class="text-zinc-500 text-xs">${escapeHtml(lead?.email || '-')}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="text-xs text-zinc-300">${escapeHtml(template?.name || 'Brak szablonu')}</div>
+                            ${lawyer ? `<div class="text-zinc-600 text-xs">przez ${escapeHtml(lawyer.name)}</div>` : ''}
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="font-medium text-white">${price ? formatPrice(price) : '-'}</div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="status-${offer.status} px-2 py-0.5 rounded text-[10px] font-medium">
+                                ${getStatusLabel(offer.status)}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-1.5 text-xs">
+                                <i class="ph ph-eye text-zinc-600"></i>
+                                <span class="${offer.view_count > 0 ? 'text-blue-400' : 'text-zinc-600'}">${offer.view_count || 0}</span>
+                                ${offer.viewed_at ? `<span class="text-zinc-600">(${formatTimeAgo(offer.viewed_at)})</span>` : ''}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-1.5 text-xs ${isExpired ? 'text-zinc-600' : isExpiringSoon ? 'text-amber-400' : 'text-zinc-400'}">
+                                ${isExpiringSoon ? '<i class="ph ph-warning"></i>' : ''}
+                                ${isExpired ? '<i class="ph ph-clock-countdown"></i>' : ''}
+                                ${formatDate(offer.valid_until)}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-zinc-500 text-xs">
+                            ${formatDate(offer.created_at)}
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-0.5">
+                                <button onclick="copyLink('${offer.unique_token}')" class="p-1.5 hover:bg-zinc-700 rounded transition-colors" title="Kopiuj link">
+                                    <i class="ph ph-copy text-zinc-500 hover:text-white"></i>
+                                </button>
+                                <a href="client-offer.html?token=${offer.unique_token}" target="_blank" class="p-1.5 hover:bg-zinc-700 rounded transition-colors" title="Podgląd">
+                                    <i class="ph ph-arrow-square-out text-zinc-500 hover:text-white"></i>
+                                </a>
+                                ${lead?.id ? `
+                                    <a href="lead.html?id=${lead.id}" class="p-1.5 hover:bg-zinc-700 rounded transition-colors" title="Szczegóły leada">
+                                        <i class="ph ph-user-circle text-zinc-500 hover:text-white"></i>
+                                    </a>
+                                ` : ''}
+                                ${!isExpired && offer.status !== 'accepted' ? `
+                                    <button onclick="extendValidity('${offer.id}')" class="p-1.5 hover:bg-zinc-700 rounded transition-colors" title="Przedłuż">
+                                        <i class="ph ph-calendar-plus text-zinc-500 hover:text-white"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                pending: 'Oczekuje',
+                viewed: 'Obejrzana',
+                accepted: 'Zaakceptowana',
+                rejected: 'Odrzucona',
+                expired: 'Wygasła'
+            };
+            return labels[status] || status;
+        }
+
+        function formatPrice(price) {
+            return parseFloat(price).toLocaleString('pl-PL') + ' zł';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' });
+        }
+
+        function formatTimeAgo(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+
+            if (diffMins < 60) return `${diffMins}m`;
+            if (diffHours < 24) return `${diffHours}h`;
+            if (diffDays < 7) return `${diffDays}d`;
+            return formatDate(dateStr);
+        }
+
+        function copyLink(token) {
+            const url = `${window.location.origin}/getmypermit/client-offer.html?token=${token}`;
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('Link skopiowany');
+            });
+        }
+
+        async function extendValidity(offerId) {
+            const days = prompt('O ile dni przedłużyć?', '7');
+            if (!days) return;
+
+            const daysNum = parseInt(days);
+            if (isNaN(daysNum) || daysNum < 1) {
+                showToast('Nieprawidłowa liczba dni', 'error');
+                return;
+            }
+
+            const offer = allOffers.find(o => o.id === offerId);
+            if (!offer) return;
+
+            const currentDate = new Date(offer.valid_until);
+            const newDate = new Date(Math.max(currentDate, new Date()));
+            newDate.setDate(newDate.getDate() + daysNum);
+
+            const { error } = await supabaseClient
+                .from('gmp_client_offers')
+                .update({
+                    valid_until: newDate.toISOString().split('T')[0],
+                    status: offer.status === 'expired' ? 'pending' : offer.status
+                })
+                .eq('id', offerId);
+
+            if (error) {
+                console.error('Error:', error);
+                showToast('Błąd', 'error');
+                return;
+            }
+
+            showToast(`Przedłużono o ${daysNum} dni`);
+            loadOffers();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden', 'translate-y-2', 'opacity-0');
+            toast.style.borderColor = type === 'error' ? '#ef4444' : '#22c55e';
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

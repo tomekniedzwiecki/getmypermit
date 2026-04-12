@@ -89,54 +89,10 @@
 </head>
 <body class="h-screen font-sans text-sm tracking-tight antialiased overflow-hidden">
 
+    <script src="components/sidebar.js" data-active="lawyers"></script>
     <div class="flex h-full">
         <!-- Sidebar -->
-        <aside class="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col flex-shrink-0">
-            <!-- Logo -->
-            <div class="h-16 flex items-center px-5 border-b border-zinc-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                        <i class="ph ph-user-list text-white"></i>
-                    </div>
-                    <span class="text-white font-semibold">GetMyPermit</span>
-                </div>
-            </div>
-
-            <!-- Navigation -->
-            <nav class="flex-1 p-3 space-y-1">
-                <a href="admin.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-list-bullets text-lg"></i>
-                    <span>Leady</span>
-                </a>
-                <a href="admin.html#pipeline" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-kanban text-lg"></i>
-                    <span>Pipeline</span>
-                </a>
-
-                <div class="h-px bg-zinc-800 my-2"></div>
-
-                <a href="calendar.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-calendar text-lg text-blue-400"></i>
-                    <span>Kalendarz</span>
-                </a>
-                <a href="lawyers.html" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-users text-lg text-purple-400"></i>
-                    <span>Prawnicy</span>
-                </a>
-                <a href="offers.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-file-text text-lg text-amber-400"></i>
-                    <span>Szablony ofert</span>
-                </a>
-            </nav>
-
-            <!-- User -->
-            <div class="p-3 border-t border-zinc-800">
-                <a href="index.html" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 text-sm transition-colors">
-                    <i class="ph ph-sign-out text-lg"></i>
-                    <span>Wyloguj</span>
-                </a>
-            </div>
-        </aside>
+        <div id="sidebar-placeholder"></div>
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
@@ -425,12 +381,15 @@
                             </div>
                         </div>
 
-                        <div class="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                ${specs.map(s => `<span class="text-[10px] text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded-full">${escapeHtml(s)}</span>`).join('')}
-                            </div>
-                            <div class="text-zinc-500 text-xs">
-                                <i class="ph ph-briefcase mr-1"></i>${caseCount} spraw
+                        <div class="mt-4 pt-4 border-t border-white/5">
+                            <div class="flex items-center justify-between gap-3 mb-2">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    ${specs.map(s => `<span class="text-[11px] text-zinc-400 bg-zinc-800 px-2.5 py-1 rounded-md">${escapeHtml(s)}</span>`).join('')}
+                                </div>
+                                <div class="text-zinc-500 text-xs whitespace-nowrap flex items-center gap-1">
+                                    <i class="ph ph-briefcase"></i>
+                                    <span>${caseCount} spraw</span>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -370,90 +370,12 @@
         </div>
     </div>
 
+    <script src="components/sidebar.js" data-active="leads"></script>
     <!-- Dashboard with Sidebar -->
     <div class="hidden h-full" id="dashboard">
         <div class="flex h-full">
             <!-- Sidebar -->
-            <aside class="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col flex-shrink-0">
-                <!-- Logo -->
-                <div class="h-16 flex items-center px-5 border-b border-zinc-800">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                            <i class="ph ph-user-list text-white"></i>
-                        </div>
-                        <span class="text-white font-semibold">GetMyPermit</span>
-                    </div>
-                </div>
-
-                <!-- Navigation -->
-                <nav class="flex-1 p-3 space-y-1">
-                    <button onclick="switchTab('leads')" id="tabLeads" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                        <i class="ph ph-list-bullets text-lg"></i>
-                        <span>Leady</span>
-                        <span class="ml-auto bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded text-xs" id="sidebarLeadsCount">0</span>
-                    </button>
-                    <button onclick="switchTab('pipeline')" id="tabPipeline" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                        <i class="ph ph-kanban text-lg"></i>
-                        <span>Pipeline</span>
-                    </button>
-
-                    <div class="h-px bg-zinc-800 my-2"></div>
-
-                    <a href="calendar.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                        <i class="ph ph-calendar text-lg text-blue-400"></i>
-                        <span>Kalendarz</span>
-                    </a>
-                    <a href="lawyers.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                        <i class="ph ph-users text-lg text-purple-400"></i>
-                        <span>Prawnicy</span>
-                    </a>
-                    <a href="offers.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                        <i class="ph ph-file-text text-lg text-amber-400"></i>
-                        <span>Szablony ofert</span>
-                    </a>
-                </nav>
-
-                <!-- Stats in Sidebar -->
-                <div class="p-3 border-t border-zinc-800">
-                    <div class="text-[10px] text-zinc-600 uppercase tracking-wider mb-3 px-1">Podsumowanie</div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-zinc-900 rounded-lg p-2 text-center">
-                            <div class="text-lg font-bold text-red-400" id="hotCount">-</div>
-                            <div class="text-[10px] text-zinc-500">HOT</div>
-                        </div>
-                        <div class="bg-zinc-900 rounded-lg p-2 text-center">
-                            <div class="text-lg font-bold text-amber-400" id="warmCount">-</div>
-                            <div class="text-[10px] text-zinc-500">WARM</div>
-                        </div>
-                        <div class="bg-zinc-900 rounded-lg p-2 text-center">
-                            <div class="text-lg font-bold text-zinc-400" id="coldCount">-</div>
-                            <div class="text-[10px] text-zinc-500">COLD</div>
-                        </div>
-                    </div>
-                    <div class="mt-2 bg-zinc-900 rounded-lg p-2 flex items-center justify-between">
-                        <span class="text-zinc-500 text-xs">Skonwertowane</span>
-                        <span class="text-green-400 font-bold" id="convertedCount">-</span>
-                    </div>
-                    <div class="mt-2 grid grid-cols-2 gap-2">
-                        <div class="bg-zinc-900 rounded-lg p-2">
-                            <div class="text-xs font-bold text-blue-400" id="todayEventsCount">0</div>
-                            <div class="text-[9px] text-zinc-500">Dzisiaj</div>
-                        </div>
-                        <div class="bg-zinc-900 rounded-lg p-2">
-                            <div class="text-xs font-bold text-amber-400" id="pendingOffersCount">0</div>
-                            <div class="text-[9px] text-zinc-500">Oferty</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- User -->
-                <div class="p-3 border-t border-zinc-800">
-                    <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 text-sm transition-colors">
-                        <i class="ph ph-sign-out text-lg"></i>
-                        <span>Wyloguj</span>
-                    </button>
-                </div>
-            </aside>
+            <div id="sidebar-placeholder"></div>
 
             <!-- Main Content -->
             <main class="flex-1 flex flex-col overflow-hidden">

@@ -500,54 +500,12 @@
             .mobile-back-btn { display: none !important; }
         }
     </style>
+    <script src="components/sidebar.js" data-active=""></script>
 </head>
 <body class="h-screen flex overflow-hidden font-sans text-sm tracking-tight antialiased">
 
     <!-- Sidebar -->
-    <aside class="w-[280px] bg-zinc-950 border-r border-white/5 flex flex-col flex-shrink-0">
-        <!-- Logo -->
-        <div class="h-16 flex items-center px-5 border-b border-white/5">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                    <i class="ph ph-user-list text-white"></i>
-                </div>
-                <span class="text-white font-semibold">GetMyPermit</span>
-            </div>
-        </div>
-        <!-- Navigation -->
-        <nav class="flex-1 p-3 space-y-1">
-            <a href="admin.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
-                <i class="ph ph-list-bullets text-lg"></i>
-                <span>Leady</span>
-            </a>
-            <a href="admin.html#pipeline" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
-                <i class="ph ph-kanban text-lg"></i>
-                <span>Pipeline</span>
-            </a>
-
-            <div class="h-px bg-zinc-800 my-2"></div>
-
-            <a href="calendar.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
-                <i class="ph ph-calendar text-lg text-blue-400"></i>
-                <span>Kalendarz</span>
-            </a>
-            <a href="lawyers.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
-                <i class="ph ph-users text-lg text-purple-400"></i>
-                <span>Prawnicy</span>
-            </a>
-            <a href="offers.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
-                <i class="ph ph-file-text text-lg text-amber-400"></i>
-                <span>Szablony ofert</span>
-            </a>
-        </nav>
-        <!-- User -->
-        <div class="p-3 border-t border-white/5">
-            <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 text-sm transition-colors">
-                <i class="ph ph-sign-out text-lg"></i>
-                <span>Wyloguj</span>
-            </button>
-        </div>
-    </aside>
+    <div id="sidebar-placeholder"></div>
 
     <!-- Main -->
     <main class="flex-1 flex flex-col bg-black relative min-w-0">

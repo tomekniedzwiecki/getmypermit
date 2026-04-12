@@ -138,54 +138,10 @@
 </head>
 <body class="h-screen font-sans text-sm tracking-tight antialiased overflow-hidden">
 
+    <script src="components/sidebar.js" data-active="calendar"></script>
     <div class="flex h-full">
         <!-- Sidebar -->
-        <aside class="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col flex-shrink-0">
-            <!-- Logo -->
-            <div class="h-16 flex items-center px-5 border-b border-zinc-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                        <i class="ph ph-user-list text-white"></i>
-                    </div>
-                    <span class="text-white font-semibold">GetMyPermit</span>
-                </div>
-            </div>
-
-            <!-- Navigation -->
-            <nav class="flex-1 p-3 space-y-1">
-                <a href="admin.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-list-bullets text-lg"></i>
-                    <span>Leady</span>
-                </a>
-                <a href="admin.html#pipeline" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-kanban text-lg"></i>
-                    <span>Pipeline</span>
-                </a>
-
-                <div class="h-px bg-zinc-800 my-2"></div>
-
-                <a href="calendar.html" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-calendar text-lg text-blue-400"></i>
-                    <span>Kalendarz</span>
-                </a>
-                <a href="lawyers.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-users text-lg text-purple-400"></i>
-                    <span>Prawnicy</span>
-                </a>
-                <a href="offers.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
-                    <i class="ph ph-file-text text-lg text-amber-400"></i>
-                    <span>Szablony ofert</span>
-                </a>
-            </nav>
-
-            <!-- User -->
-            <div class="p-3 border-t border-zinc-800">
-                <a href="index.html" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 text-sm transition-colors">
-                    <i class="ph ph-sign-out text-lg"></i>
-                    <span>Wyloguj</span>
-                </a>
-            </div>
-        </aside>
+        <div id="sidebar-placeholder"></div>
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
@@ -549,7 +505,7 @@
         async function loadLeads() {
             const { data, error } = await supabaseClient
                 .from(TABLE_LEADS)
-                .select('id, first_name, last_name, email, phone, permit_type')
+                .select('id, name, email, phone, permit_type')
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -559,7 +515,7 @@
 
             leads = (data || []).map(l => ({
                 ...l,
-                name: [l.first_name, l.last_name].filter(Boolean).join(' ') || l.email
+                name: l.name || l.email
             }));
         }
 
@@ -584,7 +540,7 @@
 
             let query = supabaseClient
                 .from(TABLE_EVENTS)
-                .select(`*, ${TABLE_LEADS}(id, first_name, last_name, email)`)
+                .select(`*, ${TABLE_LEADS}(id, name, email)`)
                 .lte('start_time', endDate.toISOString())
                 .gte('end_time', startDate.toISOString());
 
@@ -806,7 +762,7 @@
                                         ${e.lead ? `
                                             <div class="flex items-center gap-2 text-zinc-400 text-xs">
                                                 <i class="ph ph-user"></i>
-                                                ${escapeHtml(e.lead.first_name || '')} ${escapeHtml(e.lead.last_name || '')}
+                                                ${escapeHtml(e.lead.name || '')}
                                             </div>
                                         ` : ''}
                                         ${lawyer ? `
