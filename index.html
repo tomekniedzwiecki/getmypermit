@@ -5135,7 +5135,7 @@
       });
     });
 
-    function showStep(stepId) {
+    window.showStep = function(stepId) {
       document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
       document.querySelector(`.form-step[data-step="${stepId}"]`).classList.add('active');
 
@@ -5172,7 +5172,7 @@
       }
     }
 
-    function nextStep() {
+    window.nextStep = function() {
       const currentStepEl = document.querySelector('.form-step.active');
       const currentStepId = currentStepEl.dataset.step;
       const situation = form.querySelector('input[name="situation"]:checked')?.value;
@@ -5286,7 +5286,7 @@
       }
     }
 
-    function prevStep() {
+    window.prevStep = function() {
       if (stepHistory.length > 1) {
         stepHistory.pop(); // Remove current step
         const previousStep = stepHistory[stepHistory.length - 1];
@@ -5294,7 +5294,7 @@
       }
     }
 
-    function resetForm() {
+    window.resetForm = function() {
       form.reset();
       document.querySelectorAll('.giant-choice.selected').forEach(el => el.classList.remove('selected'));
       stepHistory = ['1'];
