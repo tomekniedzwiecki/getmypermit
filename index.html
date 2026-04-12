@@ -1426,6 +1426,9 @@
       margin-bottom: 2px;
       line-height: 1.2;
     }
+    .team-partner-name-sm {
+      font-size: 15px;
+    }
     .team-partner-role {
       font-size: 13px;
       opacity: 0.8;
@@ -3964,11 +3967,10 @@
       </div>
 
       <div class="team-bento">
-        <!-- Row 1: Partner + Stats + Partner + Stats -->
+        <!-- Row 1: Partner + Stats + Stats + Partner (cross pattern) -->
         <div class="team-partner fade-in">
           <img src="img/lawyer-hero.webp" alt="Paweł Stachurski" loading="lazy" width="200" height="200">
           <div class="team-partner-overlay">
-            <div class="team-badge">Managing Partner</div>
             <div class="team-partner-name">Paweł Stachurski</div>
             <div class="team-partner-role">Office Director</div>
           </div>
@@ -3977,17 +3979,16 @@
           <div class="team-stat-big">10+</div>
           <div class="team-stat-label">Years of<br>experience</div>
         </div>
-        <div class="team-partner fade-in">
-          <img src="img/team-katarzyna.webp" alt="Katarzyna Grzybowska-Jagódka" loading="lazy" width="200" height="200">
-          <div class="team-partner-overlay">
-            <div class="team-badge">Managing Partner</div>
-            <div class="team-partner-name">Katarzyna Grzybowska-Jagódka</div>
-            <div class="team-partner-role">Lead Attorney</div>
-          </div>
-        </div>
         <div class="team-stats-card team-stats-accent fade-in">
           <div class="team-stat-big">10 000+</div>
           <div class="team-stat-label">Satisfied clients<br>from 50+ countries</div>
+        </div>
+        <div class="team-partner fade-in">
+          <img src="img/team-katarzyna.webp" alt="Katarzyna Grzybowska-Jagódka" loading="lazy" width="200" height="200">
+          <div class="team-partner-overlay">
+            <div class="team-partner-name team-partner-name-sm">Katarzyna Grzybowska-Jagódka</div>
+            <div class="team-partner-role">Lead Attorney</div>
+          </div>
         </div>
 
         <!-- Row 2: Stats + Team + Team + Stats -->
@@ -4969,20 +4970,17 @@
 
     document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-    // Sticky CTA - show after hero scrolls out of view
+    // Sticky CTA - show after scrolling 15% of page
     const stickyCta = document.querySelector('.sticky-cta-mobile');
-    const heroSection = document.querySelector('.hero');
-    if (stickyCta && heroSection) {
-      const stickyObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            stickyCta.classList.remove('visible');
-          } else {
-            stickyCta.classList.add('visible');
-          }
-        });
-      }, { threshold: 0 });
-      stickyObserver.observe(heroSection);
+    if (stickyCta) {
+      window.addEventListener('scroll', () => {
+        const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+        if (scrollPercent >= 15) {
+          stickyCta.classList.add('visible');
+        } else {
+          stickyCta.classList.remove('visible');
+        }
+      });
     }
 
     // Animated counter for statistics
