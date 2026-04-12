@@ -21,6 +21,12 @@ CREATE TABLE IF NOT EXISTS gmp_lawyers (
 
 ALTER TABLE gmp_lawyers ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first (idempotent)
+DROP POLICY IF EXISTS "Authenticated users can view gmp_lawyers" ON gmp_lawyers;
+DROP POLICY IF EXISTS "Admins can insert gmp_lawyers" ON gmp_lawyers;
+DROP POLICY IF EXISTS "Admins can update gmp_lawyers" ON gmp_lawyers;
+DROP POLICY IF EXISTS "Admins can delete gmp_lawyers" ON gmp_lawyers;
+
 -- Everyone authenticated can see lawyers
 CREATE POLICY "Authenticated users can view gmp_lawyers"
     ON gmp_lawyers FOR SELECT
@@ -65,6 +71,8 @@ CREATE TABLE IF NOT EXISTS gmp_calendar_events (
 
 ALTER TABLE gmp_calendar_events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Authenticated users can CRUD gmp_calendar_events" ON gmp_calendar_events;
+
 CREATE POLICY "Authenticated users can CRUD gmp_calendar_events"
     ON gmp_calendar_events FOR ALL
     USING (auth.role() = 'authenticated');
@@ -87,6 +95,9 @@ CREATE TABLE IF NOT EXISTS gmp_offers (
 );
 
 ALTER TABLE gmp_offers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can manage gmp_offers" ON gmp_offers;
+DROP POLICY IF EXISTS "Anon can view active gmp_offers" ON gmp_offers;
 
 CREATE POLICY "Authenticated users can manage gmp_offers"
     ON gmp_offers FOR ALL
@@ -113,6 +124,10 @@ CREATE TABLE IF NOT EXISTS gmp_client_offers (
 );
 
 ALTER TABLE gmp_client_offers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can manage gmp_client_offers" ON gmp_client_offers;
+DROP POLICY IF EXISTS "Anon can view gmp_client_offers by token" ON gmp_client_offers;
+DROP POLICY IF EXISTS "Anon can update gmp_client_offers view tracking" ON gmp_client_offers;
 
 CREATE POLICY "Authenticated users can manage gmp_client_offers"
     ON gmp_client_offers FOR ALL
@@ -146,57 +161,63 @@ ADD COLUMN IF NOT EXISTS offer_id UUID REFERENCES gmp_offers(id) ON DELETE SET N
 CREATE INDEX IF NOT EXISTS idx_permit_leads_assigned_to ON permit_leads(assigned_to);
 
 -- ============ INSERT DEFAULT OFFERS ============
-INSERT INTO gmp_offers (name, description, price, is_active, is_default, milestones) VALUES
-(
-    'Pomoc w uzyskaniu pozwolenia na pobyt',
-    'Kompleksowa pomoc prawna w uzyskaniu pozwolenia na pobyt czasowy lub staly. Obejmuje analize dokumentow, przygotowanie wniosku i reprezentacje przed urzedem.',
-    5000.00,
-    TRUE,
-    TRUE,
-    '[
-        {"name": "Analiza dokumentow", "description": "Weryfikacja kompletnosci dokumentacji i ocena szans"},
-        {"name": "Przygotowanie wniosku", "description": "Sporzadzenie wniosku i wszystkich zalacznikow"},
-        {"name": "Zlozenie wniosku", "description": "Reprezentacja przed urzedem wojewodzkim"},
-        {"name": "Monitoring sprawy", "description": "Sledzenie postepowania i odpowiadanie na wezwania"}
-    ]'::jsonb
-),
-(
-    'Odwolanie od decyzji',
-    'Sporzadzenie odwolania od negatywnej decyzji administracyjnej. Analiza podstaw prawnych i reprezentacja w postepowaniu odwolawczym.',
-    3000.00,
-    TRUE,
-    FALSE,
-    '[
-        {"name": "Analiza decyzji", "description": "Ocena podstaw prawnych do odwolania"},
-        {"name": "Przygotowanie odwolania", "description": "Sporzadzenie pisma odwolawczego z argumentacja"},
-        {"name": "Zlozenie odwolania", "description": "Terminowe zlozenie do organu wyzszej instancji"}
-    ]'::jsonb
-),
-(
-    'Pelna obsluga sprawy imigracyjnej',
-    'Kompleksowa obsluga od pierwszej konsultacji do uzyskania pozwolenia. Idealny pakiet dla osob potrzebujacych pelnego wsparcia.',
-    8000.00,
-    TRUE,
-    FALSE,
-    '[
-        {"name": "Konsultacja wstepna", "description": "Omowienie sytuacji prawnej i strategii dzialania"},
-        {"name": "Kompletowanie dokumentow", "description": "Pomoc w zebraniu wszystkich wymaganych dokumentow"},
-        {"name": "Przygotowanie wniosku", "description": "Profesjonalne sporzadzenie kompletnej dokumentacji"},
-        {"name": "Reprezentacja", "description": "Pelna reprezentacja przed organami administracji"},
-        {"name": "Monitoring i wsparcie", "description": "Ciagla obsluga az do uzyskania pozytywnej decyzji"}
-    ]'::jsonb
-),
-(
-    'Konsultacja prawna',
-    'Jednorazowa konsultacja prawna z analiza sytuacji i rekomendacjami dalszych dzialan.',
-    500.00,
-    TRUE,
-    FALSE,
-    '[
-        {"name": "Konsultacja", "description": "60-minutowe spotkanie z prawnikiem"},
-        {"name": "Podsumowanie", "description": "Pisemne podsumowanie z rekomendacjami"}
-    ]'::jsonb
-);
+-- Only insert if table is empty (avoid duplicates on re-run)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM gmp_offers LIMIT 1) THEN
+        INSERT INTO gmp_offers (name, description, price, is_active, is_default, milestones) VALUES
+        (
+            'Pomoc w uzyskaniu pozwolenia na pobyt',
+            'Kompleksowa pomoc prawna w uzyskaniu pozwolenia na pobyt czasowy lub staly. Obejmuje analize dokumentow, przygotowanie wniosku i reprezentacje przed urzedem.',
+            5000.00,
+            TRUE,
+            TRUE,
+            '[
+                {"name": "Analiza dokumentow", "description": "Weryfikacja kompletnosci dokumentacji i ocena szans"},
+                {"name": "Przygotowanie wniosku", "description": "Sporzadzenie wniosku i wszystkich zalacznikow"},
+                {"name": "Zlozenie wniosku", "description": "Reprezentacja przed urzedem wojewodzkim"},
+                {"name": "Monitoring sprawy", "description": "Sledzenie postepowania i odpowiadanie na wezwania"}
+            ]'::jsonb
+        ),
+        (
+            'Odwolanie od decyzji',
+            'Sporzadzenie odwolania od negatywnej decyzji administracyjnej. Analiza podstaw prawnych i reprezentacja w postepowaniu odwolawczym.',
+            3000.00,
+            TRUE,
+            FALSE,
+            '[
+                {"name": "Analiza decyzji", "description": "Ocena podstaw prawnych do odwolania"},
+                {"name": "Przygotowanie odwolania", "description": "Sporzadzenie pisma odwolawczego z argumentacja"},
+                {"name": "Zlozenie odwolania", "description": "Terminowe zlozenie do organu wyzszej instancji"}
+            ]'::jsonb
+        ),
+        (
+            'Pelna obsluga sprawy imigracyjnej',
+            'Kompleksowa obsluga od pierwszej konsultacji do uzyskania pozwolenia. Idealny pakiet dla osob potrzebujacych pelnego wsparcia.',
+            8000.00,
+            TRUE,
+            FALSE,
+            '[
+                {"name": "Konsultacja wstepna", "description": "Omowienie sytuacji prawnej i strategii dzialania"},
+                {"name": "Kompletowanie dokumentow", "description": "Pomoc w zebraniu wszystkich wymaganych dokumentow"},
+                {"name": "Przygotowanie wniosku", "description": "Profesjonalne sporzadzenie kompletnej dokumentacji"},
+                {"name": "Reprezentacja", "description": "Pelna reprezentacja przed organami administracji"},
+                {"name": "Monitoring i wsparcie", "description": "Ciagla obsluga az do uzyskania pozytywnej decyzji"}
+            ]'::jsonb
+        ),
+        (
+            'Konsultacja prawna',
+            'Jednorazowa konsultacja prawna z analiza sytuacji i rekomendacjami dalszych dzialan.',
+            500.00,
+            TRUE,
+            FALSE,
+            '[
+                {"name": "Konsultacja", "description": "60-minutowe spotkanie z prawnikiem"},
+                {"name": "Podsumowanie", "description": "Pisemne podsumowanie z rekomendacjami"}
+            ]'::jsonb
+        );
+    END IF;
+END $$;
 
 -- Grant permissions for anon users
 GRANT SELECT ON gmp_offers TO anon;
