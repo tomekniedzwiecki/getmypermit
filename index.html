@@ -1023,6 +1023,30 @@
       border-color: white;
     }
 
+    /* Gold card back */
+    .svc-gold-back {
+      background: linear-gradient(135deg, #d4a853, #b99451) !important;
+    }
+    .svc-gold-back .btn {
+      color: #b99451;
+    }
+
+    /* Green card back */
+    .svc-green-back {
+      background: linear-gradient(135deg, #00c853, #00a844) !important;
+    }
+    .svc-green-back .btn {
+      color: #00a844;
+    }
+
+    /* Navy card back */
+    .svc-navy-back {
+      background: linear-gradient(135deg, #16213e, #1a1a2e) !important;
+    }
+    .svc-navy-back .btn {
+      color: #1a1a2e;
+    }
+
     /* Base card (non-flipping like quote) */
     .svc-card {
       border-radius: var(--radius);
@@ -1194,31 +1218,49 @@
       box-shadow: 0 20px 50px rgba(0, 85, 255, 0.4);
     }
 
-    /* Highlight card - for citizenship */
-    .svc-highlight {
-      background: linear-gradient(135deg, #1a1a2e, #0f172a);
+    /* Gold card - for citizenship (from team colors) */
+    .svc-gold {
+      background: linear-gradient(135deg, #b99451, #d4a853);
       color: white !important;
-      position: relative;
     }
-    .svc-highlight::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      border: 1px solid rgba(255,255,255,0.1);
-      pointer-events: none;
-    }
-    .svc-highlight h3, .svc-highlight p {
+    .svc-gold h3, .svc-gold p {
       color: white;
     }
-    .svc-highlight .svc-icon {
-      background: linear-gradient(135deg, var(--accent), #3377ff);
+    .svc-gold .svc-icon {
+      background: rgba(255,255,255,0.2);
     }
-    .svc-highlight .svc-icon svg {
+    .svc-gold .svc-icon svg {
       stroke: white;
     }
-    .svc-highlight:hover {
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+
+    /* Green card - for success/expediting (from team colors) */
+    .svc-green {
+      background: linear-gradient(135deg, #00c853, #00a844);
+      color: white !important;
+    }
+    .svc-green h3, .svc-green p {
+      color: white;
+    }
+    .svc-green .svc-icon {
+      background: rgba(255,255,255,0.2);
+    }
+    .svc-green .svc-icon svg {
+      stroke: white;
+    }
+
+    /* Dark card (from team colors) */
+    .svc-navy {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: white !important;
+    }
+    .svc-navy h3, .svc-navy p {
+      color: white;
+    }
+    .svc-navy .svc-icon {
+      background: rgba(255,255,255,0.15);
+    }
+    .svc-navy .svc-icon svg {
+      stroke: white;
     }
 
     /* Icon in card */
@@ -3834,14 +3876,14 @@
         </div>
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
-            <div class="svc-flip-front svc-gray">
+            <div class="svc-flip-front svc-navy">
               <div class="svc-icon">
                 <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </div>
               <h3>Temporary residence</h3>
               <p>For study, family, or business</p>
             </div>
-            <div class="svc-flip-back">
+            <div class="svc-flip-back svc-navy-back">
               <h4>Temporary residence</h4>
               <a href="#form" class="btn">Book now</a>
             </div>
@@ -3896,14 +3938,14 @@
         </div>
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
-            <div class="svc-flip-front svc-highlight">
+            <div class="svc-flip-front svc-gold">
               <div class="svc-icon">
                 <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </div>
               <h3>Polish citizenship</h3>
               <p>Recognition or granting</p>
             </div>
-            <div class="svc-flip-back">
+            <div class="svc-flip-back svc-gold-back">
               <h4>Polish citizenship</h4>
               <a href="#form" class="btn">Book now</a>
             </div>
@@ -3911,14 +3953,14 @@
         </div>
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
-            <div class="svc-flip-front svc-gray">
+            <div class="svc-flip-front svc-green">
               <div class="svc-icon">
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               </div>
               <h3>Case expediting</h3>
               <p>We fight delays and speed up decisions</p>
             </div>
-            <div class="svc-flip-back">
+            <div class="svc-flip-back svc-green-back">
               <h4>Case expediting</h4>
               <a href="#form" class="btn">Book now</a>
             </div>
@@ -3928,14 +3970,14 @@
         <!-- Row 3: 2 cards + Large quote -->
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
-            <div class="svc-flip-front svc-white">
+            <div class="svc-flip-front svc-navy">
               <div class="svc-icon">
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               </div>
               <h3>Appeal of refusal</h3>
               <p>We defend your right to stay</p>
             </div>
-            <div class="svc-flip-back">
+            <div class="svc-flip-back svc-navy-back">
               <h4>Appeal of refusal</h4>
               <a href="#form" class="btn">Book now</a>
             </div>
@@ -3943,7 +3985,7 @@
         </div>
         <div class="svc-flip fade-in">
           <div class="svc-flip-inner">
-            <div class="svc-flip-front svc-gray">
+            <div class="svc-flip-front svc-white">
               <div class="svc-icon">
                 <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               </div>
@@ -7301,7 +7343,7 @@
       // Services section
       setText('.services .section-header h2', 'servicesTitle', true);
       setText('.services .section-header p', 'servicesSubtitle');
-      setText('.svc-large.svc-gray-dark h3', 'svcResidencePermits');
+      setText('.svc-large.svc-featured h3', 'svcResidencePermits');
       setText('.svc-stat-label', 'svcStat');
 
       // Service cards
