@@ -177,12 +177,12 @@
       border-radius: 2px;
     }
     @media (max-width: 767px) {
-      .header-cta { display: none; }
+      .header-cta > .btn { display: none; }
       .lang-selector {
-        position: absolute;
-        right: 32px;
-        top: 50%;
-        transform: translateY(-50%);
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
       }
     }
     @media (max-width: 480px) {
