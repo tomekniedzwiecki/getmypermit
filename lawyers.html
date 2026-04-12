@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prawnicy - GetMyPermit</title>
+    <meta name="theme-color" content="#050505">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: #050505; color: #e5e5e5; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::selection { background: white; color: black; }
+
+        .glass-header {
+            background: rgba(5, 5, 5, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-enter { animation: fadeIn 0.4s ease-out forwards; }
+
+        .input-field {
+            background: #0a0a0a;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: rgba(255,255,255,0.25);
+            outline: none;
+        }
+
+        .lawyer-card {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.2s;
+        }
+        .lawyer-card:hover {
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+        }
+
+        .color-option {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .color-option:hover {
+            transform: scale(1.15);
+        }
+        .color-option.selected {
+            box-shadow: 0 0 0 2px #050505, 0 0 0 4px currentColor;
+        }
+
+        .sidebar-link {
+            transition: all 0.2s;
+        }
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+    </style>
+</head>
+<body class="h-screen font-sans text-sm tracking-tight antialiased overflow-hidden">
+
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col flex-shrink-0">
+            <!-- Logo -->
+            <div class="h-16 flex items-center px-5 border-b border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <i class="ph ph-user-list text-white"></i>
+                    </div>
+                    <span class="text-white font-semibold">GetMyPermit</span>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 p-3 space-y-1">
+                <a href="admin.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                    <i class="ph ph-list-bullets text-lg"></i>
+                    <span>Leady</span>
+                </a>
+                <a href="admin.html#pipeline" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                    <i class="ph ph-kanban text-lg"></i>
+                    <span>Pipeline</span>
+                </a>
+
+                <div class="h-px bg-zinc-800 my-2"></div>
+
+                <a href="calendar.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                    <i class="ph ph-calendar text-lg text-blue-400"></i>
+                    <span>Kalendarz</span>
+                </a>
+                <a href="lawyers.html" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                    <i class="ph ph-users text-lg text-purple-400"></i>
+                    <span>Prawnicy</span>
+                </a>
+                <a href="offers.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                    <i class="ph ph-file-text text-lg text-amber-400"></i>
+                    <span>Szablony ofert</span>
+                </a>
+            </nav>
+
+            <!-- User -->
+            <div class="p-3 border-t border-zinc-800">
+                <a href="index.html" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 text-sm transition-colors">
+                    <i class="ph ph-sign-out text-lg"></i>
+                    <span>Wyloguj</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="h-16 glass-header flex items-center justify-between px-4 md:px-6 flex-shrink-0">
+                <div class="flex items-center gap-2 text-zinc-500">
+                    <i class="ph ph-users text-purple-400 text-xl"></i>
+                    <span class="text-white font-medium">Prawnicy</span>
+                </div>
+                <button id="add-lawyer-btn" class="bg-white text-black hover:bg-zinc-200 px-4 py-2 rounded-lg font-medium text-sm transition-colors shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center gap-1.5">
+                    <i class="ph ph-plus"></i>
+                    <span class="hidden sm:inline">Dodaj prawnika</span>
+                </button>
+            </header>
+
+            <!-- Content -->
+            <main class="flex-1 overflow-auto p-4 md:p-6 lg:p-10">
+        <div class="max-w-5xl mx-auto animate-enter">
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-zinc-900/50 border border-white/5 rounded-lg p-4">
+                    <div class="text-zinc-500 text-xs mb-1">Wszyscy</div>
+                    <div id="stat-total" class="text-2xl font-semibold text-white">0</div>
+                </div>
+                <div class="bg-zinc-900/50 border border-white/5 rounded-lg p-4">
+                    <div class="text-zinc-500 text-xs mb-1">Aktywni</div>
+                    <div id="stat-active" class="text-2xl font-semibold text-green-400">0</div>
+                </div>
+                <div class="bg-zinc-900/50 border border-white/5 rounded-lg p-4">
+                    <div class="text-zinc-500 text-xs mb-1">Admini</div>
+                    <div id="stat-admins" class="text-2xl font-semibold text-blue-400">0</div>
+                </div>
+                <div class="bg-zinc-900/50 border border-white/5 rounded-lg p-4">
+                    <div class="text-zinc-500 text-xs mb-1">Przypisane sprawy</div>
+                    <div id="stat-cases" class="text-2xl font-semibold text-purple-400">0</div>
+                </div>
+            </div>
+
+            <!-- Lawyers Grid -->
+            <div id="lawyers-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Lawyers will be rendered here -->
+            </div>
+
+            <div id="empty-state" class="hidden text-center py-16">
+                <div class="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-users text-3xl text-zinc-600"></i>
+                </div>
+                <h3 class="text-white font-medium mb-2">Brak prawnikow</h3>
+                <p class="text-zinc-500 text-sm mb-6">Dodaj pierwszego prawnika do systemu</p>
+                <button onclick="openLawyerModal()" class="bg-white text-black hover:bg-zinc-200 px-4 py-2 rounded-lg font-medium text-sm transition-colors">
+                    <i class="ph ph-plus mr-1"></i> Dodaj prawnika
+                </button>
+            </div>
+        </div>
+    </main>
+        </div>
+    </div>
+
+    <!-- Lawyer Modal -->
+    <div id="lawyer-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-950 border border-white/10 rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 px-6 py-5 border-b border-white/5 relative">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                        <i class="ph ph-user-plus text-blue-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 id="modal-title" class="text-base font-semibold text-white">Nowy prawnik</h2>
+                        <p class="text-xs text-zinc-500">Dodaj osobę do zespołu</p>
+                    </div>
+                </div>
+                <button onclick="closeLawyerModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors p-1">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+
+            <form id="lawyer-form" class="p-6 space-y-5">
+                <input type="hidden" id="lawyer-id">
+
+                <!-- Name -->
+                <div>
+                    <label class="flex items-center gap-2 text-zinc-400 text-xs font-medium mb-2">
+                        <i class="ph ph-user text-blue-400"></i>
+                        Imię i nazwisko <span class="text-red-400">*</span>
+                    </label>
+                    <input type="text" id="lawyer-name" required
+                        class="w-full text-sm text-white input-field px-4 py-3 rounded-lg"
+                        placeholder="np. Jan Kowalski">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="flex items-center gap-2 text-zinc-400 text-xs font-medium mb-2">
+                        <i class="ph ph-envelope text-blue-400"></i>
+                        Email
+                    </label>
+                    <input type="email" id="lawyer-email"
+                        class="w-full text-sm text-white input-field px-4 py-3 rounded-lg"
+                        placeholder="jan@kancelaria.pl">
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label class="flex items-center gap-2 text-zinc-400 text-xs font-medium mb-2">
+                        <i class="ph ph-phone text-blue-400"></i>
+                        Telefon
+                    </label>
+                    <input type="tel" id="lawyer-phone"
+                        class="w-full text-sm text-white input-field px-4 py-3 rounded-lg"
+                        placeholder="+48 123 456 789">
+                </div>
+
+                <!-- Role -->
+                <div>
+                    <label class="flex items-center gap-2 text-zinc-400 text-xs font-medium mb-2">
+                        <i class="ph ph-shield-check text-blue-400"></i>
+                        Rola
+                    </label>
+                    <select id="lawyer-role" class="w-full text-sm text-white input-field px-4 py-3 rounded-lg">
+                        <option value="lawyer">Prawnik</option>
+                        <option value="assistant">Asystent</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+
+                <!-- Specialization -->
+                <div>
+                    <label class="flex items-center gap-2 text-zinc-400 text-xs font-medium mb-2">
+                        <i class="ph ph-graduation-cap text-blue-400"></i>
+                        Specjalizacje
+                    </label>
+                    <input type="text" id="lawyer-specialization"
+                        class="w-full text-sm text-white input-field px-4 py-3 rounded-lg"
+                        placeholder="imigracja, pozwolenia na pobyt (oddziel przecinkami)">
+                </div>
+
+                <!-- Color -->
+                <div>
+                    <label class="flex items-center gap-2 text-zinc-400 text-xs font-medium mb-2">
+                        <i class="ph ph-palette text-blue-400"></i>
+                        Kolor w kalendarzu
+                    </label>
+                    <div id="color-picker" class="flex flex-wrap gap-2">
+                        <div class="color-option selected" data-color="#3b82f6" style="background: #3b82f6"></div>
+                        <div class="color-option" data-color="#10b981" style="background: #10b981"></div>
+                        <div class="color-option" data-color="#f59e0b" style="background: #f59e0b"></div>
+                        <div class="color-option" data-color="#ef4444" style="background: #ef4444"></div>
+                        <div class="color-option" data-color="#8b5cf6" style="background: #8b5cf6"></div>
+                        <div class="color-option" data-color="#ec4899" style="background: #ec4899"></div>
+                        <div class="color-option" data-color="#06b6d4" style="background: #06b6d4"></div>
+                        <div class="color-option" data-color="#84cc16" style="background: #84cc16"></div>
+                    </div>
+                    <input type="hidden" id="lawyer-color" value="#3b82f6">
+                </div>
+
+                <!-- Active -->
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="lawyer-active" checked
+                        class="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-blue-500 focus:ring-blue-500/50">
+                    <label for="lawyer-active" class="text-zinc-400 text-sm">Aktywny</label>
+                </div>
+            </form>
+
+            <div class="flex gap-3 px-6 py-4 border-t border-white/5 bg-zinc-900/30">
+                <button id="delete-lawyer-btn" onclick="deleteLawyer()" class="hidden text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/50 hover:bg-red-500/10 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2">
+                    <i class="ph ph-trash"></i>
+                </button>
+                <div class="flex-1"></div>
+                <button onclick="closeLawyerModal()" class="text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-all">
+                    Anuluj
+                </button>
+                <button onclick="saveLawyer()" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2">
+                    <i class="ph ph-check"></i>
+                    Zapisz
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-lg shadow-xl hidden transition-all transform translate-y-2 opacity-0">
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // ===========================================
+        // CONFIGURATION - GMP SPECIFIC
+        // ===========================================
+        const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Table names - GMP prefixed for isolation
+        const TABLE_LAWYERS = 'gmp_lawyers';
+        const TABLE_LEADS = 'permit_leads';
+
+        let lawyers = [];
+        let leadCounts = {};
+
+        // ===========================================
+        // AUTH
+        // ===========================================
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            return session;
+        }
+
+        // ===========================================
+        // DATA LOADING
+        // ===========================================
+        async function loadLawyers() {
+            const { data, error } = await supabaseClient
+                .from(TABLE_LAWYERS)
+                .select('*')
+                .order('name');
+
+            if (error) {
+                console.error('Error loading lawyers:', error);
+                showToast('Błąd ładowania prawników', 'error');
+                return;
+            }
+
+            lawyers = data || [];
+            await loadLeadCounts();
+            renderLawyers();
+            updateStats();
+        }
+
+        async function loadLeadCounts() {
+            const { data, error } = await supabaseClient
+                .from(TABLE_LEADS)
+                .select('assigned_to');
+
+            if (error) {
+                console.error('Error loading lead counts:', error);
+                return;
+            }
+
+            leadCounts = {};
+            (data || []).forEach(lead => {
+                if (lead.assigned_to) {
+                    leadCounts[lead.assigned_to] = (leadCounts[lead.assigned_to] || 0) + 1;
+                }
+            });
+        }
+
+        // ===========================================
+        // RENDERING
+        // ===========================================
+        function renderLawyers() {
+            const grid = document.getElementById('lawyers-grid');
+            const emptyState = document.getElementById('empty-state');
+
+            if (lawyers.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            grid.innerHTML = lawyers.map(lawyer => {
+                const caseCount = leadCounts[lawyer.id] || 0;
+                const specs = (lawyer.specialization || []).slice(0, 3);
+
+                return `
+                    <div class="lawyer-card rounded-xl p-5 cursor-pointer" onclick="openLawyerModal('${lawyer.id}')">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg" style="background: ${lawyer.color || '#3b82f6'}">
+                                ${getInitials(lawyer.name)}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="text-white font-medium truncate">${escapeHtml(lawyer.name)}</h3>
+                                    ${!lawyer.is_active ? '<span class="text-[10px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">Nieaktywny</span>' : ''}
+                                </div>
+                                <div class="text-zinc-500 text-xs mb-2">
+                                    ${getRoleLabel(lawyer.role)}
+                                </div>
+                                ${lawyer.email ? `<div class="text-zinc-400 text-xs truncate mb-1"><i class="ph ph-envelope mr-1"></i>${escapeHtml(lawyer.email)}</div>` : ''}
+                                ${lawyer.phone ? `<div class="text-zinc-400 text-xs"><i class="ph ph-phone mr-1"></i>${escapeHtml(lawyer.phone)}</div>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                ${specs.map(s => `<span class="text-[10px] text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded-full">${escapeHtml(s)}</span>`).join('')}
+                            </div>
+                            <div class="text-zinc-500 text-xs">
+                                <i class="ph ph-briefcase mr-1"></i>${caseCount} spraw
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').textContent = lawyers.length;
+            document.getElementById('stat-active').textContent = lawyers.filter(l => l.is_active).length;
+            document.getElementById('stat-admins').textContent = lawyers.filter(l => l.role === 'admin').length;
+
+            const totalCases = Object.values(leadCounts).reduce((a, b) => a + b, 0);
+            document.getElementById('stat-cases').textContent = totalCases;
+        }
+
+        // ===========================================
+        // MODAL
+        // ===========================================
+        function openLawyerModal(lawyerId = null) {
+            const modal = document.getElementById('lawyer-modal');
+            const deleteBtn = document.getElementById('delete-lawyer-btn');
+            const modalTitle = document.getElementById('modal-title');
+
+            if (lawyerId) {
+                const lawyer = lawyers.find(l => l.id === lawyerId);
+                if (!lawyer) return;
+
+                modalTitle.textContent = 'Edytuj prawnika';
+                document.getElementById('lawyer-id').value = lawyer.id;
+                document.getElementById('lawyer-name').value = lawyer.name || '';
+                document.getElementById('lawyer-email').value = lawyer.email || '';
+                document.getElementById('lawyer-phone').value = lawyer.phone || '';
+                document.getElementById('lawyer-role').value = lawyer.role || 'lawyer';
+                document.getElementById('lawyer-specialization').value = (lawyer.specialization || []).join(', ');
+                document.getElementById('lawyer-color').value = lawyer.color || '#3b82f6';
+                document.getElementById('lawyer-active').checked = lawyer.is_active !== false;
+
+                // Set color picker
+                document.querySelectorAll('.color-option').forEach(opt => {
+                    opt.classList.toggle('selected', opt.dataset.color === (lawyer.color || '#3b82f6'));
+                });
+
+                deleteBtn.classList.remove('hidden');
+            } else {
+                modalTitle.textContent = 'Nowy prawnik';
+                document.getElementById('lawyer-form').reset();
+                document.getElementById('lawyer-id').value = '';
+                document.getElementById('lawyer-color').value = '#3b82f6';
+                document.getElementById('lawyer-active').checked = true;
+
+                document.querySelectorAll('.color-option').forEach(opt => {
+                    opt.classList.toggle('selected', opt.dataset.color === '#3b82f6');
+                });
+
+                deleteBtn.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeLawyerModal() {
+            document.getElementById('lawyer-modal').classList.add('hidden');
+        }
+
+        // ===========================================
+        // CRUD
+        // ===========================================
+        async function saveLawyer() {
+            const id = document.getElementById('lawyer-id').value;
+            const name = document.getElementById('lawyer-name').value.trim();
+            const email = document.getElementById('lawyer-email').value.trim();
+            const phone = document.getElementById('lawyer-phone').value.trim();
+            const role = document.getElementById('lawyer-role').value;
+            const specializationStr = document.getElementById('lawyer-specialization').value;
+            const color = document.getElementById('lawyer-color').value;
+            const isActive = document.getElementById('lawyer-active').checked;
+
+            if (!name) {
+                showToast('Podaj imię i nazwisko', 'error');
+                return;
+            }
+
+            const specialization = specializationStr
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+
+            const lawyerData = {
+                name,
+                email: email || null,
+                phone: phone || null,
+                role,
+                specialization,
+                color,
+                is_active: isActive
+            };
+
+            let error;
+            if (id) {
+                // Update
+                const { error: updateError } = await supabaseClient
+                    .from(TABLE_LAWYERS)
+                    .update(lawyerData)
+                    .eq('id', id);
+                error = updateError;
+            } else {
+                // Insert
+                const { error: insertError } = await supabaseClient
+                    .from(TABLE_LAWYERS)
+                    .insert([lawyerData]);
+                error = insertError;
+            }
+
+            if (error) {
+                console.error('Error saving lawyer:', error);
+                showToast('Błąd zapisu: ' + error.message, 'error');
+                return;
+            }
+
+            showToast(id ? 'Zapisano zmiany' : 'Dodano prawnika', 'success');
+            closeLawyerModal();
+            loadLawyers();
+        }
+
+        async function deleteLawyer() {
+            const id = document.getElementById('lawyer-id').value;
+            if (!id) return;
+
+            if (!confirm('Czy na pewno chcesz usunąć tego prawnika? Przypisane sprawy zostaną odłączone.')) {
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from(TABLE_LAWYERS)
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('Error deleting lawyer:', error);
+                showToast('Błąd usuwania: ' + error.message, 'error');
+                return;
+            }
+
+            showToast('Usunięto prawnika', 'success');
+            closeLawyerModal();
+            loadLawyers();
+        }
+
+        // ===========================================
+        // HELPERS
+        // ===========================================
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        function getRoleLabel(role) {
+            const labels = {
+                'admin': 'Administrator',
+                'lawyer': 'Prawnik',
+                'assistant': 'Asystent'
+            };
+            return labels[role] || role;
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-xl transition-all transform ${
+                type === 'error' ? 'bg-red-900/90 border border-red-500/30 text-red-200' :
+                type === 'success' ? 'bg-green-900/90 border border-green-500/30 text-green-200' :
+                'bg-zinc-900 border border-white/10 text-white'
+            }`;
+
+            toast.classList.remove('hidden', 'translate-y-2', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 200);
+            }, 3000);
+        }
+
+        // ===========================================
+        // EVENT LISTENERS
+        // ===========================================
+        document.getElementById('add-lawyer-btn').addEventListener('click', () => openLawyerModal());
+
+        // Color picker
+        document.getElementById('color-picker').addEventListener('click', (e) => {
+            const option = e.target.closest('.color-option');
+            if (!option) return;
+
+            document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            document.getElementById('lawyer-color').value = option.dataset.color;
+        });
+
+        // Close modal on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLawyerModal();
+        });
+
+        // Close modal on backdrop click
+        document.getElementById('lawyer-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeLawyerModal();
+        });
+
+        // ===========================================
+        // INIT
+        // ===========================================
+        async function init() {
+            const session = await checkAuth();
+            if (!session) return;
+            await loadLawyers();
+        }
+
+        init();
+    </script>
+</body>
+</html>

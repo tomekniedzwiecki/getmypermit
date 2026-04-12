@@ -516,9 +516,28 @@
         </div>
         <!-- Navigation -->
         <nav class="flex-1 p-3 space-y-1">
-            <a href="admin.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+            <a href="admin.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
                 <i class="ph ph-list-bullets text-lg"></i>
                 <span>Leady</span>
+            </a>
+            <a href="admin.html#pipeline" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
+                <i class="ph ph-kanban text-lg"></i>
+                <span>Pipeline</span>
+            </a>
+
+            <div class="h-px bg-zinc-800 my-2"></div>
+
+            <a href="calendar.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
+                <i class="ph ph-calendar text-lg text-blue-400"></i>
+                <span>Kalendarz</span>
+            </a>
+            <a href="lawyers.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
+                <i class="ph ph-users text-lg text-purple-400"></i>
+                <span>Prawnicy</span>
+            </a>
+            <a href="offers.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">
+                <i class="ph ph-file-text text-lg text-amber-400"></i>
+                <span>Szablony ofert</span>
             </a>
         </nav>
         <!-- User -->
@@ -644,6 +663,11 @@
                     <span>WhatsApp</span>
                     <span class="tab-badge" id="whatsapp-tab-count">0</span>
                 </button>
+                <button class="tab-btn" data-tab="offers" onclick="switchTab('offers')">
+                    <i class="ph ph-file-text text-amber-400"></i>
+                    <span>Oferty</span>
+                    <span class="tab-badge" id="offers-tab-count">0</span>
+                </button>
             </div>
 
             <!-- Tab: Informacje -->
@@ -751,6 +775,24 @@
 
                     <!-- Right Column -->
                     <div class="space-y-6">
+                        <!-- Assigned Lawyer -->
+                        <div class="bg-zinc-900/40 rounded-lg border border-white/5 p-4">
+                            <h3 class="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                                <i class="ph ph-user-circle text-blue-400"></i>
+                                Przypisany prawnik
+                            </h3>
+                            <select id="assigned-lawyer" onchange="updateAssignedLawyer()" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                <option value="">-- Wybierz prawnika --</option>
+                            </select>
+                            <div id="assigned-lawyer-info" class="hidden mt-3 flex items-center gap-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                                <div id="assigned-lawyer-avatar" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"></div>
+                                <div>
+                                    <div id="assigned-lawyer-name" class="text-white text-sm font-medium"></div>
+                                    <div id="assigned-lawyer-role" class="text-zinc-500 text-xs"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Quick Note -->
                         <div class="bg-zinc-900/40 rounded-lg border border-white/5 p-4">
                             <h3 class="text-sm font-medium text-white mb-3 flex items-center gap-2">
@@ -1049,6 +1091,112 @@
                 </div>
             </div><!-- /tab-whatsapp -->
 
+            <!-- Tab: Oferty -->
+            <div id="tab-offers" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column - Generate Offer -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Generate New Offer -->
+                        <div class="bg-zinc-900/40 rounded-lg border border-white/5 p-4 sm:p-5">
+                            <h3 class="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                                <i class="ph ph-file-plus text-amber-400"></i>
+                                Wygeneruj oferte dla klienta
+                            </h3>
+
+                            <div class="space-y-4">
+                                <!-- Select Offer Template -->
+                                <div>
+                                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Szablon oferty</label>
+                                    <select id="offer-template-select" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                        <option value="">-- Wybierz szablon --</option>
+                                    </select>
+                                </div>
+
+                                <!-- Custom Price -->
+                                <div>
+                                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Cena indywidualna (opcjonalnie)</label>
+                                    <div class="relative">
+                                        <input type="number" id="offer-custom-price" step="0.01" min="0" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white pr-12" placeholder="Zostaw puste dla ceny z szablonu">
+                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">PLN</span>
+                                    </div>
+                                </div>
+
+                                <!-- Valid Until -->
+                                <div>
+                                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Wazna do</label>
+                                    <input type="date" id="offer-valid-until" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                </div>
+
+                                <!-- Generate Button -->
+                                <button onclick="generateClientOffer()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2">
+                                    <i class="ph ph-link"></i>
+                                    Wygeneruj link do oferty
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Existing Client Offer -->
+                        <div id="client-offer-section" class="hidden bg-gradient-to-br from-green-950/20 to-zinc-900/40 rounded-lg border border-green-500/20 p-4 sm:p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-sm font-medium text-white flex items-center gap-2">
+                                    <i class="ph ph-check-circle text-green-400"></i>
+                                    Aktywna oferta
+                                </h3>
+                                <span id="client-offer-status" class="text-[10px] px-2 py-0.5 rounded-full"></span>
+                            </div>
+
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-zinc-900/60 rounded-lg">
+                                    <span class="text-zinc-500 text-xs">Szablon:</span>
+                                    <span id="client-offer-name" class="text-white text-sm font-medium"></span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-zinc-900/60 rounded-lg">
+                                    <span class="text-zinc-500 text-xs">Cena:</span>
+                                    <span id="client-offer-price" class="text-green-400 text-sm font-semibold"></span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-zinc-900/60 rounded-lg">
+                                    <span class="text-zinc-500 text-xs">Wazna do:</span>
+                                    <span id="client-offer-valid" class="text-white text-sm"></span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-zinc-900/60 rounded-lg">
+                                    <span class="text-zinc-500 text-xs">Wyswietlenia:</span>
+                                    <span id="client-offer-views" class="text-white text-sm"></span>
+                                </div>
+
+                                <!-- Copy Link -->
+                                <div class="pt-2">
+                                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Link dla klienta</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" id="client-offer-url" readonly class="input-field flex-1 rounded-lg px-3 py-2.5 text-sm text-zinc-400 font-mono">
+                                        <button onclick="copyOfferUrl()" class="px-4 py-2 bg-white text-black hover:bg-zinc-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-1">
+                                            <i class="ph ph-copy"></i>
+                                            Kopiuj
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - History -->
+                    <div class="space-y-6">
+                        <div class="bg-zinc-900/40 rounded-lg border border-white/5 p-4">
+                            <h3 class="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                                <i class="ph ph-clock-counter-clockwise text-zinc-500"></i>
+                                Historia ofert
+                            </h3>
+                            <div id="offers-history" class="space-y-2">
+                                <!-- History will be rendered here -->
+                            </div>
+                            <div id="offers-history-empty" class="text-center py-6">
+                                <i class="ph ph-file-text text-2xl text-zinc-700 mb-2"></i>
+                                <p class="text-zinc-500 text-xs">Brak historii ofert</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /tab-offers -->
+
         </div>
     </div>
     </main>
@@ -1133,6 +1281,11 @@
         </div>
     </div>
 
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-lg shadow-xl hidden transition-all transform translate-y-2 opacity-0 z-50">
+        <span id="toast-message"></span>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
@@ -1140,6 +1293,15 @@
 
         let lead = null;
         let saveTimeout = null;
+        let lawyers = [];
+        let lawyersMap = {};
+        let offerTemplates = [];
+        let clientOffers = [];
+
+        // GMP table names - isolated from TN CRM
+        const TABLE_LAWYERS = 'gmp_lawyers';
+        const TABLE_OFFERS = 'gmp_offers';
+        const TABLE_CLIENT_OFFERS = 'gmp_client_offers';
 
         // Get lead ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -1157,8 +1319,274 @@
                 return;
             }
             loadLead();
+            loadLawyers();
+            loadOfferTemplates();
         });
 
+        // ===========================================
+        // LAWYERS
+        // ===========================================
+        async function loadLawyers() {
+            const { data, error } = await db
+                .from(TABLE_LAWYERS)
+                .select('*')
+                .eq('is_active', true)
+                .order('name');
+
+            if (error) {
+                console.error('Error loading lawyers:', error);
+                return;
+            }
+
+            lawyers = data || [];
+            lawyersMap = {};
+            lawyers.forEach(l => lawyersMap[l.id] = l);
+
+            // Populate dropdown
+            const select = document.getElementById('assigned-lawyer');
+            select.innerHTML = '<option value="">-- Wybierz prawnika --</option>' +
+                lawyers.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join('');
+
+            // Set current value if lead loaded
+            if (lead && lead.assigned_to) {
+                select.value = lead.assigned_to;
+                showAssignedLawyerInfo(lead.assigned_to);
+            }
+        }
+
+        async function updateAssignedLawyer() {
+            const lawyerId = document.getElementById('assigned-lawyer').value || null;
+
+            const { error } = await db
+                .from('permit_leads')
+                .update({ assigned_to: lawyerId })
+                .eq('id', leadId);
+
+            if (error) {
+                console.error('Error updating assigned lawyer:', error);
+                showToast('Blad zapisu', 'error');
+                return;
+            }
+
+            lead.assigned_to = lawyerId;
+            showAssignedLawyerInfo(lawyerId);
+            showToast('Zapisano prawnika');
+        }
+
+        function showAssignedLawyerInfo(lawyerId) {
+            const infoDiv = document.getElementById('assigned-lawyer-info');
+            if (!lawyerId || !lawyersMap[lawyerId]) {
+                infoDiv.classList.add('hidden');
+                return;
+            }
+
+            const lawyer = lawyersMap[lawyerId];
+            infoDiv.classList.remove('hidden');
+            document.getElementById('assigned-lawyer-avatar').style.background = lawyer.color || '#3b82f6';
+            document.getElementById('assigned-lawyer-avatar').textContent = getInitials(lawyer.name);
+            document.getElementById('assigned-lawyer-name').textContent = lawyer.name;
+            document.getElementById('assigned-lawyer-role').textContent = getRoleLabel(lawyer.role);
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        function getRoleLabel(role) {
+            const labels = { 'admin': 'Administrator', 'lawyer': 'Prawnik', 'assistant': 'Asystent' };
+            return labels[role] || role;
+        }
+
+        // ===========================================
+        // OFFERS
+        // ===========================================
+        async function loadOfferTemplates() {
+            const { data, error } = await db
+                .from(TABLE_OFFERS)
+                .select('*')
+                .eq('is_active', true)
+                .order('is_default', { ascending: false })
+                .order('name');
+
+            if (error) {
+                console.error('Error loading offer templates:', error);
+                return;
+            }
+
+            offerTemplates = data || [];
+
+            // Populate dropdown
+            const select = document.getElementById('offer-template-select');
+            select.innerHTML = '<option value="">-- Wybierz szablon --</option>' +
+                offerTemplates.map(o => {
+                    const price = o.price ? ` (${parseFloat(o.price).toLocaleString('pl-PL')} PLN)` : '';
+                    const defaultLabel = o.is_default ? ' [Domyslna]' : '';
+                    return `<option value="${o.id}">${escapeHtml(o.name)}${price}${defaultLabel}</option>`;
+                }).join('');
+
+            // Set default date (14 days from now)
+            const validUntil = new Date();
+            validUntil.setDate(validUntil.getDate() + 14);
+            document.getElementById('offer-valid-until').value = validUntil.toISOString().split('T')[0];
+
+            // Load client offers for this lead
+            loadClientOffers();
+        }
+
+        async function loadClientOffers() {
+            const { data, error } = await db
+                .from(TABLE_CLIENT_OFFERS)
+                .select(`*, ${TABLE_OFFERS}(*)`)
+                .eq('lead_id', leadId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading client offers:', error);
+                return;
+            }
+
+            clientOffers = data || [];
+            document.getElementById('offers-tab-count').textContent = clientOffers.length;
+            renderClientOffers();
+        }
+
+        function renderClientOffers() {
+            const historyDiv = document.getElementById('offers-history');
+            const emptyDiv = document.getElementById('offers-history-empty');
+            const activeSection = document.getElementById('client-offer-section');
+
+            if (clientOffers.length === 0) {
+                historyDiv.innerHTML = '';
+                emptyDiv.classList.remove('hidden');
+                activeSection.classList.add('hidden');
+                return;
+            }
+
+            emptyDiv.classList.add('hidden');
+
+            // Show most recent active offer
+            const activeOffer = clientOffers.find(o => ['pending', 'viewed'].includes(o.status));
+            if (activeOffer) {
+                showActiveOffer(activeOffer);
+            } else {
+                activeSection.classList.add('hidden');
+            }
+
+            // Render history
+            historyDiv.innerHTML = clientOffers.map(o => {
+                const offerName = o[TABLE_OFFERS]?.name || 'Oferta';
+                const statusColors = {
+                    'pending': 'text-amber-400 bg-amber-500/10',
+                    'viewed': 'text-blue-400 bg-blue-500/10',
+                    'accepted': 'text-green-400 bg-green-500/10',
+                    'rejected': 'text-red-400 bg-red-500/10',
+                    'expired': 'text-zinc-400 bg-zinc-500/10'
+                };
+                const statusLabels = {
+                    'pending': 'Oczekuje',
+                    'viewed': 'Wyswietlona',
+                    'accepted': 'Zaakceptowana',
+                    'rejected': 'Odrzucona',
+                    'expired': 'Wygasla'
+                };
+
+                const date = new Date(o.created_at).toLocaleDateString('pl-PL');
+
+                return `
+                    <div class="p-3 bg-zinc-900/60 rounded-lg border border-white/5">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-white text-sm font-medium truncate">${escapeHtml(offerName)}</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded ${statusColors[o.status] || ''}">${statusLabels[o.status] || o.status}</span>
+                        </div>
+                        <div class="text-zinc-500 text-xs">${date} &bull; ${o.view_count || 0} wyswietl.</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showActiveOffer(offer) {
+            const section = document.getElementById('client-offer-section');
+            section.classList.remove('hidden');
+
+            const offerData = offer[TABLE_OFFERS] || {};
+            const price = offer.custom_price || offerData.price;
+
+            document.getElementById('client-offer-name').textContent = offerData.name || 'Oferta';
+            document.getElementById('client-offer-price').textContent = price
+                ? parseFloat(price).toLocaleString('pl-PL') + ' PLN'
+                : 'Do ustalenia';
+            document.getElementById('client-offer-valid').textContent = new Date(offer.valid_until).toLocaleDateString('pl-PL');
+            document.getElementById('client-offer-views').textContent = offer.view_count || 0;
+
+            // Status badge
+            const statusColors = {
+                'pending': 'text-amber-400 bg-amber-500/20',
+                'viewed': 'text-blue-400 bg-blue-500/20'
+            };
+            const statusLabels = { 'pending': 'Oczekuje', 'viewed': 'Wyswietlona' };
+            const statusEl = document.getElementById('client-offer-status');
+            statusEl.className = `text-[10px] px-2 py-0.5 rounded-full ${statusColors[offer.status] || ''}`;
+            statusEl.textContent = statusLabels[offer.status] || offer.status;
+
+            // URL
+            const url = `${window.location.origin}/client-offer.html?token=${offer.unique_token}`;
+            document.getElementById('client-offer-url').value = url;
+        }
+
+        async function generateClientOffer() {
+            const templateId = document.getElementById('offer-template-select').value;
+            const customPrice = document.getElementById('offer-custom-price').value;
+            const validUntil = document.getElementById('offer-valid-until').value;
+
+            if (!templateId) {
+                showToast('Wybierz szablon oferty', 'error');
+                return;
+            }
+
+            if (!validUntil) {
+                showToast('Podaj date waznosci', 'error');
+                return;
+            }
+
+            // Generate unique token
+            const token = crypto.randomUUID();
+
+            const offerData = {
+                lead_id: leadId,
+                offer_id: templateId,
+                unique_token: token,
+                valid_until: validUntil,
+                custom_price: customPrice ? parseFloat(customPrice) : null,
+                status: 'pending'
+            };
+
+            const { error } = await db
+                .from(TABLE_CLIENT_OFFERS)
+                .insert([offerData]);
+
+            if (error) {
+                console.error('Error generating offer:', error);
+                showToast('Blad generowania oferty: ' + error.message, 'error');
+                return;
+            }
+
+            showToast('Wygenerowano oferte!', 'success');
+            loadClientOffers();
+        }
+
+        function copyOfferUrl() {
+            const url = document.getElementById('client-offer-url').value;
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('Skopiowano link do schowka', 'success');
+            }).catch(() => {
+                showToast('Blad kopiowania', 'error');
+            });
+        }
+
+        // ===========================================
+        // LEAD
+        // ===========================================
         async function loadLead() {
             const { data, error } = await db
                 .from('permit_leads')
@@ -1237,6 +1665,12 @@
             document.getElementById('track-utm-source').textContent = lead.utm_source || '-';
             document.getElementById('track-utm-medium').textContent = lead.utm_medium || '-';
             document.getElementById('track-utm-campaign').textContent = lead.utm_campaign || '-';
+
+            // Assigned lawyer (if lawyers already loaded)
+            if (lead.assigned_to && lawyersMap[lead.assigned_to]) {
+                document.getElementById('assigned-lawyer').value = lead.assigned_to;
+                showAssignedLawyerInfo(lead.assigned_to);
+            }
 
             // Notes & Activity counts
             const notesCount = (lead.notes_history || []).length;
@@ -1634,6 +2068,22 @@
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-xl transition-all transform z-50 ${
+                type === 'error' ? 'bg-red-900/90 border border-red-500/30 text-red-200' :
+                type === 'success' ? 'bg-green-900/90 border border-green-500/30 text-green-200' :
+                'bg-zinc-900 border border-white/10 text-white'
+            }`;
+            toast.classList.remove('hidden', 'translate-y-2', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 200);
+            }, 3000);
+        }
+
         // Logout
         async function logout() {
             await db.auth.signOut();
@@ -1736,9 +2186,20 @@
             }, 200);
         }
 
-        function loadMeetings() {
-            // Load meetings from lead data (stored as JSON array)
-            meetings = lead.meetings || [];
+        async function loadMeetings() {
+            // Load meetings from gmp_calendar_events table
+            const { data, error } = await db
+                .from('gmp_calendar_events')
+                .select('*')
+                .eq('lead_id', lead.id)
+                .order('start_time', { ascending: true });
+
+            if (error) {
+                console.error('Error loading meetings:', error);
+                meetings = [];
+            } else {
+                meetings = data || [];
+            }
             renderMeetings();
         }
 
@@ -1808,35 +2269,32 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Zapisywanie...';
 
-            // Add meeting to local array
-            const newMeeting = {
-                id: Date.now().toString(),
-                title: title,
-                description: description || null,
-                start_time: startTime.toISOString(),
-                end_time: endTime.toISOString(),
-                created_at: new Date().toISOString()
-            };
-
-            meetings.push(newMeeting);
-
-            // Save to database
-            const { error } = await db
-                .from('permit_leads')
-                .update({ meetings: meetings })
-                .eq('id', lead.id);
+            // Save to gmp_calendar_events table
+            const { data, error } = await db
+                .from('gmp_calendar_events')
+                .insert([{
+                    title: title,
+                    description: description || null,
+                    start_time: startTime.toISOString(),
+                    end_time: endTime.toISOString(),
+                    lead_id: lead.id,
+                    event_type: 'meeting',
+                    assigned_to: lead.assigned_to || null
+                }])
+                .select()
+                .single();
 
             btn.disabled = false;
             btn.innerHTML = '<i class="ph ph-calendar-plus"></i> Dodaj spotkanie';
 
             if (error) {
                 console.error('Error creating meeting:', error);
-                meetings.pop(); // Remove from local array on error
                 alert('Błąd tworzenia spotkania');
                 return;
             }
 
-            lead.meetings = meetings;
+            // Add to local array
+            meetings.push(data);
             closeMeetingModal();
             renderMeetings();
         }
@@ -1844,12 +2302,10 @@
         async function deleteMeeting(meetingId) {
             if (!confirm('Czy na pewno chcesz usunąć to spotkanie?')) return;
 
-            meetings = meetings.filter(m => m.id !== meetingId);
-
             const { error } = await db
-                .from('permit_leads')
-                .update({ meetings: meetings })
-                .eq('id', lead.id);
+                .from('gmp_calendar_events')
+                .delete()
+                .eq('id', meetingId);
 
             if (error) {
                 console.error('Error deleting meeting:', error);
@@ -1857,7 +2313,7 @@
                 return;
             }
 
-            lead.meetings = meetings;
+            meetings = meetings.filter(m => m.id !== meetingId);
             renderMeetings();
         }
 

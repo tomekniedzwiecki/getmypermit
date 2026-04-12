@@ -396,6 +396,21 @@
                         <i class="ph ph-kanban text-lg"></i>
                         <span>Pipeline</span>
                     </button>
+
+                    <div class="h-px bg-zinc-800 my-2"></div>
+
+                    <a href="calendar.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                        <i class="ph ph-calendar text-lg text-blue-400"></i>
+                        <span>Kalendarz</span>
+                    </a>
+                    <a href="lawyers.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                        <i class="ph ph-users text-lg text-purple-400"></i>
+                        <span>Prawnicy</span>
+                    </a>
+                    <a href="offers.html" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                        <i class="ph ph-file-text text-lg text-amber-400"></i>
+                        <span>Szablony ofert</span>
+                    </a>
                 </nav>
 
                 <!-- Stats in Sidebar -->
@@ -418,6 +433,16 @@
                     <div class="mt-2 bg-zinc-900 rounded-lg p-2 flex items-center justify-between">
                         <span class="text-zinc-500 text-xs">Skonwertowane</span>
                         <span class="text-green-400 font-bold" id="convertedCount">-</span>
+                    </div>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                        <div class="bg-zinc-900 rounded-lg p-2">
+                            <div class="text-xs font-bold text-blue-400" id="todayEventsCount">0</div>
+                            <div class="text-[9px] text-zinc-500">Dzisiaj</div>
+                        </div>
+                        <div class="bg-zinc-900 rounded-lg p-2">
+                            <div class="text-xs font-bold text-amber-400" id="pendingOffersCount">0</div>
+                            <div class="text-[9px] text-zinc-500">Oferty</div>
+                        </div>
                     </div>
                 </div>
 
@@ -457,7 +482,7 @@
                             <div class="flex flex-wrap gap-3 mb-4">
                                 <div class="relative flex-1 min-w-[200px] max-w-md">
                                     <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-zinc-500"></i>
-                                    <input type="text" id="searchInput" placeholder="Szukaj telefon..."
+                                    <input type="text" id="searchInput" placeholder="Szukaj nazwisko, email, telefon..."
                                         class="filter-input w-full rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-zinc-600">
                                 </div>
                                 <select id="filterLeadType" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
@@ -480,6 +505,9 @@
                                     <option value="week">Ostatni tydzien</option>
                                     <option value="month">Ostatni miesiac</option>
                                 </select>
+                                <select id="filterLawyer" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
+                                    <option value="">Wszyscy prawnicy</option>
+                                </select>
                             </div>
 
                             <!-- Results info -->
@@ -494,11 +522,12 @@
                                 <table class="w-full text-left text-xs">
                                     <thead class="bg-zinc-900/80 text-zinc-500 border-b border-white/5">
                                         <tr>
-                                            <th class="px-4 py-3 font-medium">Lead</th>
+                                            <th class="px-4 py-3 font-medium">Imię i nazwisko</th>
+                                            <th class="px-4 py-3 font-medium">Telefon</th>
                                             <th class="px-4 py-3 font-medium">Typ</th>
-                                            <th class="px-4 py-3 font-medium">Sytuacja</th>
-                                            <th class="px-4 py-3 font-medium hidden md:table-cell">Lokalizacja</th>
+                                            <th class="px-4 py-3 font-medium hidden lg:table-cell">Sytuacja</th>
                                             <th class="px-4 py-3 font-medium">Status</th>
+                                            <th class="px-4 py-3 font-medium hidden md:table-cell">Prawnik</th>
                                             <th class="px-4 py-3 font-medium">Data</th>
                                             <th class="px-4 py-3 font-medium w-24 text-center">Akcje</th>
                                         </tr>
@@ -791,8 +820,13 @@
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let allLeads = [];
+        let lawyers = [];
+        let lawyersMap = {};
         let currentTab = 'leads';
         let selectedLead = null;
+
+        // GMP table names - isolated from TN CRM
+        const TABLE_LAWYERS = 'gmp_lawyers';
 
         // Check auth on load
         document.addEventListener('DOMContentLoaded', async () => {
@@ -869,6 +903,8 @@
             updateStats();
             renderLeads();
             renderPipeline();
+            loadLawyers();
+            loadDashboardStats();
         }
 
         function updateStats() {
@@ -885,11 +921,63 @@
             document.getElementById('sidebarLeadsCount').textContent = total;
         }
 
+        async function loadLawyers() {
+            const { data, error } = await db
+                .from(TABLE_LAWYERS)
+                .select('*')
+                .eq('is_active', true)
+                .order('name');
+
+            if (error) {
+                console.error('Error loading lawyers:', error);
+                return;
+            }
+
+            lawyers = data || [];
+            lawyersMap = {};
+            lawyers.forEach(l => lawyersMap[l.id] = l);
+
+            // Populate filter dropdown
+            const select = document.getElementById('filterLawyer');
+            select.innerHTML = '<option value="">Wszyscy prawnicy</option>' +
+                lawyers.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join('');
+        }
+
+        async function loadDashboardStats() {
+            // Load today's events count
+            const today = new Date().toISOString().split('T')[0];
+            const { data: events, error: eventsError } = await db
+                .from('gmp_calendar_events')
+                .select('id', { count: 'exact' })
+                .gte('start_date', today)
+                .lt('start_date', today + 'T23:59:59');
+
+            if (!eventsError) {
+                document.getElementById('todayEventsCount').textContent = events?.length || 0;
+            }
+
+            // Load pending offers count
+            const { data: offers, error: offersError } = await db
+                .from('gmp_client_offers')
+                .select('id', { count: 'exact' })
+                .in('status', ['pending', 'viewed']);
+
+            if (!offersError) {
+                document.getElementById('pendingOffersCount').textContent = offers?.length || 0;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
         function getFilteredLeads() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const leadType = document.getElementById('filterLeadType').value;
             const status = document.getElementById('filterStatus').value;
             const dateFilter = document.getElementById('filterDate').value;
+            const lawyerFilter = document.getElementById('filterLawyer').value;
 
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -897,9 +985,15 @@
             const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
             return allLeads.filter(lead => {
-                if (search && !lead.phone?.toLowerCase().includes(search)) return false;
+                if (search) {
+                    const phone = (lead.phone || '').toLowerCase();
+                    const email = (lead.email || '').toLowerCase();
+                    const name = (lead.name || '').toLowerCase();
+                    if (!phone.includes(search) && !email.includes(search) && !name.includes(search)) return false;
+                }
                 if (leadType && lead.lead_type !== leadType) return false;
                 if (status && lead.status !== status) return false;
+                if (lawyerFilter && lead.assigned_to !== lawyerFilter) return false;
 
                 if (dateFilter) {
                     const leadDate = new Date(lead.created_at);
@@ -926,17 +1020,30 @@
 
             document.getElementById('emptyState').classList.add('hidden');
 
-            tbody.innerHTML = filtered.map(lead => `
+            tbody.innerHTML = filtered.map(lead => {
+                const fullName = lead.name || '-';
+                const lawyer = lawyersMap[lead.assigned_to];
+                return `
                 <tr class="hover:bg-white/5 transition-colors cursor-pointer" onclick="window.location.href='lead.html?id=${lead.id}'">
                     <td class="px-4 py-3">
-                        <div class="text-white font-medium">${lead.phone}</div>
-                        <div class="text-zinc-500 text-[10px] font-mono">${lead.lead_score || 0} pkt</div>
+                        <div class="text-white font-medium">${escapeHtml(fullName)}</div>
+                        <div class="text-zinc-500 text-xs">${escapeHtml(lead.email || '-')}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-zinc-300">${escapeHtml(lead.phone || '-')}</div>
                     </td>
                     <td class="px-4 py-3">${getLeadBadge(lead.lead_type)}</td>
-                    <td class="px-4 py-3 text-zinc-400">${formatSituation(lead.situation)}</td>
-                    <td class="px-4 py-3 text-zinc-500 hidden md:table-cell">${formatLocation(lead.location)}</td>
+                    <td class="px-4 py-3 text-zinc-400 hidden lg:table-cell">${formatSituation(lead.situation)}</td>
                     <td class="px-4 py-3">${getStatusBadge(lead.status)}</td>
-                    <td class="px-4 py-3 text-zinc-500 font-mono">${formatDate(lead.created_at)}</td>
+                    <td class="px-4 py-3 hidden md:table-cell">
+                        ${lawyer ? `
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full" style="background: ${lawyer.color || '#6b7280'}"></div>
+                                <span class="text-zinc-400 text-xs">${escapeHtml(lawyer.name)}</span>
+                            </div>
+                        ` : '<span class="text-zinc-600 text-xs">-</span>'}
+                    </td>
+                    <td class="px-4 py-3 text-zinc-500 font-mono text-xs">${formatDate(lead.created_at)}</td>
                     <td class="px-4 py-3 text-center" onclick="event.stopPropagation()">
                         <div class="flex items-center justify-center gap-1">
                             <a href="tel:${lead.phone}" class="p-1.5 hover:bg-blue-500/20 rounded text-blue-400 transition-colors" title="Zadzwon">
@@ -948,7 +1055,7 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         function renderPipeline() {
@@ -968,19 +1075,23 @@
                     return;
                 }
 
-                container.innerHTML = leads.map(lead => `
+                container.innerHTML = leads.map(lead => {
+                    const fullName = lead.name || lead.phone || '-';
+                    const lawyer = lawyersMap[lead.assigned_to];
+                    return `
                     <div class="pipeline-card rounded-lg p-4" draggable="true" data-id="${lead.id}" onclick="window.location.href='lead.html?id=${lead.id}'">
                         <div class="flex items-start justify-between mb-2">
-                            <span class="text-white font-medium text-sm">${lead.phone}</span>
+                            <span class="text-white font-medium text-sm">${escapeHtml(fullName)}</span>
                             ${getLeadBadge(lead.lead_type)}
                         </div>
+                        ${lead.email ? `<div class="text-zinc-500 text-xs mb-1 truncate">${escapeHtml(lead.email)}</div>` : ''}
                         <div class="text-zinc-500 text-xs mb-2">${formatSituation(lead.situation)}</div>
                         <div class="flex items-center justify-between text-zinc-600 text-xs">
                             <span>${formatDate(lead.created_at)}</span>
-                            <span class="font-mono">${lead.lead_score || 0} pkt</span>
+                            ${lawyer ? `<div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full" style="background: ${lawyer.color || '#6b7280'}"></div><span>${escapeHtml(lawyer.name)}</span></div>` : `<span class="font-mono">${lead.lead_score || 0} pkt</span>`}
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
 
                 // Add drag events to cards
                 container.querySelectorAll('.pipeline-card').forEach(card => {
@@ -1516,6 +1627,7 @@
         document.getElementById('filterLeadType').addEventListener('change', renderLeads);
         document.getElementById('filterStatus').addEventListener('change', renderLeads);
         document.getElementById('filterDate').addEventListener('change', renderLeads);
+        document.getElementById('filterLawyer').addEventListener('change', renderLeads);
 
         // Close modal on Escape
         document.addEventListener('keydown', (e) => {

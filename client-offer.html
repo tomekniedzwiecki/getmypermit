@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oferta - GetMyPermit</title>
+    <meta name="theme-color" content="#050505">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: #050505; color: #e5e5e5; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::selection { background: #10b981; color: white; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-enter { animation: fadeIn 0.5s ease-out forwards; }
+
+        @keyframes staggerIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stagger-enter { animation: staggerIn 0.6s ease-out forwards; opacity: 0; }
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+        .stagger-5 { animation-delay: 0.5s; }
+
+        .glass-card {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .input-field {
+            background: #0a0a0a;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: rgba(16, 185, 129, 0.5);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .milestone-step {
+            position: relative;
+            cursor: pointer;
+        }
+        .milestone-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 32px;
+            bottom: -8px;
+            width: 2px;
+            background: linear-gradient(to bottom, rgba(16, 185, 129, 0.3), transparent);
+        }
+
+        .milestone-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.2s ease-out, padding 0.2s ease-out;
+            opacity: 0;
+            padding-top: 0;
+        }
+        .milestone-content.expanded {
+            max-height: 200px;
+            opacity: 1;
+            padding-top: 0.5rem;
+        }
+
+        .milestone-chevron {
+            transition: transform 0.2s ease-out;
+        }
+        .milestone-chevron.rotated {
+            transform: rotate(180deg);
+        }
+
+        .glow-green {
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.15);
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+    <!-- Loading State -->
+    <div id="loading" class="min-h-screen flex items-center justify-center">
+        <div class="text-center">
+            <div class="w-12 h-12 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin mb-4 mx-auto"></div>
+            <p class="text-zinc-500">Wczytywanie oferty...</p>
+        </div>
+    </div>
+
+    <!-- Login Screen (Email Verification) -->
+    <div id="login-screen" class="hidden min-h-screen flex items-center justify-center px-4">
+        <div class="w-full max-w-md animate-enter">
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 bg-green-500 text-white rounded-xl flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                    <i class="ph-bold ph-scales text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white mb-2">Twoja spersonalizowana oferta</h1>
+                <p class="text-zinc-400">Wprowadź swój adres e-mail, aby zobaczyć szczegóły</p>
+            </div>
+
+            <div class="glass-card rounded-2xl border border-white/10 p-6">
+                <div class="mb-4">
+                    <label class="block text-zinc-400 text-xs font-medium mb-2">Adres e-mail</label>
+                    <input type="email" id="email-input"
+                           class="input-field w-full rounded-xl px-4 py-3 text-white text-base"
+                           placeholder="jan@firma.pl"
+                           autofocus>
+                </div>
+                <div id="login-error" class="text-red-400 text-sm mb-4 hidden"></div>
+                <button id="login-btn" onclick="verifyEmail()"
+                        class="w-full bg-green-500 hover:bg-green-400 text-white px-4 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
+                    <span>Zobacz ofertę</span>
+                    <i class="ph ph-arrow-right"></i>
+                </button>
+            </div>
+
+            <p class="text-center text-zinc-600 text-xs mt-6">
+                Link jest ważny do: <span id="valid-until-preview" class="text-zinc-400">-</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="error" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="text-center max-w-md animate-enter">
+            <div class="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
+                <i class="ph ph-warning text-3xl text-red-400"></i>
+            </div>
+            <h1 class="text-xl font-semibold text-white mb-2">Nie znaleziono oferty</h1>
+            <p id="error-message" class="text-zinc-500">Oferta nie istnieje lub wygasła.</p>
+        </div>
+    </div>
+
+    <!-- Expired State -->
+    <div id="expired" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="text-center max-w-md animate-enter">
+            <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                <i class="ph ph-clock-countdown text-3xl text-amber-400"></i>
+            </div>
+            <h1 class="text-xl font-semibold text-white mb-2">Oferta wygasła</h1>
+            <p class="text-zinc-500 mb-6">Ta oferta była ważna do <span id="expired-date" class="text-white"></span>.</p>
+            <a href="tel:+48123456789" id="contact-link" class="inline-flex items-center gap-2 bg-white text-black hover:bg-zinc-200 px-6 py-3 rounded-lg font-medium transition-colors">
+                <i class="ph ph-phone"></i>
+                Skontaktuj się z nami
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="content" class="hidden">
+        <!-- Header -->
+        <header class="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur-xl border-b border-white/5">
+            <div class="max-w-4xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
+                        <i class="ph ph-scales text-green-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-white font-semibold">GetMyPermit</h1>
+                        <p class="text-zinc-500 text-xs">Kancelaria Prawna</p>
+                    </div>
+                </div>
+                <div id="validity-badge" class="text-xs text-zinc-500 bg-zinc-900 border border-white/5 px-3 py-1.5 rounded-full">
+                    Ważna do: <span id="valid-until" class="text-white"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Offer Content -->
+        <main class="p-4 md:p-8 lg:p-12">
+            <div class="max-w-4xl mx-auto">
+                <!-- Greeting -->
+                <div class="mb-8 stagger-enter stagger-1">
+                    <p class="text-zinc-500 mb-1">Oferta dla:</p>
+                    <h2 id="client-name" class="text-2xl md:text-3xl font-bold text-white"></h2>
+                </div>
+
+                <!-- Price Card -->
+                <div class="glass-card rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/5 to-transparent p-5 sm:p-8 mb-8 stagger-enter stagger-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+                        <div>
+                            <h3 id="offer-name" class="text-xl md:text-2xl font-semibold text-white mb-2"></h3>
+                            <p id="offer-description" class="text-zinc-400 text-sm"></p>
+                        </div>
+                        <div class="sm:text-right">
+                            <div class="text-zinc-500 text-xs sm:text-sm mb-1">Wartość usługi</div>
+                            <div id="offer-price" class="text-3xl sm:text-4xl font-bold text-green-400"></div>
+                            <div class="text-zinc-500 text-sm">PLN brutto</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Milestones Section -->
+                <div id="milestones-section" class="glass-card rounded-2xl border border-white/10 overflow-hidden mb-8 stagger-enter stagger-3">
+                    <div class="p-4 sm:p-6 border-b border-white/5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ph ph-list-checks text-lg sm:text-xl text-green-400"></i>
+                            </div>
+                            <h2 class="text-base sm:text-lg font-semibold text-white">Etapy realizacji</h2>
+                        </div>
+                    </div>
+                    <div class="p-4 sm:p-6">
+                        <div id="milestones-list" class="space-y-4">
+                            <!-- Milestones will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Box -->
+                <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-5 mb-8 flex items-start gap-4 stagger-enter stagger-4">
+                    <i class="ph ph-info text-blue-400 text-xl flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <h4 class="text-white font-medium mb-1">Jak to działa?</h4>
+                        <p class="text-zinc-400 text-sm">Po akceptacji oferty skontaktujemy się z Tobą w celu omówienia szczegółów i rozpoczęcia współpracy. Płatność możliwa w ratach.</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-col sm:flex-row gap-4 mb-8 stagger-enter stagger-5">
+                    <button id="accept-btn" onclick="acceptOffer()" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20">
+                        <i class="ph ph-check-circle text-xl"></i>
+                        Akceptuję ofertę
+                    </button>
+                    <a id="phone-btn" href="tel:+48123456789" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white border border-white/10 px-8 py-4 rounded-xl font-medium text-lg transition-all flex items-center justify-center gap-2">
+                        <i class="ph ph-phone text-xl"></i>
+                        Zadzwoń
+                    </a>
+                </div>
+
+                <!-- Already Accepted -->
+                <div id="accepted-message" class="hidden mb-8 bg-green-500/10 border border-green-500/20 rounded-xl p-6 text-center">
+                    <i class="ph ph-check-circle text-4xl text-green-400 mb-3"></i>
+                    <h4 class="text-white font-semibold text-lg mb-2">Oferta zaakceptowana!</h4>
+                    <p class="text-zinc-400">Dziękujemy za zaufanie. Skontaktujemy się z Tobą wkrótce.</p>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="glass-card rounded-2xl border border-white/10 p-5 sm:p-8 stagger-enter stagger-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="ph ph-user text-2xl text-green-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base sm:text-lg font-semibold text-white mb-1">Masz pytania?</h3>
+                                <p class="text-zinc-400 text-sm">Skontaktuj się bezpośrednio z nami.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="https://wa.me/48123456789" target="_blank" id="whatsapp-btn" class="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm shadow-lg shadow-[#25D366]/20">
+                                <i class="ph ph-whatsapp-logo"></i>
+                                WhatsApp
+                            </a>
+                            <a href="mailto:kontakt@getmypermit.pl" id="email-btn" class="inline-flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm border border-white/10">
+                                <i class="ph ph-envelope"></i>
+                                Email
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="border-t border-white/5 py-6 px-4 md:px-8 mt-12">
+            <div class="max-w-4xl mx-auto text-center text-zinc-500 text-sm">
+                <p>GetMyPermit - Kancelaria Prawna</p>
+                <p class="mt-1">Specjalizacja: prawo imigracyjne, pozwolenia na pobyt</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-950 border border-white/10 rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-check-circle text-3xl text-green-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-white mb-2">Potwierdzenie akceptacji</h3>
+                <p class="text-zinc-400 mb-6">Czy na pewno chcesz zaakceptować tę ofertę? Po akceptacji skontaktujemy się z Tobą w celu omówienia szczegółów.</p>
+                <div class="flex gap-3">
+                    <button onclick="closeConfirmModal()" class="flex-1 text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 px-4 py-3 rounded-lg font-medium transition-all">
+                        Anuluj
+                    </button>
+                    <button onclick="confirmAcceptance()" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white px-4 py-3 rounded-lg font-medium transition-all">
+                        Tak, akceptuję
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===========================================
+        // CONFIGURATION - GMP SPECIFIC
+        // ===========================================
+        const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Table names - GMP prefixed for isolation
+        const TABLE_CLIENT_OFFERS = 'gmp_client_offers';
+        const TABLE_OFFERS = 'gmp_offers';
+        const TABLE_LEADS = 'permit_leads';
+
+        let clientOffer = null;
+        let offer = null;
+        let lead = null;
+
+        // ===========================================
+        // SCREEN MANAGEMENT
+        // ===========================================
+        function showScreen(screenId) {
+            ['loading', 'login-screen', 'error', 'expired', 'content'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            const screen = document.getElementById(screenId);
+            if (screen) screen.classList.remove('hidden');
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        // ===========================================
+        // INIT
+        // ===========================================
+        async function init() {
+            const token = new URLSearchParams(window.location.search).get('token');
+
+            if (!token) {
+                showError('Brak tokenu oferty w adresie URL.');
+                return;
+            }
+
+            try {
+                // Load client offer by token
+                const { data: clientOfferData, error: clientOfferError } = await supabaseClient
+                    .from(TABLE_CLIENT_OFFERS)
+                    .select(`*, ${TABLE_OFFERS}(*), ${TABLE_LEADS}(*)`)
+                    .eq('unique_token', token)
+                    .single();
+
+                if (clientOfferError || !clientOfferData) {
+                    showError('Nie znaleziono oferty o podanym tokenie.');
+                    return;
+                }
+
+                clientOffer = clientOfferData;
+                offer = clientOfferData[TABLE_OFFERS];
+                lead = clientOfferData[TABLE_LEADS];
+
+                // Check if expired
+                const validUntil = new Date(clientOffer.valid_until);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (validUntil < today) {
+                    showExpired(validUntil);
+                    return;
+                }
+
+                // Show validity date on login screen
+                document.getElementById('valid-until-preview').textContent = formatDate(clientOffer.valid_until);
+
+                // Show login screen
+                showScreen('login-screen');
+
+                // Setup enter key for email input
+                document.getElementById('email-input').addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') verifyEmail();
+                });
+
+            } catch (err) {
+                console.error('Error loading offer:', err);
+                showError('Wystąpił błąd podczas ładowania oferty.');
+            }
+        }
+
+        // ===========================================
+        // EMAIL VERIFICATION
+        // ===========================================
+        async function verifyEmail() {
+            const emailInput = document.getElementById('email-input');
+            const email = emailInput.value.trim().toLowerCase();
+            const errorDiv = document.getElementById('login-error');
+
+            if (!email) {
+                errorDiv.textContent = 'Wprowadź adres e-mail';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (!lead || email !== lead.email.toLowerCase()) {
+                errorDiv.textContent = 'Nieprawidłowy adres e-mail';
+                errorDiv.classList.remove('hidden');
+                emailInput.classList.add('border-red-500');
+                return;
+            }
+
+            // Track view
+            const token = new URLSearchParams(window.location.search).get('token');
+            await trackView(token);
+
+            // Render content
+            renderOffer();
+        }
+
+        // ===========================================
+        // VIEW TRACKING
+        // ===========================================
+        async function trackView(token) {
+            const now = new Date().toISOString();
+            const viewHistory = clientOffer.view_history || [];
+            viewHistory.push({
+                timestamp: now,
+                userAgent: navigator.userAgent
+            });
+
+            await supabaseClient
+                .from(TABLE_CLIENT_OFFERS)
+                .update({
+                    view_count: (clientOffer.view_count || 0) + 1,
+                    viewed_at: now,
+                    view_history: viewHistory,
+                    status: clientOffer.status === 'pending' ? 'viewed' : clientOffer.status
+                })
+                .eq('unique_token', token);
+        }
+
+        // ===========================================
+        // RENDERING
+        // ===========================================
+        function renderOffer() {
+            showScreen('content');
+
+            // Client name
+            const clientName = lead ? [lead.first_name, lead.last_name].filter(Boolean).join(' ') || lead.email : 'Klient';
+            document.getElementById('client-name').textContent = clientName;
+
+            // Validity
+            document.getElementById('valid-until').textContent = formatDate(clientOffer.valid_until);
+
+            // Offer details
+            document.getElementById('offer-name').textContent = offer?.name || 'Oferta';
+            document.getElementById('offer-description').textContent = offer?.description || '';
+
+            // Price
+            const price = clientOffer.custom_price || offer?.price;
+            document.getElementById('offer-price').textContent = price
+                ? parseFloat(price).toLocaleString('pl-PL')
+                : 'Do ustalenia';
+
+            // Milestones with expand/collapse
+            const milestones = offer?.milestones || [];
+            if (milestones.length > 0) {
+                document.getElementById('milestones-list').innerHTML = milestones.map((m, i) => `
+                    <div class="milestone-step flex items-start gap-4" onclick="toggleMilestone(${i})">
+                        <div class="w-8 h-8 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center text-green-400 text-sm font-semibold flex-shrink-0">
+                            ${i + 1}
+                        </div>
+                        <div class="flex-1 pt-1">
+                            <div class="flex items-center justify-between">
+                                <h5 class="text-white font-medium">${escapeHtml(m.name)}</h5>
+                                ${m.description ? `<i class="ph ph-caret-down text-zinc-500 milestone-chevron" id="chevron-${i}"></i>` : ''}
+                            </div>
+                            ${m.description ? `
+                                <div class="milestone-content" id="milestone-content-${i}">
+                                    <p class="text-zinc-500 text-sm">${escapeHtml(m.description)}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('milestones-section').classList.add('hidden');
+            }
+
+            // Check if already accepted
+            if (clientOffer.status === 'accepted') {
+                document.getElementById('accept-btn').classList.add('hidden');
+                document.getElementById('accepted-message').classList.remove('hidden');
+            }
+        }
+
+        function toggleMilestone(index) {
+            const content = document.getElementById(`milestone-content-${index}`);
+            const chevron = document.getElementById(`chevron-${index}`);
+            if (content) {
+                content.classList.toggle('expanded');
+                if (chevron) chevron.classList.toggle('rotated');
+            }
+        }
+
+        function showError(message) {
+            showScreen('error');
+            document.getElementById('error-message').textContent = message;
+        }
+
+        function showExpired(date) {
+            showScreen('expired');
+            document.getElementById('expired-date').textContent = formatDate(date);
+
+            // Update status to expired
+            if (clientOffer?.id) {
+                supabaseClient
+                    .from(TABLE_CLIENT_OFFERS)
+                    .update({ status: 'expired' })
+                    .eq('id', clientOffer.id);
+            }
+        }
+
+        // ===========================================
+        // ACCEPT OFFER
+        // ===========================================
+        function acceptOffer() {
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        async function confirmAcceptance() {
+            closeConfirmModal();
+
+            const { error } = await supabaseClient
+                .from(TABLE_CLIENT_OFFERS)
+                .update({ status: 'accepted' })
+                .eq('id', clientOffer.id);
+
+            if (error) {
+                console.error('Error accepting offer:', error);
+                alert('Wystąpił błąd. Spróbuj ponownie.');
+                return;
+            }
+
+            clientOffer.status = 'accepted';
+            document.getElementById('accept-btn').classList.add('hidden');
+            document.getElementById('accepted-message').classList.remove('hidden');
+
+            // Scroll to message
+            document.getElementById('accepted-message').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ===========================================
+        // HELPERS
+        // ===========================================
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ===========================================
+        // START
+        // ===========================================
+        init();
+    </script>
+</body>
+</html>
