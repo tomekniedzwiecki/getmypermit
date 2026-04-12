@@ -15,9 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://flagcdn.com">
-  <link rel="preconnect" href="https://adwokaci-sg.pl">
   <link rel="dns-prefetch" href="https://flagcdn.com">
-  <link rel="dns-prefetch" href="https://adwokaci-sg.pl">
   <link rel="preload" as="image" href="img/office1.webp" fetchpriority="high">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=optional&subset=latin-ext">
   <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=optional&subset=latin-ext" rel="stylesheet" media="print" onload="this.media='all'">
@@ -944,7 +942,6 @@
       display: flex;
       flex-direction: column;
       padding: 24px;
-      position: relative;
       overflow: hidden;
     }
     .svc-flip-front h3 {
@@ -975,11 +972,7 @@
       z-index: 1;
       margin: 0;
       border-radius: 0;
-      transition: opacity 0.3s ease, transform 0.4s ease;
-    }
-    .svc-flip:hover .svc-flip-front .svc-icon {
-      opacity: 0.2;
-      transform: scale(1.1) rotate(-5deg);
+      pointer-events: none;
     }
     .svc-flip-front .svc-icon svg {
       width: 100%;
@@ -3955,7 +3948,7 @@
         <div class="svc-card svc-large svc-dark svc-quote fade-in">
           <div class="cta-quote">"We will handle your case until it is successfully resolved."</div>
           <div class="cta-author">
-            <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-255-kw-2.jpg" alt="adw. Paweł Stachurski" width="48" height="48">
+            <img src="img/lawyer-hero.webp" alt="adw. Paweł Stachurski" width="48" height="48">
             <div>
               <div class="cta-author-name">adw. Paweł Stachurski</div>
               <div class="cta-author-role">Managing Partner</div>
@@ -3986,7 +3979,7 @@
       <div class="team-bento">
         <!-- Row 1: Partner + Stats + Partner + Stats -->
         <div class="team-partner fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-255-kw-2.jpg" alt="Paweł Stachurski" loading="lazy" width="200" height="200">
+          <img src="img/lawyer-hero.webp" alt="Paweł Stachurski" loading="lazy" width="200" height="200">
           <div class="team-partner-overlay">
             <div class="team-badge">Managing Partner</div>
             <div class="team-partner-name">Paweł Stachurski</div>
@@ -3998,7 +3991,7 @@
           <div class="team-stat-label">Years of<br>experience</div>
         </div>
         <div class="team-partner fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/231110_SG-315-kw-2.jpg" alt="Katarzyna Grzybowska-Jagódka" loading="lazy" width="200" height="200">
+          <img src="img/team-katarzyna.webp" alt="Katarzyna Grzybowska-Jagódka" loading="lazy" width="200" height="200">
           <div class="team-partner-overlay">
             <div class="team-badge">Managing Partner</div>
             <div class="team-partner-name">Katarzyna Grzybowska-Jagódka</div>
@@ -4018,14 +4011,14 @@
           <div class="team-stat-label"><strong>4.9</strong> on Google<br>144 reviews</div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-10.jpg" alt="Michał Kuźniar" loading="lazy" width="100" height="100">
+          <img src="img/team-michal-k.webp" alt="Michał Kuźniar" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Michał Kuźniar</div>
             <div class="team-member-role">Permanent Residence</div>
           </div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-8.jpg" alt="Oleksandr Polisada" loading="lazy" width="100" height="100">
+          <img src="img/team-oleksandr.webp" alt="Oleksandr Polisada" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Oleksandr Polisada</div>
             <div class="team-member-role">Ukrainian Clients</div>
@@ -4040,7 +4033,7 @@
 
         <!-- Row 3: Team + Languages + 24h + Team -->
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-7.jpg" alt="Anastasiia Hosudarska" loading="lazy" width="200" height="200">
+          <img src="img/team-anastasiia.webp" alt="Anastasiia Hosudarska" loading="lazy" width="200" height="200">
           <div class="team-member-info">
             <div class="team-member-name">Anastasiia Hosudarska</div>
             <div class="team-member-role">Citizenship Cases</div>
@@ -4065,7 +4058,7 @@
           <div class="team-stat-label" style="color: var(--black);">We respond within<br><strong style="font-size: 24px; color: var(--accent);">24 hours</strong></div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-5.jpg" alt="Julia Szczych" loading="lazy" width="100" height="100">
+          <img src="img/team-julia.webp" alt="Julia Szczych" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Julia Szczych</div>
             <div class="team-member-role">Illegal Stay Cases</div>
@@ -4078,14 +4071,14 @@
           <div class="team-stat-label">Legal experts<br>in our team</div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-6.jpg" alt="Michał Kukielka" loading="lazy" width="100" height="100">
+          <img src="img/team-michal-ku.webp" alt="Michał Kukielka" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Michał Kukielka</div>
             <div class="team-member-role">EU Long-term Resident</div>
           </div>
         </div>
         <div class="team-member fade-in">
-          <img src="https://adwokaci-sg.pl/wp-content/uploads/2024/01/NASZE-SPECJALIZACJE-4.jpg" alt="Krzysztof Strużyński" loading="lazy" width="100" height="100">
+          <img src="img/team-krzysztof.webp" alt="Krzysztof Strużyński" loading="lazy" width="100" height="100">
           <div class="team-member-info">
             <div class="team-member-name">Krzysztof Strużyński</div>
             <div class="team-member-role">Work Permits</div>
