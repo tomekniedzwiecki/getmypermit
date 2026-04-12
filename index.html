@@ -3500,7 +3500,7 @@
     }
     .lm-modal.active {
       display: flex;
-      animation: lmFadeIn 0.25s ease;
+      animation: lmFadeIn 0.2s ease;
     }
     @keyframes lmFadeIn {
       from { opacity: 0; }
@@ -3509,30 +3509,29 @@
     .lm-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(3px);
     }
     .lm-content {
       position: relative;
       width: 100%;
-      max-width: 420px;
+      max-width: 360px;
       background: var(--white);
       border-radius: var(--radius);
-      box-shadow: 0 25px 60px rgba(0,0,0,0.3);
-      animation: lmSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+      animation: lmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     @keyframes lmSlideUp {
-      from { opacity: 0; transform: translateY(30px) scale(0.95); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .lm-close {
       position: absolute;
       top: 12px;
       right: 12px;
-      width: 36px;
-      height: 36px;
-      background: rgba(255,255,255,0.9);
+      width: 32px;
+      height: 32px;
+      background: var(--light-gray);
       border: none;
       border-radius: 50%;
       cursor: pointer;
@@ -3541,163 +3540,56 @@
       justify-content: center;
       transition: all 0.2s;
       z-index: 10;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
-    .lm-close:hover {
-      background: var(--white);
-      transform: scale(1.1);
-    }
-    .lm-close svg {
-      width: 16px;
-      height: 16px;
-      color: var(--dark);
-    }
-    /* Header with PDF visual */
-    .lm-header {
-      background: linear-gradient(135deg, #0055ff 0%, #0040cc 100%);
-      padding: 32px 24px;
-      display: flex;
-      justify-content: center;
-    }
-    .lm-pdf-preview {
-      background: var(--white);
-      border-radius: 12px;
-      padding: 20px 28px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-      position: relative;
-    }
-    .lm-pdf-badge {
-      position: absolute;
-      top: -10px;
-      right: -10px;
+    .lm-close:hover { background: var(--border); }
+    .lm-close svg { width: 14px; height: 14px; color: var(--gray); }
+    .lm-inner { padding: 32px 28px 28px; text-align: center; }
+    .lm-badge {
+      display: inline-block;
       background: linear-gradient(135deg, #22c55e, #16a34a);
       color: white;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 4px 10px;
+      padding: 6px 14px;
       border-radius: 20px;
       letter-spacing: 0.5px;
-    }
-    .lm-pdf-preview svg {
-      width: 48px;
-      height: 48px;
-      color: #dc2626;
-    }
-    .lm-pdf-preview span {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--dark);
-    }
-    .lm-inner {
-      padding: 28px 28px 24px;
+      margin-bottom: 16px;
     }
     .lm-title {
       font-size: 22px;
-      font-weight: 800;
+      font-weight: 700;
       color: var(--black);
-      margin-bottom: 8px;
-      line-height: 1.25;
-      text-align: center;
-    }
-    .lm-desc {
-      font-size: 15px;
-      color: var(--gray);
       margin-bottom: 20px;
-      line-height: 1.5;
-      text-align: center;
+      line-height: 1.3;
     }
-    .lm-benefits {
-      list-style: none;
-      margin-bottom: 24px;
-      padding: 16px;
-      background: linear-gradient(135deg, rgba(0,85,255,0.04), rgba(0,85,255,0.08));
-      border-radius: var(--radius-sm);
-      border-left: 3px solid var(--accent);
-    }
-    .lm-benefits li {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 14px;
-      color: var(--dark);
-      padding: 6px 0;
-    }
-    .lm-benefits li svg {
-      width: 18px;
-      height: 18px;
-      color: #22c55e;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-    .lm-form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    .lm-form { display: flex; flex-direction: column; gap: 12px; }
     .lm-form input {
       width: 100%;
       padding: 14px 16px;
       font-family: var(--font);
-      font-size: 15px;
-      border: 2px solid var(--border);
+      font-size: 16px;
+      border: 2px solid var(--light-gray);
       border-radius: var(--radius-sm);
       outline: none;
-      transition: all 0.2s;
-      background: var(--light-gray);
+      transition: border-color 0.2s;
     }
-    .lm-form input:focus {
-      border-color: var(--accent);
-      background: var(--white);
-      box-shadow: 0 0 0 4px rgba(0,85,255,0.1);
-    }
-    .lm-form input::placeholder {
-      color: #9ca3af;
-    }
+    .lm-form input:focus { border-color: var(--accent); }
+    .lm-form input::placeholder { color: #9ca3af; }
     .lm-submit {
       width: 100%;
       padding: 16px 24px;
-      background: linear-gradient(135deg, #0055ff, #0040cc);
+      background: var(--accent);
       color: var(--white);
       font-family: var(--font);
       font-size: 16px;
-      font-weight: 700;
+      font-weight: 600;
       border: none;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
       transition: all 0.2s;
       margin-top: 4px;
-      box-shadow: 0 4px 14px rgba(0,85,255,0.4);
     }
-    .lm-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,85,255,0.5);
-    }
-    .lm-submit svg {
-      width: 20px;
-      height: 20px;
-    }
-    .lm-note {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--gray);
-    }
-    .lm-note svg {
-      width: 16px;
-      height: 16px;
-      color: #22c55e;
-    }
+    .lm-submit:hover { background: var(--accent-light); transform: translateY(-2px); }
 
     /* LEAD MAGNET WIDGET (Desktop only) */
     .lm-widget {
@@ -3744,18 +3636,12 @@
     }
 
     @media (max-width: 480px) {
-      .lm-modal { padding: 12px; }
-      .lm-content { border-radius: 16px; }
-      .lm-header { padding: 24px 20px; }
-      .lm-pdf-preview { padding: 16px 24px; }
-      .lm-pdf-preview svg { width: 40px; height: 40px; }
-      .lm-inner { padding: 24px 20px 20px; }
-      .lm-title { font-size: 19px; }
-      .lm-desc { font-size: 14px; margin-bottom: 16px; }
-      .lm-benefits { padding: 14px; margin-bottom: 20px; }
-      .lm-benefits li { font-size: 13px; padding: 5px 0; }
-      .lm-form input { padding: 13px 14px; font-size: 16px; }
-      .lm-submit { padding: 14px 20px; font-size: 15px; }
+      .lm-modal { padding: 16px; }
+      .lm-content { border-radius: 16px; max-width: 100%; }
+      .lm-inner { padding: 28px 24px 24px; }
+      .lm-title { font-size: 20px; }
+      .lm-form input { padding: 14px; }
+      .lm-submit { padding: 14px 20px; }
     }
   </style>
 
@@ -5456,35 +5342,15 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
 
-      <!-- Visual header with PDF preview -->
-      <div class="lm-header">
-        <div class="lm-pdf-preview">
-          <div class="lm-pdf-badge">FREE PDF</div>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          <span>10 Mistakes</span>
-        </div>
-      </div>
-
       <div class="lm-inner">
-        <h3 class="lm-title">Don't Lose Your Right to Stay in Poland</h3>
-        <p class="lm-desc">Avoid the costly mistakes that get foreigners' applications rejected</p>
-
-        <ul class="lm-benefits">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> 10 critical errors that lead to rejection</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Real cases from Lower Silesia office</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Simple solutions to protect yourself</li>
-        </ul>
+        <div class="lm-badge">FREE PDF</div>
+        <h3 class="lm-title">10 Mistakes That Get You Rejected</h3>
 
         <form class="lm-form" id="leadMagnetForm">
-          <input type="email" name="lm_email" placeholder="Your email" required>
-          <input type="tel" name="lm_phone" placeholder="WhatsApp / Phone" required>
-          <button type="submit" class="lm-submit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            Download Free Guide
-          </button>
+          <input type="email" name="lm_email" placeholder="Email" required>
+          <input type="tel" name="lm_phone" placeholder="WhatsApp" required>
+          <button type="submit" class="lm-submit">Send me the guide</button>
         </form>
-
-        <p class="lm-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m0 0v2m0-2h2m-2 0H9m3-11a3 3 0 00-3 3v2h6V9a3 3 0 00-3-3z"/><rect x="5" y="11" width="14" height="10" rx="2"/></svg> No spam. Instant access.</p>
       </div>
     </div>
   </div>
