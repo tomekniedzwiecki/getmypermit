@@ -256,6 +256,28 @@
     .hero {
       padding: 100px 0 40px;
       background: var(--white);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(0, 85, 255, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -10%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(0, 85, 255, 0.03) 0%, transparent 70%);
+      pointer-events: none;
     }
     .hero-bento {
       display: grid;
@@ -898,7 +920,17 @@
     /* SERVICES - Bento Grid */
     .services {
       padding: 80px 0;
-      background: white;
+      background: linear-gradient(180deg, white 0%, #f8fafc 100%);
+      position: relative;
+    }
+    .services::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 85, 255, 0.1), transparent);
     }
     .svc-bento {
       display: grid;
@@ -917,6 +949,11 @@
     .svc-flip {
       perspective: 1000px;
       min-height: 180px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .svc-flip:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0, 85, 255, 0.15);
     }
     .svc-flip.svc-large {
       grid-column: span 2;
@@ -1072,16 +1109,27 @@
     .svc-white {
       background: white;
       color: var(--black);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid rgba(0, 85, 255, 0.08);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .svc-flip:hover .svc-white {
+      border-color: rgba(0, 85, 255, 0.2);
+      box-shadow: 0 8px 30px rgba(0, 85, 255, 0.12);
     }
     .svc-white p {
       color: var(--gray);
       opacity: 1;
     }
     .svc-gray {
-      background: #f8fafc;
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
       color: var(--black);
       border: 1px solid #e2e8f0;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .svc-flip:hover .svc-gray {
+      border-color: rgba(0, 85, 255, 0.2);
+      box-shadow: 0 8px 30px rgba(0, 85, 255, 0.1);
     }
     .svc-gray p {
       color: var(--gray);
@@ -1117,11 +1165,30 @@
       background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
       pointer-events: none;
     }
+    .svc-featured::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+      animation: shimmerLine 2s ease-in-out infinite;
+    }
+    @keyframes shimmerLine {
+      0%, 100% { opacity: 0.3; transform: translateX(-100%); }
+      50% { opacity: 1; transform: translateX(100%); }
+    }
     .svc-featured h3, .svc-featured p, .svc-featured .svc-stat, .svc-featured .svc-stat-label {
       color: white;
     }
     .svc-featured .svc-stat {
       text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+      font-size: 64px;
+      background: linear-gradient(180deg, white 30%, rgba(255,255,255,0.8) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     .svc-featured:hover {
       box-shadow: 0 20px 50px rgba(0, 85, 255, 0.4);
@@ -3625,43 +3692,43 @@
         <a href="#" class="logo">
           <img src="img/logo.png" alt="Kancelaria Migracyjna Paweł Sadkowski" class="logo-img">
         </a>
-        <div class="lang-selector" id="langSelector">
-          <button class="lang-current" onclick="toggleLangDropdown()">
-            <img src="https://flagcdn.com/w40/gb.png" alt="" id="currentLangFlag">
-            <span id="currentLangName">EN</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="lang-dropdown">
-            <button class="lang-option active" data-lang="en" onclick="setLanguage('en')">
-              <img src="https://flagcdn.com/w40/gb.png" alt="">English
-            </button>
-            <button class="lang-option" data-lang="uk" onclick="setLanguage('uk')">
-              <img src="https://flagcdn.com/w40/ua.png" alt="">Українська
-            </button>
-            <button class="lang-option" data-lang="pl" onclick="setLanguage('pl')">
-              <img src="https://flagcdn.com/w40/pl.png" alt="">Polski
-            </button>
-            <button class="lang-option" data-lang="es" onclick="setLanguage('es')">
-              <img src="https://flagcdn.com/w40/es.png" alt="">Español
-            </button>
-            <button class="lang-option" data-lang="fr" onclick="setLanguage('fr')">
-              <img src="https://flagcdn.com/w40/fr.png" alt="">Français
-            </button>
-            <button class="lang-option" data-lang="hi" onclick="setLanguage('hi')">
-              <img src="https://flagcdn.com/w40/in.png" alt="">हिन्दी
-            </button>
-            <button class="lang-option" data-lang="bn" onclick="setLanguage('bn')">
-              <img src="https://flagcdn.com/w40/bd.png" alt="">বাংলা
-            </button>
-            <button class="lang-option" data-lang="id" onclick="setLanguage('id')">
-              <img src="https://flagcdn.com/w40/id.png" alt="">Bahasa Indonesia
-            </button>
-            <button class="lang-option" data-lang="ru" onclick="setLanguage('ru')">
-              <img src="https://flagcdn.com/w40/ru.png" alt="">Русский
-            </button>
-          </div>
-        </div>
         <div class="header-cta">
+          <div class="lang-selector" id="langSelector">
+            <button class="lang-current" onclick="toggleLangDropdown()">
+              <img src="https://flagcdn.com/w40/gb.png" alt="" id="currentLangFlag">
+              <span id="currentLangName">EN</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="lang-dropdown">
+              <button class="lang-option active" data-lang="en" onclick="setLanguage('en')">
+                <img src="https://flagcdn.com/w40/gb.png" alt="">English
+              </button>
+              <button class="lang-option" data-lang="uk" onclick="setLanguage('uk')">
+                <img src="https://flagcdn.com/w40/ua.png" alt="">Українська
+              </button>
+              <button class="lang-option" data-lang="pl" onclick="setLanguage('pl')">
+                <img src="https://flagcdn.com/w40/pl.png" alt="">Polski
+              </button>
+              <button class="lang-option" data-lang="es" onclick="setLanguage('es')">
+                <img src="https://flagcdn.com/w40/es.png" alt="">Español
+              </button>
+              <button class="lang-option" data-lang="fr" onclick="setLanguage('fr')">
+                <img src="https://flagcdn.com/w40/fr.png" alt="">Français
+              </button>
+              <button class="lang-option" data-lang="hi" onclick="setLanguage('hi')">
+                <img src="https://flagcdn.com/w40/in.png" alt="">हिन्दी
+              </button>
+              <button class="lang-option" data-lang="bn" onclick="setLanguage('bn')">
+                <img src="https://flagcdn.com/w40/bd.png" alt="">বাংলা
+              </button>
+              <button class="lang-option" data-lang="id" onclick="setLanguage('id')">
+                <img src="https://flagcdn.com/w40/id.png" alt="">Bahasa Indonesia
+              </button>
+              <button class="lang-option" data-lang="ru" onclick="setLanguage('ru')">
+                <img src="https://flagcdn.com/w40/ru.png" alt="">Русский
+              </button>
+            </div>
+          </div>
           <a href="#form" class="btn btn-accent" data-i18n="headerCta">Free Assessment <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a>
         </div>
       </div>
@@ -3699,7 +3766,10 @@
         </div>
 
         <div class="hero-headline">
-          <div class="hero-tag">Immigration Law Firm</div>
+          <div class="hero-tag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            Immigration Law Firm
+          </div>
           <h1>Legalization of stay in <span class="text-gradient">Poland</span></h1>
           <p class="hero-subtitle">Residence permits, work permits, citizenship - we handle your case from start to finish</p>
           <a href="#form" class="btn btn-accent hero-cta-btn btn-pulse">Get Free Assessment <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a>
@@ -3759,7 +3829,7 @@
         <!-- Row 1: Large featured + 2 cards -->
         <div class="svc-card svc-large svc-featured fade-in">
           <h3>Residence permits</h3>
-          <div class="svc-stat">10 000+</div>
+          <div class="svc-stat count-up" data-target="10000">10 000+</div>
           <div class="svc-stat-label">foreigners helped in Lower Silesia</div>
         </div>
         <div class="svc-flip fade-in">
@@ -4922,6 +4992,30 @@
     }, { threshold: 0.1 });
 
     document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Animated counter for statistics
+    const countUpObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !entry.target.classList.contains('counted')) {
+          entry.target.classList.add('counted');
+          const target = parseInt(entry.target.dataset.target);
+          const duration = 2000;
+          const step = target / (duration / 16);
+          let current = 0;
+          const timer = setInterval(() => {
+            current += step;
+            if (current >= target) {
+              entry.target.textContent = target.toLocaleString().replace(/,/g, ' ') + '+';
+              clearInterval(timer);
+            } else {
+              entry.target.textContent = Math.floor(current).toLocaleString().replace(/,/g, ' ') + '+';
+            }
+          }, 16);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.count-up').forEach(el => countUpObserver.observe(el));
 
     // Multi-step Form Logic
     const form = document.getElementById('multiStepForm');
