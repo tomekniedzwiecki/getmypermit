@@ -46,7 +46,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 32px; }
     h1, h2, h3 { font-weight: 700; line-height: 1.2; color: var(--black); }
     h1 { font-size: clamp(32px, 4vw, 52px); }
     h2 { font-size: clamp(28px, 3.5vw, 42px); }
@@ -301,7 +301,7 @@
       color: var(--gray);
       line-height: 1.6;
       margin-bottom: 32px;
-      max-width: 480px;
+      max-width: 540px;
     }
     .hero-cta-btn {
       width: fit-content;
@@ -704,7 +704,7 @@
     /* SECTION HEADER */
     .section-header {
       text-align: center;
-      max-width: 650px;
+      max-width: 750px;
       margin: 0 auto 56px;
     }
     .section-header p {
@@ -1388,7 +1388,7 @@
       animation: gradientFlow 15s ease infinite;
       border-radius: 20px;
       padding: 40px 20px;
-      max-width: 1200px;
+      max-width: 1340px;
       margin: 0 auto;
       position: relative;
       overflow: hidden;
@@ -2523,7 +2523,7 @@
       background: linear-gradient(180deg, var(--light-gray) 0%, var(--white) 100%);
     }
     .form-wrapper {
-      max-width: 480px;
+      max-width: 520px;
       margin: 0 auto;
       background: var(--white);
       border-radius: 24px;
@@ -2550,12 +2550,18 @@
       padding: 32px 28px 36px;
     }
 
-    /* Simple Progress Bar */
+    /* Progress Header (bar + step counter) */
+    .form-progress-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
     .form-progress-bar {
+      flex: 1;
       height: 6px;
       background: var(--light-gray);
       border-radius: 3px;
-      margin-bottom: 32px;
       overflow: hidden;
     }
     .form-progress-fill {
@@ -2579,15 +2585,33 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* Step Counter (in progress header) */
+    .step-counter {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray);
+      white-space: nowrap;
+    }
+    .step-counter-current {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
     /* Step Question */
     .step-question {
       text-align: center;
       margin-bottom: 28px;
     }
     .step-icon {
-      width: 56px;
-      height: 56px;
+      width: 64px;
+      height: 64px;
       margin: 0 auto 16px;
+      background: var(--accent-soft);
+      border-radius: 16px;
+      padding: 14px;
       color: var(--accent);
     }
     .step-icon svg {
@@ -2634,9 +2658,10 @@
     .giant-choice.selected {
       border-color: var(--accent);
       background: rgba(0, 85, 255, 0.04);
+      box-shadow: 0 4px 12px rgba(0, 85, 255, 0.15);
     }
     .giant-choice.selected::after {
-      content: '✓';
+      content: '';
       position: absolute;
       top: 50%;
       right: 20px;
@@ -2644,13 +2669,11 @@
       width: 28px;
       height: 28px;
       background: var(--accent);
-      color: white;
-      font-size: 14px;
-      font-weight: bold;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+      background-size: 16px;
+      background-position: center;
+      background-repeat: no-repeat;
     }
     .giant-choice input {
       position: absolute;
@@ -2785,6 +2808,29 @@
       letter-spacing: 1px;
     }
 
+    /* Input with icon */
+    .input-with-icon {
+      position: relative;
+    }
+    .input-with-icon .form-input {
+      padding-left: 52px;
+    }
+    .input-with-icon .input-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 22px;
+      height: 22px;
+      color: var(--gray);
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+    .input-with-icon .form-input:focus + .input-icon,
+    .input-with-icon .form-input:not(:placeholder-shown) + .input-icon {
+      color: var(--accent);
+    }
+
     /* Small choice buttons (for waiting time) */
     .choice-stack-small {
       gap: 10px;
@@ -2863,7 +2909,8 @@
     }
     .btn-next:hover {
       background: #0044cc;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 85, 255, 0.35);
     }
     .btn-next:active {
       transform: translateY(0);
@@ -2894,6 +2941,7 @@
     .result-screen {
       text-align: center;
       padding: 20px 0;
+      position: relative;
     }
     .result-icon {
       width: 88px;
@@ -2910,7 +2958,46 @@
       height: 44px;
     }
     .result-icon.success {
+      width: 100px;
+      height: 100px;
       background: linear-gradient(135deg, #22c55e, #16a34a);
+      box-shadow: 0 8px 32px rgba(34, 197, 94, 0.4);
+      animation: popIn 0.5s ease, successPulse 2s ease-in-out infinite;
+    }
+    .result-icon.success svg {
+      width: 50px;
+      height: 50px;
+    }
+    @keyframes successPulse {
+      0%, 100% { box-shadow: 0 8px 32px rgba(34, 197, 94, 0.4); }
+      50% { box-shadow: 0 8px 48px rgba(34, 197, 94, 0.6); }
+    }
+    /* Success sparkles */
+    .result-screen.success-screen::before,
+    .result-screen.success-screen::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: sparkle 1.5s ease-out forwards;
+    }
+    .result-screen.success-screen::before {
+      left: 25%;
+      top: 30px;
+      background: #22c55e;
+      animation-delay: 0.3s;
+    }
+    .result-screen.success-screen::after {
+      right: 25%;
+      top: 50px;
+      background: var(--accent);
+      animation-delay: 0.5s;
+    }
+    @keyframes sparkle {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.5); opacity: 1; }
+      100% { transform: scale(0); opacity: 0; }
     }
     .result-icon.not-qualified {
       background: var(--light-gray);
@@ -4024,9 +4111,16 @@
         </div>
 
         <div class="form-body">
-          <!-- Simple Progress Bar -->
-          <div class="form-progress-bar">
-            <div class="form-progress-fill" id="progressFill"></div>
+          <!-- Progress Header -->
+          <div class="form-progress-header">
+            <div class="form-progress-bar">
+              <div class="form-progress-fill" id="progressFill"></div>
+            </div>
+            <div class="step-counter" id="stepCounter">
+              <span class="step-counter-current" id="stepCurrent">1</span>
+              <span>/</span>
+              <span id="stepTotal">5</span>
+            </div>
           </div>
 
           <form id="multiStepForm">
@@ -4111,7 +4205,7 @@
             <div class="form-step" data-step="rejection-timing">
               <div class="step-question">
                 <div class="step-icon urgent">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
                 <h3 class="step-title">When did you receive the rejection?</h3>
                 <p class="step-hint">You have 14 days to appeal</p>
@@ -4366,6 +4460,73 @@
               </div>
             </div>
 
+            <!-- STEP: Waiting time (conditional - only for stuck/no-fingerprints) -->
+            <div class="form-step" data-step="waiting-time">
+              <div class="step-question">
+                <div class="step-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <h3 class="step-title">How long have you been waiting?</h3>
+                <p class="step-hint">This helps us prioritize urgent cases</p>
+              </div>
+
+              <div class="choice-stack">
+                <label class="giant-choice">
+                  <input type="radio" name="waitingTime" value="0-6">
+                  <div class="giant-choice-content">
+                    <span class="choice-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                    </span>
+                    <div class="giant-choice-text">
+                      <div class="giant-choice-title">Less than 6 months</div>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="giant-choice">
+                  <input type="radio" name="waitingTime" value="6-12">
+                  <div class="giant-choice-content">
+                    <span class="choice-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </span>
+                    <div class="giant-choice-text">
+                      <div class="giant-choice-title">6 - 12 months</div>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="giant-choice">
+                  <input type="radio" name="waitingTime" value="12-18">
+                  <div class="giant-choice-content">
+                    <span class="choice-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 8 16"/></svg>
+                    </span>
+                    <div class="giant-choice-text">
+                      <div class="giant-choice-title">12 - 18 months</div>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="giant-choice has-tag">
+                  <span class="choice-hot-tag">Priority case</span>
+                  <input type="radio" name="waitingTime" value="18+">
+                  <div class="giant-choice-content">
+                    <span class="choice-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 10"/></svg>
+                    </span>
+                    <div class="giant-choice-text">
+                      <div class="giant-choice-title">More than 18 months</div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="form-nav">
+                <button type="button" class="btn-back" onclick="prevStep()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                <button type="button" class="btn-next" onclick="nextStep()">Continue <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+              </div>
+            </div>
+
             <!-- STEP: Final details -->
             <div class="form-step" data-step="details">
               <div class="step-question">
@@ -4378,33 +4539,17 @@
 
               <div class="form-field">
                 <label class="form-label">Your name</label>
-                <input type="text" class="form-input" name="name" placeholder="First and last name" required>
+                <div class="input-with-icon">
+                  <input type="text" class="form-input" name="name" placeholder="First and last name" required>
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
               </div>
 
               <div class="form-field">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-input" name="email" placeholder="your@email.com" required>
-              </div>
-
-              <div class="form-field" id="waitingTimeField" style="display: none;">
-                <label class="form-label">How long have you been waiting?</label>
-                <div class="choice-stack choice-stack-small">
-                  <label class="choice-small">
-                    <input type="radio" name="waitingTime" value="0-6">
-                    <span>Less than 6 months</span>
-                  </label>
-                  <label class="choice-small">
-                    <input type="radio" name="waitingTime" value="6-12">
-                    <span>6 - 12 months</span>
-                  </label>
-                  <label class="choice-small">
-                    <input type="radio" name="waitingTime" value="12-18">
-                    <span>12 - 18 months</span>
-                  </label>
-                  <label class="choice-small selected-hot">
-                    <input type="radio" name="waitingTime" value="18+">
-                    <span>More than 18 months</span>
-                  </label>
+                <div class="input-with-icon">
+                  <input type="email" class="form-input" name="email" placeholder="your@email.com" required>
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 </div>
               </div>
 
@@ -4421,7 +4566,7 @@
 
             <!-- SUCCESS SCREEN -->
             <div class="form-step" data-step="success">
-              <div class="result-screen">
+              <div class="result-screen success-screen">
                 <div class="result-icon success">
                   <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
@@ -4516,7 +4661,6 @@
     // Multi-step Form Logic
     const form = document.getElementById('multiStepForm');
     const progressFill = document.getElementById('progressFill');
-    const waitingTimeField = document.getElementById('waitingTimeField');
 
     // Track form navigation history for back button
     let stepHistory = ['1'];
@@ -4529,7 +4673,8 @@
       '2': 40,
       '3': 55,
       'intent': 70,
-      'details': 85,
+      'waiting-time': 82,
+      'details': 90,
       'success': 100,
       'not-qualified': 100,
       'info-only': 100
@@ -4557,11 +4702,31 @@
         progressFill.style.width = stepProgress[stepId] + '%';
       }
 
-      // Show waiting time field only for relevant situations
-      if (stepId === 'details' && waitingTimeField) {
-        const situation = form.querySelector('input[name="situation"]:checked')?.value;
-        const showWaiting = ['no-fingerprints', 'stuck'].includes(situation);
-        waitingTimeField.style.display = showWaiting ? 'block' : 'none';
+      // Update step counter
+      const stepCurrent = document.getElementById('stepCurrent');
+      const stepTotal = document.getElementById('stepTotal');
+      const stepCounterEl = document.getElementById('stepCounter');
+
+      // Calculate step number based on history length
+      const situation = form.querySelector('input[name="situation"]:checked')?.value;
+
+      // Total steps:
+      // - rejected/new: 6 (includes rejection-timing or permit-type)
+      // - no-fingerprints/stuck: 6 (includes waiting-time)
+      // - letter: 5
+      const hasExtraStep = ['rejected', 'new', 'no-fingerprints', 'stuck'].includes(situation);
+      const totalSteps = hasExtraStep ? 6 : 5;
+
+      // Current step = history length (since history tracks all visited steps)
+      const currentStep = stepHistory.length;
+
+      // Hide counter for terminal steps
+      if (['success', 'not-qualified', 'info-only'].includes(stepId)) {
+        stepCounterEl.style.display = 'none';
+      } else {
+        stepCounterEl.style.display = 'flex';
+        stepCurrent.textContent = currentStep;
+        stepTotal.textContent = totalSteps;
       }
     }
 
@@ -4653,6 +4818,24 @@
         // Filter out people just exploring
         if (intent.value === 'exploring') {
           showStep('info-only');
+          return;
+        }
+        // Show waiting time step for stuck/no-fingerprints situations
+        if (['no-fingerprints', 'stuck'].includes(situation)) {
+          stepHistory.push('waiting-time');
+          showStep('waiting-time');
+          return;
+        }
+        stepHistory.push('details');
+        showStep('details');
+        return;
+      }
+
+      // Waiting time step (for stuck/no-fingerprints)
+      if (currentStepId === 'waiting-time') {
+        const waitingTime = form.querySelector('input[name="waitingTime"]:checked');
+        if (!waitingTime) {
+          alert('Please select how long you have been waiting');
           return;
         }
         stepHistory.push('details');
