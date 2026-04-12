@@ -313,6 +313,29 @@
             color: white;
         }
 
+        /* Nav icon animations */
+        nav a i {
+            display: inline-block;
+        }
+        @keyframes listBounce {
+            0% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+            50% { transform: translateY(0); }
+            70% { transform: translateY(-2px); }
+            100% { transform: translateY(0); }
+        }
+        nav a:hover .ph-list-bullets {
+            animation: listBounce 0.5s ease-out;
+        }
+        @keyframes signOutSlide {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(4px); }
+            100% { transform: translateX(0); }
+        }
+        button:hover .ph-sign-out {
+            animation: signOutSlide 0.4s ease-in-out;
+        }
+
         @media (max-width: 768px) {
             aside { display: none !important; }
             .mobile-back-btn { display: flex !important; }
@@ -370,7 +393,8 @@
                         <i class="ph ph-caret-left text-lg"></i>
                     </button>
                     <div id="nav-status-badge" class="hidden sm:flex items-center gap-1.5">
-                        <span id="nav-status-label" class="text-[11px] font-medium text-zinc-400">-</span>
+                        <i id="nav-status-icon" class="ph ph-circle text-xs"></i>
+                        <span id="nav-status-label" class="text-[11px] font-medium">Status</span>
                         <span class="text-zinc-600 text-[10px] font-mono"><span id="nav-status-position">0</span>/<span id="nav-status-total">0</span></span>
                     </div>
                     <button id="next-lead-btn" disabled onclick="goToNextLead()" class="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">
@@ -390,7 +414,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto">
         <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-10 animate-enter">
 
             <!-- Lead Header -->
@@ -601,6 +625,7 @@
             </div>
 
         </div>
+    </div>
     </main>
 
     <script>
@@ -1065,9 +1090,21 @@
             const positionInStatus = sameStatusLeads.findIndex(l => l.id === leadId);
 
             // Update nav badge
-            document.getElementById('nav-status-label').textContent = formatStatus(lead.status || 'new');
+            const status = lead.status || 'new';
+            document.getElementById('nav-status-label').textContent = formatStatus(status);
             document.getElementById('nav-status-position').textContent = positionInStatus + 1;
             document.getElementById('nav-status-total').textContent = sameStatusLeads.length;
+
+            // Update nav icon color
+            const statusColors = {
+                new: 'text-blue-400',
+                contacted: 'text-amber-400',
+                qualified: 'text-violet-400',
+                converted: 'text-emerald-400',
+                lost: 'text-red-400'
+            };
+            const navIcon = document.getElementById('nav-status-icon');
+            navIcon.className = `ph ph-circle text-xs ${statusColors[status] || 'text-zinc-400'}`;
 
             // Enable/disable buttons
             const prevBtn = document.getElementById('prev-lead-btn');
