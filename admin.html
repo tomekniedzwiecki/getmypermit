@@ -927,7 +927,7 @@
             document.getElementById('emptyState').classList.add('hidden');
 
             tbody.innerHTML = filtered.map(lead => `
-                <tr class="hover:bg-white/5 transition-colors cursor-pointer" onclick="openLeadModal('${lead.id}')">
+                <tr class="hover:bg-white/5 transition-colors cursor-pointer" onclick="window.location.href='lead.html?id=${lead.id}'">
                     <td class="px-4 py-3">
                         <div class="text-white font-medium">${lead.phone}</div>
                         <div class="text-zinc-500 text-[10px] font-mono">${lead.lead_score || 0} pkt</div>
@@ -969,7 +969,7 @@
                 }
 
                 container.innerHTML = leads.map(lead => `
-                    <div class="pipeline-card rounded-lg p-4" draggable="true" data-id="${lead.id}" onclick="openLeadModal('${lead.id}')">
+                    <div class="pipeline-card rounded-lg p-4" draggable="true" data-id="${lead.id}" onclick="window.location.href='lead.html?id=${lead.id}'">
                         <div class="flex items-start justify-between mb-2">
                             <span class="text-white font-medium text-sm">${lead.phone}</span>
                             ${getLeadBadge(lead.lead_type)}
