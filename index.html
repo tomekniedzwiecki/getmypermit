@@ -82,12 +82,104 @@
       align-items: center;
       gap: 12px;
     }
+    /* Language Selector */
+    .lang-selector {
+      position: relative;
+    }
+    .lang-current {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--light-gray);
+      border: none;
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dark);
+      transition: all 0.2s;
+    }
+    .lang-current:hover {
+      background: var(--border);
+    }
+    .lang-current img {
+      width: 20px;
+      height: 14px;
+      object-fit: cover;
+      border-radius: 2px;
+    }
+    .lang-current svg {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.2s;
+    }
+    .lang-selector.open .lang-current svg {
+      transform: rotate(180deg);
+    }
+    .lang-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      box-shadow: var(--shadow);
+      min-width: 160px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px);
+      transition: all 0.2s;
+      z-index: 1001;
+    }
+    .lang-selector.open .lang-dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .lang-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--dark);
+      text-align: left;
+      transition: background 0.15s;
+    }
+    .lang-option:hover {
+      background: var(--light-gray);
+    }
+    .lang-option.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .lang-option img {
+      width: 22px;
+      height: 16px;
+      object-fit: cover;
+      border-radius: 2px;
+    }
     @media (max-width: 767px) {
       .header-cta { display: none; }
+      .lang-selector {
+        position: absolute;
+        right: 32px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
     }
     @media (max-width: 480px) {
       .header { padding: 12px 0; }
       .logo-img { height: 32px; }
+      .lang-selector { right: 16px; }
     }
     /* BUTTONS */
     .btn {
@@ -3396,8 +3488,44 @@
         <a href="#" class="logo">
           <img src="img/logo.png" alt="Kancelaria Migracyjna Paweł Sadkowski" class="logo-img">
         </a>
+        <div class="lang-selector" id="langSelector">
+          <button class="lang-current" onclick="toggleLangDropdown()">
+            <img src="https://flagcdn.com/w40/gb.png" alt="" id="currentLangFlag">
+            <span id="currentLangName">EN</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="lang-dropdown">
+            <button class="lang-option active" data-lang="en" onclick="setLanguage('en')">
+              <img src="https://flagcdn.com/w40/gb.png" alt="">English
+            </button>
+            <button class="lang-option" data-lang="uk" onclick="setLanguage('uk')">
+              <img src="https://flagcdn.com/w40/ua.png" alt="">Українська
+            </button>
+            <button class="lang-option" data-lang="pl" onclick="setLanguage('pl')">
+              <img src="https://flagcdn.com/w40/pl.png" alt="">Polski
+            </button>
+            <button class="lang-option" data-lang="es" onclick="setLanguage('es')">
+              <img src="https://flagcdn.com/w40/es.png" alt="">Español
+            </button>
+            <button class="lang-option" data-lang="fr" onclick="setLanguage('fr')">
+              <img src="https://flagcdn.com/w40/fr.png" alt="">Français
+            </button>
+            <button class="lang-option" data-lang="hi" onclick="setLanguage('hi')">
+              <img src="https://flagcdn.com/w40/in.png" alt="">हिन्दी
+            </button>
+            <button class="lang-option" data-lang="bn" onclick="setLanguage('bn')">
+              <img src="https://flagcdn.com/w40/bd.png" alt="">বাংলা
+            </button>
+            <button class="lang-option" data-lang="id" onclick="setLanguage('id')">
+              <img src="https://flagcdn.com/w40/id.png" alt="">Bahasa Indonesia
+            </button>
+            <button class="lang-option" data-lang="ru" onclick="setLanguage('ru')">
+              <img src="https://flagcdn.com/w40/ru.png" alt="">Русский
+            </button>
+          </div>
+        </div>
         <div class="header-cta">
-          <a href="#form" class="btn btn-accent">Free Assessment <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a>
+          <a href="#form" class="btn btn-accent" data-i18n="headerCta">Free Assessment <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a>
         </div>
       </div>
     </div>
@@ -5130,6 +5258,1245 @@
         if (phoneInput && !phoneInput.value) phoneInput.value = phone;
         if (emailInput && !emailInput.value) emailInput.value = email;
       }, 500);
+    });
+  </script>
+
+  <script>
+    // ========== INTERNATIONALIZATION ==========
+    const translations = {
+      en: {
+        // Header
+        headerCta: "Free Assessment",
+        // Hero
+        heroTag: "Immigration Law Firm",
+        heroTitle: "Legalization of stay in <span class=\"text-gradient\">Poland</span>",
+        heroSubtitle: "Residence permits, work permits, citizenship - we handle your case from start to finish",
+        heroCta: "Get Free Assessment",
+        heroLawyerTitle: "Lead Attorney",
+        heroLawyerExp: "11 years experience",
+        heroClientsLabel: "satisfied clients",
+        heroLangsLabel: "We speak your language",
+        // Form
+        formTitle: "Free Case Assessment",
+        formTime: "1 minute",
+        // Step 1
+        step1Title: "What's your situation?",
+        step1FastHelp: "Fast help",
+        step1Fingerprints: "Waiting for fingerprints",
+        step1Stuck: "Case stuck / no updates",
+        step1Letter: "Got a letter from office",
+        step1Rejected: "Application rejected",
+        step1New: "Start new application",
+        continueBtn: "Continue",
+        // Rejection timing
+        rejectionTitle: "When did you receive the rejection?",
+        rejectionHint: "You have 14 days to appeal",
+        rejectionActNow: "Act now!",
+        rejection0_7: "Less than 7 days ago",
+        rejection7_14: "7 - 14 days ago",
+        rejection14plus: "More than 14 days ago",
+        rejectionNotSure: "I'm not sure",
+        // Permit type
+        permitTitle: "What do you need?",
+        permitHint: "Select the type of permit",
+        permitResidence: "Residence permit (Karta pobytu)",
+        permitWork: "Work permit",
+        permitCitizenship: "Polish citizenship",
+        permitConsultation: "I need consultation",
+        // Phone
+        phoneTitle: "Your WhatsApp number",
+        phoneHint: "We'll message you within 24 hours",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneSafe: "Your number is safe. We never share it.",
+        // Location
+        locationTitle: "Where do you live?",
+        locationHint: "We specialize in Lower Silesia",
+        locationWroclaw: "Wrocław",
+        locationOtherLS: "Other city in Lower Silesia",
+        locationOtherLSDesc: "Legnica, Wałbrzych, Jelenia Góra, Bolesławiec, Świdnica, Lubin, Głogów, Zgorzelec",
+        locationOther: "Other region",
+        locationOtherDesc: "Warsaw, Kraków, Gdańsk, etc.",
+        // Intent
+        intentTitle: "What are you looking for?",
+        intentHint: "This helps us understand your needs",
+        intentBestFit: "Best fit",
+        intentReady: "I want professional help with my case",
+        intentReadyDesc: "Ready to work with a lawyer",
+        intentExploring: "Just exploring my options",
+        intentExploringDesc: "Looking for general information",
+        // Waiting time
+        waitingTitle: "How long have you been waiting?",
+        waitingHint: "This helps us prioritize urgent cases",
+        waiting0_6: "Less than 6 months",
+        waiting6_12: "6 - 12 months",
+        waiting12_18: "12 - 18 months",
+        waiting18plus: "More than 18 months",
+        waitingPriority: "Priority case",
+        // Details
+        detailsTitle: "Almost done!",
+        detailsHint: "Just a few more details",
+        detailsName: "Your name",
+        detailsNamePlaceholder: "First and last name",
+        detailsEmail: "Email",
+        detailsConsent: "I agree to the <a href=\"#\">Privacy Policy</a>",
+        detailsSubmit: "Get Free Assessment",
+        // Success
+        successTitle: "We got your request!",
+        successText: "Our team will review your case and contact you<br><strong>within 24 hours</strong>.",
+        successWhatsapp: "Chat on WhatsApp now",
+        // Not qualified
+        notQualifiedTitle: "We specialize in Lower Silesia",
+        notQualifiedText: "We can only help with cases processed by the Lower Silesian Voivodeship Office.<br><br>Please look for a lawyer in your region who specializes in immigration cases.",
+        // Info only
+        infoOnlyTitle: "We focus on case representation",
+        infoOnlyText: "We help clients who are ready to work with a lawyer on their case.<br><br>When you're ready to proceed, come back and we'll be happy to help!",
+        infoOnlyBtn: "Start again when ready",
+        // Prefooter
+        prefooterTitle: "Ready to <span class=\"text-gradient\">resolve</span> your case?",
+        prefooterText: "Get a free assessment from our immigration specialists. We respond within 24 hours.",
+        prefooterCta: "Start Free Assessment",
+        // Footer
+        footerCopy: "© 2025 Immigration Lawyer Wrocław",
+        footerPrivacy: "Privacy Policy",
+        footerTerms: "Terms",
+        // Sticky CTA
+        stickyCta: "Free Assessment",
+        // Problems section
+        problemsTitle: "Is your case <span class=\"text-gradient\">stuck</span>?",
+        problemsSubtitle: "Many foreigners wait months without any progress. You're not alone — and we can help.",
+        problemMostCommon: "Most common issue",
+        problem1Title: "Waiting 12+ months for fingerprints?",
+        problem1Text: "You submitted your application but still haven't received an appointment for fingerprints (odciski palców). This is our specialty.",
+        problem1Stat: "weeks to resolve<br>most stuck cases",
+        problem1Cta: "Get help now",
+        problem2Title: "No response from Immigration Office?",
+        problem2Text: "No letters, no calls, no updates. We can check your case status and take action.",
+        problem2Stat: "Immediate status check",
+        problem3Title: "Received a letter you don't understand?",
+        problem3Text: "Official letters are in Polish and can be confusing. Missing a deadline can result in rejection.",
+        problem3Stat: "Response within <strong>24h</strong>",
+        problem4Title: "Your case was rejected?",
+        problem4Text: "Don't panic — we can review your rejection and often get the decision reversed.",
+        problem4Counter: "days to appeal",
+        regionTitle: "Lower Silesia",
+        // Lead magnet
+        lmWidgetBtn: "Free Legal Guide",
+        lmTitle: "Are You Legally in Poland?",
+        lmDesc: "Get our free guide and avoid the most common mistakes that cost foreigners their stay.",
+        lmOfferTitle: "10 Legal Mistakes to Avoid",
+        lmOfferDesc: "PDF guide sent to your email",
+        lmEmailPlaceholder: "Your email",
+        lmPhonePlaceholder: "WhatsApp / Phone",
+        lmSubmit: "Get Free Guide",
+        lmNote: "No spam. Instant download."
+      },
+      uk: {
+        headerCta: "Безкоштовна оцінка",
+        heroTag: "Міграційна юридична фірма",
+        heroTitle: "Легалізація перебування в <span class=\"text-gradient\">Польщі</span>",
+        heroSubtitle: "Посвідки на проживання, дозволи на роботу, громадянство — ведемо вашу справу від початку до кінця",
+        heroCta: "Отримати безкоштовну оцінку",
+        heroLawyerTitle: "Провідний адвокат",
+        heroLawyerExp: "11 років досвіду",
+        heroClientsLabel: "задоволених клієнтів",
+        heroLangsLabel: "Ми говоримо вашою мовою",
+        formTitle: "Безкоштовна оцінка справи",
+        formTime: "1 хвилина",
+        step1Title: "Яка ваша ситуація?",
+        step1FastHelp: "Швидка допомога",
+        step1Fingerprints: "Чекаю на відбитки пальців",
+        step1Stuck: "Справа застрягла / немає оновлень",
+        step1Letter: "Отримав лист з офісу",
+        step1Rejected: "Заявку відхилено",
+        step1New: "Почати нову заявку",
+        continueBtn: "Продовжити",
+        rejectionTitle: "Коли ви отримали відмову?",
+        rejectionHint: "У вас є 14 днів на апеляцію",
+        rejectionActNow: "Дійте зараз!",
+        rejection0_7: "Менше 7 днів тому",
+        rejection7_14: "7 - 14 днів тому",
+        rejection14plus: "Більше 14 днів тому",
+        rejectionNotSure: "Не впевнений",
+        permitTitle: "Що вам потрібно?",
+        permitHint: "Виберіть тип дозволу",
+        permitResidence: "Посвідка на проживання (Karta pobytu)",
+        permitWork: "Дозвіл на роботу",
+        permitCitizenship: "Польське громадянство",
+        permitConsultation: "Мені потрібна консультація",
+        phoneTitle: "Ваш номер WhatsApp",
+        phoneHint: "Ми зв'яжемося з вами протягом 24 годин",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneSafe: "Ваш номер у безпеці. Ми ніколи не передаємо його.",
+        locationTitle: "Де ви живете?",
+        locationHint: "Ми спеціалізуємося на Нижній Сілезії",
+        locationWroclaw: "Вроцлав",
+        locationOtherLS: "Інше місто в Нижній Сілезії",
+        locationOtherLSDesc: "Легниця, Валбжих, Єлєня Гура, Болеславець, Свідниця, Любін, Глогув, Згожелець",
+        locationOther: "Інший регіон",
+        locationOtherDesc: "Варшава, Краків, Гданськ тощо",
+        intentTitle: "Що ви шукаєте?",
+        intentHint: "Це допоможе нам зрозуміти ваші потреби",
+        intentBestFit: "Найкращий вибір",
+        intentReady: "Хочу професійну допомогу зі справою",
+        intentReadyDesc: "Готовий працювати з адвокатом",
+        intentExploring: "Просто вивчаю варіанти",
+        intentExploringDesc: "Шукаю загальну інформацію",
+        waitingTitle: "Як довго ви чекаєте?",
+        waitingHint: "Це допоможе нам визначити пріоритетність термінових справ",
+        waiting0_6: "Менше 6 місяців",
+        waiting6_12: "6 - 12 місяців",
+        waiting12_18: "12 - 18 місяців",
+        waiting18plus: "Більше 18 місяців",
+        waitingPriority: "Пріоритетна справа",
+        detailsTitle: "Майже готово!",
+        detailsHint: "Ще кілька деталей",
+        detailsName: "Ваше ім'я",
+        detailsNamePlaceholder: "Ім'я та прізвище",
+        detailsEmail: "Email",
+        detailsConsent: "Я погоджуюся з <a href=\"#\">Політикою конфіденційності</a>",
+        detailsSubmit: "Отримати безкоштовну оцінку",
+        successTitle: "Ми отримали ваш запит!",
+        successText: "Наша команда розгляне вашу справу та зв'яжеться з вами<br><strong>протягом 24 годин</strong>.",
+        successWhatsapp: "Написати в WhatsApp зараз",
+        notQualifiedTitle: "Ми спеціалізуємося на Нижній Сілезії",
+        notQualifiedText: "Ми можемо допомогти лише зі справами, які обробляє Нижньосілезьке воєводське управління.<br><br>Будь ласка, знайдіть адвоката у вашому регіоні, який спеціалізується на міграційних справах.",
+        infoOnlyTitle: "Ми зосереджуємося на веденні справ",
+        infoOnlyText: "Ми допомагаємо клієнтам, які готові працювати з адвокатом над своєю справою.<br><br>Коли будете готові, поверніться — ми будемо раді допомогти!",
+        infoOnlyBtn: "Почати знову, коли готові",
+        prefooterTitle: "Готові <span class=\"text-gradient\">вирішити</span> свою справу?",
+        prefooterText: "Отримайте безкоштовну оцінку від наших міграційних спеціалістів. Відповідаємо протягом 24 годин.",
+        prefooterCta: "Почати безкоштовну оцінку",
+        footerCopy: "© 2025 Міграційний адвокат Вроцлав",
+        footerPrivacy: "Політика конфіденційності",
+        footerTerms: "Умови",
+        stickyCta: "Безкоштовна оцінка",
+        problemsTitle: "Ваша справа <span class=\"text-gradient\">застрягла</span>?",
+        problemsSubtitle: "Багато іноземців чекають місяцями без прогресу. Ви не самотні — ми можемо допомогти.",
+        problemMostCommon: "Найпоширеніша проблема",
+        problem1Title: "Чекаєте 12+ місяців на відбитки пальців?",
+        problem1Text: "Ви подали заявку, але досі не отримали запрошення на здачу відбитків пальців. Це наша спеціалізація.",
+        problem1Stat: "тижнів для вирішення<br>більшості застряглих справ",
+        problem1Cta: "Отримати допомогу",
+        problem2Title: "Немає відповіді від міграційного офісу?",
+        problem2Text: "Немає листів, дзвінків, оновлень. Ми можемо перевірити статус вашої справи та вжити заходів.",
+        problem2Stat: "Негайна перевірка статусу",
+        problem3Title: "Отримали лист, який не розумієте?",
+        problem3Text: "Офіційні листи польською мовою можуть бути заплутаними. Пропуск дедлайну може призвести до відмови.",
+        problem3Stat: "Відповідь протягом <strong>24 год</strong>",
+        problem4Title: "Вашу справу відхилено?",
+        problem4Text: "Не панікуйте — ми можемо переглянути вашу відмову і часто домагаємося скасування рішення.",
+        problem4Counter: "днів на апеляцію",
+        regionTitle: "Нижня Сілезія",
+        lmWidgetBtn: "Безкоштовний юридичний посібник",
+        lmTitle: "Ви легально в Польщі?",
+        lmDesc: "Отримайте наш безкоштовний посібник та уникніть найпоширеніших помилок, які коштують іноземцям їхнього перебування.",
+        lmOfferTitle: "10 юридичних помилок, яких слід уникати",
+        lmOfferDesc: "PDF-посібник на вашу пошту",
+        lmEmailPlaceholder: "Ваш email",
+        lmPhonePlaceholder: "WhatsApp / Телефон",
+        lmSubmit: "Отримати безкоштовний посібник",
+        lmNote: "Без спаму. Миттєве завантаження."
+      },
+      pl: {
+        headerCta: "Darmowa wycena",
+        heroTag: "Kancelaria Migracyjna",
+        heroTitle: "Legalizacja pobytu w <span class=\"text-gradient\">Polsce</span>",
+        heroSubtitle: "Karty pobytu, pozwolenia na pracę, obywatelstwo — prowadzimy sprawę od początku do końca",
+        heroCta: "Darmowa wycena",
+        heroLawyerTitle: "Główny adwokat",
+        heroLawyerExp: "11 lat doświadczenia",
+        heroClientsLabel: "zadowolonych klientów",
+        heroLangsLabel: "Mówimy Twoim językiem",
+        formTitle: "Darmowa wycena sprawy",
+        formTime: "1 minuta",
+        step1Title: "Jaka jest Twoja sytuacja?",
+        step1FastHelp: "Szybka pomoc",
+        step1Fingerprints: "Czekam na odciski palców",
+        step1Stuck: "Sprawa utknęła / brak aktualizacji",
+        step1Letter: "Dostałem pismo z urzędu",
+        step1Rejected: "Wniosek odrzucony",
+        step1New: "Złożyć nowy wniosek",
+        continueBtn: "Dalej",
+        rejectionTitle: "Kiedy otrzymałeś odmowę?",
+        rejectionHint: "Masz 14 dni na odwołanie",
+        rejectionActNow: "Działaj teraz!",
+        rejection0_7: "Mniej niż 7 dni temu",
+        rejection7_14: "7 - 14 dni temu",
+        rejection14plus: "Więcej niż 14 dni temu",
+        rejectionNotSure: "Nie jestem pewien",
+        permitTitle: "Czego potrzebujesz?",
+        permitHint: "Wybierz rodzaj zezwolenia",
+        permitResidence: "Karta pobytu",
+        permitWork: "Pozwolenie na pracę",
+        permitCitizenship: "Polskie obywatelstwo",
+        permitConsultation: "Potrzebuję konsultacji",
+        phoneTitle: "Twój numer WhatsApp",
+        phoneHint: "Skontaktujemy się w ciągu 24 godzin",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneSafe: "Twój numer jest bezpieczny. Nigdy go nie udostępniamy.",
+        locationTitle: "Gdzie mieszkasz?",
+        locationHint: "Specjalizujemy się w Dolnym Śląsku",
+        locationWroclaw: "Wrocław",
+        locationOtherLS: "Inne miasto na Dolnym Śląsku",
+        locationOtherLSDesc: "Legnica, Wałbrzych, Jelenia Góra, Bolesławiec, Świdnica, Lubin, Głogów, Zgorzelec",
+        locationOther: "Inny region",
+        locationOtherDesc: "Warszawa, Kraków, Gdańsk itp.",
+        intentTitle: "Czego szukasz?",
+        intentHint: "To pomoże nam zrozumieć Twoje potrzeby",
+        intentBestFit: "Najlepsze dopasowanie",
+        intentReady: "Chcę profesjonalnej pomocy w mojej sprawie",
+        intentReadyDesc: "Gotowy do współpracy z prawnikiem",
+        intentExploring: "Tylko rozglądam się",
+        intentExploringDesc: "Szukam ogólnych informacji",
+        waitingTitle: "Jak długo czekasz?",
+        waitingHint: "To pomoże nam nadać priorytet pilnym sprawom",
+        waiting0_6: "Mniej niż 6 miesięcy",
+        waiting6_12: "6 - 12 miesięcy",
+        waiting12_18: "12 - 18 miesięcy",
+        waiting18plus: "Więcej niż 18 miesięcy",
+        waitingPriority: "Priorytetowa sprawa",
+        detailsTitle: "Prawie gotowe!",
+        detailsHint: "Jeszcze kilka szczegółów",
+        detailsName: "Twoje imię",
+        detailsNamePlaceholder: "Imię i nazwisko",
+        detailsEmail: "Email",
+        detailsConsent: "Zgadzam się z <a href=\"#\">Polityką prywatności</a>",
+        detailsSubmit: "Otrzymaj darmową wycenę",
+        successTitle: "Otrzymaliśmy Twoje zgłoszenie!",
+        successText: "Nasz zespół przeanalizuje Twoją sprawę i skontaktuje się<br><strong>w ciągu 24 godzin</strong>.",
+        successWhatsapp: "Napisz na WhatsApp teraz",
+        notQualifiedTitle: "Specjalizujemy się w Dolnym Śląsku",
+        notQualifiedText: "Możemy pomóc tylko ze sprawami prowadzonymi przez Dolnośląski Urząd Wojewódzki.<br><br>Proszę poszukać prawnika w swoim regionie specjalizującego się w sprawach imigracyjnych.",
+        infoOnlyTitle: "Skupiamy się na prowadzeniu spraw",
+        infoOnlyText: "Pomagamy klientom, którzy są gotowi współpracować z prawnikiem nad swoją sprawą.<br><br>Kiedy będziesz gotowy, wróć — chętnie pomożemy!",
+        infoOnlyBtn: "Zacznij ponownie gdy gotowy",
+        prefooterTitle: "Gotowy <span class=\"text-gradient\">rozwiązać</span> swoją sprawę?",
+        prefooterText: "Uzyskaj darmową wycenę od naszych specjalistów ds. imigracji. Odpowiadamy w ciągu 24 godzin.",
+        prefooterCta: "Rozpocznij darmową wycenę",
+        footerCopy: "© 2025 Prawnik Imigracyjny Wrocław",
+        footerPrivacy: "Polityka prywatności",
+        footerTerms: "Regulamin",
+        stickyCta: "Darmowa wycena",
+        problemsTitle: "Twoja sprawa <span class=\"text-gradient\">utknęła</span>?",
+        problemsSubtitle: "Wielu cudzoziemców czeka miesiącami bez postępu. Nie jesteś sam — możemy pomóc.",
+        problemMostCommon: "Najczęstszy problem",
+        problem1Title: "Czekasz 12+ miesięcy na odciski palców?",
+        problem1Text: "Złożyłeś wniosek, ale wciąż nie otrzymałeś wezwania na odciski palców. To nasza specjalność.",
+        problem1Stat: "tygodni na rozwiązanie<br>większości utknięć",
+        problem1Cta: "Uzyskaj pomoc",
+        problem2Title: "Brak odpowiedzi z urzędu?",
+        problem2Text: "Brak pism, telefonów, aktualizacji. Możemy sprawdzić status Twojej sprawy i podjąć działania.",
+        problem2Stat: "Natychmiastowa weryfikacja statusu",
+        problem3Title: "Otrzymałeś pismo, którego nie rozumiesz?",
+        problem3Text: "Oficjalne pisma mogą być mylące. Przeoczenie terminu może skutkować odmową.",
+        problem3Stat: "Odpowiedź w ciągu <strong>24h</strong>",
+        problem4Title: "Twoja sprawa została odrzucona?",
+        problem4Text: "Nie panikuj — możemy przeanalizować odmowę i często uzyskujemy uchylenie decyzji.",
+        problem4Counter: "dni na odwołanie",
+        regionTitle: "Dolny Śląsk",
+        lmWidgetBtn: "Darmowy poradnik prawny",
+        lmTitle: "Czy jesteś legalnie w Polsce?",
+        lmDesc: "Pobierz nasz darmowy poradnik i uniknij najczęstszych błędów, które kosztują cudzoziemców pobyt.",
+        lmOfferTitle: "10 błędów prawnych, których należy unikać",
+        lmOfferDesc: "Poradnik PDF na Twój email",
+        lmEmailPlaceholder: "Twój email",
+        lmPhonePlaceholder: "WhatsApp / Telefon",
+        lmSubmit: "Pobierz darmowy poradnik",
+        lmNote: "Bez spamu. Natychmiastowe pobranie."
+      },
+      es: {
+        headerCta: "Evaluación gratuita",
+        heroTag: "Bufete de Inmigración",
+        heroTitle: "Legalización de estancia en <span class=\"text-gradient\">Polonia</span>",
+        heroSubtitle: "Permisos de residencia, permisos de trabajo, ciudadanía — gestionamos tu caso de principio a fin",
+        heroCta: "Obtener evaluación gratuita",
+        heroLawyerTitle: "Abogado principal",
+        heroLawyerExp: "11 años de experiencia",
+        heroClientsLabel: "clientes satisfechos",
+        heroLangsLabel: "Hablamos tu idioma",
+        formTitle: "Evaluación gratuita del caso",
+        formTime: "1 minuto",
+        step1Title: "¿Cuál es tu situación?",
+        step1FastHelp: "Ayuda rápida",
+        step1Fingerprints: "Esperando huellas dactilares",
+        step1Stuck: "Caso atascado / sin actualizaciones",
+        step1Letter: "Recibí una carta de la oficina",
+        step1Rejected: "Solicitud rechazada",
+        step1New: "Iniciar nueva solicitud",
+        continueBtn: "Continuar",
+        rejectionTitle: "¿Cuándo recibiste el rechazo?",
+        rejectionHint: "Tienes 14 días para apelar",
+        rejectionActNow: "¡Actúa ahora!",
+        rejection0_7: "Hace menos de 7 días",
+        rejection7_14: "Hace 7 - 14 días",
+        rejection14plus: "Hace más de 14 días",
+        rejectionNotSure: "No estoy seguro",
+        permitTitle: "¿Qué necesitas?",
+        permitHint: "Selecciona el tipo de permiso",
+        permitResidence: "Permiso de residencia (Karta pobytu)",
+        permitWork: "Permiso de trabajo",
+        permitCitizenship: "Ciudadanía polaca",
+        permitConsultation: "Necesito una consulta",
+        phoneTitle: "Tu número de WhatsApp",
+        phoneHint: "Te contactaremos en 24 horas",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneSafe: "Tu número está seguro. Nunca lo compartimos.",
+        locationTitle: "¿Dónde vives?",
+        locationHint: "Nos especializamos en Baja Silesia",
+        locationWroclaw: "Wrocław",
+        locationOtherLS: "Otra ciudad en Baja Silesia",
+        locationOtherLSDesc: "Legnica, Wałbrzych, Jelenia Góra, Bolesławiec, Świdnica, Lubin, Głogów, Zgorzelec",
+        locationOther: "Otra región",
+        locationOtherDesc: "Varsovia, Cracovia, Gdańsk, etc.",
+        intentTitle: "¿Qué estás buscando?",
+        intentHint: "Esto nos ayuda a entender tus necesidades",
+        intentBestFit: "Mejor opción",
+        intentReady: "Quiero ayuda profesional con mi caso",
+        intentReadyDesc: "Listo para trabajar con un abogado",
+        intentExploring: "Solo explorando mis opciones",
+        intentExploringDesc: "Buscando información general",
+        waitingTitle: "¿Cuánto tiempo llevas esperando?",
+        waitingHint: "Esto nos ayuda a priorizar casos urgentes",
+        waiting0_6: "Menos de 6 meses",
+        waiting6_12: "6 - 12 meses",
+        waiting12_18: "12 - 18 meses",
+        waiting18plus: "Más de 18 meses",
+        waitingPriority: "Caso prioritario",
+        detailsTitle: "¡Casi listo!",
+        detailsHint: "Solo unos detalles más",
+        detailsName: "Tu nombre",
+        detailsNamePlaceholder: "Nombre y apellido",
+        detailsEmail: "Email",
+        detailsConsent: "Acepto la <a href=\"#\">Política de privacidad</a>",
+        detailsSubmit: "Obtener evaluación gratuita",
+        successTitle: "¡Recibimos tu solicitud!",
+        successText: "Nuestro equipo revisará tu caso y te contactará<br><strong>en 24 horas</strong>.",
+        successWhatsapp: "Chatea en WhatsApp ahora",
+        notQualifiedTitle: "Nos especializamos en Baja Silesia",
+        notQualifiedText: "Solo podemos ayudar con casos procesados por la Oficina del Voivodato de Baja Silesia.<br><br>Por favor busca un abogado en tu región especializado en casos de inmigración.",
+        infoOnlyTitle: "Nos enfocamos en representación de casos",
+        infoOnlyText: "Ayudamos a clientes que están listos para trabajar con un abogado en su caso.<br><br>¡Cuando estés listo, vuelve y estaremos encantados de ayudarte!",
+        infoOnlyBtn: "Empezar de nuevo cuando estés listo",
+        prefooterTitle: "¿Listo para <span class=\"text-gradient\">resolver</span> tu caso?",
+        prefooterText: "Obtén una evaluación gratuita de nuestros especialistas en inmigración. Respondemos en 24 horas.",
+        prefooterCta: "Iniciar evaluación gratuita",
+        footerCopy: "© 2025 Abogado de Inmigración Wrocław",
+        footerPrivacy: "Política de privacidad",
+        footerTerms: "Términos",
+        stickyCta: "Evaluación gratuita",
+        problemsTitle: "¿Tu caso está <span class=\"text-gradient\">atascado</span>?",
+        problemsSubtitle: "Muchos extranjeros esperan meses sin progreso. No estás solo — podemos ayudar.",
+        problemMostCommon: "Problema más común",
+        problem1Title: "¿Esperando 12+ meses por huellas dactilares?",
+        problem1Text: "Enviaste tu solicitud pero aún no has recibido cita para huellas dactilares. Esta es nuestra especialidad.",
+        problem1Stat: "semanas para resolver<br>la mayoría de casos atascados",
+        problem1Cta: "Obtener ayuda ahora",
+        problem2Title: "¿Sin respuesta de la oficina de inmigración?",
+        problem2Text: "Sin cartas, llamadas ni actualizaciones. Podemos verificar el estado de tu caso y actuar.",
+        problem2Stat: "Verificación inmediata del estado",
+        problem3Title: "¿Recibiste una carta que no entiendes?",
+        problem3Text: "Las cartas oficiales están en polaco y pueden ser confusas. Perder un plazo puede resultar en rechazo.",
+        problem3Stat: "Respuesta en <strong>24h</strong>",
+        problem4Title: "¿Tu caso fue rechazado?",
+        problem4Text: "No te asustes — podemos revisar tu rechazo y a menudo logramos revertir la decisión.",
+        problem4Counter: "días para apelar",
+        regionTitle: "Baja Silesia",
+        lmWidgetBtn: "Guía legal gratuita",
+        lmTitle: "¿Estás legalmente en Polonia?",
+        lmDesc: "Obtén nuestra guía gratuita y evita los errores más comunes que cuestan a los extranjeros su estancia.",
+        lmOfferTitle: "10 errores legales a evitar",
+        lmOfferDesc: "Guía PDF enviada a tu email",
+        lmEmailPlaceholder: "Tu email",
+        lmPhonePlaceholder: "WhatsApp / Teléfono",
+        lmSubmit: "Obtener guía gratuita",
+        lmNote: "Sin spam. Descarga instantánea."
+      },
+      fr: {
+        headerCta: "Évaluation gratuite",
+        heroTag: "Cabinet d'Immigration",
+        heroTitle: "Légalisation du séjour en <span class=\"text-gradient\">Pologne</span>",
+        heroSubtitle: "Permis de séjour, permis de travail, citoyenneté — nous gérons votre dossier de A à Z",
+        heroCta: "Obtenir une évaluation gratuite",
+        heroLawyerTitle: "Avocat principal",
+        heroLawyerExp: "11 ans d'expérience",
+        heroClientsLabel: "clients satisfaits",
+        heroLangsLabel: "Nous parlons votre langue",
+        formTitle: "Évaluation gratuite du dossier",
+        formTime: "1 minute",
+        step1Title: "Quelle est votre situation?",
+        step1FastHelp: "Aide rapide",
+        step1Fingerprints: "En attente des empreintes digitales",
+        step1Stuck: "Dossier bloqué / pas de nouvelles",
+        step1Letter: "J'ai reçu une lettre du bureau",
+        step1Rejected: "Demande rejetée",
+        step1New: "Démarrer une nouvelle demande",
+        continueBtn: "Continuer",
+        rejectionTitle: "Quand avez-vous reçu le rejet?",
+        rejectionHint: "Vous avez 14 jours pour faire appel",
+        rejectionActNow: "Agissez maintenant!",
+        rejection0_7: "Il y a moins de 7 jours",
+        rejection7_14: "Il y a 7 - 14 jours",
+        rejection14plus: "Il y a plus de 14 jours",
+        rejectionNotSure: "Je ne suis pas sûr",
+        permitTitle: "De quoi avez-vous besoin?",
+        permitHint: "Sélectionnez le type de permis",
+        permitResidence: "Permis de séjour (Karta pobytu)",
+        permitWork: "Permis de travail",
+        permitCitizenship: "Citoyenneté polonaise",
+        permitConsultation: "J'ai besoin d'une consultation",
+        phoneTitle: "Votre numéro WhatsApp",
+        phoneHint: "Nous vous contacterons dans les 24 heures",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneSafe: "Votre numéro est en sécurité. Nous ne le partageons jamais.",
+        locationTitle: "Où habitez-vous?",
+        locationHint: "Nous sommes spécialisés en Basse-Silésie",
+        locationWroclaw: "Wrocław",
+        locationOtherLS: "Autre ville en Basse-Silésie",
+        locationOtherLSDesc: "Legnica, Wałbrzych, Jelenia Góra, Bolesławiec, Świdnica, Lubin, Głogów, Zgorzelec",
+        locationOther: "Autre région",
+        locationOtherDesc: "Varsovie, Cracovie, Gdańsk, etc.",
+        intentTitle: "Que recherchez-vous?",
+        intentHint: "Cela nous aide à comprendre vos besoins",
+        intentBestFit: "Meilleur choix",
+        intentReady: "Je veux une aide professionnelle pour mon dossier",
+        intentReadyDesc: "Prêt à travailler avec un avocat",
+        intentExploring: "Je explore simplement mes options",
+        intentExploringDesc: "Je cherche des informations générales",
+        waitingTitle: "Depuis combien de temps attendez-vous?",
+        waitingHint: "Cela nous aide à prioriser les cas urgents",
+        waiting0_6: "Moins de 6 mois",
+        waiting6_12: "6 - 12 mois",
+        waiting12_18: "12 - 18 mois",
+        waiting18plus: "Plus de 18 mois",
+        waitingPriority: "Cas prioritaire",
+        detailsTitle: "Presque terminé!",
+        detailsHint: "Encore quelques détails",
+        detailsName: "Votre nom",
+        detailsNamePlaceholder: "Prénom et nom",
+        detailsEmail: "Email",
+        detailsConsent: "J'accepte la <a href=\"#\">Politique de confidentialité</a>",
+        detailsSubmit: "Obtenir une évaluation gratuite",
+        successTitle: "Nous avons reçu votre demande!",
+        successText: "Notre équipe examinera votre dossier et vous contactera<br><strong>dans les 24 heures</strong>.",
+        successWhatsapp: "Chattez sur WhatsApp maintenant",
+        notQualifiedTitle: "Nous sommes spécialisés en Basse-Silésie",
+        notQualifiedText: "Nous ne pouvons aider qu'avec les dossiers traités par le Bureau du Voïvodat de Basse-Silésie.<br><br>Veuillez chercher un avocat dans votre région spécialisé en immigration.",
+        infoOnlyTitle: "Nous nous concentrons sur la représentation",
+        infoOnlyText: "Nous aidons les clients prêts à travailler avec un avocat sur leur dossier.<br><br>Quand vous serez prêt, revenez — nous serons heureux de vous aider!",
+        infoOnlyBtn: "Recommencer quand prêt",
+        prefooterTitle: "Prêt à <span class=\"text-gradient\">résoudre</span> votre dossier?",
+        prefooterText: "Obtenez une évaluation gratuite de nos spécialistes en immigration. Réponse en 24 heures.",
+        prefooterCta: "Commencer l'évaluation gratuite",
+        footerCopy: "© 2025 Avocat en Immigration Wrocław",
+        footerPrivacy: "Politique de confidentialité",
+        footerTerms: "Conditions",
+        stickyCta: "Évaluation gratuite",
+        problemsTitle: "Votre dossier est <span class=\"text-gradient\">bloqué</span>?",
+        problemsSubtitle: "Beaucoup d'étrangers attendent des mois sans progrès. Vous n'êtes pas seul — nous pouvons aider.",
+        problemMostCommon: "Problème le plus courant",
+        problem1Title: "Vous attendez 12+ mois pour les empreintes?",
+        problem1Text: "Vous avez soumis votre demande mais n'avez toujours pas reçu de rendez-vous pour les empreintes. C'est notre spécialité.",
+        problem1Stat: "semaines pour résoudre<br>la plupart des dossiers bloqués",
+        problem1Cta: "Obtenir de l'aide",
+        problem2Title: "Pas de réponse du bureau d'immigration?",
+        problem2Text: "Pas de lettres, d'appels ni de mises à jour. Nous pouvons vérifier le statut de votre dossier et agir.",
+        problem2Stat: "Vérification immédiate du statut",
+        problem3Title: "Vous avez reçu une lettre incompréhensible?",
+        problem3Text: "Les lettres officielles sont en polonais et peuvent être confuses. Manquer un délai peut entraîner un rejet.",
+        problem3Stat: "Réponse en <strong>24h</strong>",
+        problem4Title: "Votre dossier a été rejeté?",
+        problem4Text: "Pas de panique — nous pouvons examiner votre rejet et souvent faire annuler la décision.",
+        problem4Counter: "jours pour faire appel",
+        regionTitle: "Basse-Silésie",
+        lmWidgetBtn: "Guide juridique gratuit",
+        lmTitle: "Êtes-vous légalement en Pologne?",
+        lmDesc: "Obtenez notre guide gratuit et évitez les erreurs les plus courantes qui coûtent aux étrangers leur séjour.",
+        lmOfferTitle: "10 erreurs juridiques à éviter",
+        lmOfferDesc: "Guide PDF envoyé par email",
+        lmEmailPlaceholder: "Votre email",
+        lmPhonePlaceholder: "WhatsApp / Téléphone",
+        lmSubmit: "Obtenir le guide gratuit",
+        lmNote: "Pas de spam. Téléchargement instantané."
+      },
+      hi: {
+        headerCta: "मुफ्त मूल्यांकन",
+        heroTag: "आव्रजन कानून फर्म",
+        heroTitle: "<span class=\"text-gradient\">पोलैंड</span> में रहने का वैधीकरण",
+        heroSubtitle: "निवास परमिट, कार्य परमिट, नागरिकता — हम शुरू से अंत तक आपके मामले को संभालते हैं",
+        heroCta: "मुफ्त मूल्यांकन प्राप्त करें",
+        heroLawyerTitle: "प्रमुख वकील",
+        heroLawyerExp: "11 वर्षों का अनुभव",
+        heroClientsLabel: "संतुष्ट ग्राहक",
+        heroLangsLabel: "हम आपकी भाषा बोलते हैं",
+        formTitle: "मुफ्त केस मूल्यांकन",
+        formTime: "1 मिनट",
+        step1Title: "आपकी स्थिति क्या है?",
+        step1FastHelp: "त्वरित सहायता",
+        step1Fingerprints: "फिंगरप्रिंट का इंतजार",
+        step1Stuck: "केस अटका / कोई अपडेट नहीं",
+        step1Letter: "कार्यालय से पत्र मिला",
+        step1Rejected: "आवेदन अस्वीकृत",
+        step1New: "नया आवेदन शुरू करें",
+        continueBtn: "जारी रखें",
+        rejectionTitle: "आपको अस्वीकृति कब मिली?",
+        rejectionHint: "अपील के लिए 14 दिन हैं",
+        rejectionActNow: "अभी कार्य करें!",
+        rejection0_7: "7 दिन से कम पहले",
+        rejection7_14: "7 - 14 दिन पहले",
+        rejection14plus: "14 दिन से अधिक पहले",
+        rejectionNotSure: "मुझे यकीन नहीं है",
+        permitTitle: "आपको क्या चाहिए?",
+        permitHint: "परमिट का प्रकार चुनें",
+        permitResidence: "निवास परमिट (Karta pobytu)",
+        permitWork: "कार्य परमिट",
+        permitCitizenship: "पोलिश नागरिकता",
+        permitConsultation: "मुझे परामर्श चाहिए",
+        phoneTitle: "आपका WhatsApp नंबर",
+        phoneHint: "हम 24 घंटे में संपर्क करेंगे",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneSafe: "आपका नंबर सुरक्षित है। हम इसे कभी साझा नहीं करते।",
+        locationTitle: "आप कहाँ रहते हैं?",
+        locationHint: "हम निचले सिलेसिया में विशेषज्ञ हैं",
+        locationWroclaw: "व्रोट्सवाफ",
+        locationOtherLS: "निचले सिलेसिया में अन्य शहर",
+        locationOtherLSDesc: "Legnica, Wałbrzych, Jelenia Góra, Bolesławiec, Świdnica, Lubin, Głogów, Zgorzelec",
+        locationOther: "अन्य क्षेत्र",
+        locationOtherDesc: "वारसॉ, क्राको, ग्दान्स्क, आदि",
+        intentTitle: "आप क्या खोज रहे हैं?",
+        intentHint: "इससे हमें आपकी जरूरतें समझने में मदद मिलती है",
+        intentBestFit: "सर्वश्रेष्ठ विकल्प",
+        intentReady: "मुझे अपने केस में पेशेवर मदद चाहिए",
+        intentReadyDesc: "वकील के साथ काम करने के लिए तैयार",
+        intentExploring: "बस विकल्प देख रहा हूं",
+        intentExploringDesc: "सामान्य जानकारी खोज रहा हूं",
+        waitingTitle: "आप कितने समय से इंतजार कर रहे हैं?",
+        waitingHint: "इससे हमें तत्काल मामलों को प्राथमिकता देने में मदद मिलती है",
+        waiting0_6: "6 महीने से कम",
+        waiting6_12: "6 - 12 महीने",
+        waiting12_18: "12 - 18 महीने",
+        waiting18plus: "18 महीने से अधिक",
+        waitingPriority: "प्राथमिकता मामला",
+        detailsTitle: "लगभग पूरा!",
+        detailsHint: "बस कुछ और विवरण",
+        detailsName: "आपका नाम",
+        detailsNamePlaceholder: "पहला और अंतिम नाम",
+        detailsEmail: "ईमेल",
+        detailsConsent: "मैं <a href=\"#\">गोपनीयता नीति</a> से सहमत हूं",
+        detailsSubmit: "मुफ्त मूल्यांकन प्राप्त करें",
+        successTitle: "हमें आपका अनुरोध मिल गया!",
+        successText: "हमारी टीम आपके मामले की समीक्षा करेगी और<br><strong>24 घंटे में</strong> संपर्क करेगी।",
+        successWhatsapp: "अभी WhatsApp पर चैट करें",
+        notQualifiedTitle: "हम निचले सिलेसिया में विशेषज्ञ हैं",
+        notQualifiedText: "हम केवल निचले सिलेसियन वोइवोडशिप कार्यालय द्वारा संसाधित मामलों में मदद कर सकते हैं।<br><br>कृपया अपने क्षेत्र में आव्रजन मामलों में विशेषज्ञ वकील खोजें।",
+        infoOnlyTitle: "हम केस प्रतिनिधित्व पर ध्यान देते हैं",
+        infoOnlyText: "हम उन ग्राहकों की मदद करते हैं जो अपने मामले पर वकील के साथ काम करने के लिए तैयार हैं।<br><br>जब आप तैयार हों, वापस आएं — हमें खुशी होगी!",
+        infoOnlyBtn: "तैयार होने पर फिर से शुरू करें",
+        prefooterTitle: "अपना मामला <span class=\"text-gradient\">हल</span> करने के लिए तैयार?",
+        prefooterText: "हमारे आव्रजन विशेषज्ञों से मुफ्त मूल्यांकन प्राप्त करें। 24 घंटे में जवाब।",
+        prefooterCta: "मुफ्त मूल्यांकन शुरू करें",
+        footerCopy: "© 2025 आव्रजन वकील व्रोट्सवाफ",
+        footerPrivacy: "गोपनीयता नीति",
+        footerTerms: "शर्तें",
+        stickyCta: "मुफ्त मूल्यांकन",
+        problemsTitle: "क्या आपका केस <span class=\"text-gradient\">अटका</span> है?",
+        problemsSubtitle: "कई विदेशी बिना प्रगति के महीनों इंतजार करते हैं। आप अकेले नहीं हैं — हम मदद कर सकते हैं।",
+        problemMostCommon: "सबसे आम समस्या",
+        problem1Title: "12+ महीने से फिंगरप्रिंट का इंतजार?",
+        problem1Text: "आपने आवेदन जमा किया लेकिन अभी तक फिंगरप्रिंट की नियुक्ति नहीं मिली। यह हमारी विशेषता है।",
+        problem1Stat: "सप्ताह में अधिकांश<br>अटके मामलों का समाधान",
+        problem1Cta: "अभी मदद प्राप्त करें",
+        problem2Title: "आव्रजन कार्यालय से कोई जवाब नहीं?",
+        problem2Text: "कोई पत्र, कॉल या अपडेट नहीं। हम आपके केस की स्थिति जांच सकते हैं और कार्रवाई कर सकते हैं।",
+        problem2Stat: "तत्काल स्थिति जांच",
+        problem3Title: "समझ में न आने वाला पत्र मिला?",
+        problem3Text: "आधिकारिक पत्र पोलिश में हैं और भ्रमित करने वाले हो सकते हैं। समय सीमा चूकने से अस्वीकृति हो सकती है।",
+        problem3Stat: "<strong>24 घंटे</strong> में जवाब",
+        problem4Title: "आपका केस अस्वीकृत हो गया?",
+        problem4Text: "घबराएं नहीं — हम आपकी अस्वीकृति की समीक्षा कर सकते हैं और अक्सर निर्णय पलट देते हैं।",
+        problem4Counter: "दिन अपील के लिए",
+        regionTitle: "निचला सिलेसिया",
+        lmWidgetBtn: "मुफ्त कानूनी गाइड",
+        lmTitle: "क्या आप पोलैंड में कानूनी रूप से हैं?",
+        lmDesc: "हमारी मुफ्त गाइड प्राप्त करें और सबसे आम गलतियों से बचें।",
+        lmOfferTitle: "10 कानूनी गलतियां जिनसे बचना है",
+        lmOfferDesc: "PDF गाइड आपके ईमेल पर",
+        lmEmailPlaceholder: "आपका ईमेल",
+        lmPhonePlaceholder: "WhatsApp / फोन",
+        lmSubmit: "मुफ्त गाइड प्राप्त करें",
+        lmNote: "कोई स्पैम नहीं। तुरंत डाउनलोड।"
+      },
+      bn: {
+        headerCta: "বিনামূল্যে মূল্যায়ন",
+        heroTag: "অভিবাসন আইন সংস্থা",
+        heroTitle: "<span class=\"text-gradient\">পোল্যান্ডে</span> থাকার বৈধতা",
+        heroSubtitle: "রেসিডেন্স পারমিট, ওয়ার্ক পারমিট, নাগরিকত্ব — আমরা শুরু থেকে শেষ পর্যন্ত আপনার কেস পরিচালনা করি",
+        heroCta: "বিনামূল্যে মূল্যায়ন পান",
+        heroLawyerTitle: "প্রধান অ্যাটর্নি",
+        heroLawyerExp: "১১ বছরের অভিজ্ঞতা",
+        heroClientsLabel: "সন্তুষ্ট ক্লায়েন্ট",
+        heroLangsLabel: "আমরা আপনার ভাষায় কথা বলি",
+        formTitle: "বিনামূল্যে কেস মূল্যায়ন",
+        formTime: "১ মিনিট",
+        step1Title: "আপনার পরিস্থিতি কী?",
+        step1FastHelp: "দ্রুত সাহায্য",
+        step1Fingerprints: "ফিঙ্গারপ্রিন্টের জন্য অপেক্ষা",
+        step1Stuck: "কেস আটকে আছে / কোনো আপডেট নেই",
+        step1Letter: "অফিস থেকে চিঠি পেয়েছি",
+        step1Rejected: "আবেদন প্রত্যাখ্যাত",
+        step1New: "নতুন আবেদন শুরু করুন",
+        continueBtn: "চালিয়ে যান",
+        rejectionTitle: "আপনি প্রত্যাখ্যান কখন পেয়েছেন?",
+        rejectionHint: "আপিলের জন্য ১৪ দিন আছে",
+        rejectionActNow: "এখনই পদক্ষেপ নিন!",
+        rejection0_7: "৭ দিনেরও কম আগে",
+        rejection7_14: "৭ - ১৪ দিন আগে",
+        rejection14plus: "১৪ দিনেরও বেশি আগে",
+        rejectionNotSure: "আমি নিশ্চিত নই",
+        permitTitle: "আপনার কী দরকার?",
+        permitHint: "পারমিটের ধরন নির্বাচন করুন",
+        permitResidence: "রেসিডেন্স পারমিট (Karta pobytu)",
+        permitWork: "ওয়ার্ক পারমিট",
+        permitCitizenship: "পোলিশ নাগরিকত্ব",
+        permitConsultation: "আমার পরামর্শ দরকার",
+        phoneTitle: "আপনার WhatsApp নম্বর",
+        phoneHint: "আমরা ২৪ ঘন্টার মধ্যে যোগাযোগ করব",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneSafe: "আপনার নম্বর নিরাপদ। আমরা কখনো শেয়ার করি না।",
+        locationTitle: "আপনি কোথায় থাকেন?",
+        locationHint: "আমরা লোয়ার সাইলেশিয়ায় বিশেষজ্ঞ",
+        locationWroclaw: "রক্লাউ",
+        locationOtherLS: "লোয়ার সাইলেশিয়ার অন্য শহর",
+        locationOtherLSDesc: "Legnica, Wałbrzych, Jelenia Góra, Bolesławiec, Świdnica, Lubin, Głogów, Zgorzelec",
+        locationOther: "অন্য অঞ্চল",
+        locationOtherDesc: "ওয়ারশ, ক্রাকুফ, গদানস্ক, ইত্যাদি",
+        intentTitle: "আপনি কী খুঁজছেন?",
+        intentHint: "এটি আমাদের আপনার প্রয়োজন বুঝতে সাহায্য করে",
+        intentBestFit: "সেরা পছন্দ",
+        intentReady: "আমি আমার কেসে পেশাদার সাহায্য চাই",
+        intentReadyDesc: "আইনজীবীর সাথে কাজ করতে প্রস্তুত",
+        intentExploring: "শুধু বিকল্প খুঁজছি",
+        intentExploringDesc: "সাধারণ তথ্য খুঁজছি",
+        waitingTitle: "আপনি কতক্ষণ অপেক্ষা করছেন?",
+        waitingHint: "এটি আমাদের জরুরি কেসগুলিকে অগ্রাধিকার দিতে সাহায্য করে",
+        waiting0_6: "৬ মাসেরও কম",
+        waiting6_12: "৬ - ১২ মাস",
+        waiting12_18: "১২ - ১৮ মাস",
+        waiting18plus: "১৮ মাসেরও বেশি",
+        waitingPriority: "অগ্রাধিকার কেস",
+        detailsTitle: "প্রায় শেষ!",
+        detailsHint: "আর কিছু বিবরণ",
+        detailsName: "আপনার নাম",
+        detailsNamePlaceholder: "প্রথম ও শেষ নাম",
+        detailsEmail: "ইমেইল",
+        detailsConsent: "আমি <a href=\"#\">গোপনীয়তা নীতি</a>তে সম্মত",
+        detailsSubmit: "বিনামূল্যে মূল্যায়ন পান",
+        successTitle: "আমরা আপনার অনুরোধ পেয়েছি!",
+        successText: "আমাদের টিম আপনার কেস পর্যালোচনা করবে এবং<br><strong>২৪ ঘন্টার মধ্যে</strong> যোগাযোগ করবে।",
+        successWhatsapp: "এখনই WhatsApp-এ চ্যাট করুন",
+        notQualifiedTitle: "আমরা লোয়ার সাইলেশিয়ায় বিশেষজ্ঞ",
+        notQualifiedText: "আমরা শুধুমাত্র লোয়ার সাইলেশিয়ান ভয়ভডশিপ অফিস দ্বারা প্রক্রিয়াকৃত কেসে সাহায্য করতে পারি।<br><br>অনুগ্রহ করে আপনার অঞ্চলে অভিবাসন কেসে বিশেষজ্ঞ আইনজীবী খুঁজুন।",
+        infoOnlyTitle: "আমরা কেস প্রতিনিধিত্বে ফোকাস করি",
+        infoOnlyText: "আমরা এমন ক্লায়েন্টদের সাহায্য করি যারা তাদের কেসে আইনজীবীর সাথে কাজ করতে প্রস্তুত।<br><br>যখন আপনি প্রস্তুত, ফিরে আসুন — আমরা সাহায্য করতে খুশি হব!",
+        infoOnlyBtn: "প্রস্তুত হলে আবার শুরু করুন",
+        prefooterTitle: "আপনার কেস <span class=\"text-gradient\">সমাধান</span> করতে প্রস্তুত?",
+        prefooterText: "আমাদের অভিবাসন বিশেষজ্ঞদের কাছ থেকে বিনামূল্যে মূল্যায়ন পান। ২৪ ঘন্টায় উত্তর।",
+        prefooterCta: "বিনামূল্যে মূল্যায়ন শুরু করুন",
+        footerCopy: "© ২০২৫ অভিবাসন আইনজীবী রক্লাউ",
+        footerPrivacy: "গোপনীয়তা নীতি",
+        footerTerms: "শর্তাবলী",
+        stickyCta: "বিনামূল্যে মূল্যায়ন",
+        problemsTitle: "আপনার কেস কি <span class=\"text-gradient\">আটকে</span> আছে?",
+        problemsSubtitle: "অনেক বিদেশী কোনো অগ্রগতি ছাড়াই মাসের পর মাস অপেক্ষা করে। আপনি একা নন — আমরা সাহায্য করতে পারি।",
+        problemMostCommon: "সবচেয়ে সাধারণ সমস্যা",
+        problem1Title: "১২+ মাস ধরে ফিঙ্গারপ্রিন্টের জন্য অপেক্ষা?",
+        problem1Text: "আপনি আবেদন জমা দিয়েছেন কিন্তু এখনো ফিঙ্গারপ্রিন্টের অ্যাপয়েন্টমেন্ট পাননি। এটি আমাদের বিশেষত্ব।",
+        problem1Stat: "সপ্তাহে বেশিরভাগ<br>আটকে থাকা কেস সমাধান",
+        problem1Cta: "এখনই সাহায্য নিন",
+        problem2Title: "অভিবাসন অফিস থেকে কোনো উত্তর নেই?",
+        problem2Text: "কোনো চিঠি, কল বা আপডেট নেই। আমরা আপনার কেসের অবস্থা পরীক্ষা করতে পারি।",
+        problem2Stat: "তাৎক্ষণিক স্ট্যাটাস চেক",
+        problem3Title: "বুঝতে পারছেন না এমন চিঠি পেয়েছেন?",
+        problem3Text: "অফিসিয়াল চিঠি পোলিশে এবং বিভ্রান্তিকর হতে পারে। সময়সীমা মিস করলে প্রত্যাখ্যান হতে পারে।",
+        problem3Stat: "<strong>২৪ ঘন্টায়</strong> উত্তর",
+        problem4Title: "আপনার কেস প্রত্যাখ্যাত হয়েছে?",
+        problem4Text: "আতঙ্কিত হবেন না — আমরা আপনার প্রত্যাখ্যান পর্যালোচনা করতে পারি এবং প্রায়ই সিদ্ধান্ত উল্টে দিই।",
+        problem4Counter: "দিন আপিলের জন্য",
+        regionTitle: "লোয়ার সাইলেশিয়া",
+        lmWidgetBtn: "বিনামূল্যে আইনি গাইড",
+        lmTitle: "আপনি কি পোল্যান্ডে বৈধভাবে আছেন?",
+        lmDesc: "আমাদের বিনামূল্যে গাইড পান এবং সবচেয়ে সাধারণ ভুলগুলি এড়িয়ে চলুন।",
+        lmOfferTitle: "১০টি আইনি ভুল এড়াতে হবে",
+        lmOfferDesc: "PDF গাইড আপনার ইমেইলে",
+        lmEmailPlaceholder: "আপনার ইমেইল",
+        lmPhonePlaceholder: "WhatsApp / ফোন",
+        lmSubmit: "বিনামূল্যে গাইড পান",
+        lmNote: "কোনো স্প্যাম নেই। তাৎক্ষণিক ডাউনলোড।"
+      },
+      id: {
+        headerCta: "Penilaian gratis",
+        heroTag: "Firma Hukum Imigrasi",
+        heroTitle: "Legalisasi tinggal di <span class=\"text-gradient\">Polandia</span>",
+        heroSubtitle: "Izin tinggal, izin kerja, kewarganegaraan — kami tangani kasus Anda dari awal hingga akhir",
+        heroCta: "Dapatkan penilaian gratis",
+        heroLawyerTitle: "Pengacara utama",
+        heroLawyerExp: "11 tahun pengalaman",
+        heroClientsLabel: "klien puas",
+        heroLangsLabel: "Kami berbicara bahasa Anda",
+        formTitle: "Penilaian kasus gratis",
+        formTime: "1 menit",
+        step1Title: "Apa situasi Anda?",
+        step1FastHelp: "Bantuan cepat",
+        step1Fingerprints: "Menunggu sidik jari",
+        step1Stuck: "Kasus macet / tidak ada update",
+        step1Letter: "Dapat surat dari kantor",
+        step1Rejected: "Aplikasi ditolak",
+        step1New: "Mulai aplikasi baru",
+        continueBtn: "Lanjutkan",
+        rejectionTitle: "Kapan Anda menerima penolakan?",
+        rejectionHint: "Anda punya 14 hari untuk banding",
+        rejectionActNow: "Bertindak sekarang!",
+        rejection0_7: "Kurang dari 7 hari lalu",
+        rejection7_14: "7 - 14 hari lalu",
+        rejection14plus: "Lebih dari 14 hari lalu",
+        rejectionNotSure: "Saya tidak yakin",
+        permitTitle: "Apa yang Anda butuhkan?",
+        permitHint: "Pilih jenis izin",
+        permitResidence: "Izin tinggal (Karta pobytu)",
+        permitWork: "Izin kerja",
+        permitCitizenship: "Kewarganegaraan Polandia",
+        permitConsultation: "Saya butuh konsultasi",
+        phoneTitle: "Nomor WhatsApp Anda",
+        phoneHint: "Kami akan menghubungi dalam 24 jam",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneSafe: "Nomor Anda aman. Kami tidak pernah membagikannya.",
+        locationTitle: "Di mana Anda tinggal?",
+        locationHint: "Kami spesialis di Lower Silesia",
+        locationWroclaw: "Wrocław",
+        locationOtherLS: "Kota lain di Lower Silesia",
+        locationOtherLSDesc: "Legnica, Wałbrzych, Jelenia Góra, Bolesławiec, Świdnica, Lubin, Głogów, Zgorzelec",
+        locationOther: "Wilayah lain",
+        locationOtherDesc: "Warsawa, Krakow, Gdańsk, dll.",
+        intentTitle: "Apa yang Anda cari?",
+        intentHint: "Ini membantu kami memahami kebutuhan Anda",
+        intentBestFit: "Pilihan terbaik",
+        intentReady: "Saya ingin bantuan profesional untuk kasus saya",
+        intentReadyDesc: "Siap bekerja dengan pengacara",
+        intentExploring: "Hanya menjelajahi pilihan saya",
+        intentExploringDesc: "Mencari informasi umum",
+        waitingTitle: "Sudah berapa lama Anda menunggu?",
+        waitingHint: "Ini membantu kami memprioritaskan kasus mendesak",
+        waiting0_6: "Kurang dari 6 bulan",
+        waiting6_12: "6 - 12 bulan",
+        waiting12_18: "12 - 18 bulan",
+        waiting18plus: "Lebih dari 18 bulan",
+        waitingPriority: "Kasus prioritas",
+        detailsTitle: "Hampir selesai!",
+        detailsHint: "Hanya beberapa detail lagi",
+        detailsName: "Nama Anda",
+        detailsNamePlaceholder: "Nama depan dan belakang",
+        detailsEmail: "Email",
+        detailsConsent: "Saya setuju dengan <a href=\"#\">Kebijakan Privasi</a>",
+        detailsSubmit: "Dapatkan penilaian gratis",
+        successTitle: "Kami menerima permintaan Anda!",
+        successText: "Tim kami akan meninjau kasus Anda dan menghubungi<br><strong>dalam 24 jam</strong>.",
+        successWhatsapp: "Chat di WhatsApp sekarang",
+        notQualifiedTitle: "Kami spesialis di Lower Silesia",
+        notQualifiedText: "Kami hanya dapat membantu kasus yang diproses oleh Kantor Voivodeship Lower Silesian.<br><br>Silakan cari pengacara di wilayah Anda yang spesialis dalam kasus imigrasi.",
+        infoOnlyTitle: "Kami fokus pada representasi kasus",
+        infoOnlyText: "Kami membantu klien yang siap bekerja dengan pengacara untuk kasus mereka.<br><br>Ketika Anda siap, kembali dan kami dengan senang hati membantu!",
+        infoOnlyBtn: "Mulai lagi ketika siap",
+        prefooterTitle: "Siap <span class=\"text-gradient\">menyelesaikan</span> kasus Anda?",
+        prefooterText: "Dapatkan penilaian gratis dari spesialis imigrasi kami. Kami merespons dalam 24 jam.",
+        prefooterCta: "Mulai penilaian gratis",
+        footerCopy: "© 2025 Pengacara Imigrasi Wrocław",
+        footerPrivacy: "Kebijakan Privasi",
+        footerTerms: "Syarat",
+        stickyCta: "Penilaian gratis",
+        problemsTitle: "Kasus Anda <span class=\"text-gradient\">macet</span>?",
+        problemsSubtitle: "Banyak orang asing menunggu berbulan-bulan tanpa kemajuan. Anda tidak sendirian — kami dapat membantu.",
+        problemMostCommon: "Masalah paling umum",
+        problem1Title: "Menunggu 12+ bulan untuk sidik jari?",
+        problem1Text: "Anda sudah mengajukan aplikasi tapi belum menerima jadwal sidik jari. Ini spesialisasi kami.",
+        problem1Stat: "minggu untuk menyelesaikan<br>sebagian besar kasus macet",
+        problem1Cta: "Dapatkan bantuan sekarang",
+        problem2Title: "Tidak ada respons dari kantor imigrasi?",
+        problem2Text: "Tidak ada surat, telepon, atau update. Kami dapat memeriksa status kasus Anda dan bertindak.",
+        problem2Stat: "Pengecekan status langsung",
+        problem3Title: "Menerima surat yang tidak Anda mengerti?",
+        problem3Text: "Surat resmi dalam bahasa Polandia dan bisa membingungkan. Melewatkan tenggat dapat mengakibatkan penolakan.",
+        problem3Stat: "Respons dalam <strong>24 jam</strong>",
+        problem4Title: "Kasus Anda ditolak?",
+        problem4Text: "Jangan panik — kami dapat meninjau penolakan Anda dan sering berhasil membatalkan keputusan.",
+        problem4Counter: "hari untuk banding",
+        regionTitle: "Lower Silesia",
+        lmWidgetBtn: "Panduan hukum gratis",
+        lmTitle: "Apakah Anda legal di Polandia?",
+        lmDesc: "Dapatkan panduan gratis kami dan hindari kesalahan paling umum yang merugikan orang asing.",
+        lmOfferTitle: "10 kesalahan hukum yang harus dihindari",
+        lmOfferDesc: "Panduan PDF dikirim ke email Anda",
+        lmEmailPlaceholder: "Email Anda",
+        lmPhonePlaceholder: "WhatsApp / Telepon",
+        lmSubmit: "Dapatkan panduan gratis",
+        lmNote: "Tanpa spam. Download langsung."
+      },
+      ru: {
+        headerCta: "Бесплатная оценка",
+        heroTag: "Миграционная юридическая фирма",
+        heroTitle: "Легализация пребывания в <span class=\"text-gradient\">Польше</span>",
+        heroSubtitle: "Вид на жительство, разрешение на работу, гражданство — ведём ваше дело от начала до конца",
+        heroCta: "Получить бесплатную оценку",
+        heroLawyerTitle: "Ведущий адвокат",
+        heroLawyerExp: "11 лет опыта",
+        heroClientsLabel: "довольных клиентов",
+        heroLangsLabel: "Мы говорим на вашем языке",
+        formTitle: "Бесплатная оценка дела",
+        formTime: "1 минута",
+        step1Title: "Какова ваша ситуация?",
+        step1FastHelp: "Быстрая помощь",
+        step1Fingerprints: "Жду отпечатки пальцев",
+        step1Stuck: "Дело застряло / нет обновлений",
+        step1Letter: "Получил письмо из офиса",
+        step1Rejected: "Заявка отклонена",
+        step1New: "Начать новую заявку",
+        continueBtn: "Продолжить",
+        rejectionTitle: "Когда вы получили отказ?",
+        rejectionHint: "У вас есть 14 дней на апелляцию",
+        rejectionActNow: "Действуйте сейчас!",
+        rejection0_7: "Менее 7 дней назад",
+        rejection7_14: "7 - 14 дней назад",
+        rejection14plus: "Более 14 дней назад",
+        rejectionNotSure: "Не уверен",
+        permitTitle: "Что вам нужно?",
+        permitHint: "Выберите тип разрешения",
+        permitResidence: "Вид на жительство (Karta pobytu)",
+        permitWork: "Разрешение на работу",
+        permitCitizenship: "Польское гражданство",
+        permitConsultation: "Мне нужна консультация",
+        phoneTitle: "Ваш номер WhatsApp",
+        phoneHint: "Мы свяжемся с вами в течение 24 часов",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneSafe: "Ваш номер в безопасности. Мы никогда его не передаём.",
+        locationTitle: "Где вы живёте?",
+        locationHint: "Мы специализируемся на Нижней Силезии",
+        locationWroclaw: "Вроцлав",
+        locationOtherLS: "Другой город в Нижней Силезии",
+        locationOtherLSDesc: "Легница, Валбжих, Еленя Гура, Болеславец, Свидница, Любин, Глогув, Згожелец",
+        locationOther: "Другой регион",
+        locationOtherDesc: "Варшава, Краков, Гданьск и т.д.",
+        intentTitle: "Что вы ищете?",
+        intentHint: "Это поможет нам понять ваши потребности",
+        intentBestFit: "Лучший выбор",
+        intentReady: "Хочу профессиональную помощь с моим делом",
+        intentReadyDesc: "Готов работать с адвокатом",
+        intentExploring: "Просто изучаю варианты",
+        intentExploringDesc: "Ищу общую информацию",
+        waitingTitle: "Как долго вы ждёте?",
+        waitingHint: "Это поможет нам приоритизировать срочные дела",
+        waiting0_6: "Менее 6 месяцев",
+        waiting6_12: "6 - 12 месяцев",
+        waiting12_18: "12 - 18 месяцев",
+        waiting18plus: "Более 18 месяцев",
+        waitingPriority: "Приоритетное дело",
+        detailsTitle: "Почти готово!",
+        detailsHint: "Ещё несколько деталей",
+        detailsName: "Ваше имя",
+        detailsNamePlaceholder: "Имя и фамилия",
+        detailsEmail: "Email",
+        detailsConsent: "Я согласен с <a href=\"#\">Политикой конфиденциальности</a>",
+        detailsSubmit: "Получить бесплатную оценку",
+        successTitle: "Мы получили ваш запрос!",
+        successText: "Наша команда рассмотрит ваше дело и свяжется с вами<br><strong>в течение 24 часов</strong>.",
+        successWhatsapp: "Написать в WhatsApp сейчас",
+        notQualifiedTitle: "Мы специализируемся на Нижней Силезии",
+        notQualifiedText: "Мы можем помочь только с делами, которые обрабатывает Нижнесилезское воеводское управление.<br><br>Пожалуйста, найдите адвоката в вашем регионе, специализирующегося на миграционных делах.",
+        infoOnlyTitle: "Мы фокусируемся на ведении дел",
+        infoOnlyText: "Мы помогаем клиентам, которые готовы работать с адвокатом над своим делом.<br><br>Когда будете готовы, возвращайтесь — мы будем рады помочь!",
+        infoOnlyBtn: "Начать снова когда готовы",
+        prefooterTitle: "Готовы <span class=\"text-gradient\">решить</span> своё дело?",
+        prefooterText: "Получите бесплатную оценку от наших миграционных специалистов. Отвечаем в течение 24 часов.",
+        prefooterCta: "Начать бесплатную оценку",
+        footerCopy: "© 2025 Миграционный адвокат Вроцлав",
+        footerPrivacy: "Политика конфиденциальности",
+        footerTerms: "Условия",
+        stickyCta: "Бесплатная оценка",
+        problemsTitle: "Ваше дело <span class=\"text-gradient\">застряло</span>?",
+        problemsSubtitle: "Многие иностранцы ждут месяцами без прогресса. Вы не одиноки — мы можем помочь.",
+        problemMostCommon: "Самая частая проблема",
+        problem1Title: "Ждёте 12+ месяцев отпечатки пальцев?",
+        problem1Text: "Вы подали заявку, но до сих пор не получили приглашение на сдачу отпечатков. Это наша специализация.",
+        problem1Stat: "недель для решения<br>большинства застрявших дел",
+        problem1Cta: "Получить помощь",
+        problem2Title: "Нет ответа от миграционного офиса?",
+        problem2Text: "Нет писем, звонков, обновлений. Мы можем проверить статус вашего дела и принять меры.",
+        problem2Stat: "Немедленная проверка статуса",
+        problem3Title: "Получили письмо, которое не понимаете?",
+        problem3Text: "Официальные письма на польском языке могут быть запутанными. Пропуск дедлайна может привести к отказу.",
+        problem3Stat: "Ответ в течение <strong>24ч</strong>",
+        problem4Title: "Ваше дело отклонено?",
+        problem4Text: "Не паникуйте — мы можем пересмотреть ваш отказ и часто добиваемся отмены решения.",
+        problem4Counter: "дней на апелляцию",
+        regionTitle: "Нижняя Силезия",
+        lmWidgetBtn: "Бесплатный юридический гид",
+        lmTitle: "Вы легально в Польше?",
+        lmDesc: "Получите наш бесплатный гид и избегайте самых распространённых ошибок, которые стоят иностранцам их пребывания.",
+        lmOfferTitle: "10 юридических ошибок, которых следует избегать",
+        lmOfferDesc: "PDF-гид на вашу почту",
+        lmEmailPlaceholder: "Ваш email",
+        lmPhonePlaceholder: "WhatsApp / Телефон",
+        lmSubmit: "Получить бесплатный гид",
+        lmNote: "Без спама. Мгновенная загрузка."
+      }
+    };
+
+    // Language config
+    const langConfig = {
+      en: { flag: 'https://flagcdn.com/w40/gb.png', name: 'EN' },
+      uk: { flag: 'https://flagcdn.com/w40/ua.png', name: 'UA' },
+      pl: { flag: 'https://flagcdn.com/w40/pl.png', name: 'PL' },
+      es: { flag: 'https://flagcdn.com/w40/es.png', name: 'ES' },
+      fr: { flag: 'https://flagcdn.com/w40/fr.png', name: 'FR' },
+      hi: { flag: 'https://flagcdn.com/w40/in.png', name: 'HI' },
+      bn: { flag: 'https://flagcdn.com/w40/bd.png', name: 'BN' },
+      id: { flag: 'https://flagcdn.com/w40/id.png', name: 'ID' },
+      ru: { flag: 'https://flagcdn.com/w40/ru.png', name: 'RU' }
+    };
+
+    let currentLang = 'en';
+
+    // Toggle language dropdown
+    function toggleLangDropdown() {
+      document.getElementById('langSelector').classList.toggle('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const selector = document.getElementById('langSelector');
+      if (!selector.contains(e.target)) {
+        selector.classList.remove('open');
+      }
+    });
+
+    // Set language
+    function setLanguage(lang) {
+      if (!translations[lang]) return;
+
+      currentLang = lang;
+      localStorage.setItem('preferredLang', lang);
+
+      // Update selector button
+      document.getElementById('currentLangFlag').src = langConfig[lang].flag;
+      document.getElementById('currentLangName').textContent = langConfig[lang].name;
+
+      // Update active state in dropdown
+      document.querySelectorAll('.lang-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.lang === lang);
+      });
+
+      // Close dropdown
+      document.getElementById('langSelector').classList.remove('open');
+
+      // Update HTML lang attribute
+      document.documentElement.lang = lang;
+
+      // Apply translations
+      applyTranslations(lang);
+    }
+
+    // Apply translations to DOM
+    function applyTranslations(lang) {
+      const t = translations[lang];
+      if (!t) return;
+
+      // Helper to set text/HTML
+      const setText = (selector, key, html = false) => {
+        const el = document.querySelector(selector);
+        if (el && t[key]) {
+          if (html) el.innerHTML = t[key];
+          else el.textContent = t[key];
+        }
+      };
+
+      // Header
+      setText('.header-cta .btn', 'headerCta');
+
+      // Hero
+      setText('.hero-tag', 'heroTag');
+      setText('.hero-headline h1', 'heroTitle', true);
+      setText('.hero-subtitle', 'heroSubtitle');
+      setText('.hero-cta-btn', 'heroCta');
+      setText('.hero-lawyer-title', 'heroLawyerTitle');
+      setText('.hero-lawyer-exp', 'heroLawyerExp');
+      setText('.hero-clients-label', 'heroClientsLabel');
+      setText('.hero-langs-card span', 'heroLangsLabel');
+
+      // Form header
+      setText('.form-header h2', 'formTitle');
+      setText('.form-header p', 'formTime');
+
+      // Step 1
+      setText('[data-step="1"] .step-title', 'step1Title');
+      setText('[data-step="1"] .choice-hot-tag', 'step1FastHelp');
+      document.querySelectorAll('[data-step="1"] .giant-choice-title').forEach((el, i) => {
+        const keys = ['step1Fingerprints', 'step1Stuck', 'step1Letter', 'step1Rejected', 'step1New'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+
+      // Continue buttons
+      document.querySelectorAll('.btn-next').forEach(btn => {
+        const svg = btn.querySelector('svg');
+        const text = btn.textContent.trim().replace(/\s+/g, ' ');
+        if (text.includes('Continue') || text.includes('Dalej') || text.includes('Продовжити') || text.includes('Continuar') || text.includes('Lanjutkan') || text.includes('जारी') || text.includes('চালিয়ে')) {
+          btn.innerHTML = t.continueBtn + ' ';
+          if (svg) btn.appendChild(svg);
+        }
+        if (text.includes('Get Free Assessment') || text.includes('Otrzymaj') || text.includes('Отримати') || text.includes('Obtener') || text.includes('Obtenir') || text.includes('Dapatkan') || text.includes('प्राप्त') || text.includes('পান')) {
+          btn.innerHTML = t.detailsSubmit + ' ';
+          if (svg) btn.appendChild(svg);
+        }
+      });
+
+      // Rejection timing
+      setText('[data-step="rejection-timing"] .step-title', 'rejectionTitle');
+      setText('[data-step="rejection-timing"] .step-hint', 'rejectionHint');
+      setText('[data-step="rejection-timing"] .choice-hot-tag', 'rejectionActNow');
+      document.querySelectorAll('[data-step="rejection-timing"] .giant-choice-title').forEach((el, i) => {
+        const keys = ['rejection0_7', 'rejection7_14', 'rejection14plus', 'rejectionNotSure'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+
+      // Permit type
+      setText('[data-step="permit-type"] .step-title', 'permitTitle');
+      setText('[data-step="permit-type"] .step-hint', 'permitHint');
+      document.querySelectorAll('[data-step="permit-type"] .giant-choice-title').forEach((el, i) => {
+        const keys = ['permitResidence', 'permitWork', 'permitCitizenship', 'permitConsultation'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+
+      // Phone step
+      setText('[data-step="2"] .step-title', 'phoneTitle');
+      setText('[data-step="2"] .step-hint', 'phoneHint');
+      const phoneInput = document.querySelector('[data-step="2"] input[name="phone"]');
+      if (phoneInput) phoneInput.placeholder = t.phonePlaceholder;
+      setText('.trust-note span', 'phoneSafe');
+
+      // Location step
+      setText('[data-step="3"] .step-title', 'locationTitle');
+      setText('[data-step="3"] .step-hint', 'locationHint');
+      document.querySelectorAll('[data-step="3"] .giant-choice-title').forEach((el, i) => {
+        const keys = ['locationWroclaw', 'locationOtherLS', 'locationOther'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+      document.querySelectorAll('[data-step="3"] .giant-choice-desc').forEach((el, i) => {
+        const keys = ['locationOtherLSDesc', 'locationOtherDesc'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+
+      // Intent step
+      setText('[data-step="intent"] .step-title', 'intentTitle');
+      setText('[data-step="intent"] .step-hint', 'intentHint');
+      setText('[data-step="intent"] .choice-hot-tag', 'intentBestFit');
+      document.querySelectorAll('[data-step="intent"] .giant-choice-title').forEach((el, i) => {
+        const keys = ['intentReady', 'intentExploring'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+      document.querySelectorAll('[data-step="intent"] .giant-choice-desc').forEach((el, i) => {
+        const keys = ['intentReadyDesc', 'intentExploringDesc'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+
+      // Waiting time
+      setText('[data-step="waiting-time"] .step-title', 'waitingTitle');
+      setText('[data-step="waiting-time"] .step-hint', 'waitingHint');
+      setText('[data-step="waiting-time"] .choice-hot-tag', 'waitingPriority');
+      document.querySelectorAll('[data-step="waiting-time"] .giant-choice-title').forEach((el, i) => {
+        const keys = ['waiting0_6', 'waiting6_12', 'waiting12_18', 'waiting18plus'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+
+      // Details
+      setText('[data-step="details"] .step-title', 'detailsTitle');
+      setText('[data-step="details"] .step-hint', 'detailsHint');
+      document.querySelectorAll('[data-step="details"] .form-label').forEach((el, i) => {
+        const keys = ['detailsName', 'detailsEmail'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+      const nameInput = document.querySelector('input[name="name"]');
+      if (nameInput) nameInput.placeholder = t.detailsNamePlaceholder;
+      setText('.form-checkbox span', 'detailsConsent', true);
+
+      // Success
+      setText('[data-step="success"] .result-title', 'successTitle');
+      setText('[data-step="success"] .result-text', 'successText', true);
+      setText('.btn-whatsapp', 'successWhatsapp');
+
+      // Not qualified
+      setText('[data-step="not-qualified"] .result-title', 'notQualifiedTitle');
+      setText('[data-step="not-qualified"] .result-text', 'notQualifiedText', true);
+
+      // Info only
+      setText('[data-step="info-only"] .result-title', 'infoOnlyTitle');
+      setText('[data-step="info-only"] .result-text', 'infoOnlyText', true);
+      setText('[data-step="info-only"] .btn', 'infoOnlyBtn');
+
+      // Prefooter
+      setText('.prefooter h2', 'prefooterTitle', true);
+      setText('.prefooter p', 'prefooterText');
+      setText('.prefooter .btn', 'prefooterCta');
+
+      // Footer
+      setText('.footer-minimal span', 'footerCopy');
+      document.querySelectorAll('.footer-links-inline a').forEach((el, i) => {
+        const keys = ['footerPrivacy', 'footerTerms'];
+        if (t[keys[i]]) el.textContent = t[keys[i]];
+      });
+
+      // Sticky CTA
+      setText('.sticky-cta-mobile .btn', 'stickyCta');
+
+      // Problems section
+      setText('.problem-section .section-header h2', 'problemsTitle', true);
+      setText('.problem-section .section-header p', 'problemsSubtitle');
+      setText('.hot-badge', 'problemMostCommon');
+
+      // Lead magnet
+      setText('.lm-widget-btn', 'lmWidgetBtn');
+      setText('.lm-title', 'lmTitle');
+      setText('.lm-desc', 'lmDesc');
+      setText('.lm-offer-text strong', 'lmOfferTitle');
+      setText('.lm-offer-text span', 'lmOfferDesc');
+      const lmEmail = document.querySelector('#leadMagnetForm input[name="lm_email"]');
+      if (lmEmail) lmEmail.placeholder = t.lmEmailPlaceholder;
+      const lmPhone = document.querySelector('#leadMagnetForm input[name="lm_phone"]');
+      if (lmPhone) lmPhone.placeholder = t.lmPhonePlaceholder;
+      setText('.lm-submit', 'lmSubmit');
+      setText('.lm-note', 'lmNote');
+    }
+
+    // Detect browser language
+    function detectBrowserLanguage() {
+      // Check localStorage first
+      const saved = localStorage.getItem('preferredLang');
+      if (saved && translations[saved]) {
+        return saved;
+      }
+
+      // Get browser language
+      const browserLang = navigator.language || navigator.userLanguage;
+      const shortLang = browserLang.split('-')[0].toLowerCase();
+
+      // Map to our supported languages
+      if (translations[shortLang]) {
+        return shortLang;
+      }
+
+      // Default to English
+      return 'en';
+    }
+
+    // Initialize language on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      const detectedLang = detectBrowserLanguage();
+      setLanguage(detectedLang);
     });
   </script>
 </body>
