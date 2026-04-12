@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GetMyPermit - Lead</title>
+    <meta name="theme-color" content="#050505">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: #050505; color: #e5e5e5; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::selection { background: white; color: black; }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .lead-header-mobile {
+                flex-direction: column !important;
+                gap: 1rem !important;
+            }
+            .lead-header-mobile .lead-avatar-mobile {
+                width: 48px !important;
+                height: 48px !important;
+                font-size: 1.25rem !important;
+            }
+            .lead-header-mobile h1 {
+                font-size: 1.5rem !important;
+            }
+            .mobile-grid-1 {
+                grid-template-columns: 1fr !important;
+            }
+            .pipeline-mini {
+                gap: 2px;
+            }
+            .stage-pill {
+                padding: 4px 6px;
+            }
+            .stage-pill .stage-name {
+                font-size: 10px;
+            }
+            .stage-pill .stage-icon {
+                width: 16px;
+                height: 16px;
+                font-size: 9px;
+            }
+            .tab-nav {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .tab-nav::-webkit-scrollbar {
+                display: none;
+            }
+            .tab-btn {
+                padding: 10px 12px;
+                flex-shrink: 0;
+            }
+            .tab-btn span:not(.tab-badge) {
+                display: none;
+            }
+        }
+
+        .glass-header {
+            background: rgba(5, 5, 5, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-enter { animation: fadeIn 0.4s ease-out forwards; }
+
+        .input-field {
+            background: #0a0a0a;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: rgba(255,255,255,0.25);
+            outline: none;
+        }
+        .input-field:hover:not(:focus) {
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        /* Pipeline Mini Styles */
+        .pipeline-mini {
+            display: flex;
+            gap: 4px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .pipeline-mini::-webkit-scrollbar {
+            display: none;
+        }
+        .stage-pill {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: rgba(39, 39, 42, 0.5);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0.5;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .stage-pill:hover {
+            opacity: 0.85;
+            background: rgba(39, 39, 42, 0.8);
+            transform: translateY(-1px);
+        }
+        .stage-pill:hover .stage-icon {
+            transform: scale(1.05);
+        }
+        .stage-pill .stage-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: transform 0.2s ease;
+        }
+        .stage-pill .stage-name {
+            font-size: 11px;
+            font-weight: 500;
+            color: #a1a1aa;
+        }
+        .stage-pill .stage-check {
+            display: none;
+            font-size: 9px;
+        }
+        .stage-pill.completed {
+            opacity: 0.6;
+        }
+        .stage-pill.completed .stage-check {
+            display: block;
+            color: #22c55e;
+        }
+        .stage-pill.current {
+            opacity: 1;
+            border-color: currentColor;
+            box-shadow: 0 0 12px var(--glow-color, rgba(255,255,255,0.2));
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .stage-pill.current .stage-name {
+            color: white;
+            font-weight: 600;
+        }
+        .stage-pill.current .stage-icon {
+            transform: scale(1.05);
+        }
+        .stage-pill.terminal-won {
+            opacity: 1;
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.5);
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.25);
+        }
+        .stage-pill.terminal-won .stage-icon {
+            background: rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+        }
+        .stage-pill.terminal-won .stage-name {
+            color: #4ade80;
+            font-weight: 600;
+        }
+        .stage-pill.terminal-lost {
+            opacity: 1;
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
+        }
+        .stage-pill.terminal-lost .stage-icon {
+            background: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+        .stage-pill.terminal-lost .stage-name {
+            color: #f87171;
+            font-weight: 600;
+        }
+        #pipeline-stepper.terminal-state .stage-pill:not(.terminal-won):not(.terminal-lost) {
+            opacity: 0.3;
+        }
+        #pipeline-stepper.terminal-state .stage-pill:not(.terminal-won):not(.terminal-lost):hover {
+            opacity: 0.6;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 4px;
+            background: rgba(39, 39, 42, 0.3);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #71717a;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn:hover {
+            color: #a1a1aa;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .tab-btn.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .tab-btn i {
+            font-size: 16px;
+        }
+        .tab-btn .tab-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .tab-btn.active .tab-badge {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Activity timeline */
+        .activity-item {
+            position: relative;
+            padding-left: 28px;
+            padding-bottom: 16px;
+        }
+        .activity-item::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 20px;
+            bottom: 0;
+            width: 1px;
+            background: rgba(255,255,255,0.1);
+        }
+        .activity-item:last-child::before { display: none; }
+        .activity-icon {
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+        }
+
+        /* Note card */
+        .note-card {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden font-sans text-sm tracking-tight antialiased">
+
+    <!-- Header -->
+    <header class="h-16 glass-header flex items-center justify-between px-4 md:px-6 sticky top-0 z-30 flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <a href="admin.html" class="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-colors">
+                <i class="ph ph-arrow-left text-xl"></i>
+            </a>
+            <div class="flex items-center gap-2 text-zinc-500">
+                <a href="admin.html" class="text-zinc-400 hover:text-white transition-colors hidden sm:inline">leads</a>
+                <span class="text-zinc-700 hidden sm:inline">/</span>
+                <span id="breadcrumb-phone" class="text-white font-medium truncate max-w-[150px] md:max-w-[200px]">...</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 md:gap-3">
+            <div id="save-status" class="hidden md:flex items-center gap-2 text-xs text-zinc-500 mr-2">
+                <span id="save-status-text"></span>
+            </div>
+            <button id="delete-btn" onclick="deleteLead()" class="text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/40 px-3 md:px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2">
+                <i class="ph ph-trash"></i>
+                <span class="hidden md:inline">Usun</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+        <div class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-enter">
+
+            <!-- Lead Header -->
+            <div class="flex items-start gap-4 sm:gap-6 mb-6 sm:mb-8 lead-header-mobile">
+                <div id="lead-avatar" class="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 lead-avatar-mobile">
+                    ?
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3 mb-1 flex-wrap">
+                        <h1 id="lead-phone-display" class="text-2xl sm:text-3xl font-semibold text-white tracking-tight">Ladowanie...</h1>
+                        <span id="lead-type-badge"></span>
+                        <span id="lead-score" class="text-zinc-500 font-mono text-xs"></span>
+                    </div>
+                    <div class="flex items-center gap-3 text-zinc-500 text-sm flex-wrap">
+                        <span id="lead-source-badge" class="inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-medium border-zinc-700 text-zinc-400">-</span>
+                        <span class="text-zinc-700">•</span>
+                        <span class="font-mono text-xs">Dodany: <span id="lead-created">-</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <a id="btn-call" href="#" class="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 rounded-lg text-sm font-medium transition-colors">
+                    <i class="ph ph-phone"></i> Zadzwon
+                </a>
+                <a id="btn-whatsapp" href="#" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 rounded-lg text-sm font-medium transition-colors">
+                    <i class="ph ph-whatsapp-logo"></i> WhatsApp
+                </a>
+                <a id="btn-email" href="#" class="hidden flex items-center gap-2 px-4 py-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 hover:bg-violet-500/20 rounded-lg text-sm font-medium transition-colors">
+                    <i class="ph ph-envelope"></i> Email
+                </a>
+            </div>
+
+            <!-- Pipeline Mini -->
+            <div id="pipeline-stepper" class="mb-6">
+                <div class="pipeline-mini">
+                    <div class="stage-pill" data-status="new" onclick="changeStatus('new')" style="--glow-color: rgba(59, 130, 246, 0.3)">
+                        <div class="stage-icon bg-blue-500/20 text-blue-400"><i class="ph ph-star"></i></div>
+                        <span class="stage-name">Nowy</span>
+                        <i class="ph ph-check stage-check"></i>
+                    </div>
+                    <div class="stage-pill" data-status="contacted" onclick="changeStatus('contacted')" style="--glow-color: rgba(251, 191, 36, 0.3)">
+                        <div class="stage-icon bg-amber-500/20 text-amber-400"><i class="ph ph-phone-outgoing"></i></div>
+                        <span class="stage-name">Skontaktowany</span>
+                        <i class="ph ph-check stage-check"></i>
+                    </div>
+                    <div class="stage-pill" data-status="qualified" onclick="changeStatus('qualified')" style="--glow-color: rgba(139, 92, 246, 0.3)">
+                        <div class="stage-icon bg-violet-500/20 text-violet-400"><i class="ph ph-check-circle"></i></div>
+                        <span class="stage-name">Zakwalifikowany</span>
+                        <i class="ph ph-check stage-check"></i>
+                    </div>
+                    <div class="stage-pill" data-status="converted" onclick="changeStatus('converted')">
+                        <div class="stage-icon bg-green-500/20 text-green-400"><i class="ph ph-trophy"></i></div>
+                        <span class="stage-name">Wygrany</span>
+                        <i class="ph ph-check stage-check"></i>
+                    </div>
+                    <div class="stage-pill" data-status="lost" onclick="changeStatus('lost')">
+                        <div class="stage-icon bg-zinc-500/20 text-zinc-400"><i class="ph ph-x-circle"></i></div>
+                        <span class="stage-name">Stracony</span>
+                        <i class="ph ph-check stage-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="tab-nav mb-6">
+                <button class="tab-btn active" data-tab="info" onclick="switchTab('info')">
+                    <i class="ph ph-user-circle"></i>
+                    <span>Informacje</span>
+                </button>
+                <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')">
+                    <i class="ph ph-note-pencil"></i>
+                    <span>Notatki</span>
+                    <span class="tab-badge" id="notes-count">0</span>
+                </button>
+                <button class="tab-btn" data-tab="activity" onclick="switchTab('activity')">
+                    <i class="ph ph-clock-counter-clockwise"></i>
+                    <span>Aktywnosc</span>
+                    <span class="tab-badge" id="activity-count">0</span>
+                </button>
+            </div>
+
+            <!-- Tab: Informacje -->
+            <div id="tab-info" class="tab-content active">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mobile-grid-1">
+
+                    <!-- Left Column -->
+                    <div class="lg:col-span-2 space-y-6">
+
+                        <!-- Form Data -->
+                        <div class="bg-zinc-900/40 rounded-lg border border-white/5 p-4 sm:p-5">
+                            <h3 class="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                                <i class="ph ph-clipboard-text text-zinc-500"></i>
+                                Dane z formularza
+                            </h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                <div class="p-3 bg-zinc-900/60 rounded-lg border border-white/5">
+                                    <div class="text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1">Sytuacja</div>
+                                    <div id="field-situation" class="text-white text-sm font-medium">-</div>
+                                </div>
+                                <div class="p-3 bg-zinc-900/60 rounded-lg border border-white/5">
+                                    <div class="text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1">Lokalizacja</div>
+                                    <div id="field-location" class="text-white text-sm font-medium">-</div>
+                                </div>
+                                <div class="p-3 bg-zinc-900/60 rounded-lg border border-white/5">
+                                    <div class="text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1">Czas oczekiwania</div>
+                                    <div id="field-waiting" class="text-white text-sm font-medium">-</div>
+                                </div>
+                                <div class="p-3 bg-zinc-900/60 rounded-lg border border-white/5">
+                                    <div class="text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1">Typ pozwolenia</div>
+                                    <div id="field-permit" class="text-white text-sm font-medium">-</div>
+                                </div>
+                                <div class="p-3 bg-zinc-900/60 rounded-lg border border-white/5">
+                                    <div class="text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1">Odmowa timing</div>
+                                    <div id="field-rejection" class="text-white text-sm font-medium">-</div>
+                                </div>
+                                <div class="p-3 bg-zinc-900/60 rounded-lg border border-white/5">
+                                    <div class="text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1">Intencja</div>
+                                    <div id="field-intent" class="text-white text-sm font-medium">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Details from client -->
+                        <div id="details-section" class="bg-zinc-900/40 rounded-lg border border-white/5 p-4 sm:p-5 hidden">
+                            <h3 class="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                                <i class="ph ph-chat-text text-zinc-500"></i>
+                                Szczegoly od klienta
+                            </h3>
+                            <div id="field-details" class="text-zinc-300 text-sm whitespace-pre-wrap"></div>
+                        </div>
+
+                        <!-- Contact Info -->
+                        <div class="bg-zinc-900/40 rounded-lg border border-white/5 p-4 sm:p-5">
+                            <h3 class="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                                <i class="ph ph-user text-zinc-500"></i>
+                                Dane kontaktowe
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Telefon</label>
+                                    <input type="tel" id="edit-phone" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Email</label>
+                                    <input type="email" id="edit-email" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white" placeholder="email@example.com">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Imie i nazwisko</label>
+                                    <input type="text" id="edit-name" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white" placeholder="Jan Kowalski">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Tracking -->
+                    <div class="space-y-6">
+                        <div class="bg-zinc-900/40 rounded-lg border border-white/5 p-4 sm:p-5">
+                            <h3 class="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                                <i class="ph ph-chart-line text-zinc-500"></i>
+                                Dane sledzenia
+                            </h3>
+                            <div class="space-y-3 text-xs">
+                                <div class="flex justify-between"><span class="text-zinc-500">Jezyk:</span><span id="track-language" class="text-zinc-300 font-mono">-</span></div>
+                                <div class="flex justify-between"><span class="text-zinc-500">Referrer:</span><span id="track-referrer" class="text-zinc-300 font-mono truncate max-w-[120px]">-</span></div>
+                                <div class="flex justify-between"><span class="text-zinc-500">UTM Source:</span><span id="track-utm-source" class="text-zinc-300 font-mono">-</span></div>
+                                <div class="flex justify-between"><span class="text-zinc-500">UTM Medium:</span><span id="track-utm-medium" class="text-zinc-300 font-mono">-</span></div>
+                                <div class="flex justify-between"><span class="text-zinc-500">UTM Campaign:</span><span id="track-utm-campaign" class="text-zinc-300 font-mono">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Notatki -->
+            <div id="tab-notes" class="tab-content">
+                <div class="max-w-2xl">
+                    <!-- Add note -->
+                    <div class="mb-6">
+                        <div class="flex gap-2">
+                            <textarea id="new-note-input" rows="2" class="input-field flex-1 text-sm text-white rounded-lg px-3 py-2.5 resize-none" placeholder="Dodaj notatke..."></textarea>
+                            <button onclick="addNote()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors self-end">
+                                <i class="ph ph-plus mr-1"></i>Dodaj
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Notes list -->
+                    <div id="notes-list">
+                        <div class="text-zinc-600 text-sm text-center py-8">
+                            <i class="ph ph-note-blank text-2xl mb-2 block"></i>
+                            Brak notatek
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Aktywnosc -->
+            <div id="tab-activity" class="tab-content">
+                <div class="max-w-2xl">
+                    <div id="activity-list">
+                        <div class="text-zinc-600 text-sm text-center py-8">
+                            <i class="ph ph-clock text-2xl mb-2 block"></i>
+                            Brak aktywnosci
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let lead = null;
+        let saveTimeout = null;
+
+        // Get lead ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const leadId = urlParams.get('id');
+
+        // Check auth and load lead
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await db.auth.getSession();
+            if (!session) {
+                window.location.href = 'admin.html';
+                return;
+            }
+            if (!leadId) {
+                window.location.href = 'admin.html';
+                return;
+            }
+            loadLead();
+        });
+
+        async function loadLead() {
+            const { data, error } = await db
+                .from('permit_leads')
+                .select('*')
+                .eq('id', leadId)
+                .single();
+
+            if (error || !data) {
+                alert('Lead nie znaleziony');
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            lead = data;
+            renderLead();
+        }
+
+        function renderLead() {
+            // Breadcrumb
+            document.getElementById('breadcrumb-phone').textContent = lead.phone || '?';
+
+            // Avatar
+            const avatarLetter = (lead.phone || '?').replace(/[^a-zA-Z0-9]/g, '')[0] || '?';
+            document.getElementById('lead-avatar').textContent = avatarLetter.toUpperCase();
+
+            // Header
+            document.getElementById('lead-phone-display').textContent = lead.phone || '-';
+            document.getElementById('lead-type-badge').innerHTML = getLeadBadge(lead.lead_type);
+            document.getElementById('lead-score').textContent = (lead.lead_score || 0) + ' pkt';
+            document.getElementById('lead-created').textContent = formatDate(lead.created_at);
+
+            // Source badge
+            if (lead.utm_source || lead.referrer) {
+                const source = lead.utm_source || (lead.referrer?.includes('google') ? 'Google' : 'Direct');
+                document.getElementById('lead-source-badge').innerHTML = source;
+                document.getElementById('lead-source-badge').className = 'inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-medium border-violet-500/30 text-violet-400 bg-violet-500/10';
+            }
+
+            // Quick actions
+            document.getElementById('btn-call').href = 'tel:' + lead.phone;
+            document.getElementById('btn-whatsapp').href = 'https://wa.me/' + (lead.phone?.replace(/[^0-9]/g, '') || '');
+            if (lead.email) {
+                document.getElementById('btn-email').href = 'mailto:' + lead.email;
+                document.getElementById('btn-email').classList.remove('hidden');
+            }
+
+            // Pipeline
+            updatePipeline(lead.status || 'new');
+
+            // Form data
+            document.getElementById('field-situation').textContent = formatSituation(lead.situation);
+            document.getElementById('field-location').textContent = formatLocation(lead.location);
+            document.getElementById('field-waiting').textContent = formatWaitingTime(lead.waiting_time);
+            document.getElementById('field-permit').textContent = formatPermitType(lead.permit_type);
+            document.getElementById('field-rejection').textContent = formatRejectionTiming(lead.rejection_timing);
+            document.getElementById('field-intent').textContent = formatIntent(lead.intent);
+
+            // Details
+            if (lead.details) {
+                document.getElementById('details-section').classList.remove('hidden');
+                document.getElementById('field-details').textContent = lead.details;
+            }
+
+            // Contact fields
+            document.getElementById('edit-phone').value = lead.phone || '';
+            document.getElementById('edit-email').value = lead.email || '';
+            document.getElementById('edit-name').value = lead.name || '';
+
+            // Tracking
+            document.getElementById('track-language').textContent = lead.language || '-';
+            document.getElementById('track-referrer').textContent = lead.referrer || '-';
+            document.getElementById('track-referrer').title = lead.referrer || '';
+            document.getElementById('track-utm-source').textContent = lead.utm_source || '-';
+            document.getElementById('track-utm-medium').textContent = lead.utm_medium || '-';
+            document.getElementById('track-utm-campaign').textContent = lead.utm_campaign || '-';
+
+            // Notes & Activity counts
+            const notesCount = (lead.notes_history || []).length;
+            const activityCount = (lead.activity_log || []).length;
+            document.getElementById('notes-count').textContent = notesCount;
+            document.getElementById('activity-count').textContent = activityCount;
+
+            renderNotes();
+            renderActivity();
+
+            // Auto-save on input changes
+            ['edit-phone', 'edit-email', 'edit-name'].forEach(id => {
+                document.getElementById(id).addEventListener('input', () => autoSave());
+            });
+        }
+
+        function updatePipeline(currentStatus) {
+            const statuses = ['new', 'contacted', 'qualified', 'converted', 'lost'];
+            const currentIndex = statuses.indexOf(currentStatus);
+            const container = document.getElementById('pipeline-stepper');
+
+            if (currentStatus === 'converted' || currentStatus === 'lost') {
+                container.classList.add('terminal-state');
+            } else {
+                container.classList.remove('terminal-state');
+            }
+
+            document.querySelectorAll('.stage-pill').forEach(pill => {
+                pill.classList.remove('current', 'completed', 'terminal-won', 'terminal-lost');
+                const status = pill.dataset.status;
+
+                if (status === currentStatus) {
+                    if (status === 'converted') {
+                        pill.classList.add('terminal-won');
+                    } else if (status === 'lost') {
+                        pill.classList.add('terminal-lost');
+                    } else {
+                        pill.classList.add('current');
+                    }
+                } else if (currentStatus !== 'lost' && statuses.indexOf(status) < currentIndex) {
+                    pill.classList.add('completed');
+                }
+            });
+        }
+
+        async function changeStatus(newStatus) {
+            if (!lead || lead.status === newStatus) return;
+
+            const oldStatus = lead.status;
+            showSaveStatus('Zapisywanie...');
+
+            const { error } = await db
+                .from('permit_leads')
+                .update({ status: newStatus })
+                .eq('id', lead.id);
+
+            if (!error) {
+                lead.status = newStatus;
+                updatePipeline(newStatus);
+                addActivity('status', `Zmiana statusu: ${formatStatus(oldStatus)} → ${formatStatus(newStatus)}`);
+                showSaveStatus('Zapisano');
+            } else {
+                showSaveStatus('Blad!');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === 'tab-' + tab);
+            });
+        }
+
+        function autoSave() {
+            if (saveTimeout) clearTimeout(saveTimeout);
+            showSaveStatus('...');
+            saveTimeout = setTimeout(saveContactInfo, 800);
+        }
+
+        async function saveContactInfo() {
+            const phone = document.getElementById('edit-phone').value.trim();
+            const email = document.getElementById('edit-email').value.trim();
+            const name = document.getElementById('edit-name').value.trim();
+
+            showSaveStatus('Zapisywanie...');
+
+            const { error } = await db
+                .from('permit_leads')
+                .update({ phone, email, name })
+                .eq('id', lead.id);
+
+            if (!error) {
+                lead.phone = phone;
+                lead.email = email;
+                lead.name = name;
+                showSaveStatus('Zapisano');
+            } else {
+                showSaveStatus('Blad!');
+            }
+        }
+
+        async function addNote() {
+            const input = document.getElementById('new-note-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const note = {
+                text,
+                created_at: new Date().toISOString(),
+                status: lead.status
+            };
+
+            const notesHistory = lead.notes_history || [];
+            notesHistory.unshift(note);
+
+            showSaveStatus('Zapisywanie...');
+
+            const { error } = await db
+                .from('permit_leads')
+                .update({ notes_history: notesHistory, notes: text })
+                .eq('id', lead.id);
+
+            if (!error) {
+                lead.notes_history = notesHistory;
+                lead.notes = text;
+                input.value = '';
+                renderNotes();
+                document.getElementById('notes-count').textContent = notesHistory.length;
+                addActivity('note', text.substring(0, 50) + (text.length > 50 ? '...' : ''));
+                showSaveStatus('Zapisano');
+            } else {
+                showSaveStatus('Blad!');
+            }
+        }
+
+        function renderNotes() {
+            const container = document.getElementById('notes-list');
+            const notes = lead?.notes_history || [];
+
+            if (notes.length === 0 && !lead?.notes) {
+                container.innerHTML = `
+                    <div class="text-zinc-600 text-sm text-center py-8">
+                        <i class="ph ph-note-blank text-2xl mb-2 block"></i>
+                        Brak notatek
+                    </div>
+                `;
+                return;
+            }
+
+            // Fallback for old notes field
+            if (notes.length === 0 && lead?.notes) {
+                container.innerHTML = `
+                    <div class="note-card">
+                        <div class="text-zinc-300 text-sm whitespace-pre-wrap">${escapeHtml(lead.notes)}</div>
+                        <div class="text-xs text-zinc-500 mt-2">Zapisano wczesniej</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = notes.map(note => `
+                <div class="note-card">
+                    <div class="text-zinc-300 text-sm whitespace-pre-wrap">${escapeHtml(note.text)}</div>
+                    <div class="flex items-center gap-2 mt-2 text-xs text-zinc-500">
+                        <i class="ph ph-clock"></i>
+                        <span>${formatRelativeTime(note.created_at)}</span>
+                        ${note.status ? `<span class="text-zinc-700">•</span><span>${formatStatus(note.status)}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addActivity(type, description) {
+            if (!lead) return;
+
+            const activity = {
+                type,
+                description,
+                created_at: new Date().toISOString()
+            };
+
+            const activityLog = lead.activity_log || [];
+            activityLog.unshift(activity);
+
+            db.from('permit_leads')
+                .update({ activity_log: activityLog })
+                .eq('id', lead.id)
+                .then(() => {
+                    lead.activity_log = activityLog;
+                    renderActivity();
+                    document.getElementById('activity-count').textContent = activityLog.length;
+                });
+        }
+
+        function renderActivity() {
+            const container = document.getElementById('activity-list');
+            const activities = lead?.activity_log || [];
+
+            // Always show creation
+            const allActivities = [...activities];
+            if (!allActivities.find(a => a.type === 'created')) {
+                allActivities.push({
+                    type: 'created',
+                    description: 'Lead utworzony z formularza',
+                    created_at: lead?.created_at
+                });
+            }
+
+            if (allActivities.length === 0) {
+                container.innerHTML = `
+                    <div class="text-zinc-600 text-sm text-center py-8">
+                        <i class="ph ph-clock text-2xl mb-2 block"></i>
+                        Brak aktywnosci
+                    </div>
+                `;
+                return;
+            }
+
+            const typeConfig = {
+                created: { icon: 'ph-plus', bg: 'bg-blue-500' },
+                status: { icon: 'ph-arrow-right', bg: 'bg-amber-500' },
+                note: { icon: 'ph-note', bg: 'bg-violet-500' },
+                call: { icon: 'ph-phone', bg: 'bg-green-500' },
+                email: { icon: 'ph-envelope', bg: 'bg-purple-500' }
+            };
+
+            container.innerHTML = allActivities.map(activity => {
+                const config = typeConfig[activity.type] || { icon: 'ph-circle', bg: 'bg-zinc-500' };
+                return `
+                    <div class="activity-item">
+                        <div class="activity-icon ${config.bg} text-white">
+                            <i class="ph ${config.icon}"></i>
+                        </div>
+                        <div>
+                            <div class="text-zinc-300 text-sm">${escapeHtml(activity.description)}</div>
+                            <div class="text-zinc-500 text-xs mt-1">${formatRelativeTime(activity.created_at)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function deleteLead() {
+            if (!confirm('Na pewno usunac tego leada?')) return;
+
+            const { error } = await db
+                .from('permit_leads')
+                .delete()
+                .eq('id', lead.id);
+
+            if (!error) {
+                window.location.href = 'admin.html';
+            } else {
+                alert('Blad podczas usuwania');
+            }
+        }
+
+        function showSaveStatus(text) {
+            const el = document.getElementById('save-status');
+            document.getElementById('save-status-text').textContent = text;
+            el.classList.remove('hidden');
+            if (text === 'Zapisano') {
+                setTimeout(() => el.classList.add('hidden'), 2000);
+            }
+        }
+
+        // Formatters
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function formatRelativeTime(dateStr) {
+            if (!dateStr) return '-';
+            const now = new Date();
+            const date = new Date(dateStr);
+            const diff = Math.floor((now - date) / 1000);
+
+            if (diff < 60) return 'przed chwila';
+            if (diff < 3600) return `${Math.floor(diff / 60)} min temu`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} godz temu`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)} dni temu`;
+            return formatDate(dateStr);
+        }
+
+        function formatStatus(status) {
+            const map = { new: 'Nowy', contacted: 'Skontaktowany', qualified: 'Zakwalifikowany', converted: 'Wygrany', lost: 'Stracony' };
+            return map[status] || status || '-';
+        }
+
+        function formatSituation(val) {
+            const map = { rejected: 'Odmowa', waiting: 'Oczekuje', 'new-application': 'Nowy wniosek' };
+            return map[val] || val || '-';
+        }
+
+        function formatLocation(val) {
+            const map = { dolnoslaskie: 'Dolnoslaskie', other: 'Inne' };
+            return map[val] || val || '-';
+        }
+
+        function formatWaitingTime(val) {
+            const map = { '12plus': '12+ mies', '6-12': '6-12 mies', 'under-6': '<6 mies' };
+            return map[val] || val || '-';
+        }
+
+        function formatPermitType(val) {
+            const map = { temporary: 'Pobyt czasowy', permanent: 'Staly pobyt', citizenship: 'Obywatelstwo', 'eu-resident': 'Rezydent UE', work: 'Praca', residence: 'Pobyt' };
+            return map[val] || val || '-';
+        }
+
+        function formatRejectionTiming(val) {
+            const map = { 'under-14': '<14 dni', '14-30': '14-30 dni', 'over-30': '>30 dni' };
+            return map[val] || val || '-';
+        }
+
+        function formatIntent(val) {
+            const map = { 'hire-lawyer': 'Zatrudnic prawnika', 'just-info': 'Tylko info', diy: 'Sam zalatwi' };
+            return map[val] || val || '-';
+        }
+
+        function getLeadBadge(type) {
+            const badges = {
+                HOT: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">HOT</span>',
+                WARM: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">WARM</span>',
+                COLD: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">COLD</span>'
+            };
+            return badges[type] || '';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>
