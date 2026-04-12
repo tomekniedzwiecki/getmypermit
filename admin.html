@@ -26,12 +26,6 @@
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
         ::selection { background: white; color: black; }
 
-        .glass-header {
-            background: rgba(5, 5, 5, 0.85);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
@@ -50,8 +44,16 @@
             outline: none;
         }
 
-        .tab-btn { transition: all 0.2s; }
-        .tab-btn.active { background: rgba(255,255,255,0.1); color: white; }
+        .sidebar-link {
+            transition: all 0.2s;
+        }
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
 
         .pipeline-column { min-width: 280px; }
         .pipeline-card {
@@ -67,7 +69,7 @@
         }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden font-sans text-sm antialiased">
+<body class="h-screen overflow-hidden font-sans text-sm antialiased">
 
     <!-- Auth Screen -->
     <div class="fixed inset-0 bg-black z-50 flex items-center justify-center p-4" id="authScreen">
@@ -84,13 +86,13 @@
             <form id="loginForm" class="space-y-4">
                 <div>
                     <label class="block text-zinc-400 text-sm mb-1.5">Email</label>
-                    <input type="email" id="email" required
+                    <input type="email" id="email" required autocomplete="email"
                         class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
                         placeholder="twoj@email.com">
                 </div>
                 <div>
                     <label class="block text-zinc-400 text-sm mb-1.5">Haslo</label>
-                    <input type="password" id="password" required
+                    <input type="password" id="password" required autocomplete="current-password"
                         class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
                         placeholder="********">
                 </div>
@@ -102,178 +104,200 @@
         </div>
     </div>
 
-    <!-- Dashboard -->
-    <div class="hidden flex-col h-full" id="dashboard">
-        <!-- Header -->
-        <header class="glass-header h-16 flex items-center justify-between px-6 flex-shrink-0">
-            <div class="flex items-center gap-6">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                        <i class="ph ph-user-list text-white"></i>
+    <!-- Dashboard with Sidebar -->
+    <div class="hidden h-full" id="dashboard">
+        <div class="flex h-full">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col flex-shrink-0">
+                <!-- Logo -->
+                <div class="h-16 flex items-center px-5 border-b border-zinc-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <i class="ph ph-user-list text-white"></i>
+                        </div>
+                        <span class="text-white font-semibold">GetMyPermit</span>
                     </div>
-                    <span class="text-white font-medium">GetMyPermit</span>
                 </div>
-                <!-- Tabs -->
-                <div class="flex items-center gap-1 bg-zinc-900 rounded-lg p-1">
-                    <button onclick="switchTab('leads')" id="tabLeads" class="tab-btn active px-4 py-1.5 rounded-md text-zinc-400 hover:text-white text-sm font-medium flex items-center gap-2">
-                        <i class="ph ph-list-bullets"></i> Leady
+
+                <!-- Navigation -->
+                <nav class="flex-1 p-3 space-y-1">
+                    <button onclick="switchTab('leads')" id="tabLeads" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                        <i class="ph ph-list-bullets text-lg"></i>
+                        <span>Leady</span>
+                        <span class="ml-auto bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded text-xs" id="sidebarLeadsCount">0</span>
                     </button>
-                    <button onclick="switchTab('pipeline')" id="tabPipeline" class="tab-btn px-4 py-1.5 rounded-md text-zinc-400 hover:text-white text-sm font-medium flex items-center gap-2">
-                        <i class="ph ph-kanban"></i> Pipeline
+                    <button onclick="switchTab('pipeline')" id="tabPipeline" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                        <i class="ph ph-kanban text-lg"></i>
+                        <span>Pipeline</span>
+                    </button>
+                </nav>
+
+                <!-- Stats in Sidebar -->
+                <div class="p-3 border-t border-zinc-800">
+                    <div class="text-[10px] text-zinc-600 uppercase tracking-wider mb-3 px-1">Podsumowanie</div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="bg-zinc-900 rounded-lg p-2 text-center">
+                            <div class="text-lg font-bold text-red-400" id="hotCount">-</div>
+                            <div class="text-[10px] text-zinc-500">HOT</div>
+                        </div>
+                        <div class="bg-zinc-900 rounded-lg p-2 text-center">
+                            <div class="text-lg font-bold text-amber-400" id="warmCount">-</div>
+                            <div class="text-[10px] text-zinc-500">WARM</div>
+                        </div>
+                        <div class="bg-zinc-900 rounded-lg p-2 text-center">
+                            <div class="text-lg font-bold text-zinc-400" id="coldCount">-</div>
+                            <div class="text-[10px] text-zinc-500">COLD</div>
+                        </div>
+                    </div>
+                    <div class="mt-2 bg-zinc-900 rounded-lg p-2 flex items-center justify-between">
+                        <span class="text-zinc-500 text-xs">Skonwertowane</span>
+                        <span class="text-green-400 font-bold" id="convertedCount">-</span>
+                    </div>
+                </div>
+
+                <!-- User -->
+                <div class="p-3 border-t border-zinc-800">
+                    <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 text-sm transition-colors">
+                        <i class="ph ph-sign-out text-lg"></i>
+                        <span>Wyloguj</span>
                     </button>
                 </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <button onclick="exportCSV()" class="text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2">
-                    <i class="ph ph-download-simple"></i> Export
-                </button>
-                <button onclick="loadLeads()" class="text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2">
-                    <i class="ph ph-arrows-clockwise text-base" id="refreshIcon"></i>
-                </button>
-                <button onclick="logout()" class="text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 px-3 py-2 rounded-lg text-xs font-medium transition-all">
-                    Wyloguj
-                </button>
-            </div>
-        </header>
+            </aside>
 
-        <!-- Content -->
-        <div class="flex-1 overflow-auto p-6">
-            <div class="max-w-7xl mx-auto animate-enter">
-                <!-- Stats -->
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                        <div class="text-3xl font-bold text-white" id="totalCount">-</div>
-                        <div class="text-zinc-500 text-xs">Wszystkie</div>
+            <!-- Main Content -->
+            <main class="flex-1 flex flex-col overflow-hidden">
+                <!-- Top Bar -->
+                <header class="h-16 flex items-center justify-between px-6 border-b border-zinc-800 flex-shrink-0">
+                    <div>
+                        <h1 class="text-white font-semibold" id="pageTitle">Leady</h1>
+                        <p class="text-zinc-500 text-xs">Zarzadzaj swoimi leadami</p>
                     </div>
-                    <div class="bg-zinc-900 border border-red-500/20 rounded-xl p-4">
-                        <div class="text-3xl font-bold text-red-400" id="hotCount">-</div>
-                        <div class="text-zinc-500 text-xs">HOT</div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportCSV()" class="text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2">
+                            <i class="ph ph-download-simple"></i> Export
+                        </button>
+                        <button onclick="loadLeads()" class="text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2">
+                            <i class="ph ph-arrows-clockwise text-base" id="refreshIcon"></i> Odswiez
+                        </button>
                     </div>
-                    <div class="bg-zinc-900 border border-amber-500/20 rounded-xl p-4">
-                        <div class="text-3xl font-bold text-amber-400" id="warmCount">-</div>
-                        <div class="text-zinc-500 text-xs">WARM</div>
-                    </div>
-                    <div class="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
-                        <div class="text-3xl font-bold text-zinc-400" id="coldCount">-</div>
-                        <div class="text-zinc-500 text-xs">COLD</div>
-                    </div>
-                    <div class="bg-zinc-900 border border-green-500/20 rounded-xl p-4">
-                        <div class="text-3xl font-bold text-green-400" id="convertedCount">-</div>
-                        <div class="text-zinc-500 text-xs">Skonwertowane</div>
-                    </div>
-                </div>
+                </header>
 
-                <!-- Leads Tab -->
-                <div id="leadsTab">
-                    <!-- Filters -->
-                    <div class="flex flex-wrap gap-3 mb-4">
-                        <div class="relative flex-1 min-w-[200px] max-w-md">
-                            <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-zinc-500"></i>
-                            <input type="text" id="searchInput" placeholder="Szukaj telefon..."
-                                class="filter-input w-full rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-zinc-600">
-                        </div>
-                        <select id="filterLeadType" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
-                            <option value="">Wszystkie typy</option>
-                            <option value="HOT">HOT</option>
-                            <option value="WARM">WARM</option>
-                            <option value="COLD">COLD</option>
-                        </select>
-                        <select id="filterStatus" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
-                            <option value="">Wszystkie statusy</option>
-                            <option value="new">Nowy</option>
-                            <option value="contacted">Skontaktowany</option>
-                            <option value="qualified">Zakwalifikowany</option>
-                            <option value="converted">Skonwertowany</option>
-                            <option value="lost">Stracony</option>
-                        </select>
-                        <select id="filterDate" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
-                            <option value="">Caly czas</option>
-                            <option value="today">Dzisiaj</option>
-                            <option value="week">Ostatni tydzien</option>
-                            <option value="month">Ostatni miesiac</option>
-                        </select>
-                    </div>
+                <!-- Content -->
+                <div class="flex-1 overflow-auto p-6">
+                    <div class="animate-enter">
+                        <!-- Leads Tab -->
+                        <div id="leadsTab">
+                            <!-- Filters -->
+                            <div class="flex flex-wrap gap-3 mb-4">
+                                <div class="relative flex-1 min-w-[200px] max-w-md">
+                                    <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-zinc-500"></i>
+                                    <input type="text" id="searchInput" placeholder="Szukaj telefon..."
+                                        class="filter-input w-full rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-zinc-600">
+                                </div>
+                                <select id="filterLeadType" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
+                                    <option value="">Wszystkie typy</option>
+                                    <option value="HOT">HOT</option>
+                                    <option value="WARM">WARM</option>
+                                    <option value="COLD">COLD</option>
+                                </select>
+                                <select id="filterStatus" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
+                                    <option value="">Wszystkie statusy</option>
+                                    <option value="new">Nowy</option>
+                                    <option value="contacted">Skontaktowany</option>
+                                    <option value="qualified">Zakwalifikowany</option>
+                                    <option value="converted">Skonwertowany</option>
+                                    <option value="lost">Stracony</option>
+                                </select>
+                                <select id="filterDate" class="filter-input rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-pointer">
+                                    <option value="">Caly czas</option>
+                                    <option value="today">Dzisiaj</option>
+                                    <option value="week">Ostatni tydzien</option>
+                                    <option value="month">Ostatni miesiac</option>
+                                </select>
+                            </div>
 
-                    <!-- Results info -->
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="text-zinc-500 text-xs font-mono">
-                            Wyswietlam <span id="showingCount" class="text-white">0</span> leadow
-                        </div>
-                    </div>
+                            <!-- Results info -->
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="text-zinc-500 text-xs font-mono">
+                                    Wyswietlam <span id="showingCount" class="text-white">0</span> leadow
+                                </div>
+                            </div>
 
-                    <!-- Table -->
-                    <div class="border border-white/5 rounded-lg overflow-hidden bg-zinc-900/40">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-zinc-900/80 text-zinc-500 border-b border-white/5">
-                                <tr>
-                                    <th class="px-4 py-3 font-medium">Lead</th>
-                                    <th class="px-4 py-3 font-medium">Typ</th>
-                                    <th class="px-4 py-3 font-medium">Sytuacja</th>
-                                    <th class="px-4 py-3 font-medium hidden md:table-cell">Lokalizacja</th>
-                                    <th class="px-4 py-3 font-medium">Status</th>
-                                    <th class="px-4 py-3 font-medium">Data</th>
-                                    <th class="px-4 py-3 font-medium w-24 text-center">Akcje</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leadsTable" class="divide-y divide-white/5"></tbody>
-                        </table>
-                        <div id="emptyState" class="hidden py-16 text-center">
-                            <i class="ph ph-magnifying-glass text-3xl text-zinc-700 mb-2"></i>
-                            <p class="text-zinc-500 text-sm">Brak wynikow</p>
+                            <!-- Table -->
+                            <div class="border border-white/5 rounded-lg overflow-hidden bg-zinc-900/40">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-zinc-900/80 text-zinc-500 border-b border-white/5">
+                                        <tr>
+                                            <th class="px-4 py-3 font-medium">Lead</th>
+                                            <th class="px-4 py-3 font-medium">Typ</th>
+                                            <th class="px-4 py-3 font-medium">Sytuacja</th>
+                                            <th class="px-4 py-3 font-medium hidden md:table-cell">Lokalizacja</th>
+                                            <th class="px-4 py-3 font-medium">Status</th>
+                                            <th class="px-4 py-3 font-medium">Data</th>
+                                            <th class="px-4 py-3 font-medium w-24 text-center">Akcje</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="leadsTable" class="divide-y divide-white/5"></tbody>
+                                </table>
+                                <div id="emptyState" class="hidden py-16 text-center">
+                                    <i class="ph ph-magnifying-glass text-3xl text-zinc-700 mb-2"></i>
+                                    <p class="text-zinc-500 text-sm">Brak wynikow</p>
+                                </div>
+                                <div id="loadingState" class="py-16 text-center">
+                                    <div class="w-5 h-5 mx-auto mb-3 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
+                                    <p class="text-zinc-500 text-sm font-mono">Ladowanie...</p>
+                                </div>
+                            </div>
                         </div>
-                        <div id="loadingState" class="py-16 text-center">
-                            <div class="w-5 h-5 mx-auto mb-3 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
-                            <p class="text-zinc-500 text-sm font-mono">Ladowanie...</p>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Pipeline Tab -->
-                <div id="pipelineTab" class="hidden">
-                    <div class="flex gap-4 overflow-x-auto pb-4">
-                        <div class="pipeline-column flex-shrink-0">
-                            <div class="flex items-center gap-2 mb-3 px-1">
-                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <span class="text-zinc-300 font-medium text-sm">Nowe</span>
-                                <span class="text-zinc-600 text-xs ml-auto" id="newPipelineCount">0</span>
+                        <!-- Pipeline Tab -->
+                        <div id="pipelineTab" class="hidden">
+                            <div class="flex gap-4 overflow-x-auto pb-4">
+                                <div class="pipeline-column flex-shrink-0">
+                                    <div class="flex items-center gap-2 mb-3 px-1">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        <span class="text-zinc-300 font-medium text-sm">Nowe</span>
+                                        <span class="text-zinc-600 text-xs ml-auto" id="newPipelineCount">0</span>
+                                    </div>
+                                    <div id="pipelineNew" class="space-y-3 min-h-[200px]"></div>
+                                </div>
+                                <div class="pipeline-column flex-shrink-0">
+                                    <div class="flex items-center gap-2 mb-3 px-1">
+                                        <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                                        <span class="text-zinc-300 font-medium text-sm">Skontaktowany</span>
+                                        <span class="text-zinc-600 text-xs ml-auto" id="contactedPipelineCount">0</span>
+                                    </div>
+                                    <div id="pipelineContacted" class="space-y-3 min-h-[200px]"></div>
+                                </div>
+                                <div class="pipeline-column flex-shrink-0">
+                                    <div class="flex items-center gap-2 mb-3 px-1">
+                                        <div class="w-2 h-2 bg-violet-500 rounded-full"></div>
+                                        <span class="text-zinc-300 font-medium text-sm">Zakwalifikowany</span>
+                                        <span class="text-zinc-600 text-xs ml-auto" id="qualifiedPipelineCount">0</span>
+                                    </div>
+                                    <div id="pipelineQualified" class="space-y-3 min-h-[200px]"></div>
+                                </div>
+                                <div class="pipeline-column flex-shrink-0">
+                                    <div class="flex items-center gap-2 mb-3 px-1">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <span class="text-zinc-300 font-medium text-sm">Skonwertowany</span>
+                                        <span class="text-zinc-600 text-xs ml-auto" id="convertedPipelineCount">0</span>
+                                    </div>
+                                    <div id="pipelineConverted" class="space-y-3 min-h-[200px]"></div>
+                                </div>
+                                <div class="pipeline-column flex-shrink-0">
+                                    <div class="flex items-center gap-2 mb-3 px-1">
+                                        <div class="w-2 h-2 bg-zinc-600 rounded-full"></div>
+                                        <span class="text-zinc-300 font-medium text-sm">Stracony</span>
+                                        <span class="text-zinc-600 text-xs ml-auto" id="lostPipelineCount">0</span>
+                                    </div>
+                                    <div id="pipelineLost" class="space-y-3 min-h-[200px]"></div>
+                                </div>
                             </div>
-                            <div id="pipelineNew" class="space-y-3 min-h-[200px]"></div>
-                        </div>
-                        <div class="pipeline-column flex-shrink-0">
-                            <div class="flex items-center gap-2 mb-3 px-1">
-                                <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
-                                <span class="text-zinc-300 font-medium text-sm">Skontaktowany</span>
-                                <span class="text-zinc-600 text-xs ml-auto" id="contactedPipelineCount">0</span>
-                            </div>
-                            <div id="pipelineContacted" class="space-y-3 min-h-[200px]"></div>
-                        </div>
-                        <div class="pipeline-column flex-shrink-0">
-                            <div class="flex items-center gap-2 mb-3 px-1">
-                                <div class="w-2 h-2 bg-violet-500 rounded-full"></div>
-                                <span class="text-zinc-300 font-medium text-sm">Zakwalifikowany</span>
-                                <span class="text-zinc-600 text-xs ml-auto" id="qualifiedPipelineCount">0</span>
-                            </div>
-                            <div id="pipelineQualified" class="space-y-3 min-h-[200px]"></div>
-                        </div>
-                        <div class="pipeline-column flex-shrink-0">
-                            <div class="flex items-center gap-2 mb-3 px-1">
-                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span class="text-zinc-300 font-medium text-sm">Skonwertowany</span>
-                                <span class="text-zinc-600 text-xs ml-auto" id="convertedPipelineCount">0</span>
-                            </div>
-                            <div id="pipelineConverted" class="space-y-3 min-h-[200px]"></div>
-                        </div>
-                        <div class="pipeline-column flex-shrink-0">
-                            <div class="flex items-center gap-2 mb-3 px-1">
-                                <div class="w-2 h-2 bg-zinc-600 rounded-full"></div>
-                                <span class="text-zinc-300 font-medium text-sm">Stracony</span>
-                                <span class="text-zinc-600 text-xs ml-auto" id="lostPipelineCount">0</span>
-                            </div>
-                            <div id="pipelineLost" class="space-y-3 min-h-[200px]"></div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     </div>
 
@@ -427,13 +451,11 @@
             await db.auth.signOut();
             document.getElementById('authScreen').classList.remove('hidden');
             document.getElementById('dashboard').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('flex');
         }
 
         function showDashboard() {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('dashboard').classList.add('flex');
         }
 
         function switchTab(tab) {
@@ -442,6 +464,12 @@
             document.getElementById('tabPipeline').classList.toggle('active', tab === 'pipeline');
             document.getElementById('leadsTab').classList.toggle('hidden', tab !== 'leads');
             document.getElementById('pipelineTab').classList.toggle('hidden', tab !== 'pipeline');
+
+            // Update page title
+            const titles = { leads: 'Leady', pipeline: 'Pipeline' };
+            const subtitles = { leads: 'Zarzadzaj swoimi leadami', pipeline: 'Widok Kanban' };
+            document.getElementById('pageTitle').textContent = titles[tab];
+            document.getElementById('pageTitle').nextElementSibling.textContent = subtitles[tab];
         }
 
         async function loadLeads() {
@@ -470,11 +498,17 @@
         }
 
         function updateStats() {
-            document.getElementById('totalCount').textContent = allLeads.length;
-            document.getElementById('hotCount').textContent = allLeads.filter(l => l.lead_type === 'HOT').length;
-            document.getElementById('warmCount').textContent = allLeads.filter(l => l.lead_type === 'WARM').length;
-            document.getElementById('coldCount').textContent = allLeads.filter(l => l.lead_type === 'COLD').length;
-            document.getElementById('convertedCount').textContent = allLeads.filter(l => l.status === 'converted').length;
+            const total = allLeads.length;
+            const hot = allLeads.filter(l => l.lead_type === 'HOT').length;
+            const warm = allLeads.filter(l => l.lead_type === 'WARM').length;
+            const cold = allLeads.filter(l => l.lead_type === 'COLD').length;
+            const converted = allLeads.filter(l => l.status === 'converted').length;
+
+            document.getElementById('hotCount').textContent = hot;
+            document.getElementById('warmCount').textContent = warm;
+            document.getElementById('coldCount').textContent = cold;
+            document.getElementById('convertedCount').textContent = converted;
+            document.getElementById('sidebarLeadsCount').textContent = total;
         }
 
         function getFilteredLeads() {
@@ -724,22 +758,22 @@
         }
 
         function formatWaitingTime(w) {
-            const map = { '18+': '18+ mies.', '12-18': '12-18 mies.', '6-12': '6-12 mies.', 'under-6': '<6 mies.' };
+            const map = { '18+': '18+ mies.', '12-18': '12-18 mies.', '6-12': '6-12 mies.', '0-6': '<6 mies.', 'under-6': '<6 mies.' };
             return map[w] || w || '-';
         }
 
         function formatPermitType(p) {
-            const map = { temporary: 'Czasowy', permanent: 'Staly', citizenship: 'Obywatelstwo', 'eu-resident': 'Rezydent UE', work: 'Praca', residence: 'Pobyt' };
+            const map = { temporary: 'Czasowy', permanent: 'Staly', citizenship: 'Obywatelstwo', 'eu-resident': 'Rezydent UE', work: 'Praca', residence: 'Pobyt', 'not-sure': 'Konsultacja' };
             return map[p] || p || '-';
         }
 
         function formatRejectionTiming(r) {
-            const map = { '0-7': '0-7 dni', '7-14': '7-14 dni', 'not-sure': 'Nie wiem' };
+            const map = { '0-7': '0-7 dni', '7-14': '7-14 dni', '14+': '14+ dni', 'not-sure': 'Nie wiem' };
             return map[r] || r || '-';
         }
 
         function formatIntent(i) {
-            const map = { ready: 'Gotowy wynajac', 'hire-lawyer': 'Chce prawnika', 'just-info': 'Tylko info', diy: 'Sam to zrobie' };
+            const map = { ready: 'Gotowy na pomoc', exploring: 'Sprawdza opcje', 'hire-lawyer': 'Chce prawnika', 'just-info': 'Tylko info', diy: 'Sam to zrobie' };
             return map[i] || i || '-';
         }
 
