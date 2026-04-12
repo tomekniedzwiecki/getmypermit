@@ -1210,6 +1210,7 @@
       -webkit-mask-composite: xor;
       mask-composite: exclude;
       opacity: 0.6;
+      pointer-events: none;
     }
     @keyframes borderGradient {
       0%, 100% { background-position: 0% 50%; }
@@ -2422,6 +2423,7 @@
       height: 400px;
       background: radial-gradient(circle, rgba(255,100,100,0.15) 0%, transparent 70%);
       animation: problemGlow1 12s ease-in-out infinite;
+      pointer-events: none;
     }
     .problem-section::after {
       content: '';
@@ -2432,6 +2434,7 @@
       height: 350px;
       background: radial-gradient(circle, rgba(0,85,255,0.2) 0%, transparent 70%);
       animation: problemGlow2 15s ease-in-out infinite;
+      pointer-events: none;
     }
     @keyframes problemGlow1 {
       0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
