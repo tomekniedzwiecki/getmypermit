@@ -4980,413 +4980,390 @@
   </div>
 
   <script>
-    // FAQ Accordion
-    document.querySelectorAll('.faq-question').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const item = btn.closest('.faq-item');
-        const isOpen = item.classList.contains('open');
-        document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
-        if (!isOpen) item.classList.add('open');
+  (function() {
+    "use strict";
+
+    // === FAQ ACCORDION ===
+    document.querySelectorAll(".faq-question").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var item = btn.closest(".faq-item");
+        var isOpen = item.classList.contains("open");
+        document.querySelectorAll(".faq-item.open").forEach(function(i) {
+          i.classList.remove("open");
+        });
+        if (!isOpen) item.classList.add("open");
       });
     });
 
-    // Fade-in animations
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
+    // === FADE-IN ANIMATIONS ===
+    var fadeObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
         if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
+          entry.target.classList.add("visible");
         }
       });
     }, { threshold: 0.1 });
 
-    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    document.querySelectorAll(".fade-in").forEach(function(el) {
+      fadeObserver.observe(el);
+    });
 
-    // Sticky CTA - show after scrolling 15% of page
-    const stickyCta = document.querySelector('.sticky-cta-mobile');
+    // === STICKY CTA ===
+    var stickyCta = document.querySelector(".sticky-cta-mobile");
     if (stickyCta) {
-      window.addEventListener('scroll', () => {
-        const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+      window.addEventListener("scroll", function() {
+        var scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
         if (scrollPercent >= 15) {
-          stickyCta.classList.add('visible');
+          stickyCta.classList.add("visible");
         } else {
-          stickyCta.classList.remove('visible');
+          stickyCta.classList.remove("visible");
         }
       });
     }
 
-    // Animated counter for statistics
-    const countUpObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !entry.target.classList.contains('counted')) {
-          entry.target.classList.add('counted');
-          const target = parseInt(entry.target.dataset.target);
-          const duration = 2000;
-          const step = target / (duration / 16);
-          let current = 0;
-          const timer = setInterval(() => {
+    // === COUNTER ANIMATION ===
+    var countObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting && !entry.target.classList.contains("counted")) {
+          entry.target.classList.add("counted");
+          var target = parseInt(entry.target.dataset.target);
+          var duration = 2000;
+          var step = target / (duration / 16);
+          var current = 0;
+          var timer = setInterval(function() {
             current += step;
             if (current >= target) {
-              entry.target.textContent = target.toLocaleString().replace(/,/g, ' ') + '+';
+              entry.target.textContent = target.toLocaleString().replace(/,/g, " ") + "+";
               clearInterval(timer);
             } else {
-              entry.target.textContent = Math.floor(current).toLocaleString().replace(/,/g, ' ') + '+';
+              entry.target.textContent = Math.floor(current).toLocaleString().replace(/,/g, " ") + "+";
             }
           }, 16);
         }
       });
     }, { threshold: 0.5 });
 
-    document.querySelectorAll('.count-up').forEach(el => countUpObserver.observe(el));
+    document.querySelectorAll(".count-up").forEach(function(el) {
+      countObserver.observe(el);
+    });
 
-    // Auto-flip cards animation when services section is visible
-    const servicesSection = document.querySelector('.services');
-    let autoFlipTriggered = false;
-
-    const autoFlipObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !autoFlipTriggered) {
-          autoFlipTriggered = true;
-          const flipCards = document.querySelectorAll('.svc-flip');
-          // Flip cards 2, 5, 8 (różne pozycje w gridzie)
-          const cardsToFlip = [1, 4, 7];
-          cardsToFlip.forEach((index, i) => {
-            if (flipCards[index]) {
-              setTimeout(() => {
-                flipCards[index].classList.add('auto-flip');
-                // Usuń klasę po animacji
-                setTimeout(() => {
-                  flipCards[index].classList.remove('auto-flip');
-                }, 1500);
-              }, 800 + (i * 600)); // Staggered: 0.8s, 1.4s, 2s
-            }
-          });
-        }
-      });
-    }, { threshold: 0.3 });
+    // === AUTO-FLIP CARDS ===
+    var servicesSection = document.querySelector(".services");
+    var autoFlipTriggered = false;
 
     if (servicesSection) {
-      autoFlipObserver.observe(servicesSection);
+      var flipObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !autoFlipTriggered) {
+            autoFlipTriggered = true;
+            var flipCards = document.querySelectorAll(".svc-flip");
+            var cardsToFlip = [1, 4, 7];
+            cardsToFlip.forEach(function(index, i) {
+              if (flipCards[index]) {
+                setTimeout(function() {
+                  flipCards[index].classList.add("auto-flip");
+                  setTimeout(function() {
+                    flipCards[index].classList.remove("auto-flip");
+                  }, 1500);
+                }, 800 + (i * 600));
+              }
+            });
+          }
+        });
+      }, { threshold: 0.3 });
+      flipObserver.observe(servicesSection);
     }
 
-    // Multi-step Form Logic
-    const form = document.getElementById('multiStepForm');
-    const progressFill = document.getElementById('progressFill');
+    // === FORM LOGIC ===
+    var form = document.getElementById("multiStepForm");
+    var progressFill = document.getElementById("progressFill");
+    var stepHistory = ["1"];
 
-    // Track form navigation history for back button
-    let stepHistory = ['1'];
-
-    // Progress percentages for each step
-    const stepProgress = {
-      '1': 15,
-      'rejection-timing': 25,
-      'permit-type': 25,
-      '2': 40,
-      '3': 55,
-      'intent': 70,
-      'waiting-time': 82,
-      'details': 90,
-      'success': 100,
-      'not-qualified': 100,
-      'info-only': 100
+    var stepProgress = {
+      "1": 15,
+      "rejection-timing": 25,
+      "permit-type": 25,
+      "2": 40,
+      "3": 55,
+      "intent": 70,
+      "waiting-time": 82,
+      "details": 90,
+      "success": 100,
+      "not-qualified": 100,
+      "info-only": 100
     };
 
     // Giant choice selection
-    document.querySelectorAll('.giant-choice').forEach(choice => {
-      choice.addEventListener('click', function() {
-        const input = this.querySelector('input');
-        const name = input.name;
-        document.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
-          inp.closest('.giant-choice').classList.remove('selected');
+    document.querySelectorAll(".giant-choice").forEach(function(choice) {
+      choice.addEventListener("click", function() {
+        var input = this.querySelector("input");
+        var name = input.name;
+        document.querySelectorAll("input[name=\"" + name + "\"]").forEach(function(inp) {
+          inp.closest(".giant-choice").classList.remove("selected");
         });
-        this.classList.add('selected');
+        this.classList.add("selected");
         input.checked = true;
       });
     });
 
-    function showStep(stepId) {
-      document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
-      document.querySelector(`.form-step[data-step="${stepId}"]`).classList.add('active');
+    // Show step function
+    window.showStep = function(stepId) {
+      document.querySelectorAll(".form-step").forEach(function(step) {
+        step.classList.remove("active");
+      });
+      var targetStep = document.querySelector(".form-step[data-step=\"" + stepId + "\"]");
+      if (targetStep) targetStep.classList.add("active");
 
-      // Update progress bar
       if (progressFill && stepProgress[stepId]) {
-        progressFill.style.width = stepProgress[stepId] + '%';
+        progressFill.style.width = stepProgress[stepId] + "%";
       }
 
-      // Update step counter
-      const stepCurrent = document.getElementById('stepCurrent');
-      const stepTotal = document.getElementById('stepTotal');
-      const stepCounterEl = document.getElementById('stepCounter');
+      var stepCurrent = document.getElementById("stepCurrent");
+      var stepTotal = document.getElementById("stepTotal");
+      var stepCounterEl = document.getElementById("stepCounter");
 
-      // Calculate step number based on history length
-      const situation = form.querySelector('input[name="situation"]:checked')?.value;
+      var situationInput = form.querySelector("input[name=\"situation\"]:checked");
+      var situation = situationInput ? situationInput.value : null;
 
-      // Total steps:
-      // - rejected/new: 6 (includes rejection-timing or permit-type)
-      // - no-fingerprints/stuck: 6 (includes waiting-time)
-      // - letter: 5
-      const hasExtraStep = ['rejected', 'new', 'no-fingerprints', 'stuck'].includes(situation);
-      const totalSteps = hasExtraStep ? 6 : 5;
+      var hasExtraStep = ["rejected", "new", "no-fingerprints", "stuck"].indexOf(situation) !== -1;
+      var totalSteps = hasExtraStep ? 6 : 5;
+      var currentStep = stepHistory.length;
 
-      // Current step = history length (since history tracks all visited steps)
-      const currentStep = stepHistory.length;
-
-      // Hide counter for terminal steps
-      if (['success', 'not-qualified', 'info-only'].includes(stepId)) {
-        stepCounterEl.style.display = 'none';
+      if (["success", "not-qualified", "info-only"].indexOf(stepId) !== -1) {
+        if (stepCounterEl) stepCounterEl.style.display = "none";
       } else {
-        stepCounterEl.style.display = 'flex';
-        stepCurrent.textContent = currentStep;
-        stepTotal.textContent = totalSteps;
+        if (stepCounterEl) stepCounterEl.style.display = "flex";
+        if (stepCurrent) stepCurrent.textContent = currentStep;
+        if (stepTotal) stepTotal.textContent = totalSteps;
       }
-    }
+    };
 
-    function nextStep() {
-      const currentStepEl = document.querySelector('.form-step.active');
-      const currentStepId = currentStepEl.dataset.step;
-      const situation = form.querySelector('input[name="situation"]:checked')?.value;
+    // Next step function
+    window.nextStep = function() {
+      var currentStepEl = document.querySelector(".form-step.active");
+      var currentStepId = currentStepEl.dataset.step;
+      var situationInput = form.querySelector("input[name=\"situation\"]:checked");
+      var situation = situationInput ? situationInput.value : null;
 
-      // Step 1: What's your situation?
-      if (currentStepId === '1') {
+      if (currentStepId === "1") {
         if (!situation) {
-          alert('Please select your situation');
+          alert("Please select your situation");
           return;
         }
-        // Conditional routing based on situation
-        if (situation === 'rejected') {
-          stepHistory.push('rejection-timing');
-          showStep('rejection-timing');
-        } else if (situation === 'new') {
-          stepHistory.push('permit-type');
-          showStep('permit-type');
+        if (situation === "rejected") {
+          stepHistory.push("rejection-timing");
+          window.showStep("rejection-timing");
+        } else if (situation === "new") {
+          stepHistory.push("permit-type");
+          window.showStep("permit-type");
         } else {
-          stepHistory.push('2');
-          showStep('2');
+          stepHistory.push("2");
+          window.showStep("2");
         }
         return;
       }
 
-      // Rejection timing (conditional)
-      if (currentStepId === 'rejection-timing') {
-        const timing = form.querySelector('input[name="rejectionTiming"]:checked');
+      if (currentStepId === "rejection-timing") {
+        var timing = form.querySelector("input[name=\"rejectionTiming\"]:checked");
         if (!timing) {
-          alert('Please select when you received the rejection');
+          alert("Please select when you received the rejection");
           return;
         }
-        stepHistory.push('2');
-        showStep('2');
+        stepHistory.push("2");
+        window.showStep("2");
         return;
       }
 
-      // Permit type (conditional)
-      if (currentStepId === 'permit-type') {
-        const permitType = form.querySelector('input[name="permitType"]:checked');
+      if (currentStepId === "permit-type") {
+        var permitType = form.querySelector("input[name=\"permitType\"]:checked");
         if (!permitType) {
-          alert('Please select what you need');
+          alert("Please select what you need");
           return;
         }
-        stepHistory.push('2');
-        showStep('2');
+        stepHistory.push("2");
+        window.showStep("2");
         return;
       }
 
-      // Step 2: Phone/WhatsApp
-      if (currentStepId === '2') {
-        const phone = form.querySelector('input[name="phone"]').value;
+      if (currentStepId === "2") {
+        var phone = form.querySelector("input[name=\"phone\"]").value;
         if (!phone || phone.length < 9) {
-          alert('Please enter a valid phone number');
+          alert("Please enter a valid phone number");
           return;
         }
-        stepHistory.push('3');
-        showStep('3');
+        stepHistory.push("3");
+        window.showStep("3");
         return;
       }
 
-      // Step 3: Location
-      if (currentStepId === '3') {
-        const location = form.querySelector('input[name="location"]:checked');
+      if (currentStepId === "3") {
+        var location = form.querySelector("input[name=\"location\"]:checked");
         if (!location) {
-          alert('Please select your location');
+          alert("Please select your location");
           return;
         }
-        // Disqualify if outside Lower Silesia
-        if (location.value === 'other') {
-          showStep('not-qualified');
+        if (location.value === "other") {
+          window.showStep("not-qualified");
           return;
         }
-        stepHistory.push('intent');
-        showStep('intent');
+        stepHistory.push("intent");
+        window.showStep("intent");
         return;
       }
 
-      // Intent (qualifying question)
-      if (currentStepId === 'intent') {
-        const intent = form.querySelector('input[name="intent"]:checked');
+      if (currentStepId === "intent") {
+        var intent = form.querySelector("input[name=\"intent\"]:checked");
         if (!intent) {
-          alert('Please select an option');
+          alert("Please select an option");
           return;
         }
-        // Filter out people just exploring
-        if (intent.value === 'exploring') {
-          showStep('info-only');
+        if (intent.value === "exploring") {
+          window.showStep("info-only");
           return;
         }
-        // Show waiting time step for stuck/no-fingerprints situations
-        if (['no-fingerprints', 'stuck'].includes(situation)) {
-          stepHistory.push('waiting-time');
-          showStep('waiting-time');
+        if (["no-fingerprints", "stuck"].indexOf(situation) !== -1) {
+          stepHistory.push("waiting-time");
+          window.showStep("waiting-time");
           return;
         }
-        stepHistory.push('details');
-        showStep('details');
+        stepHistory.push("details");
+        window.showStep("details");
         return;
       }
 
-      // Waiting time step (for stuck/no-fingerprints)
-      if (currentStepId === 'waiting-time') {
-        const waitingTime = form.querySelector('input[name="waitingTime"]:checked');
+      if (currentStepId === "waiting-time") {
+        var waitingTime = form.querySelector("input[name=\"waitingTime\"]:checked");
         if (!waitingTime) {
-          alert('Please select how long you have been waiting');
+          alert("Please select how long you have been waiting");
           return;
         }
-        stepHistory.push('details');
-        showStep('details');
+        stepHistory.push("details");
+        window.showStep("details");
         return;
       }
-    }
+    };
 
-    function prevStep() {
+    // Previous step function
+    window.prevStep = function() {
       if (stepHistory.length > 1) {
-        stepHistory.pop(); // Remove current step
-        const previousStep = stepHistory[stepHistory.length - 1];
-        showStep(previousStep);
+        stepHistory.pop();
+        var previousStep = stepHistory[stepHistory.length - 1];
+        window.showStep(previousStep);
       }
-    }
+    };
 
-    function resetForm() {
+    // Reset form function
+    window.resetForm = function() {
       form.reset();
-      document.querySelectorAll('.giant-choice.selected').forEach(el => el.classList.remove('selected'));
-      stepHistory = ['1'];
-      showStep('1');
+      document.querySelectorAll(".giant-choice.selected").forEach(function(el) {
+        el.classList.remove("selected");
+      });
+      stepHistory = ["1"];
+      window.showStep("1");
+    };
+
+    // === SUPABASE CONFIG ===
+    var SUPABASE_URL = "https://yxmavwkwnfuphjqbelws.supabase.co";
+    var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340";
+    var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function saveLeadToSupabase(leadData) {
+      db.from("permit_leads").insert([leadData]).then(function(result) {
+        if (result.error) {
+          console.error("Error saving lead:", result.error);
+        } else {
+          console.log("Lead saved successfully:", result.data);
+        }
+      }).catch(function(err) {
+        console.error("Supabase error:", err);
+      });
     }
 
-    // Form submission
-    form.addEventListener('submit', function(e) {
+    // === FORM SUBMISSION ===
+    form.addEventListener("submit", function(e) {
       e.preventDefault();
 
-      const name = form.querySelector('input[name="name"]').value;
-      const email = form.querySelector('input[name="email"]').value;
-      const phone = form.querySelector('input[name="phone"]').value;
-      const consent = form.querySelector('input[name="consent"]').checked;
+      var name = form.querySelector("input[name=\"name\"]").value;
+      var email = form.querySelector("input[name=\"email\"]").value;
+      var phone = form.querySelector("input[name=\"phone\"]").value;
+      var consent = form.querySelector("input[name=\"consent\"]").checked;
 
       if (!name || !email) {
-        alert('Please fill in all fields');
+        alert("Please fill in all fields");
         return;
       }
       if (!consent) {
-        alert('Please agree to the privacy policy');
+        alert("Please agree to the privacy policy");
         return;
       }
 
-      // Collect all form data
-      const situation = form.querySelector('input[name="situation"]:checked')?.value;
-      const location = form.querySelector('input[name="location"]:checked')?.value;
-      const intent = form.querySelector('input[name="intent"]:checked')?.value;
-      const waitingTime = form.querySelector('input[name="waitingTime"]:checked')?.value;
-      const rejectionTiming = form.querySelector('input[name="rejectionTiming"]:checked')?.value;
-      const permitType = form.querySelector('input[name="permitType"]:checked')?.value;
+      var situationInput = form.querySelector("input[name=\"situation\"]:checked");
+      var locationInput = form.querySelector("input[name=\"location\"]:checked");
+      var intentInput = form.querySelector("input[name=\"intent\"]:checked");
+      var waitingTimeInput = form.querySelector("input[name=\"waitingTime\"]:checked");
+      var rejectionTimingInput = form.querySelector("input[name=\"rejectionTiming\"]:checked");
+      var permitTypeInput = form.querySelector("input[name=\"permitType\"]:checked");
 
-      const formData = {
-        situation,
-        location,
-        intent,
-        waitingTime,
-        rejectionTiming,
-        permitType,
-        name,
-        email,
-        phone
-      };
+      var situation = situationInput ? situationInput.value : null;
+      var location = locationInput ? locationInput.value : null;
+      var intent = intentInput ? intentInput.value : null;
+      var waitingTime = waitingTimeInput ? waitingTimeInput.value : null;
+      var rejectionTiming = rejectionTimingInput ? rejectionTimingInput.value : null;
+      var permitType = permitTypeInput ? permitTypeInput.value : null;
 
-      console.log('Lead data:', formData);
+      console.log("Lead data:", { situation: situation, location: location, intent: intent, name: name, email: email, phone: phone });
 
-      // Calculate lead score based on guidelines
-      let score = 0;
+      // Calculate lead score
+      var score = 0;
 
-      // Situation scoring
-      if (situation === 'no-fingerprints') score += 40;  // Ideal client per guidelines
-      else if (situation === 'rejected') score += 30;    // Urgent - 14 day deadline
-      else if (situation === 'stuck') score += 25;
-      else if (situation === 'letter') score += 20;
-      else if (situation === 'new') score += 15;
+      if (situation === "no-fingerprints") score += 40;
+      else if (situation === "rejected") score += 30;
+      else if (situation === "stuck") score += 25;
+      else if (situation === "letter") score += 20;
+      else if (situation === "new") score += 15;
 
-      // Rejection urgency scoring (14 days to appeal!)
-      if (rejectionTiming === '0-7') score += 25;        // Very urgent - within appeal window
-      else if (rejectionTiming === '7-14') score += 20;  // Urgent - deadline approaching
-      else if (rejectionTiming === 'not-sure') score += 10;
+      if (rejectionTiming === "0-7") score += 25;
+      else if (rejectionTiming === "7-14") score += 20;
+      else if (rejectionTiming === "not-sure") score += 10;
 
-      // Waiting time scoring (18+ months = ideal per guidelines)
-      if (waitingTime === '18+') score += 25;
-      else if (waitingTime === '12-18') score += 15;
-      else if (waitingTime === '6-12') score += 5;
+      if (waitingTime === "18+") score += 25;
+      else if (waitingTime === "12-18") score += 15;
+      else if (waitingTime === "6-12") score += 5;
 
-      // Location scoring
-      if (location === 'wroclaw') score += 10;
-      else if (location === 'dolnoslaskie') score += 5;
+      if (location === "wroclaw") score += 10;
+      else if (location === "dolnoslaskie") score += 5;
 
-      // Intent scoring (ready to work = higher quality)
-      if (intent === 'ready') score += 15;
+      if (intent === "ready") score += 15;
 
-      // Permit type (citizenship often higher value)
-      if (permitType === 'citizenship') score += 10;
-      else if (permitType === 'residence') score += 5;
+      if (permitType === "citizenship") score += 10;
+      else if (permitType === "residence") score += 5;
 
-      const leadType = score >= 60 ? 'HOT' : score >= 35 ? 'WARM' : 'COLD';
-      console.log('Lead score:', score, '(' + leadType + ')');
+      var leadType = score >= 60 ? "HOT" : score >= 35 ? "WARM" : "COLD";
+      console.log("Lead score:", score, "(" + leadType + ")");
 
-      // Save to Supabase
+      var detailsEl = form.querySelector("textarea[name=\"details\"]");
+
       saveLeadToSupabase({
-        phone,
-        details: form.querySelector('textarea[name="details"]')?.value || '',
-        situation,
-        location,
-        intent,
+        phone: phone,
+        details: detailsEl ? detailsEl.value : "",
+        situation: situation,
+        location: location,
+        intent: intent,
         waiting_time: waitingTime,
         rejection_timing: rejectionTiming,
         permit_type: permitType,
         lead_score: score,
         lead_type: leadType,
-        language: currentLang || 'en',
+        language: window.currentLang || "en",
         user_agent: navigator.userAgent,
         referrer: document.referrer
       });
 
-      // Show success
-      showStep('success');
-
-      // Mark form as submitted (for lead magnet logic)
-      sessionStorage.setItem('formSubmitted', 'true');
+      window.showStep("success");
+      sessionStorage.setItem("formSubmitted", "true");
     });
 
-    // Supabase configuration
-    const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    async function saveLeadToSupabase(leadData) {
-      try {
-        const { data, error } = await supabase
-          .from('permit_leads')
-          .insert([leadData]);
-
-        if (error) {
-          console.error('Error saving lead:', error);
-        } else {
-          console.log('Lead saved successfully:', data);
-        }
-      } catch (err) {
-        console.error('Supabase error:', err);
-      }
-    }
+  })();
   </script>
 
   <!-- LEAD MAGNET WIDGET (Desktop) -->
