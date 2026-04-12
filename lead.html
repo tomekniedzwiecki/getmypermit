@@ -301,22 +301,83 @@
             padding: 12px;
             margin-bottom: 8px;
         }
+        /* Sidebar */
+        .sidebar-link {
+            transition: all 0.2s;
+        }
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            aside { display: none !important; }
+            .mobile-back-btn { display: flex !important; }
+        }
+        @media (min-width: 769px) {
+            .mobile-back-btn { display: none !important; }
+        }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden font-sans text-sm tracking-tight antialiased">
+<body class="h-screen flex overflow-hidden font-sans text-sm tracking-tight antialiased">
 
-    <!-- Header -->
-    <header class="h-16 glass-header flex items-center justify-between px-4 md:px-6 sticky top-0 z-30 flex-shrink-0">
-        <div class="flex items-center gap-3">
-            <a href="admin.html" class="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-colors">
-                <i class="ph ph-arrow-left text-xl"></i>
-            </a>
-            <div class="flex items-center gap-2 text-zinc-500">
-                <a href="admin.html" class="text-zinc-400 hover:text-white transition-colors hidden sm:inline">leads</a>
-                <span class="text-zinc-700 hidden sm:inline">/</span>
-                <span id="breadcrumb-phone" class="text-white font-medium truncate max-w-[150px] md:max-w-[200px]">...</span>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-zinc-950 border-r border-white/5 flex flex-col flex-shrink-0">
+        <!-- Logo -->
+        <div class="h-16 flex items-center px-5 border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <i class="ph ph-user-list text-white"></i>
+                </div>
+                <span class="text-white font-semibold">GetMyPermit</span>
             </div>
         </div>
+        <!-- Navigation -->
+        <nav class="flex-1 p-3 space-y-1">
+            <a href="admin.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 text-sm font-medium">
+                <i class="ph ph-list-bullets text-lg"></i>
+                <span>Leady</span>
+            </a>
+        </nav>
+        <!-- User -->
+        <div class="p-3 border-t border-white/5">
+            <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 text-sm transition-colors">
+                <i class="ph ph-sign-out text-lg"></i>
+                <span>Wyloguj</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col bg-black relative min-w-0">
+        <!-- Header -->
+        <header class="h-16 glass-header flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+            <div class="flex items-center gap-3">
+                <a href="admin.html" class="mobile-back-btn hidden items-center justify-center w-9 h-9 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-colors">
+                    <i class="ph ph-arrow-left text-xl"></i>
+                </a>
+                <div class="flex items-center gap-2 text-zinc-500">
+                    <a href="admin.html" class="text-zinc-400 hover:text-white transition-colors hidden sm:inline">leads</a>
+                    <span class="text-zinc-700 hidden sm:inline">/</span>
+                    <span id="breadcrumb-phone" class="text-white font-medium truncate max-w-[150px] md:max-w-[200px]">...</span>
+                </div>
+                <!-- Lead Navigation -->
+                <div class="flex items-center gap-1 sm:gap-2 ml-1 sm:ml-2 border-l border-white/10 pl-2 sm:pl-3">
+                    <button id="prev-lead-btn" disabled onclick="goToPrevLead()" class="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                        <i class="ph ph-caret-left text-lg"></i>
+                    </button>
+                    <div id="nav-status-badge" class="hidden sm:flex items-center gap-1.5">
+                        <span id="nav-status-label" class="text-[11px] font-medium text-zinc-400">-</span>
+                        <span class="text-zinc-600 text-[10px] font-mono"><span id="nav-status-position">0</span>/<span id="nav-status-total">0</span></span>
+                    </div>
+                    <button id="next-lead-btn" disabled onclick="goToNextLead()" class="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                        <i class="ph ph-caret-right text-lg"></i>
+                    </button>
+                </div>
+            </div>
         <div class="flex items-center gap-2 md:gap-3">
             <div id="save-status" class="hidden md:flex items-center gap-2 text-xs text-zinc-500 mr-2">
                 <span id="save-status-text"></span>
@@ -330,7 +391,7 @@
 
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto">
-        <div class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-enter">
+        <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-10 animate-enter">
 
             <!-- Lead Header -->
             <div class="flex items-start gap-4 sm:gap-6 mb-6 sm:mb-8 lead-header-mobile">
@@ -349,19 +410,6 @@
                         <span class="font-mono text-xs">Dodany: <span id="lead-created">-</span></span>
                     </div>
                 </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="flex gap-2 mb-6 flex-wrap">
-                <a id="btn-call" href="#" class="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 rounded-lg text-sm font-medium transition-colors">
-                    <i class="ph ph-phone"></i> Zadzwon
-                </a>
-                <a id="btn-whatsapp" href="#" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 rounded-lg text-sm font-medium transition-colors">
-                    <i class="ph ph-whatsapp-logo"></i> WhatsApp
-                </a>
-                <a id="btn-email" href="#" class="hidden flex items-center gap-2 px-4 py-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 hover:bg-violet-500/20 rounded-lg text-sm font-medium transition-colors">
-                    <i class="ph ph-envelope"></i> Email
-                </a>
             </div>
 
             <!-- Pipeline Mini -->
@@ -399,7 +447,7 @@
             <div class="tab-nav mb-6">
                 <button class="tab-btn active" data-tab="info" onclick="switchTab('info')">
                     <i class="ph ph-user-circle"></i>
-                    <span>Informacje</span>
+                    <span>Informacje podstawowe</span>
                 </button>
                 <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')">
                     <i class="ph ph-note-pencil"></i>
@@ -472,11 +520,24 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Telefon</label>
-                                    <input type="tel" id="edit-phone" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                    <div class="flex gap-2">
+                                        <input type="tel" id="edit-phone" class="input-field flex-1 rounded-lg px-3 py-2.5 text-sm text-white">
+                                        <a id="btn-call" href="#" class="px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-lg text-emerald-400 transition-colors" title="Zadzwon">
+                                            <i class="ph ph-phone text-lg"></i>
+                                        </a>
+                                        <a id="btn-whatsapp" href="#" target="_blank" class="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 rounded-lg text-green-400 transition-colors" title="WhatsApp">
+                                            <i class="ph ph-whatsapp-logo text-lg"></i>
+                                        </a>
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Email</label>
-                                    <input type="email" id="edit-email" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white" placeholder="email@example.com">
+                                    <div class="flex gap-2">
+                                        <input type="email" id="edit-email" class="input-field flex-1 rounded-lg px-3 py-2.5 text-sm text-white" placeholder="email@example.com">
+                                        <a id="btn-email" href="#" class="px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 rounded-lg text-purple-400 transition-colors" title="Wyslij email">
+                                            <i class="ph ph-envelope-simple text-lg"></i>
+                                        </a>
+                                    </div>
                                 </div>
                                 <div class="sm:col-span-2">
                                     <label class="block text-zinc-500 text-[10px] font-mono uppercase tracking-wider mb-1.5">Imie i nazwisko</label>
@@ -606,13 +667,13 @@
                 document.getElementById('lead-source-badge').className = 'inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-medium border-violet-500/30 text-violet-400 bg-violet-500/10';
             }
 
-            // Quick actions
+            // Action buttons
             document.getElementById('btn-call').href = 'tel:' + lead.phone;
             document.getElementById('btn-whatsapp').href = 'https://wa.me/' + (lead.phone?.replace(/[^0-9]/g, '') || '');
-            if (lead.email) {
-                document.getElementById('btn-email').href = 'mailto:' + lead.email;
-                document.getElementById('btn-email').classList.remove('hidden');
-            }
+            document.getElementById('btn-email').href = 'mailto:' + (lead.email || '');
+
+            // Load leads for prev/next navigation
+            loadLeadsForNavigation();
 
             // Pipeline
             updatePipeline(lead.status || 'new');
@@ -978,6 +1039,60 @@
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Logout
+        async function logout() {
+            await db.auth.signOut();
+            window.location.href = 'admin.html';
+        }
+
+        // Lead navigation
+        let allLeads = [];
+        let currentLeadIndex = -1;
+
+        async function loadLeadsForNavigation() {
+            const { data } = await db
+                .from('permit_leads')
+                .select('id, status, phone')
+                .order('created_at', { ascending: false });
+
+            allLeads = data || [];
+            currentLeadIndex = allLeads.findIndex(l => l.id === leadId);
+
+            // Filter leads by same status
+            const sameStatusLeads = allLeads.filter(l => (l.status || 'new') === (lead.status || 'new'));
+            const positionInStatus = sameStatusLeads.findIndex(l => l.id === leadId);
+
+            // Update nav badge
+            document.getElementById('nav-status-label').textContent = formatStatus(lead.status || 'new');
+            document.getElementById('nav-status-position').textContent = positionInStatus + 1;
+            document.getElementById('nav-status-total').textContent = sameStatusLeads.length;
+
+            // Enable/disable buttons
+            const prevBtn = document.getElementById('prev-lead-btn');
+            const nextBtn = document.getElementById('next-lead-btn');
+
+            prevBtn.disabled = positionInStatus <= 0;
+            nextBtn.disabled = positionInStatus >= sameStatusLeads.length - 1;
+
+            // Store for navigation
+            window.sameStatusLeads = sameStatusLeads;
+            window.positionInStatus = positionInStatus;
+        }
+
+        function goToPrevLead() {
+            if (window.positionInStatus > 0) {
+                const prevLead = window.sameStatusLeads[window.positionInStatus - 1];
+                window.location.href = 'lead.html?id=' + prevLead.id;
+            }
+        }
+
+        function goToNextLead() {
+            if (window.positionInStatus < window.sameStatusLeads.length - 1) {
+                const nextLead = window.sameStatusLeads[window.positionInStatus + 1];
+                window.location.href = 'lead.html?id=' + nextLead.id;
+            }
         }
     </script>
 </body>
