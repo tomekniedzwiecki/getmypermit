@@ -177,12 +177,12 @@
       border-radius: 2px;
     }
     @media (max-width: 767px) {
-      .header-cta { display: none; }
+      .header-cta > .btn { display: none; }
       .lang-selector {
-        position: absolute;
-        right: 32px;
-        top: 50%;
-        transform: translateY(-50%);
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
       }
     }
     @media (max-width: 480px) {
@@ -3710,7 +3710,6 @@
   </script>
 </head>
 <body>
-<script>alert('TEST NA POCZATKU BODY');</script>
 
   <!-- HEADER -->
   <header class="header">
@@ -4444,7 +4443,6 @@
       </div>
     </div>
   </section>
-<script>alert('TEST PRZED FORMULARZEM');</script>
 
   <!-- MULTI-STEP FORM -->
   <section class="form-section" id="form">
@@ -4951,7 +4949,6 @@
       </div>
     </div>
   </section>
-<script>alert('TEST PO FORMULARZU');</script>
 
   <!-- PRE-FOOTER CTA -->
   <section class="prefooter">
@@ -4981,13 +4978,8 @@
   <div class="sticky-cta-mobile">
     <a href="#form" class="btn btn-accent btn-pulse">Free Assessment <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a>
   </div>
-<script>alert('PRZED GLOWNYM SKRYPTEM');</script>
 
   <script>
-    alert('SKRYPT STARTUJE!');
-  </script>
-  <script>
-    alert('SKRYPT 2 START');
     // FAQ Accordion
     document.querySelectorAll('.faq-question').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -5021,10 +5013,6 @@
         }
       });
     }
-  </script>
-  <script>
-    alert('POLOWA SKRYPTU');
-    alert('PRZED COUNTER');
 
     // Animated counter for statistics
     const countUpObserver = new IntersectionObserver((entries) => {
@@ -5049,7 +5037,6 @@
     }, { threshold: 0.5 });
 
     document.querySelectorAll('.count-up').forEach(el => countUpObserver.observe(el));
-    alert('CHECKPOINT 1.2');
 
     // Auto-flip cards animation when services section is visible
     const servicesSection = document.querySelector('.services');
@@ -5080,7 +5067,6 @@
     if (servicesSection) {
       autoFlipObserver.observe(servicesSection);
     }
-    alert('CHECKPOINT 1.5');
 
     // Multi-step Form Logic
     const form = document.getElementById('multiStepForm');
@@ -5116,7 +5102,6 @@
         input.checked = true;
       });
     });
-    alert('CHECKPOINT 2');
 
     function showStep(stepId) {
       document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
@@ -5155,7 +5140,6 @@
       }
     }
 
-    console.log('DEFINING nextStep');
     function nextStep() {
       const currentStepEl = document.querySelector('.form-step.active');
       const currentStepId = currentStepEl.dataset.step;
@@ -5217,7 +5201,6 @@
         return;
       }
 
-alert('CHECKPOINT 3');
       // Step 3: Location
       if (currentStepId === '3') {
         const location = form.querySelector('input[name="location"]:checked');
@@ -5374,10 +5357,7 @@ alert('CHECKPOINT 3');
         lead_type: leadType,
         language: currentLang || 'en',
         user_agent: navigator.userAgent,
-        referrer: document.referrer,
-        utm_source: getUtmParam('utm_source'),
-        utm_medium: getUtmParam('utm_medium'),
-        utm_campaign: getUtmParam('utm_campaign')
+        referrer: document.referrer
       });
 
       // Show success
@@ -5386,12 +5366,6 @@ alert('CHECKPOINT 3');
       // Mark form as submitted (for lead magnet logic)
       sessionStorage.setItem('formSubmitted', 'true');
     });
-
-    // UTM parameter helper
-    function getUtmParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param) || null;
-    }
 
     // Supabase configuration
     const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
@@ -5413,7 +5387,6 @@ alert('CHECKPOINT 3');
         console.error('Supabase error:', err);
       }
     }
-    alert('SKRYPT KOMPLETNY!');
   </script>
 
   <!-- LEAD MAGNET WIDGET (Desktop) -->
