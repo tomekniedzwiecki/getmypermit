@@ -713,11 +713,11 @@
                 <div id="accepted-message" class="success-box hidden mb-8">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
                     <h4>Oferta zaakceptowana!</h4>
-                    <p>Dziekujemy za zaufanie. Umow sie teraz na bezplatna rozmowe.</p>
+                    <p>Dziekujemy za zaufanie. Skontaktujemy sie z Toba wkrotce.</p>
                 </div>
 
-                <!-- Booking Section -->
-                <div id="booking-section" class="card mb-8">
+                <!-- Booking Section (shown only if already accepted but no booking yet) -->
+                <div id="booking-section" class="card mb-8 hidden">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -859,10 +859,115 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
             </div>
             <h3>Potwierdzenie akceptacji</h3>
-            <p>Czy na pewno chcesz zaakceptowac te oferte? Po akceptacji skontaktujemy sie z Toba w celu omowienia szczegolom.</p>
+            <p>Czy na pewno chcesz zaakceptowac te oferte? Po akceptacji umowisz sie na bezplatna rozmowe z prawnikiem.</p>
             <div class="modal-buttons">
                 <button onclick="closeConfirmModal()" class="btn btn-outline">Anuluj</button>
                 <button onclick="confirmAcceptance()" class="btn btn-primary">Tak, akceptuje</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal (Full Screen) -->
+    <div id="booking-modal" class="modal-overlay hidden" style="background: white;">
+        <div style="width: 100%; max-width: 500px; padding: 24px;">
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 32px;">
+                <div style="width: 72px; height: 72px; background: var(--success); background: rgba(34, 197, 94, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                </div>
+                <h2 style="font-size: 24px; margin-bottom: 8px; color: var(--black);">Oferta zaakceptowana!</h2>
+                <p style="color: var(--gray);">Teraz umow sie na bezplatna rozmowe z prawnikiem</p>
+            </div>
+
+            <!-- Booking Content (cloned from main) -->
+            <div id="modal-booking-content">
+                <!-- Step 1: Select date -->
+                <div id="modal-step-date">
+                    <p style="font-weight: 600; color: var(--black); margin-bottom: 16px; text-align: center;">Wybierz dzien rozmowy</p>
+                    <div id="modal-booking-calendar" style="margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <button onclick="changeBookingMonth(-1)" class="btn btn-outline" style="padding: 8px 12px; font-size: 14px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+                            </button>
+                            <span id="modal-month-label" style="font-weight: 600; color: var(--black);"></span>
+                            <button onclick="changeBookingMonth(1)" class="btn btn-outline" style="padding: 8px 12px; font-size: 14px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+                            </button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; margin-bottom: 8px;">
+                            <div style="font-size: 12px; color: var(--gray); padding: 8px;">Pn</div>
+                            <div style="font-size: 12px; color: var(--gray); padding: 8px;">Wt</div>
+                            <div style="font-size: 12px; color: var(--gray); padding: 8px;">Sr</div>
+                            <div style="font-size: 12px; color: var(--gray); padding: 8px;">Cz</div>
+                            <div style="font-size: 12px; color: var(--gray); padding: 8px;">Pt</div>
+                            <div style="font-size: 12px; color: var(--gray); padding: 8px;">Sb</div>
+                            <div style="font-size: 12px; color: var(--gray); padding: 8px;">Nd</div>
+                        </div>
+                        <div id="modal-booking-days" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Select time -->
+                <div id="modal-step-time" class="hidden">
+                    <p style="font-weight: 600; color: var(--black); margin-bottom: 8px; text-align: center;">Wybierz godzine</p>
+                    <p id="modal-selected-date-label" style="color: var(--gray); font-size: 14px; margin-bottom: 16px; text-align: center;"></p>
+                    <div id="modal-booking-slots" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px;"></div>
+                    <button onclick="modalGoBackToDate()" class="btn btn-outline" style="width: 100%;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+                        Zmien date
+                    </button>
+                </div>
+
+                <!-- Step 3: Confirm -->
+                <div id="modal-step-confirm" class="hidden">
+                    <div style="background: var(--light-gray); border-radius: var(--radius-sm); padding: 20px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <span style="color: var(--gray);">Data:</span>
+                            <span id="modal-confirm-date" style="font-weight: 600; color: var(--black);"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <span style="color: var(--gray);">Godzina:</span>
+                            <span id="modal-confirm-time" style="font-weight: 600; color: var(--black);"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--gray);">Czas trwania:</span>
+                            <span id="modal-confirm-duration" style="font-weight: 600; color: var(--black);"></span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label class="input-label">Numer telefonu do kontaktu</label>
+                        <input type="tel" id="modal-booking-phone" class="input-field" placeholder="+48 123 456 789">
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button onclick="modalGoBackToTime()" class="btn btn-outline" style="flex: 1;">Wstecz</button>
+                        <button onclick="modalConfirmBooking()" class="btn btn-primary" style="flex: 2;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                            Umow rozmowe
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading state -->
+                <div id="modal-booking-loading" class="hidden" style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="margin: 0 auto 16px;"></div>
+                    <p style="color: var(--gray);">Rezerwuje termin...</p>
+                </div>
+
+                <!-- Success state -->
+                <div id="modal-booking-success" class="hidden" style="text-align: center; padding: 20px;">
+                    <div style="width: 72px; height: 72px; background: rgba(34, 197, 94, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                    </div>
+                    <h3 style="font-size: 20px; margin-bottom: 8px; color: var(--black);">Rozmowa umowiona!</h3>
+                    <p style="color: var(--gray); margin-bottom: 16px;">
+                        <strong id="modal-booked-date"></strong> o godzinie <strong id="modal-booked-time"></strong>
+                    </p>
+                    <p style="color: var(--gray); font-size: 14px; margin-bottom: 24px;">Skontaktujemy sie z Toba pod numer <strong id="modal-booked-phone"></strong></p>
+                    <button onclick="closeBookingModal()" class="btn btn-primary" style="width: 100%;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                        Gotowe
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1088,7 +1193,9 @@
             clientOffer.status = 'accepted';
             document.getElementById('accept-btn').classList.add('hidden');
             document.getElementById('accepted-message').classList.remove('hidden');
-            document.getElementById('accepted-message').scrollIntoView({ behavior: 'smooth' });
+
+            // Open booking modal immediately
+            openBookingModal();
         }
 
         // ===========================================
@@ -1162,12 +1269,16 @@
             }
 
             if (!assignedLawyer) {
-                document.getElementById('booking-section').classList.add('hidden');
                 return;
             }
 
             await loadAvailabilityData();
-            renderBookingCalendar();
+
+            // If offer is already accepted, show booking section
+            if (clientOffer.status === 'accepted') {
+                document.getElementById('booking-section').classList.remove('hidden');
+                renderBookingCalendar();
+            }
         }
 
         async function loadAvailabilityData() {
@@ -1449,6 +1560,7 @@
         function showBookingConfirmed(appointment) {
             document.getElementById('booking-widget').classList.add('hidden');
             document.getElementById('booking-confirmed').classList.remove('hidden');
+            document.getElementById('booking-section').classList.remove('hidden');
 
             const date = new Date(appointment.scheduled_date);
             document.getElementById('booked-date').textContent =
@@ -1456,6 +1568,282 @@
             document.getElementById('booked-time').textContent = appointment.scheduled_time.substring(0, 5);
             document.getElementById('booked-phone').textContent = appointment.client_phone;
         }
+
+        // ===========================================
+        // BOOKING MODAL FUNCTIONS
+        // ===========================================
+        let modalMode = false;
+
+        async function openBookingModal() {
+            modalMode = true;
+
+            // Initialize booking system if not already done
+            if (!assignedLawyer) {
+                const lawyerId = lead?.assigned_to || clientOffer?.assigned_to;
+                if (lawyerId) {
+                    const { data: lawyer } = await supabaseClient
+                        .from(TABLE_LAWYERS)
+                        .select('*')
+                        .eq('id', lawyerId)
+                        .single();
+                    assignedLawyer = lawyer;
+                }
+                if (!assignedLawyer) {
+                    const { data: lawyers } = await supabaseClient
+                        .from(TABLE_LAWYERS)
+                        .select('*')
+                        .eq('is_active', true)
+                        .limit(1);
+                    if (lawyers && lawyers.length > 0) assignedLawyer = lawyers[0];
+                }
+                if (assignedLawyer) await loadAvailabilityData();
+            }
+
+            if (!assignedLawyer) {
+                alert('Brak dostepnych terminow. Skontaktujemy sie z Toba telefonicznie.');
+                return;
+            }
+
+            // Reset state
+            selectedBookingDate = null;
+            selectedBookingTime = null;
+
+            // Show modal
+            document.getElementById('booking-modal').classList.remove('hidden');
+
+            // Render calendar in modal
+            renderModalCalendar();
+        }
+
+        function closeBookingModal() {
+            document.getElementById('booking-modal').classList.add('hidden');
+            modalMode = false;
+
+            // Refresh the page to show updated state
+            window.location.reload();
+        }
+
+        function renderModalCalendar() {
+            const container = document.getElementById('modal-booking-days');
+            document.getElementById('modal-month-label').textContent =
+                `${MONTH_NAMES[bookingMonth.getMonth()]} ${bookingMonth.getFullYear()}`;
+
+            const firstDay = new Date(bookingMonth.getFullYear(), bookingMonth.getMonth(), 1);
+            const lastDay = new Date(bookingMonth.getFullYear(), bookingMonth.getMonth() + 1, 0);
+
+            let startDate = new Date(firstDay);
+            const dayOfWeek = firstDay.getDay() || 7;
+            startDate.setDate(firstDay.getDate() - dayOfWeek + 1);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayStr = today.toISOString().split('T')[0];
+
+            let html = '';
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+
+                const isOtherMonth = date.getMonth() !== bookingMonth.getMonth();
+                const isPast = date < today;
+                const isToday = dateStr === todayStr;
+                const isAvailable = isDayAvailable(date);
+                const isBlocked = isDateBlocked(dateStr);
+                const isSelected = selectedBookingDate === dateStr;
+
+                let classes = 'booking-day';
+                if (isOtherMonth) classes += ' other-month disabled';
+                else if (isPast || isBlocked || !isAvailable) classes += ' disabled';
+                else classes += ' available';
+                if (isToday) classes += ' today';
+                if (isSelected) classes += ' selected';
+
+                const clickable = !isOtherMonth && !isPast && !isBlocked && isAvailable;
+
+                html += `<div class="${classes}" ${clickable ? `onclick="modalSelectDate('${dateStr}')"` : ''}>${date.getDate()}</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function modalSelectDate(dateStr) {
+            selectedBookingDate = dateStr;
+            selectedBookingTime = null;
+            renderModalCalendar();
+            modalShowTimeSlots();
+        }
+
+        function modalShowTimeSlots() {
+            document.getElementById('modal-step-date').classList.add('hidden');
+            document.getElementById('modal-step-time').classList.remove('hidden');
+
+            const date = new Date(selectedBookingDate);
+            document.getElementById('modal-selected-date-label').textContent =
+                `${DAY_NAMES[date.getDay()]}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`;
+
+            modalRenderTimeSlots();
+        }
+
+        function modalRenderTimeSlots() {
+            const container = document.getElementById('modal-booking-slots');
+            const date = new Date(selectedBookingDate);
+            const dayOfWeek = date.getDay();
+
+            const daySlots = availability.filter(a => a.day_of_week === dayOfWeek);
+
+            if (daySlots.length === 0) {
+                container.innerHTML = '<p style="color: var(--gray); grid-column: 1/-1; text-align: center;">Brak dostepnych terminow w tym dniu</p>';
+                return;
+            }
+
+            let allSlots = [];
+            daySlots.forEach(slot => {
+                const duration = slot.slot_duration || 30;
+                selectedSlotDuration = duration;
+
+                let current = timeToMinutes(slot.start_time);
+                const end = timeToMinutes(slot.end_time);
+
+                while (current + duration <= end) {
+                    allSlots.push({ time: minutesToTime(current), duration: duration });
+                    current += duration;
+                }
+            });
+
+            const bookedTimes = existingAppointments
+                .filter(a => a.scheduled_date === selectedBookingDate)
+                .map(a => a.scheduled_time.substring(0, 5));
+
+            const blockedTimes = blockedDates
+                .filter(b => b.blocked_date === selectedBookingDate && b.start_time)
+                .map(b => ({ start: b.start_time.substring(0, 5), end: b.end_time?.substring(0, 5) }));
+
+            container.innerHTML = allSlots.map(slot => {
+                const isBooked = bookedTimes.includes(slot.time);
+                const isBlockedTime = blockedTimes.some(bt => slot.time >= bt.start && (!bt.end || slot.time < bt.end));
+                const isSelected = selectedBookingTime === slot.time;
+
+                let classes = 'time-slot-btn';
+                if (isBooked || isBlockedTime) classes += ' booked';
+                else if (isSelected) classes += ' selected';
+
+                const clickable = !isBooked && !isBlockedTime;
+
+                return `<button class="${classes}" ${clickable ? `onclick="modalSelectTime('${slot.time}')"` : 'disabled'}>${slot.time}</button>`;
+            }).join('');
+
+            if (allSlots.length === 0) {
+                container.innerHTML = '<p style="color: var(--gray); grid-column: 1/-1; text-align: center;">Brak dostepnych terminow</p>';
+            }
+        }
+
+        function modalSelectTime(time) {
+            selectedBookingTime = time;
+            modalRenderTimeSlots();
+            modalShowConfirmStep();
+        }
+
+        function modalShowConfirmStep() {
+            document.getElementById('modal-step-time').classList.add('hidden');
+            document.getElementById('modal-step-confirm').classList.remove('hidden');
+
+            const date = new Date(selectedBookingDate);
+            document.getElementById('modal-confirm-date').textContent =
+                `${DAY_NAMES[date.getDay()]}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
+            document.getElementById('modal-confirm-time').textContent = selectedBookingTime;
+            document.getElementById('modal-confirm-duration').textContent = `${selectedSlotDuration} minut`;
+
+            if (lead?.phone) {
+                document.getElementById('modal-booking-phone').value = lead.phone;
+            }
+        }
+
+        function modalGoBackToDate() {
+            document.getElementById('modal-step-time').classList.add('hidden');
+            document.getElementById('modal-step-date').classList.remove('hidden');
+            selectedBookingTime = null;
+        }
+
+        function modalGoBackToTime() {
+            document.getElementById('modal-step-confirm').classList.add('hidden');
+            document.getElementById('modal-step-time').classList.remove('hidden');
+        }
+
+        async function modalConfirmBooking() {
+            const phone = document.getElementById('modal-booking-phone').value.trim();
+
+            if (!phone) {
+                alert('Podaj numer telefonu');
+                return;
+            }
+
+            if (!selectedBookingDate || !selectedBookingTime) {
+                alert('Wybierz date i godzine');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('modal-step-confirm').classList.add('hidden');
+            document.getElementById('modal-booking-loading').classList.remove('hidden');
+
+            const appointmentData = {
+                lawyer_id: assignedLawyer.id,
+                lead_id: lead?.id || null,
+                client_offer_id: clientOffer.id,
+                scheduled_date: selectedBookingDate,
+                scheduled_time: selectedBookingTime,
+                duration_minutes: selectedSlotDuration,
+                client_name: lead?.name || null,
+                client_email: lead?.email || null,
+                client_phone: phone,
+                meeting_type: 'consultation',
+                status: 'scheduled'
+            };
+
+            const { data, error } = await supabaseClient
+                .from(TABLE_APPOINTMENTS)
+                .insert([appointmentData])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error creating appointment:', error);
+                alert('Blad podczas rezerwacji. Sprobuj ponownie.');
+                document.getElementById('modal-booking-loading').classList.add('hidden');
+                document.getElementById('modal-step-confirm').classList.remove('hidden');
+                return;
+            }
+
+            // Update lead phone if changed
+            if (lead && phone !== lead.phone) {
+                await supabaseClient
+                    .from(TABLE_LEADS)
+                    .update({ phone: phone })
+                    .eq('id', lead.id);
+            }
+
+            // Show success
+            document.getElementById('modal-booking-loading').classList.add('hidden');
+            document.getElementById('modal-booking-success').classList.remove('hidden');
+
+            const date = new Date(data.scheduled_date);
+            document.getElementById('modal-booked-date').textContent =
+                `${DAY_NAMES[date.getDay()]}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`;
+            document.getElementById('modal-booked-time').textContent = data.scheduled_time.substring(0, 5);
+            document.getElementById('modal-booked-phone').textContent = data.client_phone;
+        }
+
+        // Override changeBookingMonth to work in both contexts
+        const originalChangeBookingMonth = changeBookingMonth;
+        changeBookingMonth = function(delta) {
+            bookingMonth.setMonth(bookingMonth.getMonth() + delta);
+            if (modalMode) {
+                renderModalCalendar();
+            } else {
+                renderBookingCalendar();
+            }
+        };
 
         // Start
         init();
