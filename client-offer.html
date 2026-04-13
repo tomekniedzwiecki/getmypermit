@@ -473,6 +473,83 @@
             padding: 24px;
         }
 
+        /* Booking Calendar */
+        .booking-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-xs);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .booking-day:hover:not(.disabled):not(.other-month) {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+        }
+        .booking-day.selected {
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+        .booking-day.today {
+            border-color: var(--accent);
+        }
+        .booking-day.disabled {
+            color: var(--border);
+            cursor: not-allowed;
+        }
+        .booking-day.other-month {
+            color: var(--border);
+        }
+        .booking-day.available {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--black);
+        }
+        .booking-day.available::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+        .booking-day {
+            position: relative;
+        }
+
+        /* Time slots */
+        .time-slot-btn {
+            padding: 12px 8px;
+            background: var(--light-gray);
+            border: 2px solid transparent;
+            border-radius: var(--radius-xs);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .time-slot-btn:hover {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+        .time-slot-btn.selected {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .time-slot-btn.booked {
+            background: var(--border);
+            color: var(--gray);
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
         /* Utility */
         .hidden { display: none !important; }
         .text-center { text-align: center; }
@@ -636,7 +713,111 @@
                 <div id="accepted-message" class="success-box hidden mb-8">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
                     <h4>Oferta zaakceptowana!</h4>
-                    <p>Dziekujemy za zaufanie. Skontaktujemy sie z Toba wkrotce.</p>
+                    <p>Dziekujemy za zaufanie. Umow sie teraz na bezplatna rozmowe.</p>
+                </div>
+
+                <!-- Booking Section -->
+                <div id="booking-section" class="card mb-8">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <div>
+                            <h3 style="margin: 0;">Umow bezplatna rozmowe</h3>
+                            <p style="color: var(--gray); font-size: 14px; margin: 4px 0 0 0;">Wybierz termin konsultacji z prawnikiem</p>
+                        </div>
+                    </div>
+
+                    <!-- Already booked message -->
+                    <div id="booking-confirmed" class="hidden" style="text-align: center; padding: 20px;">
+                        <div style="width: 64px; height: 64px; background: var(--success); background: rgba(34, 197, 94, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                        </div>
+                        <h4 style="color: var(--black); margin-bottom: 8px;">Rozmowa umowiona!</h4>
+                        <p style="color: var(--gray); margin-bottom: 16px;">
+                            <strong id="booked-date"></strong> o godzinie <strong id="booked-time"></strong>
+                        </p>
+                        <p style="color: var(--gray); font-size: 14px;">Skontaktujemy sie z Toba pod numer <strong id="booked-phone"></strong></p>
+                    </div>
+
+                    <!-- Booking widget -->
+                    <div id="booking-widget">
+                        <!-- Step 1: Select date -->
+                        <div id="booking-step-date">
+                            <p style="font-weight: 600; color: var(--black); margin-bottom: 16px;">1. Wybierz dzien</p>
+                            <div id="booking-calendar" style="margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <button onclick="changeBookingMonth(-1)" class="btn btn-outline" style="padding: 8px 12px; font-size: 14px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+                                    </button>
+                                    <span id="booking-month-label" style="font-weight: 600; color: var(--black);"></span>
+                                    <button onclick="changeBookingMonth(1)" class="btn btn-outline" style="padding: 8px 12px; font-size: 14px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+                                    </button>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; margin-bottom: 8px;">
+                                    <div style="font-size: 12px; color: var(--gray); padding: 8px;">Pn</div>
+                                    <div style="font-size: 12px; color: var(--gray); padding: 8px;">Wt</div>
+                                    <div style="font-size: 12px; color: var(--gray); padding: 8px;">Sr</div>
+                                    <div style="font-size: 12px; color: var(--gray); padding: 8px;">Cz</div>
+                                    <div style="font-size: 12px; color: var(--gray); padding: 8px;">Pt</div>
+                                    <div style="font-size: 12px; color: var(--gray); padding: 8px;">Sb</div>
+                                    <div style="font-size: 12px; color: var(--gray); padding: 8px;">Nd</div>
+                                </div>
+                                <div id="booking-days" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Select time -->
+                        <div id="booking-step-time" class="hidden">
+                            <p style="font-weight: 600; color: var(--black); margin-bottom: 8px;">2. Wybierz godzine</p>
+                            <p id="selected-date-label" style="color: var(--gray); font-size: 14px; margin-bottom: 16px;"></p>
+                            <div id="booking-slots" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px;"></div>
+                            <button onclick="goBackToDateSelection()" class="btn btn-outline" style="width: 100%;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+                                Zmien date
+                            </button>
+                        </div>
+
+                        <!-- Step 3: Confirm -->
+                        <div id="booking-step-confirm" class="hidden">
+                            <p style="font-weight: 600; color: var(--black); margin-bottom: 16px;">3. Potwierdz rezerwacje</p>
+                            <div style="background: var(--light-gray); border-radius: var(--radius-sm); padding: 20px; margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                    <span style="color: var(--gray);">Data:</span>
+                                    <span id="confirm-date" style="font-weight: 600; color: var(--black);"></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                    <span style="color: var(--gray);">Godzina:</span>
+                                    <span id="confirm-time" style="font-weight: 600; color: var(--black);"></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: var(--gray);">Czas trwania:</span>
+                                    <span id="confirm-duration" style="font-weight: 600; color: var(--black);"></span>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 20px;">
+                                <label class="input-label">Numer telefonu do kontaktu</label>
+                                <input type="tel" id="booking-phone" class="input-field" placeholder="+48 123 456 789">
+                            </div>
+                            <div style="display: flex; gap: 12px;">
+                                <button onclick="goBackToTimeSelection()" class="btn btn-outline" style="flex: 1;">Wstecz</button>
+                                <button onclick="confirmBooking()" class="btn btn-primary" style="flex: 2;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                                    Potwierdzam
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Loading state -->
+                        <div id="booking-loading" class="hidden" style="text-align: center; padding: 40px;">
+                            <div class="spinner" style="margin: 0 auto 16px;"></div>
+                            <p style="color: var(--gray);">Rezerwuje termin...</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Contact -->
@@ -852,6 +1033,9 @@
                 document.getElementById('accept-btn').classList.add('hidden');
                 document.getElementById('accepted-message').classList.remove('hidden');
             }
+
+            // Initialize booking system
+            initBookingSystem();
         }
 
         function toggleMilestone(index) {
@@ -915,6 +1099,362 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // ===========================================
+        // BOOKING SYSTEM
+        // ===========================================
+        const TABLE_AVAILABILITY = 'gmp_lawyer_availability';
+        const TABLE_BLOCKED = 'gmp_lawyer_blocked_dates';
+        const TABLE_APPOINTMENTS = 'gmp_appointments';
+        const TABLE_LAWYERS = 'gmp_lawyers';
+
+        let bookingMonth = new Date();
+        let availability = [];
+        let blockedDates = [];
+        let existingAppointments = [];
+        let assignedLawyer = null;
+        let selectedBookingDate = null;
+        let selectedBookingTime = null;
+        let selectedSlotDuration = 30;
+
+        const MONTH_NAMES = ['Styczen', 'Luty', 'Marzec', 'Kwiecien', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpien', 'Wrzesien', 'Pazdziernik', 'Listopad', 'Grudzien'];
+        const DAY_NAMES = ['Niedziela', 'Poniedzialek', 'Wtorek', 'Sroda', 'Czwartek', 'Piatek', 'Sobota'];
+
+        async function initBookingSystem() {
+            // Check if there's already a booked appointment for this offer
+            const { data: existingBooking } = await supabaseClient
+                .from(TABLE_APPOINTMENTS)
+                .select('*')
+                .eq('client_offer_id', clientOffer.id)
+                .neq('status', 'cancelled')
+                .single();
+
+            if (existingBooking) {
+                showBookingConfirmed(existingBooking);
+                return;
+            }
+
+            // Get assigned lawyer from lead or offer
+            const lawyerId = lead?.assigned_to || clientOffer?.assigned_to;
+
+            if (lawyerId) {
+                const { data: lawyer } = await supabaseClient
+                    .from(TABLE_LAWYERS)
+                    .select('*')
+                    .eq('id', lawyerId)
+                    .single();
+
+                assignedLawyer = lawyer;
+            }
+
+            // If no assigned lawyer, get first active lawyer
+            if (!assignedLawyer) {
+                const { data: lawyers } = await supabaseClient
+                    .from(TABLE_LAWYERS)
+                    .select('*')
+                    .eq('is_active', true)
+                    .limit(1);
+
+                if (lawyers && lawyers.length > 0) {
+                    assignedLawyer = lawyers[0];
+                }
+            }
+
+            if (!assignedLawyer) {
+                document.getElementById('booking-section').classList.add('hidden');
+                return;
+            }
+
+            await loadAvailabilityData();
+            renderBookingCalendar();
+        }
+
+        async function loadAvailabilityData() {
+            if (!assignedLawyer) return;
+
+            // Load weekly availability
+            const { data: availData } = await supabaseClient
+                .from(TABLE_AVAILABILITY)
+                .select('*')
+                .eq('lawyer_id', assignedLawyer.id)
+                .eq('is_active', true);
+
+            availability = availData || [];
+
+            // Load blocked dates (next 60 days)
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + 60);
+
+            const { data: blockedData } = await supabaseClient
+                .from(TABLE_BLOCKED)
+                .select('*')
+                .eq('lawyer_id', assignedLawyer.id)
+                .gte('blocked_date', startDate.toISOString().split('T')[0])
+                .lte('blocked_date', endDate.toISOString().split('T')[0]);
+
+            blockedDates = blockedData || [];
+
+            // Load existing appointments
+            const { data: apptData } = await supabaseClient
+                .from(TABLE_APPOINTMENTS)
+                .select('*')
+                .eq('lawyer_id', assignedLawyer.id)
+                .gte('scheduled_date', startDate.toISOString().split('T')[0])
+                .neq('status', 'cancelled');
+
+            existingAppointments = apptData || [];
+        }
+
+        function renderBookingCalendar() {
+            const container = document.getElementById('booking-days');
+            document.getElementById('booking-month-label').textContent =
+                `${MONTH_NAMES[bookingMonth.getMonth()]} ${bookingMonth.getFullYear()}`;
+
+            const firstDay = new Date(bookingMonth.getFullYear(), bookingMonth.getMonth(), 1);
+            const lastDay = new Date(bookingMonth.getFullYear(), bookingMonth.getMonth() + 1, 0);
+
+            // Get first Monday
+            let startDate = new Date(firstDay);
+            const dayOfWeek = firstDay.getDay() || 7;
+            startDate.setDate(firstDay.getDate() - dayOfWeek + 1);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayStr = today.toISOString().split('T')[0];
+
+            let html = '';
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+
+                const isOtherMonth = date.getMonth() !== bookingMonth.getMonth();
+                const isPast = date < today;
+                const isToday = dateStr === todayStr;
+                const isAvailable = isDayAvailable(date);
+                const isBlocked = isDateBlocked(dateStr);
+                const isSelected = selectedBookingDate === dateStr;
+
+                let classes = 'booking-day';
+                if (isOtherMonth) classes += ' other-month disabled';
+                else if (isPast || isBlocked || !isAvailable) classes += ' disabled';
+                else classes += ' available';
+                if (isToday) classes += ' today';
+                if (isSelected) classes += ' selected';
+
+                const clickable = !isOtherMonth && !isPast && !isBlocked && isAvailable;
+
+                html += `<div class="${classes}" ${clickable ? `onclick="selectBookingDate('${dateStr}')"` : ''}>${date.getDate()}</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function isDayAvailable(date) {
+            const dayOfWeek = date.getDay();
+            return availability.some(slot => slot.day_of_week === dayOfWeek);
+        }
+
+        function isDateBlocked(dateStr) {
+            return blockedDates.some(b => b.blocked_date === dateStr && !b.start_time);
+        }
+
+        function changeBookingMonth(delta) {
+            bookingMonth.setMonth(bookingMonth.getMonth() + delta);
+            renderBookingCalendar();
+        }
+
+        function selectBookingDate(dateStr) {
+            selectedBookingDate = dateStr;
+            selectedBookingTime = null;
+            renderBookingCalendar();
+            showTimeSlots();
+        }
+
+        function showTimeSlots() {
+            document.getElementById('booking-step-date').classList.add('hidden');
+            document.getElementById('booking-step-time').classList.remove('hidden');
+
+            const date = new Date(selectedBookingDate);
+            document.getElementById('selected-date-label').textContent =
+                `${DAY_NAMES[date.getDay()]}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`;
+
+            renderTimeSlots();
+        }
+
+        function renderTimeSlots() {
+            const container = document.getElementById('booking-slots');
+            const date = new Date(selectedBookingDate);
+            const dayOfWeek = date.getDay();
+
+            // Get availability for this day
+            const daySlots = availability.filter(a => a.day_of_week === dayOfWeek);
+
+            if (daySlots.length === 0) {
+                container.innerHTML = '<p style="color: var(--gray); grid-column: 1/-1; text-align: center;">Brak dostepnych terminow w tym dniu</p>';
+                return;
+            }
+
+            // Generate all time slots
+            let allSlots = [];
+            daySlots.forEach(slot => {
+                const duration = slot.slot_duration || 30;
+                selectedSlotDuration = duration;
+
+                let current = timeToMinutes(slot.start_time);
+                const end = timeToMinutes(slot.end_time);
+
+                while (current + duration <= end) {
+                    allSlots.push({
+                        time: minutesToTime(current),
+                        duration: duration
+                    });
+                    current += duration;
+                }
+            });
+
+            // Check which slots are already booked or blocked
+            const bookedTimes = existingAppointments
+                .filter(a => a.scheduled_date === selectedBookingDate)
+                .map(a => a.scheduled_time.substring(0, 5));
+
+            const blockedTimes = blockedDates
+                .filter(b => b.blocked_date === selectedBookingDate && b.start_time)
+                .map(b => ({ start: b.start_time.substring(0, 5), end: b.end_time?.substring(0, 5) }));
+
+            container.innerHTML = allSlots.map(slot => {
+                const isBooked = bookedTimes.includes(slot.time);
+                const isBlockedTime = blockedTimes.some(bt =>
+                    slot.time >= bt.start && (!bt.end || slot.time < bt.end)
+                );
+                const isSelected = selectedBookingTime === slot.time;
+
+                let classes = 'time-slot-btn';
+                if (isBooked || isBlockedTime) classes += ' booked';
+                else if (isSelected) classes += ' selected';
+
+                const clickable = !isBooked && !isBlockedTime;
+
+                return `<button class="${classes}" ${clickable ? `onclick="selectBookingTime('${slot.time}')"` : 'disabled'}>${slot.time}</button>`;
+            }).join('');
+
+            if (allSlots.length === 0) {
+                container.innerHTML = '<p style="color: var(--gray); grid-column: 1/-1; text-align: center;">Brak dostepnych terminow</p>';
+            }
+        }
+
+        function timeToMinutes(time) {
+            const [h, m] = time.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        function minutesToTime(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        }
+
+        function selectBookingTime(time) {
+            selectedBookingTime = time;
+            renderTimeSlots();
+            showConfirmStep();
+        }
+
+        function showConfirmStep() {
+            document.getElementById('booking-step-time').classList.add('hidden');
+            document.getElementById('booking-step-confirm').classList.remove('hidden');
+
+            const date = new Date(selectedBookingDate);
+            document.getElementById('confirm-date').textContent =
+                `${DAY_NAMES[date.getDay()]}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
+            document.getElementById('confirm-time').textContent = selectedBookingTime;
+            document.getElementById('confirm-duration').textContent = `${selectedSlotDuration} minut`;
+
+            // Pre-fill phone from lead
+            if (lead?.phone) {
+                document.getElementById('booking-phone').value = lead.phone;
+            }
+        }
+
+        function goBackToDateSelection() {
+            document.getElementById('booking-step-time').classList.add('hidden');
+            document.getElementById('booking-step-date').classList.remove('hidden');
+            selectedBookingTime = null;
+        }
+
+        function goBackToTimeSelection() {
+            document.getElementById('booking-step-confirm').classList.add('hidden');
+            document.getElementById('booking-step-time').classList.remove('hidden');
+        }
+
+        async function confirmBooking() {
+            const phone = document.getElementById('booking-phone').value.trim();
+
+            if (!phone) {
+                alert('Podaj numer telefonu');
+                return;
+            }
+
+            if (!selectedBookingDate || !selectedBookingTime) {
+                alert('Wybierz date i godzine');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('booking-step-confirm').classList.add('hidden');
+            document.getElementById('booking-loading').classList.remove('hidden');
+
+            // Create appointment
+            const appointmentData = {
+                lawyer_id: assignedLawyer.id,
+                lead_id: lead?.id || null,
+                client_offer_id: clientOffer.id,
+                scheduled_date: selectedBookingDate,
+                scheduled_time: selectedBookingTime,
+                duration_minutes: selectedSlotDuration,
+                client_name: lead?.name || null,
+                client_email: lead?.email || null,
+                client_phone: phone,
+                meeting_type: 'consultation',
+                status: 'scheduled'
+            };
+
+            const { data, error } = await supabaseClient
+                .from(TABLE_APPOINTMENTS)
+                .insert([appointmentData])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error creating appointment:', error);
+                alert('Blad podczas rezerwacji. Sprobuj ponownie.');
+                document.getElementById('booking-loading').classList.add('hidden');
+                document.getElementById('booking-step-confirm').classList.remove('hidden');
+                return;
+            }
+
+            // Update lead phone if changed
+            if (lead && phone !== lead.phone) {
+                await supabaseClient
+                    .from(TABLE_LEADS)
+                    .update({ phone: phone })
+                    .eq('id', lead.id);
+            }
+
+            showBookingConfirmed(data);
+        }
+
+        function showBookingConfirmed(appointment) {
+            document.getElementById('booking-widget').classList.add('hidden');
+            document.getElementById('booking-confirmed').classList.remove('hidden');
+
+            const date = new Date(appointment.scheduled_date);
+            document.getElementById('booked-date').textContent =
+                `${DAY_NAMES[date.getDay()]}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`;
+            document.getElementById('booked-time').textContent = appointment.scheduled_time.substring(0, 5);
+            document.getElementById('booked-phone').textContent = appointment.client_phone;
         }
 
         // Start

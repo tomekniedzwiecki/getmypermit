@@ -382,7 +382,7 @@
                         </div>
 
                         <div class="mt-4 pt-4 border-t border-white/5">
-                            <div class="flex items-center justify-between gap-3 mb-2">
+                            <div class="flex items-center justify-between gap-3 mb-3">
                                 <div class="flex flex-wrap items-center gap-1.5">
                                     ${specs.map(s => `<span class="text-[11px] text-zinc-400 bg-zinc-800 px-2.5 py-1 rounded-md">${escapeHtml(s)}</span>`).join('')}
                                 </div>
@@ -391,6 +391,11 @@
                                     <span>${caseCount} spraw</span>
                                 </div>
                             </div>
+                            <a href="availability.html?lawyer_id=${lawyer.id}" onclick="event.stopPropagation()"
+                               class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 transition-all">
+                                <i class="ph ph-clock"></i>
+                                <span>Ustaw dostepnosc</span>
+                            </a>
                         </div>
                     </div>
                 `;

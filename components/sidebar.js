@@ -9,6 +9,7 @@
         { href: 'admin.html#leads', icon: 'ph-list-bullets', color: 'text-cyan-400', label: 'Leady', id: 'leads' },
         { href: 'admin.html#pipeline', icon: 'ph-kanban', color: 'text-pink-400', label: 'Pipeline', id: 'pipeline' },
         { href: 'calendar.html', icon: 'ph-calendar', color: 'text-blue-400', label: 'Kalendarz', id: 'calendar' },
+        { href: 'availability.html', icon: 'ph-clock', color: 'text-emerald-400', label: 'Dostepnosc', id: 'availability' },
         { href: 'lawyers.html', icon: 'ph-users', color: 'text-purple-400', label: 'Prawnicy', id: 'lawyers' },
         { href: 'offers.html', icon: 'ph-file-text', color: 'text-amber-400', label: 'Szablony ofert', id: 'offers' },
         { href: 'client-offers.html', icon: 'ph-paper-plane-tilt', color: 'text-green-400', label: 'Wysłane oferty', id: 'client-offers' },

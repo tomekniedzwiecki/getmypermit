@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dostepnosc - GetMyPermit</title>
+    <meta name="theme-color" content="#050505">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: #050505; color: #e5e5e5; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::selection { background: white; color: black; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-enter { animation: fadeIn 0.4s ease-out forwards; }
+
+        .input-field {
+            background: #0a0a0a;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: rgba(255,255,255,0.25);
+            outline: none;
+        }
+
+        .sidebar-link { transition: all 0.2s; }
+        .sidebar-link:hover { background: rgba(255,255,255,0.05); }
+        .sidebar-link.active { background: rgba(255,255,255,0.1); color: white; }
+
+        .day-card {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.2s;
+        }
+        .day-card:hover { border-color: rgba(255,255,255,0.15); }
+        .day-card.has-slots {
+            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.03);
+        }
+
+        .time-slot {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .blocked-card {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .appointment-card {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .appointment-card.scheduled { border-left: 3px solid #3b82f6; }
+        .appointment-card.confirmed { border-left: 3px solid #22c55e; }
+        .appointment-card.completed { border-left: 3px solid #6b7280; }
+        .appointment-card.cancelled { border-left: 3px solid #ef4444; opacity: 0.5; }
+
+        .tab-btn { transition: all 0.2s; }
+        .tab-btn.active { background: rgba(255,255,255,0.1); color: white; }
+    </style>
+</head>
+<body class="h-screen font-sans text-sm tracking-tight antialiased overflow-hidden">
+
+    <!-- Auth Screen -->
+    <div class="fixed inset-0 bg-black z-50 flex items-center justify-center p-4" id="authScreen">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-md">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+                    <i class="ph ph-clock text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-white">Dostepnosc</h1>
+                    <p class="text-zinc-500 text-sm">GetMyPermit.pl</p>
+                </div>
+            </div>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1.5">Email</label>
+                    <input type="email" id="email" required autocomplete="email"
+                        class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+                        placeholder="twoj@email.com">
+                </div>
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1.5">Haslo</label>
+                    <input type="password" id="password" required autocomplete="current-password"
+                        class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+                        placeholder="********">
+                </div>
+                <button type="submit" class="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-zinc-200 transition-colors">
+                    Zaloguj sie
+                </button>
+                <p class="text-red-400 text-sm text-center hidden" id="errorMsg"></p>
+            </form>
+        </div>
+    </div>
+
+    <script src="components/sidebar.js" data-active="availability"></script>
+    <div class="hidden h-full" id="dashboard">
+        <div class="flex h-full">
+            <div id="sidebar-placeholder"></div>
+
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <header class="h-16 flex items-center justify-between px-6 border-b border-zinc-800 flex-shrink-0">
+                    <div class="flex items-center gap-2 text-zinc-500">
+                        <i class="ph ph-clock text-emerald-400 text-xl"></i>
+                        <span class="text-white font-medium">Dostepnosc prawnikow</span>
+                    </div>
+                    <select id="lawyerSelect" class="input-field rounded-lg px-4 py-2 text-sm text-zinc-300 cursor-pointer">
+                        <option value="">Wybierz prawnika</option>
+                    </select>
+                </header>
+
+                <div class="px-6 py-3 border-b border-zinc-800 flex gap-2">
+                    <button class="tab-btn active px-4 py-2 rounded-lg text-zinc-400 font-medium text-sm" data-tab="weekly" onclick="switchTab('weekly')">
+                        <i class="ph ph-calendar-dots mr-2"></i>Harmonogram
+                    </button>
+                    <button class="tab-btn px-4 py-2 rounded-lg text-zinc-400 font-medium text-sm" data-tab="blocked" onclick="switchTab('blocked')">
+                        <i class="ph ph-prohibit mr-2"></i>Zablokowane
+                    </button>
+                    <button class="tab-btn px-4 py-2 rounded-lg text-zinc-400 font-medium text-sm" data-tab="appointments" onclick="switchTab('appointments')">
+                        <i class="ph ph-calendar-check mr-2"></i>Spotkania
+                        <span class="ml-1 px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs font-mono" id="appointmentsCount">0</span>
+                    </button>
+                </div>
+
+                <main class="flex-1 overflow-auto p-6">
+                    <div class="max-w-6xl mx-auto animate-enter">
+
+                        <!-- Weekly Tab -->
+                        <div id="weeklyTab">
+                            <div class="mb-6">
+                                <h2 class="text-lg font-semibold text-white mb-2">Harmonogram tygodniowy</h2>
+                                <p class="text-zinc-500 text-sm">Ustaw godziny dostepnosci dla kazdego dnia tygodnia.</p>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-8" id="weeklyGrid"></div>
+
+                            <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+                                <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                                    <i class="ph ph-plus-circle text-emerald-400"></i>Dodaj nowy slot
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                    <div>
+                                        <label class="block text-zinc-500 text-xs mb-1.5">Dzien</label>
+                                        <select id="newSlotDay" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                            <option value="1">Poniedzialek</option>
+                                            <option value="2">Wtorek</option>
+                                            <option value="3">Sroda</option>
+                                            <option value="4">Czwartek</option>
+                                            <option value="5">Piatek</option>
+                                            <option value="6">Sobota</option>
+                                            <option value="0">Niedziela</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-zinc-500 text-xs mb-1.5">Od</label>
+                                        <input type="time" id="newSlotStart" value="09:00" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-zinc-500 text-xs mb-1.5">Do</label>
+                                        <input type="time" id="newSlotEnd" value="17:00" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-zinc-500 text-xs mb-1.5">Dlugosc slotu</label>
+                                        <select id="newSlotDuration" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                            <option value="15">15 min</option>
+                                            <option value="30" selected>30 min</option>
+                                            <option value="45">45 min</option>
+                                            <option value="60">60 min</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button onclick="addSlot()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
+                                            <i class="ph ph-plus mr-1"></i> Dodaj
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Blocked Tab -->
+                        <div id="blockedTab" class="hidden">
+                            <div class="mb-6">
+                                <h2 class="text-lg font-semibold text-white mb-2">Zablokowane dni</h2>
+                                <p class="text-zinc-500 text-sm">Urlopy, dni wolne, itp.</p>
+                            </div>
+
+                            <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mb-6">
+                                <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                                    <i class="ph ph-calendar-x text-red-400"></i>Zablokuj date
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                    <div>
+                                        <label class="block text-zinc-500 text-xs mb-1.5">Data</label>
+                                        <input type="date" id="blockDate" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-zinc-500 text-xs mb-1.5">Od (opcj.)</label>
+                                        <input type="time" id="blockStartTime" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-zinc-500 text-xs mb-1.5">Do (opcj.)</label>
+                                        <input type="time" id="blockEndTime" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-zinc-500 text-xs mb-1.5">Powod</label>
+                                        <input type="text" id="blockReason" class="input-field w-full rounded-lg px-3 py-2.5 text-sm text-white" placeholder="np. Urlop">
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button onclick="addBlockedDate()" class="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-medium py-2.5 px-4 rounded-lg transition-colors">
+                                            <i class="ph ph-prohibit mr-1"></i> Zablokuj
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-3" id="blockedList"></div>
+                        </div>
+
+                        <!-- Appointments Tab -->
+                        <div id="appointmentsTab" class="hidden">
+                            <div class="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-white mb-2">Umowione spotkania</h2>
+                                    <p class="text-zinc-500 text-sm">Zarezerwowane konsultacje.</p>
+                                </div>
+                                <select id="appointmentsFilter" class="input-field rounded-lg px-3 py-2 text-xs text-zinc-300" onchange="renderAppointments()">
+                                    <option value="upcoming">Nadchodzace</option>
+                                    <option value="all">Wszystkie</option>
+                                    <option value="completed">Zakonczone</option>
+                                    <option value="cancelled">Anulowane</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3" id="appointmentsList"></div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Modal -->
+    <div id="appointmentModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-950 border border-white/10 rounded-xl w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                <h3 class="text-white font-semibold">Szczegoly spotkania</h3>
+                <button onclick="closeAppointmentModal()" class="text-zinc-500 hover:text-white p-2 hover:bg-white/5 rounded-lg"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="p-6" id="appointmentModalContent"></div>
+            <div class="flex gap-3 px-6 py-4 border-t border-white/5">
+                <button onclick="cancelAppointment()" id="cancelApptBtn" class="text-red-400 hover:text-red-300 border border-red-500/20 px-4 py-2 rounded-lg text-sm"><i class="ph ph-x-circle mr-1"></i> Anuluj</button>
+                <div class="flex-1"></div>
+                <button onclick="markCompleted()" id="completeApptBtn" class="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg text-sm"><i class="ph ph-check mr-1"></i> Zakonczone</button>
+                <button onclick="confirmAppointment()" id="confirmApptBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm"><i class="ph ph-check-circle mr-1"></i> Potwierdz</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="hidden fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-xl transition-all transform translate-y-2 opacity-0">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yxmavwkwnfuphjqbelws.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bWF2d2t3bmZ1cGhqcWJlbHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQyNTUsImV4cCI6MjA4NDM0MDI1NX0.XeR0Fc7OFn6YbNJrOKTBEj36JtmLISZTM87y4ai9340';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const TABLE_LAWYERS = 'gmp_lawyers';
+        const TABLE_AVAILABILITY = 'gmp_lawyer_availability';
+        const TABLE_BLOCKED = 'gmp_lawyer_blocked_dates';
+        const TABLE_APPOINTMENTS = 'gmp_appointments';
+
+        let currentLawyerId = null;
+        let lawyers = [];
+        let availability = [];
+        let blockedDates = [];
+        let appointments = [];
+        let selectedAppointment = null;
+
+        const DAYS = ['Niedziela', 'Poniedzialek', 'Wtorek', 'Sroda', 'Czwartek', 'Piatek', 'Sobota'];
+
+        // AUTH
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await db.auth.getSession();
+            if (session) { showDashboard(); loadLawyers(); }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { data, error } = await db.auth.signInWithPassword({
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            });
+            if (error) {
+                document.getElementById('errorMsg').textContent = 'Bledny email lub haslo';
+                document.getElementById('errorMsg').classList.remove('hidden');
+            } else { showDashboard(); loadLawyers(); }
+        });
+
+        function showDashboard() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+        }
+
+        async function logout() { await db.auth.signOut(); window.location.reload(); }
+
+        // LAWYERS
+        async function loadLawyers() {
+            const { data } = await db.from(TABLE_LAWYERS).select('*').eq('is_active', true).order('name');
+            lawyers = data || [];
+            const select = document.getElementById('lawyerSelect');
+            select.innerHTML = '<option value="">Wybierz prawnika</option>' + lawyers.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join('');
+
+            // Check URL for lawyer_id parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlLawyerId = urlParams.get('lawyer_id');
+
+            if (urlLawyerId && lawyers.find(l => l.id === urlLawyerId)) {
+                select.value = urlLawyerId;
+                currentLawyerId = urlLawyerId;
+                loadData();
+            } else if (lawyers.length > 0) {
+                select.value = lawyers[0].id;
+                currentLawyerId = lawyers[0].id;
+                loadData();
+            }
+        }
+
+        document.getElementById('lawyerSelect').addEventListener('change', (e) => { currentLawyerId = e.target.value; if (currentLawyerId) loadData(); });
+
+        // LOAD DATA
+        async function loadData() {
+            if (!currentLawyerId) return;
+            await Promise.all([loadAvailability(), loadBlockedDates(), loadAppointments()]);
+            renderWeeklyGrid(); renderBlockedList(); renderAppointments();
+        }
+
+        async function loadAvailability() {
+            const { data } = await db.from(TABLE_AVAILABILITY).select('*').eq('lawyer_id', currentLawyerId).eq('is_active', true).order('day_of_week').order('start_time');
+            availability = data || [];
+        }
+
+        async function loadBlockedDates() {
+            const { data } = await db.from(TABLE_BLOCKED).select('*').eq('lawyer_id', currentLawyerId).gte('blocked_date', new Date().toISOString().split('T')[0]).order('blocked_date');
+            blockedDates = data || [];
+        }
+
+        async function loadAppointments() {
+            const { data } = await db.from(TABLE_APPOINTMENTS).select('*, permit_leads(*)').eq('lawyer_id', currentLawyerId).order('scheduled_date').order('scheduled_time');
+            appointments = data || [];
+            document.getElementById('appointmentsCount').textContent = appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length;
+        }
+
+        // TABS
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+            document.getElementById('weeklyTab').classList.toggle('hidden', tab !== 'weekly');
+            document.getElementById('blockedTab').classList.toggle('hidden', tab !== 'blocked');
+            document.getElementById('appointmentsTab').classList.toggle('hidden', tab !== 'appointments');
+        }
+
+        // WEEKLY GRID
+        function renderWeeklyGrid() {
+            const byDay = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+            availability.forEach(s => byDay[s.day_of_week].push(s));
+            document.getElementById('weeklyGrid').innerHTML = [1,2,3,4,5,6,0].map(d => {
+                const slots = byDay[d];
+                return `
+                    <div class="day-card rounded-xl p-4 ${slots.length ? 'has-slots' : ''}">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-white font-medium text-sm">${DAYS[d]}</h4>
+                            ${slots.length ? '<i class="ph ph-check-circle text-emerald-400 text-sm"></i>' : ''}
+                        </div>
+                        ${slots.length ? `
+                            <div class="space-y-2">${slots.map(s => `
+                                <div class="time-slot rounded-lg px-3 py-2 flex items-center justify-between">
+                                    <span class="text-xs text-blue-300 font-mono">${formatTime(s.start_time)} - ${formatTime(s.end_time)}</span>
+                                    <button onclick="deleteSlot('${s.id}')" class="text-zinc-500 hover:text-red-400 p-1"><i class="ph ph-trash text-xs"></i></button>
+                                </div>
+                            `).join('')}</div>
+                            <div class="mt-2 text-zinc-600 text-[10px]">Slot: ${slots[0]?.slot_duration || 30} min</div>
+                        ` : '<div class="text-zinc-600 text-xs text-center py-4"><i class="ph ph-moon text-lg mb-1 block"></i>Niedostepny</div>'}
+                    </div>`;
+            }).join('');
+        }
+
+        async function addSlot() {
+            if (!currentLawyerId) { showToast('Wybierz prawnika', 'error'); return; }
+            const start = document.getElementById('newSlotStart').value;
+            const end = document.getElementById('newSlotEnd').value;
+            if (!start || !end) { showToast('Podaj godziny', 'error'); return; }
+            if (start >= end) { showToast('Nieprawidlowe godziny', 'error'); return; }
+
+            const { error } = await db.from(TABLE_AVAILABILITY).insert({
+                lawyer_id: currentLawyerId,
+                day_of_week: parseInt(document.getElementById('newSlotDay').value),
+                start_time: start, end_time: end,
+                slot_duration: parseInt(document.getElementById('newSlotDuration').value),
+                is_active: true
+            });
+            if (error) { showToast(error.code === '23505' ? 'Slot juz istnieje' : 'Blad', 'error'); return; }
+            showToast('Slot dodany', 'success');
+            await loadAvailability(); renderWeeklyGrid();
+        }
+
+        async function deleteSlot(id) {
+            if (!confirm('Usunac slot?')) return;
+            await db.from(TABLE_AVAILABILITY).delete().eq('id', id);
+            showToast('Usuniety', 'success');
+            await loadAvailability(); renderWeeklyGrid();
+        }
+
+        // BLOCKED DATES
+        function renderBlockedList() {
+            const c = document.getElementById('blockedList');
+            if (!blockedDates.length) { c.innerHTML = '<div class="text-zinc-600 text-center py-12"><i class="ph ph-calendar-x text-3xl mb-2 block"></i>Brak</div>'; return; }
+            c.innerHTML = blockedDates.map(b => `
+                <div class="blocked-card rounded-lg p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center text-red-400"><i class="ph ph-calendar-x"></i></div>
+                        <div>
+                            <div class="text-white font-medium">${new Date(b.blocked_date).toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'})}</div>
+                            <div class="text-zinc-500 text-xs">${b.start_time && b.end_time ? formatTime(b.start_time)+' - '+formatTime(b.end_time) : 'Caly dzien'}${b.reason ? ' - '+escapeHtml(b.reason) : ''}</div>
+                        </div>
+                    </div>
+                    <button onclick="deleteBlockedDate('${b.id}')" class="text-zinc-500 hover:text-red-400 p-2"><i class="ph ph-trash"></i></button>
+                </div>
+            `).join('');
+        }
+
+        async function addBlockedDate() {
+            if (!currentLawyerId) { showToast('Wybierz prawnika', 'error'); return; }
+            const date = document.getElementById('blockDate').value;
+            if (!date) { showToast('Wybierz date', 'error'); return; }
+            const { error } = await db.from(TABLE_BLOCKED).insert({
+                lawyer_id: currentLawyerId, blocked_date: date,
+                start_time: document.getElementById('blockStartTime').value || null,
+                end_time: document.getElementById('blockEndTime').value || null,
+                reason: document.getElementById('blockReason').value || null
+            });
+            if (error) { showToast(error.code === '23505' ? 'Juz zablokowane' : 'Blad', 'error'); return; }
+            ['blockDate','blockStartTime','blockEndTime','blockReason'].forEach(id => document.getElementById(id).value = '');
+            showToast('Zablokowane', 'success');
+            await loadBlockedDates(); renderBlockedList();
+        }
+
+        async function deleteBlockedDate(id) {
+            if (!confirm('Odblokowac?')) return;
+            await db.from(TABLE_BLOCKED).delete().eq('id', id);
+            showToast('Odblokowane', 'success');
+            await loadBlockedDates(); renderBlockedList();
+        }
+
+        // APPOINTMENTS
+        function renderAppointments() {
+            const c = document.getElementById('appointmentsList');
+            const filter = document.getElementById('appointmentsFilter').value;
+            const today = new Date().toISOString().split('T')[0];
+            let filtered = appointments;
+            if (filter === 'upcoming') filtered = filtered.filter(a => a.scheduled_date >= today && ['scheduled','confirmed'].includes(a.status));
+            else if (filter === 'completed') filtered = filtered.filter(a => a.status === 'completed');
+            else if (filter === 'cancelled') filtered = filtered.filter(a => a.status === 'cancelled');
+
+            if (!filtered.length) { c.innerHTML = '<div class="text-zinc-600 text-center py-12"><i class="ph ph-calendar-blank text-3xl mb-2 block"></i>Brak</div>'; return; }
+
+            const labels = { scheduled: 'Zaplanowane', confirmed: 'Potwierdzone', completed: 'Zakonczone', cancelled: 'Anulowane' };
+            const colors = { scheduled: 'bg-blue-500/20 text-blue-400 border-blue-500/30', confirmed: 'bg-green-500/20 text-green-400 border-green-500/30', completed: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30', cancelled: 'bg-red-500/20 text-red-400 border-red-500/30' };
+
+            c.innerHTML = filtered.map(a => {
+                const lead = a.permit_leads;
+                return `
+                    <div class="appointment-card ${a.status} rounded-lg p-4 cursor-pointer hover:border-white/20" onclick="openAppointmentModal('${a.id}')">
+                        <div class="flex items-start justify-between mb-2">
+                            <div>
+                                <div class="text-white font-medium">${escapeHtml(a.client_name || lead?.name || 'Nieznany')}</div>
+                                <div class="text-zinc-500 text-xs font-mono">${a.client_phone || lead?.phone || '-'}</div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-medium border ${colors[a.status]}">${labels[a.status]}</span>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs">
+                            <span class="text-blue-400 font-mono"><i class="ph ph-calendar mr-1"></i>${new Date(a.scheduled_date).toLocaleDateString('pl-PL', {day:'numeric',month:'short'})}</span>
+                            <span class="text-emerald-400 font-mono"><i class="ph ph-clock mr-1"></i>${formatTime(a.scheduled_time)}</span>
+                            <span class="text-zinc-500">${a.duration_minutes} min</span>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function openAppointmentModal(id) {
+            selectedAppointment = appointments.find(a => a.id === id);
+            if (!selectedAppointment) return;
+            const lead = selectedAppointment.permit_leads;
+            document.getElementById('appointmentModalContent').innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div><div class="text-zinc-500 text-xs mb-1">Klient</div><div class="text-white font-medium">${escapeHtml(selectedAppointment.client_name || lead?.name || 'Nieznany')}</div></div>
+                    <div><div class="text-zinc-500 text-xs mb-1">Telefon</div><div class="text-white font-mono"><a href="tel:${selectedAppointment.client_phone || lead?.phone}" class="hover:text-blue-400">${selectedAppointment.client_phone || lead?.phone || '-'}</a></div></div>
+                    <div><div class="text-zinc-500 text-xs mb-1">Email</div><div class="text-white">${escapeHtml(selectedAppointment.client_email || lead?.email || '-')}</div></div>
+                    <div><div class="text-zinc-500 text-xs mb-1">Status</div><div class="text-white">${selectedAppointment.status}</div></div>
+                    <div><div class="text-zinc-500 text-xs mb-1">Data</div><div class="text-white">${new Date(selectedAppointment.scheduled_date).toLocaleDateString('pl-PL', {weekday:'long',day:'numeric',month:'long'})}</div></div>
+                    <div><div class="text-zinc-500 text-xs mb-1">Godzina</div><div class="text-white font-mono">${formatTime(selectedAppointment.scheduled_time)} (${selectedAppointment.duration_minutes} min)</div></div>
+                </div>
+                ${lead ? `<div class="mt-4"><a href="lead.html?id=${lead.id}" class="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"><i class="ph ph-arrow-right"></i> Zobacz lead</a></div>` : ''}
+            `;
+            document.getElementById('cancelApptBtn').classList.toggle('hidden', ['cancelled','completed'].includes(selectedAppointment.status));
+            document.getElementById('confirmApptBtn').classList.toggle('hidden', selectedAppointment.status !== 'scheduled');
+            document.getElementById('completeApptBtn').classList.toggle('hidden', ['cancelled','completed'].includes(selectedAppointment.status));
+            document.getElementById('appointmentModal').classList.remove('hidden');
+        }
+
+        function closeAppointmentModal() { document.getElementById('appointmentModal').classList.add('hidden'); selectedAppointment = null; }
+
+        async function confirmAppointment() {
+            if (!selectedAppointment) return;
+            await db.from(TABLE_APPOINTMENTS).update({ status: 'confirmed' }).eq('id', selectedAppointment.id);
+            showToast('Potwierdzone', 'success'); closeAppointmentModal();
+            await loadAppointments(); renderAppointments();
+        }
+
+        async function markCompleted() {
+            if (!selectedAppointment) return;
+            await db.from(TABLE_APPOINTMENTS).update({ status: 'completed' }).eq('id', selectedAppointment.id);
+            showToast('Zakonczone', 'success'); closeAppointmentModal();
+            await loadAppointments(); renderAppointments();
+        }
+
+        async function cancelAppointment() {
+            if (!selectedAppointment || !confirm('Anulowac?')) return;
+            await db.from(TABLE_APPOINTMENTS).update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq('id', selectedAppointment.id);
+            showToast('Anulowane', 'success'); closeAppointmentModal();
+            await loadAppointments(); renderAppointments();
+        }
+
+        // HELPERS
+        function formatTime(t) { return t ? t.substring(0,5) : '-'; }
+        function escapeHtml(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function showToast(msg, type = 'info') {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = msg;
+            t.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-xl transition-all transform ${type === 'error' ? 'bg-red-900/90 border border-red-500/30 text-red-200' : type === 'success' ? 'bg-green-900/90 border border-green-500/30 text-green-200' : 'bg-zinc-900 border border-white/10 text-white'}`;
+            t.classList.remove('hidden', 'translate-y-2', 'opacity-0');
+            setTimeout(() => { t.classList.add('translate-y-2', 'opacity-0'); setTimeout(() => t.classList.add('hidden'), 200); }, 3000);
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAppointmentModal(); });
+    </script>
+</body>
+</html>
