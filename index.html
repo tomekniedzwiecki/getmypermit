@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Immigration Lawyer Wrocław — Residence Permit & Citizenship Help</title>
-  <meta name="description" content="Licensed immigration lawyers in Lower Silesia. We help foreigners get residence permits, work permits, and Polish citizenship. Free case assessment.">
-  <meta property="og:title" content="Immigration Lawyer Wrocław — Get Your Residence Permit">
-  <meta property="og:description" content="Stuck waiting for your residence permit? We help foreigners in Lower Silesia navigate Polish immigration. 10 000+ clients served.">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Immigration Lawyer Wrocław — Residence Permit, MOS 2.0 & Case Takeover</title>
+  <meta name="description" content="MOS 2.0 launches April 27, 2026 — you file alone, or we take over end-to-end. Licensed immigration lawyers in Lower Silesia handling residence permits from application to decision.">
+  <meta property="og:title" content="MOS 2.0 is here — don't file alone. Immigration Lawyer Wrocław">
+  <meta property="og:description" content="From April 27, 2026 foreigners submit applications themselves via MOS 2.0. One mistake = illegal stay. We take over the whole case — from Trusted Profile to final decision.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="en_US">
   <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
@@ -3703,6 +3706,32 @@
 </head>
 <body>
 
+  <!-- TOP BAR - MOS 2.0 ALERT -->
+  <a href="#mos20" class="top-bar">
+    <style>
+      .top-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 1001; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 20px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 0.3px; text-decoration: none; text-align: center; white-space: nowrap; overflow: hidden; transform: translateY(-100%); opacity: 0; pointer-events: none; transition: transform 0.3s ease, opacity 0.3s ease, background 0.2s; }
+      .top-bar.is-visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+      .top-bar:hover { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); }
+      .top-bar svg { flex-shrink: 0; }
+      .top-bar-arrow { transition: transform 0.2s; }
+      .top-bar:hover .top-bar-arrow { transform: translateX(3px); }
+      .top-bar-text-full { display: inline; }
+      .top-bar-text-short { display: none; }
+      .header { transition: top 0.3s ease; }
+      .top-bar.is-visible ~ .header { top: 40px; }
+      @media (max-width: 640px) {
+        .top-bar { padding: 8px 12px; font-size: 12px; gap: 6px; }
+        .top-bar-text-full { display: none; }
+        .top-bar-text-short { display: inline; }
+        .top-bar.is-visible ~ .header { top: 34px; }
+      }
+    </style>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="10"/></svg>
+    <span class="top-bar-text-full top-bar-text">New procedure: MOS 2.0 — from 27.04.2026</span>
+    <span class="top-bar-text-short top-bar-text" data-i18n="topBarShort">New: MOS 2.0</span>
+    <svg class="top-bar-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+
   <!-- HEADER -->
   <header class="header">
     <div class="container">
@@ -3784,12 +3813,13 @@
         </div>
 
         <div class="hero-headline">
-          <div class="hero-tag">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-            Immigration Law Firm
-          </div>
-          <h1>Legalization of stay in <span class="text-gradient">Poland</span></h1>
-          <p class="hero-subtitle">Residence permits, work permits, citizenship - we handle your case from start to finish</p>
+          <a href="#mos20" class="hero-tag hero-tag-mos" style="text-decoration: none; cursor: pointer; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="10"/></svg>
+            <span class="hero-tag-text">New procedure: MOS 2.0 — from 27.04.2026</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;margin-left:4px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <h1>You won't have to do it <span class="text-gradient">alone</span></h1>
+          <p class="hero-subtitle">Under MOS 2.0 you initiate the case yourself, prepare the application yourself, and are responsible for its correctness yourself. One error and your stay becomes illegal — even if you believe the case is pending. We take the case over and lead it comprehensively to a positive decision.</p>
           <a href="#form" class="btn btn-accent hero-cta-btn btn-pulse">Get Free Assessment <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a>
         </div>
 
@@ -3981,6 +4011,194 @@
     </div>
   </section>
 
+  <!-- MOS 2.0 — NEW PROCEDURE -->
+  <section class="mos-section" id="mos20">
+    <style>
+      .mos-section { padding: 96px 0; background: var(--white); }
+      .mos-wrap { max-width: 920px; margin: 0 auto; text-align: center; }
+      .mos-date-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--accent-soft); border-radius: 999px; color: var(--accent); font-size: 13px; font-weight: 600; margin-bottom: 24px; }
+      .mos-date-pill svg { width: 16px; height: 16px; }
+      .mos-wrap h2 { font-size: clamp(28px, 3.8vw, 42px); margin-bottom: 16px; letter-spacing: -0.01em; }
+      .mos-wrap > p.mos-lead { font-size: 18px; color: var(--gray); line-height: 1.6; max-width: 640px; margin: 0 auto 48px; }
+      .mos-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; margin-bottom: 40px; }
+      .mos-card { padding: 28px; border-radius: 16px; border: 1px solid var(--border); background: var(--white); }
+      .mos-card.mos-card-risk { background: #fafbfc; }
+      .mos-card.mos-card-answer { background: var(--accent); color: #fff; border-color: var(--accent); }
+      .mos-card-label { font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.65; margin-bottom: 12px; }
+      .mos-card h3 { font-size: 20px; line-height: 1.3; margin-bottom: 10px; color: inherit; }
+      .mos-card.mos-card-answer h3 { color: #fff; }
+      .mos-card p { font-size: 15px; line-height: 1.55; color: var(--gray); margin: 0; }
+      .mos-card.mos-card-answer p { color: rgba(255,255,255,0.88); }
+      .mos-cta-wrap { display: flex; justify-content: center; }
+      .mos-cta { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; background: var(--accent); color: #fff; font-weight: 600; font-size: 16px; border-radius: 12px; text-decoration: none; transition: transform 0.2s; }
+      .mos-cta:hover { transform: translateY(-2px); }
+      .mos-cta svg { width: 16px; height: 16px; }
+      @media (max-width: 720px) {
+        .mos-section { padding: 64px 0; }
+        .mos-cards { grid-template-columns: 1fr; gap: 12px; margin-bottom: 32px; }
+        .mos-card { padding: 22px; }
+      }
+    </style>
+    <div class="container">
+      <div class="mos-wrap fade-in">
+        <span class="mos-date-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span data-i18n="mosDate">New procedure — from 27.04.2026</span>
+        </span>
+        <h2 data-i18n-html="mosTitle">Under MOS 2.0, <span class="text-gradient">you file alone</span>.</h2>
+        <p class="mos-lead" data-i18n="mosLead">The foreigner initiates the case, prepares the application, and is responsible for its correctness — alone.</p>
+
+        <div class="mos-cards">
+          <div class="mos-card mos-card-risk">
+            <div class="mos-card-label" data-i18n="mosRiskLabel">The risk</div>
+            <h3 data-i18n="mosRiskTitle">One mistake = illegal stay</h3>
+            <p data-i18n="mosRiskText">An incorrectly filed application has no legal effect — you may be in Poland illegally while believing your case is pending.</p>
+          </div>
+          <div class="mos-card mos-card-answer">
+            <div class="mos-card-label" data-i18n="mosAnswerLabel">Our answer</div>
+            <h3 data-i18n="mosAnswerTitle">We take over the whole case</h3>
+            <p data-i18n="mosAnswerText">All 7 steps of MOS 2.0 — from the Trusted Profile to the final decision.</p>
+          </div>
+        </div>
+
+        <div class="mos-cta-wrap">
+          <a href="#form" class="mos-cta"><span data-i18n="mosCta">Hand over my case</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 STEPS OF MOS 2.0 -->
+  <section class="steps-section" id="steps">
+    <style>
+      .steps-section { padding: 100px 0; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%); position: relative; overflow: hidden; }
+      .steps-section::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: var(--border); }
+      .steps-timeline { position: relative; max-width: 960px; margin: 64px auto 0; padding: 0 16px; }
+      .steps-timeline::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--accent) 0%, var(--accent-light) 50%, var(--accent) 100%); transform: translateX(-50%); border-radius: 2px; }
+      .step-row { position: relative; display: grid; grid-template-columns: 1fr 80px 1fr; align-items: center; margin-bottom: 48px; }
+      .step-row:last-child { margin-bottom: 0; }
+      .step-node { grid-column: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; }
+      .step-number { width: 64px; height: 64px; border-radius: 50%; background: var(--white); border: 3px solid var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; box-shadow: 0 8px 24px -4px rgba(0, 85, 255, 0.3); transition: transform 0.3s ease; }
+      .step-row:hover .step-number { transform: scale(1.08); background: var(--accent); color: var(--white); }
+      .step-row.step-critical .step-number { background: var(--accent); color: var(--white); box-shadow: 0 0 0 6px rgba(0, 85, 255, 0.15), 0 12px 32px -4px rgba(0, 85, 255, 0.4); }
+      .step-card { background: var(--white); padding: 24px 28px; border-radius: var(--radius-sm); border: 1px solid var(--border); box-shadow: var(--shadow); transition: all 0.3s ease; position: relative; }
+      .step-card::before { content: ""; position: absolute; top: 50%; width: 20px; height: 2px; background: var(--accent); transform: translateY(-50%); }
+      .step-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--accent); }
+      .step-row:nth-child(odd) .step-card { grid-column: 1; text-align: right; }
+      .step-row:nth-child(odd) .step-card::before { right: -20px; }
+      .step-row:nth-child(even) .step-card { grid-column: 3; text-align: left; }
+      .step-row:nth-child(even) .step-card::before { left: -20px; }
+      .step-card .step-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+      .step-card.step-tag-critical .step-tag { color: #dc2626; }
+      .step-card h3 { font-size: 20px; margin-bottom: 8px; color: var(--black); }
+      .step-card p { font-size: 15px; color: var(--gray); line-height: 1.6; margin: 0; }
+      .step-icon { display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 10px; background: var(--accent-soft); color: var(--accent); margin-bottom: 12px; }
+      .step-icon svg { width: 20px; height: 20px; }
+      .steps-outro { max-width: 720px; margin: 64px auto 0; text-align: center; padding: 32px; background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); }
+      .steps-outro p { font-size: 17px; color: var(--dark); margin-bottom: 20px; }
+      .steps-outro strong { color: var(--accent); }
+      @media (max-width: 768px) {
+        .steps-section { padding: 60px 0; }
+        .steps-timeline { margin-top: 40px; padding: 0 8px; }
+        .steps-timeline::before { left: 32px; }
+        .step-row { grid-template-columns: 64px 1fr; gap: 16px; margin-bottom: 24px; align-items: flex-start; }
+        .step-node { grid-column: 1; }
+        .step-number { width: 48px; height: 48px; font-size: 18px; border-width: 2px; }
+        .step-row:nth-child(odd) .step-card,
+        .step-row:nth-child(even) .step-card { grid-column: 2; text-align: left; }
+        .step-card::before { display: none; }
+        .step-card { padding: 16px 18px; }
+        .step-card h3 { font-size: 17px; }
+        .step-card p { font-size: 14px; }
+      }
+    </style>
+    <div class="container">
+      <div class="section-header">
+        <h2 data-i18n-html="stepsTitle">7 steps of <span class="text-gradient">MOS 2.0</span> — we run each one</h2>
+        <p data-i18n="stepsSubtitle">Every stage of the procedure is part of one coherent process. Skipping any of them increases the risk of error. That is why we handle the case comprehensively — from the Trusted Profile to the final decision.</p>
+      </div>
+
+      <div class="steps-timeline">
+        <div class="step-row fade-in">
+          <div class="step-card">
+            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span class="step-tag" data-i18n="mosStep1Tag">Identification</span>
+            <h3 data-i18n="mosStep1Title">Trusted Profile</h3>
+            <p data-i18n="mosStep1Text">We help set up the Trusted Profile and introduce the client to the public administration system.</p>
+          </div>
+          <div class="step-node"><div class="step-number">1</div></div>
+        </div>
+
+        <div class="step-row fade-in">
+          <div class="step-node"><div class="step-number">2</div></div>
+          <div class="step-card">
+            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <span class="step-tag" data-i18n="mosStep2Tag">System access</span>
+            <h3 data-i18n="mosStep2Title">MOS 2.0 registration</h3>
+            <p data-i18n="mosStep2Text">We run the registration process and ensure the procedure is started correctly from day one.</p>
+          </div>
+        </div>
+
+        <div class="step-row step-critical fade-in">
+          <div class="step-card step-tag-critical">
+            <div class="step-icon" style="background: #fee2e2; color: #dc2626;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <span class="step-tag" data-i18n="mosStep3Tag">Application — critical stage</span>
+            <h3 data-i18n="mosStep3Title">Correct legal basis</h3>
+            <p data-i18n="mosStep3Text">We analyse your situation, select the correct legal basis for stay, and prepare a correct application. This is the stage that decides the legality of your stay.</p>
+          </div>
+          <div class="step-node"><div class="step-number">3</div></div>
+        </div>
+
+        <div class="step-row fade-in">
+          <div class="step-node"><div class="step-number">4</div></div>
+          <div class="step-card">
+            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.54 0 2.98.39 4.24 1.07"/></svg></div>
+            <span class="step-tag" data-i18n="mosStep4Tag">Documents</span>
+            <h3 data-i18n="mosStep4Title">We collect and verify</h3>
+            <p data-i18n="mosStep4Text">We define the scope of documents, contact your employer, and compile and verify the full dossier.</p>
+          </div>
+        </div>
+
+        <div class="step-row fade-in">
+          <div class="step-card">
+            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+            <span class="step-tag" data-i18n="mosStep5Tag">Signature &amp; submission</span>
+            <h3 data-i18n="mosStep5Title">Effective submission</h3>
+            <p data-i18n="mosStep5Text">We control the correctness of the whole process and are responsible for the effective submission of the application.</p>
+          </div>
+          <div class="step-node"><div class="step-number">5</div></div>
+        </div>
+
+        <div class="step-row fade-in">
+          <div class="step-node"><div class="step-number">6</div></div>
+          <div class="step-card">
+            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/><path d="M14 9h1"/><path d="M14 13h1"/><path d="M14 17h1"/></svg></div>
+            <span class="step-tag" data-i18n="mosStep6Tag">Office visit</span>
+            <h3 data-i18n="mosStep6Title">Dolnośląski Urząd Wojewódzki</h3>
+            <p data-i18n="mosStep6Text">We organise the appointment, prepare the client, and minimise the risk of formal errors at the office in Wrocław.</p>
+          </div>
+        </div>
+
+        <div class="step-row fade-in">
+          <div class="step-card">
+            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <span class="step-tag" data-i18n="mosStep7Tag">Proceedings</span>
+            <h3 data-i18n="mosStep7Title">We run it to the decision</h3>
+            <p data-i18n="mosStep7Text">We handle the communication with the office, react to every call, and control the course of the case all the way to the final decision.</p>
+          </div>
+          <div class="step-node"><div class="step-number">7</div></div>
+        </div>
+      </div>
+
+      <div class="steps-outro fade-in">
+        <p data-i18n-html="stepsOutroText">Skipping any step means risk. That is why we run <strong>all 7 steps</strong> — you don't have to learn the system or guess whether you did it right.</p>
+        <a href="#form" class="btn btn-accent btn-pulse"><span data-i18n="stepsOutroCta">Hand over my case</span> <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a>
+      </div>
+    </div>
+  </section>
+
   <!-- TEAM -->
   <section class="team">
     <div class="container">
@@ -3992,7 +4210,7 @@
       <div class="team-bento">
         <!-- Row 1: Partner + Stats + Stats + Partner (cross pattern) -->
         <div class="team-partner fade-in">
-          <img src="img/lawyer-hero.webp" alt="Paweł Stachurski" loading="lazy" width="200" height="200">
+          <img src="img/partner-pawel.webp?v=2" alt="Paweł Stachurski" loading="eager" width="350" height="350">
           <div class="team-partner-overlay">
             <div class="team-partner-name">Paweł Stachurski</div>
             <div class="team-partner-role">Office Director</div>
@@ -4007,7 +4225,7 @@
           <div class="team-stat-label">Satisfied clients<br>from 50+ countries</div>
         </div>
         <div class="team-partner fade-in">
-          <img src="img/team-katarzyna.webp" alt="Katarzyna Grzybowska-Jagódka" loading="lazy" width="200" height="200">
+          <img src="img/partner-katarzyna.webp?v=2" alt="Katarzyna Grzybowska-Jagódka" loading="eager" width="350" height="350">
           <div class="team-partner-overlay">
             <div class="team-partner-name team-partner-name-sm">Katarzyna Grzybowska-Jagódka</div>
             <div class="team-partner-role">Lead Attorney</div>
@@ -4116,6 +4334,12 @@
       <div class="reviews-bento">
         <!-- Row 1: Video tall + 2 text reviews + 1 photo -->
         <div class="rv-video tall fade-in">
+          <style>
+            .rv-video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+            .rv-video.is-playing .rv-video-placeholder { opacity: 0; pointer-events: none; }
+            .rv-video-placeholder { transition: opacity 0.4s ease; }
+          </style>
+          <video class="rv-video-el" muted loop playsinline preload="none" data-src="img/opinia1.mp4" poster="img/office1.webp" aria-label="Client video testimonial"></video>
           <div class="rv-video-placeholder">
             <div class="rv-video-play">
               <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -4169,12 +4393,12 @@
         </div>
 
         <div class="rv-photo fade-in">
-          <div class="rv-photo-placeholder">Residence card photo</div>
+          <img src="img/review-1.webp" alt="Client residence card" loading="lazy" width="800" height="1000" decoding="async">
         </div>
 
         <!-- Row 2: Photo + video + text + text -->
         <div class="rv-photo fade-in">
-          <div class="rv-photo-placeholder">Happy client photo</div>
+          <img src="img/review-2.webp" alt="Happy client" loading="lazy" width="800" height="800" decoding="async">
         </div>
 
         <div class="rv-video fade-in">
@@ -4254,7 +4478,7 @@
         </div>
 
         <div class="rv-photo fade-in">
-          <div class="rv-photo-placeholder">EU Card photo</div>
+          <img src="img/review-3.webp" alt="EU long-term resident card" loading="lazy" width="800" height="800" decoding="async">
         </div>
 
         <div class="rv-google fade-in">
@@ -4350,10 +4574,38 @@
 
   <!-- PROBLEM SECTION - Cases in Progress -->
   <section class="problem-section" id="problem">
+    <style>
+      #problem { background: linear-gradient(180deg, #fafbfc 0%, #ffffff 100%); color: var(--dark); animation: none; }
+      #problem::before, #problem::after { display: none; }
+      #problem .section-header h2 { color: var(--black); }
+      #problem .section-header p { color: var(--gray); }
+      #problem .problem-card { background: var(--white); border: 1px solid var(--border); color: var(--dark); box-shadow: var(--shadow); }
+      #problem .problem-card h3 { color: var(--black); }
+      #problem .problem-card p { color: var(--gray); }
+      #problem .problem-card.highlight { background: var(--accent); color: #fff; border-color: var(--accent); }
+      #problem .problem-card.highlight h3, #problem .problem-card.highlight p { color: #fff; }
+      #problem .problem-card.highlight .highlight-stat .stat-label { color: rgba(255,255,255,0.85); }
+      #problem .problem-card.urgent { background: linear-gradient(135deg, rgba(239,68,68,0.88) 0%, rgba(220,38,38,0.82) 100%); border-color: rgba(220,38,38,0.5); color: #fff; box-shadow: 0 10px 28px -14px rgba(220,38,38,0.35); display: flex; flex-direction: column; align-items: stretch; }
+      #problem .problem-card.urgent > div:last-child { display: flex; flex-direction: column; flex: 1; }
+      #problem .problem-card.urgent h3, #problem .problem-card.urgent p { color: #fff; }
+      #problem .problem-card.urgent p { margin-bottom: 20px; }
+      #problem .problem-icon { background: var(--accent); color: #fff; box-shadow: 0 6px 16px -4px rgba(0,85,255,0.35); }
+      #problem .problem-icon svg { stroke-width: 2.2; color: inherit; }
+      #problem .problem-card.highlight .problem-icon { background: #fff; color: var(--accent); box-shadow: 0 6px 16px -4px rgba(0,0,0,0.15); }
+      #problem .problem-card.highlight .problem-icon svg { color: var(--accent); }
+      #problem .problem-card.urgent .problem-icon { background: #fff; color: #dc2626; box-shadow: 0 6px 16px -4px rgba(0,0,0,0.2); }
+      #problem .problem-card.urgent .problem-icon svg { color: #dc2626; }
+      #problem .problem-card.urgent .urgent-counter { margin-top: auto; padding: 20px; border-radius: 16px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 16px; }
+      #problem .problem-card.urgent .urgent-counter .counter-number { color: #fff; font-size: 64px; font-weight: 800; line-height: 0.9; letter-spacing: -0.03em; text-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+      #problem .problem-card.urgent .urgent-counter .counter-label { color: rgba(255,255,255,0.95); font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; line-height: 1.25; }
+      #problem .problem-stat { color: var(--gray); }
+      #problem .problem-stat svg { color: var(--accent); stroke-width: 2.2; }
+      #problem .hot-badge { background: #fff; color: var(--accent); }
+    </style>
     <div class="container">
       <div class="section-header">
         <h2>Is your case <span class="text-gradient">stuck</span>?</h2>
-        <p>Many foreigners wait months without any progress. You're not alone — and we can help.</p>
+        <p>You filed, and now you wait. An ongoing case also needs full takeover — we step in at any stage.</p>
       </div>
 
       <div class="problem-grid">
@@ -4364,7 +4616,7 @@
           <div>
             <span class="hot-badge">Most common issue</span>
             <h3>Waiting 12+ months for fingerprints?</h3>
-            <p>You submitted your application but still haven't received an appointment for fingerprints (odciski palców). This is our specialty.</p>
+            <p>No appointment, no sign of life from the office. We find out what's really going on and push the case to a decision.</p>
           </div>
           <div class="highlight-stat">
             <span class="stat-number">4-8</span>
@@ -4375,11 +4627,11 @@
 
         <div class="problem-card problem-card-enhanced fade-in">
           <div class="problem-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
           </div>
           <div>
             <h3>No response from Immigration Office?</h3>
-            <p>No letters, no calls, no updates. We can check your case status and take action.</p>
+            <p>Silence doesn't mean the case is safe. We verify the real status and step in.</p>
             <div class="problem-stat">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
               <span>Immediate status check</span>
@@ -4393,7 +4645,7 @@
           </div>
           <div>
             <h3>Received a letter you don't understand?</h3>
-            <p>Official letters are in Polish and can be confusing. Missing a deadline can result in rejection.</p>
+            <p>Polish-language letters with strict deadlines. We translate, explain, and respond for you.</p>
             <div class="problem-stat">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               <span>Response within <strong>24h</strong></span>
@@ -4403,11 +4655,11 @@
 
         <div class="problem-card urgent fade-in">
           <div class="problem-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
           <div>
             <h3>Your case was rejected?</h3>
-            <p>Don't panic — we can review your rejection and often get the decision reversed.</p>
+            <p>Don't panic — we file the appeal and often get the decision reversed. You have 14 days.</p>
             <div class="urgent-counter">
               <span class="counter-number">14</span>
               <span class="counter-label">days to appeal</span>
@@ -4415,23 +4667,20 @@
           </div>
         </div>
 
-        <div class="problem-card region fade-in">
-          <div class="region-content">
-            <div class="region-header">
-              <div class="region-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-              </div>
-              <h3>Lower Silesia</h3>
-            </div>
-            <div class="region-cities">
-              <span class="city-pin"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Wrocław</span>
-              <span class="city-pin"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Legnica</span>
-              <span class="city-pin"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Wałbrzych</span>
-              <span class="city-pin"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Jelenia Góra</span>
-              <span class="city-pin"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Bolesławiec</span>
+        <div class="problem-card problem-card-enhanced fade-in">
+          <div class="problem-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div>
+            <h3>Proceedings never effectively opened?</h3>
+            <p>The most dangerous situation — you believe your stay is legal, but the case was never really started. We force the office to open or resume it.</p>
+            <div class="problem-stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span>Verify real legal status</span>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   </section>
@@ -4946,9 +5195,33 @@
   <section class="prefooter">
     <div class="container">
       <div class="prefooter-content">
-        <h2>Ready to <span class="text-gradient">resolve</span> your case?</h2>
-        <p>Get a free assessment from our immigration specialists. We respond within 24 hours.</p>
-        <a href="#form" class="btn btn-accent btn-lg btn-pulse">Start Free Assessment <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a>
+        <style>
+          .prefooter-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin: 24px 0 32px; max-width: 780px; margin-left: auto; margin-right: auto; }
+          .prefooter-trust-item { display: inline-flex; align-items: center; gap: 10px; padding: 12px 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; color: rgba(255,255,255,0.95); font-size: 14px; font-weight: 600; backdrop-filter: blur(4px); }
+          .prefooter-trust-item svg { width: 18px; height: 18px; flex-shrink: 0; color: #4ade80; }
+          @media (max-width: 640px) {
+            .prefooter-trust { gap: 8px; margin: 20px 0 24px; }
+            .prefooter-trust-item { padding: 10px 14px; font-size: 13px; gap: 8px; }
+            .prefooter-trust-item svg { width: 16px; height: 16px; }
+          }
+        </style>
+        <h2 data-i18n-html="prefooterTitle">Hand over your case — <span class="text-gradient">end to end</span></h2>
+        <p data-i18n="prefooterText">No safe partial support under MOS 2.0 — one case, one takeover, one decision.</p>
+        <div class="prefooter-trust">
+          <div class="prefooter-trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span data-i18n="prefooterTrust1">Full case takeover</span>
+          </div>
+          <div class="prefooter-trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span data-i18n="prefooterTrust2">All 7 steps of MOS 2.0</span>
+          </div>
+          <div class="prefooter-trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span data-i18n="prefooterTrust3">Free — reply in 24h</span>
+          </div>
+        </div>
+        <a href="#form" class="btn btn-accent btn-lg btn-pulse"><span data-i18n="prefooterCta">Start Free Assessment</span> <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg></a>
       </div>
     </div>
   </section>
@@ -5594,9 +5867,9 @@
         // Header
         headerCta: "Free Assessment",
         // Hero
-        heroTag: "Immigration Law Firm",
+        heroTag: "New procedure: MOS 2.0 — from 27.04.2026",
         heroTitle: "Legalization of stay in <span class=\"text-gradient\">Poland</span>",
-        heroSubtitle: "Residence permits, work permits, citizenship - we handle your case from start to finish",
+        heroSubtitle: "Residence permits, work permits, citizenship — we handle your case from start to finish",
         heroCta: "Get Free Assessment",
         heroLawyerTitle: "Managing Partner",
         heroLawyerExp: "11 years experience",
@@ -5679,8 +5952,11 @@
         infoOnlyText: "We help clients who are ready to work with a lawyer on their case.<br><br>When you're ready to proceed, come back and we'll be happy to help!",
         infoOnlyBtn: "Start again when ready",
         // Prefooter
-        prefooterTitle: "Ready to <span class=\"text-gradient\">resolve</span> your case?",
-        prefooterText: "Get a free assessment from our immigration specialists. We respond within 24 hours.",
+        prefooterTitle: "Hand over your case — <span class=\"text-gradient\">end to end</span>",
+        prefooterText: "No safe partial support under MOS 2.0 — one case, one takeover, one decision.",
+        prefooterTrust1: "Full case takeover",
+        prefooterTrust2: "All 7 steps of MOS 2.0",
+        prefooterTrust3: "Free — reply in 24h",
         prefooterCta: "Start Free Assessment",
         // Footer
         footerCopy: "© 2025 Immigration Lawyer Wrocław",
@@ -5690,7 +5966,7 @@
         stickyCta: "Free Assessment",
         // Problems section
         problemsTitle: "Is your case <span class=\"text-gradient\">stuck</span>?",
-        problemsSubtitle: "Many foreigners wait months without any progress. You're not alone — and we can help.",
+        problemsSubtitle: "You filed, and now you wait. An ongoing case also needs full takeover — we step in at any stage.",
         problemMostCommon: "Most common issue",
         problem1Title: "Waiting 12+ months for fingerprints?",
         problem1Text: "You submitted your application but still haven't received an appointment for fingerprints (odciski palców). This is our specialty.",
@@ -5705,7 +5981,49 @@
         problem4Title: "Your case was rejected?",
         problem4Text: "Don't panic — we can review your rejection and often get the decision reversed.",
         problem4Counter: "days to appeal",
+        problem5Title: "Proceedings never effectively opened?",
+        problem5Text: "The most dangerous situation — you believe your stay is legal, but the case was never really started. We force the office to open or resume it.",
+        problem5Stat: "Verify real legal status",
         regionTitle: "Lower Silesia",
+        // MOS 2.0 section
+        mosDate: "New procedure — from 27.04.2026",
+        mosTitle: "Under MOS 2.0, <span class=\"text-gradient\">you file alone</span>.",
+        mosLead: "The foreigner initiates the case, prepares the application, and is responsible for its correctness — alone.",
+        mosRiskLabel: "The risk",
+        mosRiskTitle: "One mistake = illegal stay",
+        mosRiskText: "An incorrectly filed application has no legal effect — you may be in Poland illegally while believing your case is pending.",
+        mosAnswerLabel: "Our answer",
+        mosAnswerTitle: "We take over the whole case",
+        mosAnswerText: "All 7 steps of MOS 2.0 — from the Trusted Profile to the final decision.",
+        mosCta: "Hand over my case",
+        // 7 STEPS section
+        stepsTitle: "7 steps of <span class=\"text-gradient\">MOS 2.0</span> — we run each one",
+        stepsSubtitle: "Every stage of the procedure is part of one coherent process. Skipping any of them increases the risk of error. That is why we handle the case comprehensively — from the Trusted Profile to the final decision.",
+        mosStep1Tag: "Identification",
+        mosStep1Title: "Trusted Profile",
+        mosStep1Text: "We help set up the Trusted Profile and introduce the client to the public administration system.",
+        mosStep2Tag: "System access",
+        mosStep2Title: "MOS 2.0 registration",
+        mosStep2Text: "We run the registration process and ensure the procedure is started correctly from day one.",
+        mosStep3Tag: "Application — critical stage",
+        mosStep3Title: "Correct legal basis",
+        mosStep3Text: "We analyse your situation, select the correct legal basis for stay, and prepare a correct application. This is the stage that decides the legality of your stay.",
+        mosStep4Tag: "Documents",
+        mosStep4Title: "We collect and verify",
+        mosStep4Text: "We define the scope of documents, contact your employer, and compile and verify the full dossier.",
+        mosStep5Tag: "Signature & submission",
+        mosStep5Title: "Effective submission",
+        mosStep5Text: "We control the correctness of the whole process and are responsible for the effective submission of the application.",
+        mosStep6Tag: "Office visit",
+        mosStep6Title: "Dolnośląski Urząd Wojewódzki",
+        mosStep6Text: "We organise the appointment, prepare the client, and minimise the risk of formal errors at the office in Wrocław.",
+        mosStep7Tag: "Proceedings",
+        mosStep7Title: "We run it to the decision",
+        mosStep7Text: "We handle the communication with the office, react to every call, and control the course of the case all the way to the final decision.",
+        stepsOutroText: "Skipping any step means risk. That is why we run <strong>all 7 steps</strong> — you don't have to learn the system or guess whether you did it right.",
+        stepsOutroCta: "Hand over my case",
+        // Top bar (mobile short)
+        topBarShort: "New: MOS 2.0",
         // Lead magnet
         lmWidgetBtn: "Free Legal Guide",
         lmTitle: "Are You Legally in Poland?",
@@ -5784,7 +6102,7 @@
       },
       uk: {
         headerCta: "Безкоштовна оцінка",
-        heroTag: "Міграційна юридична фірма",
+        heroTag: "Нова процедура: MOS 2.0 — від 27.04.2026",
         heroTitle: "Легалізація перебування в <span class=\"text-gradient\">Польщі</span>",
         heroSubtitle: "Посвідки на проживання, дозволи на роботу, громадянство — ведемо вашу справу від початку до кінця",
         heroCta: "Отримати безкоштовну оцінку",
@@ -5856,15 +6174,18 @@
         infoOnlyTitle: "Ми зосереджуємося на веденні справ",
         infoOnlyText: "Ми допомагаємо клієнтам, які готові працювати з адвокатом над своєю справою.<br><br>Коли будете готові, поверніться — ми будемо раді допомогти!",
         infoOnlyBtn: "Почати знову, коли готові",
-        prefooterTitle: "Готові <span class=\"text-gradient\">вирішити</span> свою справу?",
-        prefooterText: "Отримайте безкоштовну оцінку від наших міграційних спеціалістів. Відповідаємо протягом 24 годин.",
+        prefooterTitle: "Передайте справу — <span class=\"text-gradient\">від початку до кінця</span>",
+        prefooterText: "У MOS 2.0 немає безпечної часткової підтримки — одна справа, одне переймання, одне рішення.",
+        prefooterTrust1: "Повне переймання справи",
+        prefooterTrust2: "Усі 7 етапів MOS 2.0",
+        prefooterTrust3: "Безкоштовно — відповідь за 24 год",
         prefooterCta: "Почати безкоштовну оцінку",
         footerCopy: "© 2025 Міграційний адвокат Вроцлав",
         footerPrivacy: "Політика конфіденційності",
         footerTerms: "Умови",
         stickyCta: "Безкоштовна оцінка",
         problemsTitle: "Ваша справа <span class=\"text-gradient\">застрягла</span>?",
-        problemsSubtitle: "Багато іноземців чекають місяцями без прогресу. Ви не самотні — ми можемо допомогти.",
+        problemsSubtitle: "Ви подали заяву і чекаєте. Навіть справа в процесі потребує повного переймання — ми підключаємося на будь-якому етапі.",
         problemMostCommon: "Найпоширеніша проблема",
         problem1Title: "Чекаєте 12+ місяців на відбитки пальців?",
         problem1Text: "Ви подали заявку, але досі не отримали запрошення на здачу відбитків пальців. Це наша спеціалізація.",
@@ -5879,7 +6200,46 @@
         problem4Title: "Вашу справу відхилено?",
         problem4Text: "Не панікуйте — ми можемо переглянути вашу відмову і часто домагаємося скасування рішення.",
         problem4Counter: "днів на апеляцію",
+        problem5Title: "Провадження так і не було відкрито?",
+        problem5Text: "Найнебезпечніша ситуація — ви вважаєте, що ваше перебування легальне, але справу так і не було належним чином розпочато. Ми змусимо орган відкрити або відновити її.",
+        problem5Stat: "Перевірка реального статусу",
         regionTitle: "Нижня Сілезія",
+        mosDate: "Нова процедура — від 27.04.2026",
+        mosTitle: "У MOS 2.0 <span class=\"text-gradient\">ви подаєте заяву самі</span>.",
+        mosLead: "Іноземець сам ініціює справу, сам готує заяву і сам відповідає за її правильність.",
+        mosRiskLabel: "Ризик",
+        mosRiskTitle: "Одна помилка = незаконне перебування",
+        mosRiskText: "Неправильно поданий запит не має правових наслідків — ви можете перебувати в Польщі незаконно, вважаючи, що ваша справа розглядається.",
+        mosAnswerLabel: "Наша відповідь",
+        mosAnswerTitle: "Беремо всю справу на себе",
+        mosAnswerText: "Усі 7 етапів MOS 2.0 — від Довіреного Профілю до остаточного рішення.",
+        mosCta: "Передати справу",
+        stepsTitle: "7 етапів <span class=\"text-gradient\">MOS 2.0</span> — кожен ведемо ми",
+        stepsSubtitle: "Кожен етап процедури є частиною одного цілісного процесу. Пропуск будь-якого збільшує ризик помилки. Тому ми ведемо справу комплексно — від Довіреного Профілю до остаточного рішення.",
+        mosStep1Tag: "Ідентифікація",
+        mosStep1Title: "Довірений Профіль",
+        mosStep1Text: "Допомагаємо створити Довірений Профіль і вводимо клієнта в систему державної адміністрації.",
+        mosStep2Tag: "Доступ до системи",
+        mosStep2Title: "Реєстрація в MOS 2.0",
+        mosStep2Text: "Проводимо процес реєстрації і забезпечуємо правильний початок процедури з першого дня.",
+        mosStep3Tag: "Заява — ключовий етап",
+        mosStep3Title: "Правильна правова підстава",
+        mosStep3Text: "Аналізуємо вашу ситуацію, підбираємо правильну правову підставу для перебування і готуємо коректну заяву. Це етап, який вирішує законність перебування.",
+        mosStep4Tag: "Документи",
+        mosStep4Title: "Збираємо і перевіряємо",
+        mosStep4Text: "Визначаємо обсяг документів, зв'язуємося з роботодавцем, збираємо і перевіряємо всю документацію.",
+        mosStep5Tag: "Підпис і подача",
+        mosStep5Title: "Ефективна подача",
+        mosStep5Text: "Контролюємо правильність усього процесу і відповідаємо за ефективну подачу заяви.",
+        mosStep6Tag: "Візит в орган",
+        mosStep6Title: "Нижньосілезьке воєводське управління",
+        mosStep6Text: "Організовуємо візит, готуємо клієнта і мінімізуємо ризик формальних помилок в органі у Вроцлаві.",
+        mosStep7Tag: "Провадження",
+        mosStep7Title: "Ведемо аж до рішення",
+        mosStep7Text: "Ведемо комунікацію з органом, реагуємо на кожен виклик і контролюємо хід справи аж до остаточного рішення.",
+        stepsOutroText: "Пропуск будь-якого етапу — це ризик. Тому ми ведемо <strong>всі 7 етапів</strong> — вам не потрібно вчити систему чи здогадуватися, чи все зробили правильно.",
+        stepsOutroCta: "Передати справу",
+        topBarShort: "Нове: MOS 2.0",
         lmWidgetBtn: "Безкоштовний юридичний посібник",
         lmTitle: "Ви легально в Польщі?",
         lmDesc: "Отримайте наш безкоштовний посібник та уникніть найпоширеніших помилок, які коштують іноземцям їхнього перебування.",
@@ -5953,7 +6313,7 @@
       },
       pl: {
         headerCta: "Darmowa wycena",
-        heroTag: "Kancelaria Migracyjna",
+        heroTag: "Nowa procedura: MOS 2.0 — od 27.04.2026",
         heroTitle: "Legalizacja pobytu w <span class=\"text-gradient\">Polsce</span>",
         heroSubtitle: "Karty pobytu, pozwolenia na pracę, obywatelstwo — prowadzimy sprawę od początku do końca",
         heroCta: "Darmowa wycena",
@@ -6025,15 +6385,18 @@
         infoOnlyTitle: "Skupiamy się na prowadzeniu spraw",
         infoOnlyText: "Pomagamy klientom, którzy są gotowi współpracować z prawnikiem nad swoją sprawą.<br><br>Kiedy będziesz gotowy, wróć — chętnie pomożemy!",
         infoOnlyBtn: "Zacznij ponownie gdy gotowy",
-        prefooterTitle: "Gotowy <span class=\"text-gradient\">rozwiązać</span> swoją sprawę?",
-        prefooterText: "Uzyskaj darmową wycenę od naszych specjalistów ds. imigracji. Odpowiadamy w ciągu 24 godzin.",
+        prefooterTitle: "Przekaż sprawę — <span class=\"text-gradient\">od początku do końca</span>",
+        prefooterText: "W MOS 2.0 nie ma bezpiecznego częściowego wsparcia — jedna sprawa, jedno przejęcie, jedna decyzja.",
+        prefooterTrust1: "Pełne przejęcie sprawy",
+        prefooterTrust2: "Wszystkie 7 etapów MOS 2.0",
+        prefooterTrust3: "Bezpłatnie — odpowiedź w 24h",
         prefooterCta: "Rozpocznij darmową wycenę",
         footerCopy: "© 2025 Prawnik Imigracyjny Wrocław",
         footerPrivacy: "Polityka prywatności",
         footerTerms: "Regulamin",
         stickyCta: "Darmowa wycena",
         problemsTitle: "Twoja sprawa <span class=\"text-gradient\">utknęła</span>?",
-        problemsSubtitle: "Wielu cudzoziemców czeka miesiącami bez postępu. Nie jesteś sam — możemy pomóc.",
+        problemsSubtitle: "Złożyłeś wniosek i czekasz. Nawet sprawa w toku wymaga pełnego przejęcia — wchodzimy na każdym etapie.",
         problemMostCommon: "Najczęstszy problem",
         problem1Title: "Czekasz 12+ miesięcy na odciski palców?",
         problem1Text: "Złożyłeś wniosek, ale wciąż nie otrzymałeś wezwania na odciski palców. To nasza specjalność.",
@@ -6048,7 +6411,46 @@
         problem4Title: "Twoja sprawa została odrzucona?",
         problem4Text: "Nie panikuj — możemy przeanalizować odmowę i często uzyskujemy uchylenie decyzji.",
         problem4Counter: "dni na odwołanie",
+        problem5Title: "Postępowanie nie zostało skutecznie wszczęte?",
+        problem5Text: "Najgroźniejsza sytuacja — myślisz, że Twój pobyt jest legalny, a sprawa w ogóle nie została skutecznie rozpoczęta. Wymuszamy na urzędzie wszczęcie lub wznowienie postępowania.",
+        problem5Stat: "Sprawdź realny status prawny",
         regionTitle: "Dolny Śląsk",
+        mosDate: "Nowa procedura — od 27.04.2026",
+        mosTitle: "W MOS 2.0 <span class=\"text-gradient\">składasz wniosek sam</span>.",
+        mosLead: "Cudzoziemiec sam inicjuje sprawę, sam przygotowuje wniosek i sam odpowiada za jego poprawność.",
+        mosRiskLabel: "Ryzyko",
+        mosRiskTitle: "Jeden błąd = nielegalny pobyt",
+        mosRiskText: "Nieprawidłowo złożony wniosek nie wywołuje skutków prawnych — możesz przebywać w Polsce nielegalnie, myśląc że Twoja sprawa jest w toku.",
+        mosAnswerLabel: "Nasza odpowiedź",
+        mosAnswerTitle: "Przejmujemy całą sprawę",
+        mosAnswerText: "Wszystkie 7 etapów MOS 2.0 — od Profilu Zaufanego po ostateczną decyzję.",
+        mosCta: "Przekaż sprawę",
+        stepsTitle: "7 etapów <span class=\"text-gradient\">MOS 2.0</span> — każdy prowadzimy my",
+        stepsSubtitle: "Każdy etap procedury jest elementem jednego spójnego procesu. Pominięcie któregokolwiek zwiększa ryzyko błędu. Dlatego prowadzimy sprawę kompleksowo — od Profilu Zaufanego do ostatecznej decyzji.",
+        mosStep1Tag: "Identyfikacja",
+        mosStep1Title: "Profil Zaufany",
+        mosStep1Text: "Pomagamy założyć Profil Zaufany i wprowadzamy klienta w system administracji publicznej.",
+        mosStep2Tag: "Dostęp do systemu",
+        mosStep2Title: "Rejestracja w MOS 2.0",
+        mosStep2Text: "Prowadzimy proces rejestracji i zapewniamy poprawne rozpoczęcie procedury od pierwszego dnia.",
+        mosStep3Tag: "Wniosek — etap kluczowy",
+        mosStep3Title: "Właściwa podstawa prawna",
+        mosStep3Text: "Analizujemy Twoją sytuację, dobieramy właściwą podstawę pobytu i przygotowujemy poprawny wniosek. To etap, który decyduje o legalności pobytu.",
+        mosStep4Tag: "Dokumenty",
+        mosStep4Title: "Kompletujemy i weryfikujemy",
+        mosStep4Text: "Określamy zakres dokumentów, kontaktujemy się z pracodawcą, kompletujemy i weryfikujemy całą dokumentację.",
+        mosStep5Tag: "Podpis i złożenie",
+        mosStep5Title: "Skuteczne złożenie",
+        mosStep5Text: "Kontrolujemy poprawność całego procesu i odpowiadamy za skuteczne złożenie wniosku.",
+        mosStep6Tag: "Wizyta w urzędzie",
+        mosStep6Title: "Dolnośląski Urząd Wojewódzki",
+        mosStep6Text: "Organizujemy wizytę, przygotowujemy klienta i minimalizujemy ryzyko błędów formalnych w urzędzie we Wrocławiu.",
+        mosStep7Tag: "Postępowanie",
+        mosStep7Title: "Prowadzimy aż do decyzji",
+        mosStep7Text: "Prowadzimy komunikację z urzędem, reagujemy na każde wezwanie i kontrolujemy przebieg sprawy aż do ostatecznej decyzji.",
+        stepsOutroText: "Pominięcie jakiegokolwiek etapu to ryzyko. Dlatego prowadzimy <strong>wszystkie 7 etapów</strong> — nie musisz uczyć się systemu ani zgadywać, czy zrobiłeś wszystko poprawnie.",
+        stepsOutroCta: "Przekaż sprawę",
+        topBarShort: "Nowość: MOS 2.0",
         lmWidgetBtn: "Darmowy poradnik prawny",
         lmTitle: "Czy jesteś legalnie w Polsce?",
         lmDesc: "Pobierz nasz darmowy poradnik i uniknij najczęstszych błędów, które kosztują cudzoziemców pobyt.",
@@ -6122,7 +6524,7 @@
       },
       es: {
         headerCta: "Evaluación gratuita",
-        heroTag: "Bufete de Inmigración",
+        heroTag: "Nuevo procedimiento: MOS 2.0 — desde 27.04.2026",
         heroTitle: "Legalización de estancia en <span class=\"text-gradient\">Polonia</span>",
         heroSubtitle: "Permisos de residencia, permisos de trabajo, ciudadanía — gestionamos tu caso de principio a fin",
         heroCta: "Obtener evaluación gratuita",
@@ -6194,15 +6596,18 @@
         infoOnlyTitle: "Nos enfocamos en representación de casos",
         infoOnlyText: "Ayudamos a clientes que están listos para trabajar con un abogado en su caso.<br><br>¡Cuando estés listo, vuelve y estaremos encantados de ayudarte!",
         infoOnlyBtn: "Empezar de nuevo cuando estés listo",
-        prefooterTitle: "¿Listo para <span class=\"text-gradient\">resolver</span> tu caso?",
-        prefooterText: "Obtén una evaluación gratuita de nuestros especialistas en inmigración. Respondemos en 24 horas.",
+        prefooterTitle: "Entréganos tu caso — <span class=\"text-gradient\">de principio a fin</span>",
+        prefooterText: "En MOS 2.0 no hay apoyo parcial seguro — un caso, una toma de control, una decisión.",
+        prefooterTrust1: "Asumimos todo el caso",
+        prefooterTrust2: "Los 7 pasos de MOS 2.0",
+        prefooterTrust3: "Gratis — respuesta en 24h",
         prefooterCta: "Iniciar evaluación gratuita",
         footerCopy: "© 2025 Abogado de Inmigración Wrocław",
         footerPrivacy: "Política de privacidad",
         footerTerms: "Términos",
         stickyCta: "Evaluación gratuita",
         problemsTitle: "¿Tu caso está <span class=\"text-gradient\">atascado</span>?",
-        problemsSubtitle: "Muchos extranjeros esperan meses sin progreso. No estás solo — podemos ayudar.",
+        problemsSubtitle: "Presentaste la solicitud y ahora esperas. Un caso en curso también necesita ser asumido por completo — intervenimos en cualquier etapa.",
         problemMostCommon: "Problema más común",
         problem1Title: "¿Esperando 12+ meses por huellas dactilares?",
         problem1Text: "Enviaste tu solicitud pero aún no has recibido cita para huellas dactilares. Esta es nuestra especialidad.",
@@ -6217,7 +6622,46 @@
         problem4Title: "¿Tu caso fue rechazado?",
         problem4Text: "No te asustes — podemos revisar tu rechazo y a menudo logramos revertir la decisión.",
         problem4Counter: "días para apelar",
+        problem5Title: "¿El procedimiento nunca se abrió realmente?",
+        problem5Text: "La situación más peligrosa — crees que tu estancia es legal, pero el caso nunca se inició correctamente. Obligamos a la oficina a abrirlo o reanudarlo.",
+        problem5Stat: "Verificar estado legal real",
         regionTitle: "Baja Silesia",
+        mosDate: "Nuevo procedimiento — desde 27.04.2026",
+        mosTitle: "En MOS 2.0, <span class=\"text-gradient\">presentas solo</span>.",
+        mosLead: "El extranjero inicia el caso solo, prepara la solicitud solo y es responsable de su corrección — solo.",
+        mosRiskLabel: "El riesgo",
+        mosRiskTitle: "Un error = estancia ilegal",
+        mosRiskText: "Una solicitud incorrectamente presentada no tiene efecto legal — puedes estar en Polonia ilegalmente mientras crees que tu caso está en curso.",
+        mosAnswerLabel: "Nuestra respuesta",
+        mosAnswerTitle: "Asumimos todo el caso",
+        mosAnswerText: "Los 7 pasos de MOS 2.0 — desde el Perfil de Confianza hasta la decisión final.",
+        mosCta: "Entregar mi caso",
+        stepsTitle: "7 pasos de <span class=\"text-gradient\">MOS 2.0</span> — cada uno lo llevamos nosotros",
+        stepsSubtitle: "Cada etapa del procedimiento es parte de un proceso coherente. Omitir cualquiera aumenta el riesgo de error. Por eso llevamos el caso de forma integral — desde el Perfil de Confianza hasta la decisión final.",
+        mosStep1Tag: "Identificación",
+        mosStep1Title: "Perfil de Confianza",
+        mosStep1Text: "Ayudamos a configurar el Perfil de Confianza e introducimos al cliente en el sistema de la administración pública.",
+        mosStep2Tag: "Acceso al sistema",
+        mosStep2Title: "Registro en MOS 2.0",
+        mosStep2Text: "Realizamos el proceso de registro y aseguramos que el procedimiento se inicie correctamente desde el primer día.",
+        mosStep3Tag: "Solicitud — etapa crítica",
+        mosStep3Title: "Base legal correcta",
+        mosStep3Text: "Analizamos tu situación, seleccionamos la base legal correcta para la estancia y preparamos una solicitud correcta. Es la etapa que decide la legalidad de tu estancia.",
+        mosStep4Tag: "Documentos",
+        mosStep4Title: "Recopilamos y verificamos",
+        mosStep4Text: "Definimos el alcance de los documentos, contactamos con tu empleador, y compilamos y verificamos todo el expediente.",
+        mosStep5Tag: "Firma y presentación",
+        mosStep5Title: "Presentación efectiva",
+        mosStep5Text: "Controlamos la corrección de todo el proceso y somos responsables de la presentación efectiva de la solicitud.",
+        mosStep6Tag: "Visita a la oficina",
+        mosStep6Title: "Oficina Provincial de Baja Silesia",
+        mosStep6Text: "Organizamos la cita, preparamos al cliente y minimizamos el riesgo de errores formales en la oficina de Wrocław.",
+        mosStep7Tag: "Procedimiento",
+        mosStep7Title: "Lo llevamos hasta la decisión",
+        mosStep7Text: "Manejamos la comunicación con la oficina, reaccionamos ante cada requerimiento y controlamos el curso del caso hasta la decisión final.",
+        stepsOutroText: "Omitir cualquier paso significa riesgo. Por eso ejecutamos los <strong>7 pasos</strong> — no tienes que aprender el sistema ni adivinar si lo hiciste bien.",
+        stepsOutroCta: "Entregar mi caso",
+        topBarShort: "Nuevo: MOS 2.0",
         lmWidgetBtn: "Guía legal gratuita",
         lmTitle: "¿Estás legalmente en Polonia?",
         lmDesc: "Obtén nuestra guía gratuita y evita los errores más comunes que cuestan a los extranjeros su estancia.",
@@ -6291,7 +6735,7 @@
       },
       fr: {
         headerCta: "Évaluation gratuite",
-        heroTag: "Cabinet d'Immigration",
+        heroTag: "Nouvelle procédure : MOS 2.0 — dès le 27.04.2026",
         heroTitle: "Légalisation du séjour en <span class=\"text-gradient\">Pologne</span>",
         heroSubtitle: "Permis de séjour, permis de travail, citoyenneté — nous gérons votre dossier de A à Z",
         heroCta: "Obtenir une évaluation gratuite",
@@ -6363,15 +6807,18 @@
         infoOnlyTitle: "Nous nous concentrons sur la représentation",
         infoOnlyText: "Nous aidons les clients prêts à travailler avec un avocat sur leur dossier.<br><br>Quand vous serez prêt, revenez — nous serons heureux de vous aider!",
         infoOnlyBtn: "Recommencer quand prêt",
-        prefooterTitle: "Prêt à <span class=\"text-gradient\">résoudre</span> votre dossier?",
-        prefooterText: "Obtenez une évaluation gratuite de nos spécialistes en immigration. Réponse en 24 heures.",
+        prefooterTitle: "Confiez-nous votre dossier — <span class=\"text-gradient\">de A à Z</span>",
+        prefooterText: "Sous MOS 2.0 pas de soutien partiel sûr — un dossier, une reprise, une décision.",
+        prefooterTrust1: "Reprise complète du dossier",
+        prefooterTrust2: "Les 7 étapes de MOS 2.0",
+        prefooterTrust3: "Gratuit — réponse sous 24h",
         prefooterCta: "Commencer l'évaluation gratuite",
         footerCopy: "© 2025 Avocat en Immigration Wrocław",
         footerPrivacy: "Politique de confidentialité",
         footerTerms: "Conditions",
         stickyCta: "Évaluation gratuite",
         problemsTitle: "Votre dossier est <span class=\"text-gradient\">bloqué</span>?",
-        problemsSubtitle: "Beaucoup d'étrangers attendent des mois sans progrès. Vous n'êtes pas seul — nous pouvons aider.",
+        problemsSubtitle: "Vous avez déposé et vous attendez. Un dossier en cours doit aussi être entièrement repris — nous intervenons à n'importe quelle étape.",
         problemMostCommon: "Problème le plus courant",
         problem1Title: "Vous attendez 12+ mois pour les empreintes?",
         problem1Text: "Vous avez soumis votre demande mais n'avez toujours pas reçu de rendez-vous pour les empreintes. C'est notre spécialité.",
@@ -6386,7 +6833,46 @@
         problem4Title: "Votre dossier a été rejeté?",
         problem4Text: "Pas de panique — nous pouvons examiner votre rejet et souvent faire annuler la décision.",
         problem4Counter: "jours pour faire appel",
+        problem5Title: "Procédure jamais réellement ouverte ?",
+        problem5Text: "La situation la plus dangereuse — vous pensez que votre séjour est légal, mais l'affaire n'a jamais été réellement ouverte. Nous obligeons l'administration à l'ouvrir ou à la reprendre.",
+        problem5Stat: "Vérifier le statut juridique réel",
         regionTitle: "Basse-Silésie",
+        mosDate: "Nouvelle procédure — dès le 27.04.2026",
+        mosTitle: "Sous MOS 2.0, <span class=\"text-gradient\">vous déposez seul</span>.",
+        mosLead: "L'étranger initie seul le dossier, prépare seul la demande et est seul responsable de son exactitude.",
+        mosRiskLabel: "Le risque",
+        mosRiskTitle: "Une erreur = séjour illégal",
+        mosRiskText: "Une demande incorrectement déposée n'a aucun effet juridique — vous pouvez séjourner illégalement en Pologne tout en pensant que votre dossier est en cours.",
+        mosAnswerLabel: "Notre réponse",
+        mosAnswerTitle: "Nous reprenons tout le dossier",
+        mosAnswerText: "Les 7 étapes de MOS 2.0 — du Profil de Confiance jusqu'à la décision finale.",
+        mosCta: "Confier mon dossier",
+        stepsTitle: "7 étapes de <span class=\"text-gradient\">MOS 2.0</span> — nous menons chacune",
+        stepsSubtitle: "Chaque étape de la procédure fait partie d'un processus cohérent. En omettre une augmente le risque d'erreur. C'est pourquoi nous menons le dossier de manière complète — du Profil de Confiance à la décision finale.",
+        mosStep1Tag: "Identification",
+        mosStep1Title: "Profil de Confiance",
+        mosStep1Text: "Nous aidons à créer le Profil de Confiance et introduisons le client dans le système de l'administration publique.",
+        mosStep2Tag: "Accès au système",
+        mosStep2Title: "Inscription à MOS 2.0",
+        mosStep2Text: "Nous menons le processus d'inscription et garantissons un lancement correct de la procédure dès le premier jour.",
+        mosStep3Tag: "Demande — étape critique",
+        mosStep3Title: "Base juridique correcte",
+        mosStep3Text: "Nous analysons votre situation, sélectionnons la base juridique correcte pour le séjour et préparons une demande correcte. C'est l'étape qui décide de la légalité de votre séjour.",
+        mosStep4Tag: "Documents",
+        mosStep4Title: "Nous collectons et vérifions",
+        mosStep4Text: "Nous définissons l'étendue des documents, contactons votre employeur, et compilons et vérifions l'ensemble du dossier.",
+        mosStep5Tag: "Signature et dépôt",
+        mosStep5Title: "Dépôt effectif",
+        mosStep5Text: "Nous contrôlons l'exactitude de l'ensemble du processus et sommes responsables du dépôt effectif de la demande.",
+        mosStep6Tag: "Visite à l'administration",
+        mosStep6Title: "Office de Voïvodie de Basse-Silésie",
+        mosStep6Text: "Nous organisons le rendez-vous, préparons le client et minimisons le risque d'erreurs formelles à l'office de Wrocław.",
+        mosStep7Tag: "Procédure",
+        mosStep7Title: "Nous menons jusqu'à la décision",
+        mosStep7Text: "Nous gérons la communication avec l'office, réagissons à chaque convocation et contrôlons le déroulement du dossier jusqu'à la décision finale.",
+        stepsOutroText: "Omettre une étape, c'est prendre un risque. C'est pourquoi nous menons <strong>les 7 étapes</strong> — vous n'avez pas à apprendre le système ni à deviner si vous avez bien fait.",
+        stepsOutroCta: "Confier mon dossier",
+        topBarShort: "Nouveau : MOS 2.0",
         lmWidgetBtn: "Guide juridique gratuit",
         lmTitle: "Êtes-vous légalement en Pologne?",
         lmDesc: "Obtenez notre guide gratuit et évitez les erreurs les plus courantes qui coûtent aux étrangers leur séjour.",
@@ -6460,7 +6946,7 @@
       },
       hi: {
         headerCta: "मुफ्त मूल्यांकन",
-        heroTag: "आव्रजन कानून फर्म",
+        heroTag: "नई प्रक्रिया: MOS 2.0 — 27.04.2026 से",
         heroTitle: "<span class=\"text-gradient\">पोलैंड</span> में रहने का वैधीकरण",
         heroSubtitle: "निवास परमिट, कार्य परमिट, नागरिकता — हम शुरू से अंत तक आपके मामले को संभालते हैं",
         heroCta: "मुफ्त मूल्यांकन प्राप्त करें",
@@ -6532,15 +7018,18 @@
         infoOnlyTitle: "हम केस प्रतिनिधित्व पर ध्यान देते हैं",
         infoOnlyText: "हम उन ग्राहकों की मदद करते हैं जो अपने मामले पर वकील के साथ काम करने के लिए तैयार हैं।<br><br>जब आप तैयार हों, वापस आएं — हमें खुशी होगी!",
         infoOnlyBtn: "तैयार होने पर फिर से शुरू करें",
-        prefooterTitle: "अपना मामला <span class=\"text-gradient\">हल</span> करने के लिए तैयार?",
-        prefooterText: "हमारे आव्रजन विशेषज्ञों से मुफ्त मूल्यांकन प्राप्त करें। 24 घंटे में जवाब।",
+        prefooterTitle: "अपना मामला सौंप दें — <span class=\"text-gradient\">शुरू से अंत तक</span>",
+        prefooterText: "MOS 2.0 में सुरक्षित आंशिक समर्थन नहीं है — एक मामला, एक अधिग्रहण, एक निर्णय।",
+        prefooterTrust1: "पूरा मामला अधिग्रहण",
+        prefooterTrust2: "MOS 2.0 के सभी 7 चरण",
+        prefooterTrust3: "मुफ्त — 24 घंटे में जवाब",
         prefooterCta: "मुफ्त मूल्यांकन शुरू करें",
         footerCopy: "© 2025 आव्रजन वकील व्रोट्सवाफ",
         footerPrivacy: "गोपनीयता नीति",
         footerTerms: "शर्तें",
         stickyCta: "मुफ्त मूल्यांकन",
         problemsTitle: "क्या आपका केस <span class=\"text-gradient\">अटका</span> है?",
-        problemsSubtitle: "कई विदेशी बिना प्रगति के महीनों इंतजार करते हैं। आप अकेले नहीं हैं — हम मदद कर सकते हैं।",
+        problemsSubtitle: "आपने आवेदन किया है और अब प्रतीक्षा कर रहे हैं। चल रहे मामले को भी पूर्ण रूप से संभालने की आवश्यकता है — हम किसी भी चरण में हस्तक्षेप करते हैं।",
         problemMostCommon: "सबसे आम समस्या",
         problem1Title: "12+ महीने से फिंगरप्रिंट का इंतजार?",
         problem1Text: "आपने आवेदन जमा किया लेकिन अभी तक फिंगरप्रिंट की नियुक्ति नहीं मिली। यह हमारी विशेषता है।",
@@ -6555,7 +7044,46 @@
         problem4Title: "आपका केस अस्वीकृत हो गया?",
         problem4Text: "घबराएं नहीं — हम आपकी अस्वीकृति की समीक्षा कर सकते हैं और अक्सर निर्णय पलट देते हैं।",
         problem4Counter: "दिन अपील के लिए",
+        problem5Title: "क्या आपकी कार्यवाही वास्तव में शुरू ही नहीं हुई?",
+        problem5Text: "सबसे खतरनाक स्थिति — आप सोचते हैं कि आपका प्रवास वैध है, लेकिन मामला वास्तव में शुरू ही नहीं हुआ। हम कार्यालय को इसे खोलने या फिर से शुरू करने के लिए मजबूर करते हैं।",
+        problem5Stat: "वास्तविक कानूनी स्थिति सत्यापित करें",
         regionTitle: "निचला सिलेसिया",
+        mosDate: "नई प्रक्रिया — 27.04.2026 से",
+        mosTitle: "MOS 2.0 में, <span class=\"text-gradient\">आप अकेले आवेदन करते हैं</span>।",
+        mosLead: "विदेशी स्वयं मामला शुरू करता है, स्वयं आवेदन तैयार करता है, और उसकी शुद्धता के लिए स्वयं जिम्मेदार होता है।",
+        mosRiskLabel: "जोखिम",
+        mosRiskTitle: "एक गलती = अवैध प्रवास",
+        mosRiskText: "गलत तरीके से दायर किया गया आवेदन कानूनी रूप से मान्य नहीं है — आप पोलैंड में अवैध रूप से रह सकते हैं जबकि आपको लगता है कि मामला प्रगति पर है।",
+        mosAnswerLabel: "हमारा उत्तर",
+        mosAnswerTitle: "हम पूरा मामला संभालते हैं",
+        mosAnswerText: "MOS 2.0 के सभी 7 चरण — विश्वसनीय प्रोफ़ाइल से अंतिम निर्णय तक।",
+        mosCta: "मामला सौंपें",
+        stepsTitle: "<span class=\"text-gradient\">MOS 2.0</span> के 7 चरण — हर एक हम चलाते हैं",
+        stepsSubtitle: "प्रक्रिया का हर चरण एक सुसंगत प्रक्रिया का हिस्सा है। किसी को भी छोड़ना त्रुटि का जोखिम बढ़ाता है। इसलिए हम मामले को व्यापक रूप से संभालते हैं — विश्वसनीय प्रोफ़ाइल से अंतिम निर्णय तक।",
+        mosStep1Tag: "पहचान",
+        mosStep1Title: "विश्वसनीय प्रोफ़ाइल",
+        mosStep1Text: "हम विश्वसनीय प्रोफ़ाइल बनाने में मदद करते हैं और ग्राहक को सार्वजनिक प्रशासन प्रणाली में परिचित कराते हैं।",
+        mosStep2Tag: "सिस्टम तक पहुंच",
+        mosStep2Title: "MOS 2.0 पंजीकरण",
+        mosStep2Text: "हम पंजीकरण प्रक्रिया चलाते हैं और सुनिश्चित करते हैं कि प्रक्रिया पहले दिन से सही तरीके से शुरू हो।",
+        mosStep3Tag: "आवेदन — महत्वपूर्ण चरण",
+        mosStep3Title: "सही कानूनी आधार",
+        mosStep3Text: "हम आपकी स्थिति का विश्लेषण करते हैं, ठहरने के लिए सही कानूनी आधार चुनते हैं और सही आवेदन तैयार करते हैं। यही वह चरण है जो आपके प्रवास की वैधता तय करता है।",
+        mosStep4Tag: "दस्तावेज़",
+        mosStep4Title: "हम एकत्र और सत्यापित करते हैं",
+        mosStep4Text: "हम दस्तावेजों का दायरा परिभाषित करते हैं, आपके नियोक्ता से संपर्क करते हैं और पूरे डोज़ियर को संकलित और सत्यापित करते हैं।",
+        mosStep5Tag: "हस्ताक्षर और प्रस्तुति",
+        mosStep5Title: "प्रभावी प्रस्तुति",
+        mosStep5Text: "हम पूरी प्रक्रिया की शुद्धता को नियंत्रित करते हैं और आवेदन की प्रभावी प्रस्तुति के लिए जिम्मेदार हैं।",
+        mosStep6Tag: "कार्यालय यात्रा",
+        mosStep6Title: "निचला सिलेसिया वोइवोडशिप कार्यालय",
+        mosStep6Text: "हम अपॉइंटमेंट आयोजित करते हैं, ग्राहक को तैयार करते हैं और व्रोकला कार्यालय में औपचारिक त्रुटियों के जोखिम को कम करते हैं।",
+        mosStep7Tag: "कार्यवाही",
+        mosStep7Title: "हम निर्णय तक ले जाते हैं",
+        mosStep7Text: "हम कार्यालय के साथ संचार संभालते हैं, हर सूचना पर प्रतिक्रिया करते हैं और अंतिम निर्णय तक मामले के पाठ्यक्रम को नियंत्रित करते हैं।",
+        stepsOutroText: "किसी भी चरण को छोड़ना जोखिम है। इसलिए हम <strong>सभी 7 चरण</strong> चलाते हैं — आपको सिस्टम सीखने या अनुमान लगाने की ज़रूरत नहीं कि आपने सही किया।",
+        stepsOutroCta: "मामला सौंपें",
+        topBarShort: "नया: MOS 2.0",
         lmWidgetBtn: "मुफ्त कानूनी गाइड",
         lmTitle: "क्या आप पोलैंड में कानूनी रूप से हैं?",
         lmDesc: "हमारी मुफ्त गाइड प्राप्त करें और सबसे आम गलतियों से बचें।",
@@ -6629,7 +7157,7 @@
       },
       bn: {
         headerCta: "বিনামূল্যে মূল্যায়ন",
-        heroTag: "অভিবাসন আইন সংস্থা",
+        heroTag: "নতুন প্রক্রিয়া: MOS 2.0 — 27.04.2026 থেকে",
         heroTitle: "<span class=\"text-gradient\">পোল্যান্ডে</span> থাকার বৈধতা",
         heroSubtitle: "রেসিডেন্স পারমিট, ওয়ার্ক পারমিট, নাগরিকত্ব — আমরা শুরু থেকে শেষ পর্যন্ত আপনার কেস পরিচালনা করি",
         heroCta: "বিনামূল্যে মূল্যায়ন পান",
@@ -6701,15 +7229,18 @@
         infoOnlyTitle: "আমরা কেস প্রতিনিধিত্বে ফোকাস করি",
         infoOnlyText: "আমরা এমন ক্লায়েন্টদের সাহায্য করি যারা তাদের কেসে আইনজীবীর সাথে কাজ করতে প্রস্তুত।<br><br>যখন আপনি প্রস্তুত, ফিরে আসুন — আমরা সাহায্য করতে খুশি হব!",
         infoOnlyBtn: "প্রস্তুত হলে আবার শুরু করুন",
-        prefooterTitle: "আপনার কেস <span class=\"text-gradient\">সমাধান</span> করতে প্রস্তুত?",
-        prefooterText: "আমাদের অভিবাসন বিশেষজ্ঞদের কাছ থেকে বিনামূল্যে মূল্যায়ন পান। ২৪ ঘন্টায় উত্তর।",
+        prefooterTitle: "আপনার মামলা হস্তান্তর করুন — <span class=\"text-gradient\">শুরু থেকে শেষ পর্যন্ত</span>",
+        prefooterText: "MOS 2.0-এ নিরাপদ আংশিক সমর্থন নেই — একটি মামলা, একটি গ্রহণ, একটি সিদ্ধান্ত।",
+        prefooterTrust1: "সম্পূর্ণ মামলা গ্রহণ",
+        prefooterTrust2: "MOS 2.0-এর সব 7টি ধাপ",
+        prefooterTrust3: "বিনামূল্যে — 24 ঘণ্টায় উত্তর",
         prefooterCta: "বিনামূল্যে মূল্যায়ন শুরু করুন",
         footerCopy: "© ২০২৫ অভিবাসন আইনজীবী রক্লাউ",
         footerPrivacy: "গোপনীয়তা নীতি",
         footerTerms: "শর্তাবলী",
         stickyCta: "বিনামূল্যে মূল্যায়ন",
         problemsTitle: "আপনার কেস কি <span class=\"text-gradient\">আটকে</span> আছে?",
-        problemsSubtitle: "অনেক বিদেশী কোনো অগ্রগতি ছাড়াই মাসের পর মাস অপেক্ষা করে। আপনি একা নন — আমরা সাহায্য করতে পারি।",
+        problemsSubtitle: "আপনি দাখিল করেছেন এবং এখন অপেক্ষা করছেন। চলমান মামলাটিকেও সম্পূর্ণভাবে গ্রহণ করা প্রয়োজন — আমরা যেকোনো পর্যায়ে পদক্ষেপ নিই।",
         problemMostCommon: "সবচেয়ে সাধারণ সমস্যা",
         problem1Title: "১২+ মাস ধরে ফিঙ্গারপ্রিন্টের জন্য অপেক্ষা?",
         problem1Text: "আপনি আবেদন জমা দিয়েছেন কিন্তু এখনো ফিঙ্গারপ্রিন্টের অ্যাপয়েন্টমেন্ট পাননি। এটি আমাদের বিশেষত্ব।",
@@ -6724,7 +7255,46 @@
         problem4Title: "আপনার কেস প্রত্যাখ্যাত হয়েছে?",
         problem4Text: "আতঙ্কিত হবেন না — আমরা আপনার প্রত্যাখ্যান পর্যালোচনা করতে পারি এবং প্রায়ই সিদ্ধান্ত উল্টে দিই।",
         problem4Counter: "দিন আপিলের জন্য",
+        problem5Title: "কার্যধারা কি কখনোই কার্যকরভাবে শুরু হয়নি?",
+        problem5Text: "সবচেয়ে বিপজ্জনক পরিস্থিতি — আপনি ভাবছেন যে আপনার অবস্থান বৈধ, কিন্তু মামলা কখনোই সঠিকভাবে শুরু হয়নি। আমরা অফিসকে এটি খোলার বা পুনরায় শুরু করতে বাধ্য করি।",
+        problem5Stat: "প্রকৃত আইনি অবস্থা যাচাই করুন",
         regionTitle: "লোয়ার সাইলেশিয়া",
+        mosDate: "নতুন প্রক্রিয়া — 27.04.2026 থেকে",
+        mosTitle: "MOS 2.0-এ, <span class=\"text-gradient\">আপনি একা দাখিল করেন</span>।",
+        mosLead: "বিদেশী নিজেই মামলা শুরু করে, নিজেই আবেদন প্রস্তুত করে এবং এর সঠিকতার জন্য নিজেই দায়ী।",
+        mosRiskLabel: "ঝুঁকি",
+        mosRiskTitle: "একটি ভুল = অবৈধ অবস্থান",
+        mosRiskText: "ভুলভাবে দাখিল করা আবেদনের কোনো আইনি প্রভাব নেই — আপনি পোল্যান্ডে অবৈধভাবে থাকতে পারেন যখন আপনি মনে করেন আপনার মামলা চলছে।",
+        mosAnswerLabel: "আমাদের উত্তর",
+        mosAnswerTitle: "আমরা পুরো মামলা গ্রহণ করি",
+        mosAnswerText: "MOS 2.0-এর সমস্ত 7টি ধাপ — বিশ্বস্ত প্রোফাইল থেকে চূড়ান্ত সিদ্ধান্ত পর্যন্ত।",
+        mosCta: "আমার মামলা হস্তান্তর",
+        stepsTitle: "<span class=\"text-gradient\">MOS 2.0</span>-এর 7টি ধাপ — প্রতিটি আমরা পরিচালনা করি",
+        stepsSubtitle: "প্রক্রিয়ার প্রতিটি পর্যায় একটি সুসংগত প্রক্রিয়ার অংশ। কোনোটি বাদ দেওয়া ভুলের ঝুঁকি বাড়ায়। সেজন্য আমরা মামলাটি ব্যাপকভাবে পরিচালনা করি — বিশ্বস্ত প্রোফাইল থেকে চূড়ান্ত সিদ্ধান্ত পর্যন্ত।",
+        mosStep1Tag: "পরিচয়",
+        mosStep1Title: "বিশ্বস্ত প্রোফাইল",
+        mosStep1Text: "আমরা বিশ্বস্ত প্রোফাইল তৈরিতে সাহায্য করি এবং ক্লায়েন্টকে পাবলিক অ্যাডমিনিস্ট্রেশন সিস্টেমের সাথে পরিচয় করিয়ে দিই।",
+        mosStep2Tag: "সিস্টেম অ্যাক্সেস",
+        mosStep2Title: "MOS 2.0 নিবন্ধন",
+        mosStep2Text: "আমরা নিবন্ধন প্রক্রিয়া পরিচালনা করি এবং নিশ্চিত করি যে প্রক্রিয়া প্রথম দিন থেকেই সঠিকভাবে শুরু হয়।",
+        mosStep3Tag: "আবেদন — গুরুত্বপূর্ণ পর্যায়",
+        mosStep3Title: "সঠিক আইনি ভিত্তি",
+        mosStep3Text: "আমরা আপনার পরিস্থিতি বিশ্লেষণ করি, থাকার জন্য সঠিক আইনি ভিত্তি নির্বাচন করি এবং সঠিক আবেদন প্রস্তুত করি। এটি সেই পর্যায় যা আপনার অবস্থানের বৈধতা নির্ধারণ করে।",
+        mosStep4Tag: "নথিপত্র",
+        mosStep4Title: "আমরা সংগ্রহ ও যাচাই করি",
+        mosStep4Text: "আমরা নথির পরিধি নির্ধারণ করি, আপনার নিয়োগকর্তার সাথে যোগাযোগ করি এবং সম্পূর্ণ ফাইল সংকলন ও যাচাই করি।",
+        mosStep5Tag: "স্বাক্ষর ও দাখিল",
+        mosStep5Title: "কার্যকর দাখিল",
+        mosStep5Text: "আমরা পুরো প্রক্রিয়ার সঠিকতা নিয়ন্ত্রণ করি এবং আবেদনের কার্যকর দাখিলের জন্য দায়ী।",
+        mosStep6Tag: "অফিস সফর",
+        mosStep6Title: "লোয়ার সাইলেশিয়ান ভয়েভোডশিপ অফিস",
+        mosStep6Text: "আমরা অ্যাপয়েন্টমেন্টের ব্যবস্থা করি, ক্লায়েন্টকে প্রস্তুত করি এবং ভ্রোৎসওয়াফ অফিসে আনুষ্ঠানিক ভুলের ঝুঁকি কমিয়ে দিই।",
+        mosStep7Tag: "কার্যক্রম",
+        mosStep7Title: "আমরা সিদ্ধান্ত পর্যন্ত পরিচালনা করি",
+        mosStep7Text: "আমরা অফিসের সাথে যোগাযোগ পরিচালনা করি, প্রতিটি কলে প্রতিক্রিয়া জানাই এবং চূড়ান্ত সিদ্ধান্ত পর্যন্ত মামলার গতিপথ নিয়ন্ত্রণ করি।",
+        stepsOutroText: "কোনো ধাপ বাদ দেওয়া মানে ঝুঁকি। সেজন্য আমরা <strong>সব 7টি ধাপ</strong> পরিচালনা করি — আপনাকে সিস্টেম শিখতে বা অনুমান করতে হবে না যে আপনি সঠিক করেছেন কিনা।",
+        stepsOutroCta: "আমার মামলা হস্তান্তর",
+        topBarShort: "নতুন: MOS 2.0",
         lmWidgetBtn: "বিনামূল্যে আইনি গাইড",
         lmTitle: "আপনি কি পোল্যান্ডে বৈধভাবে আছেন?",
         lmDesc: "আমাদের বিনামূল্যে গাইড পান এবং সবচেয়ে সাধারণ ভুলগুলি এড়িয়ে চলুন।",
@@ -6798,7 +7368,7 @@
       },
       id: {
         headerCta: "Penilaian gratis",
-        heroTag: "Firma Hukum Imigrasi",
+        heroTag: "Prosedur baru: MOS 2.0 — mulai 27.04.2026",
         heroTitle: "Legalisasi tinggal di <span class=\"text-gradient\">Polandia</span>",
         heroSubtitle: "Izin tinggal, izin kerja, kewarganegaraan — kami tangani kasus Anda dari awal hingga akhir",
         heroCta: "Dapatkan penilaian gratis",
@@ -6870,15 +7440,18 @@
         infoOnlyTitle: "Kami fokus pada representasi kasus",
         infoOnlyText: "Kami membantu klien yang siap bekerja dengan pengacara untuk kasus mereka.<br><br>Ketika Anda siap, kembali dan kami dengan senang hati membantu!",
         infoOnlyBtn: "Mulai lagi ketika siap",
-        prefooterTitle: "Siap <span class=\"text-gradient\">menyelesaikan</span> kasus Anda?",
-        prefooterText: "Dapatkan penilaian gratis dari spesialis imigrasi kami. Kami merespons dalam 24 jam.",
+        prefooterTitle: "Serahkan kasus Anda — <span class=\"text-gradient\">dari awal hingga akhir</span>",
+        prefooterText: "Di MOS 2.0 tidak ada dukungan parsial yang aman — satu kasus, satu pengambilalihan, satu keputusan.",
+        prefooterTrust1: "Pengambilalihan penuh kasus",
+        prefooterTrust2: "Semua 7 tahap MOS 2.0",
+        prefooterTrust3: "Gratis — jawaban dalam 24j",
         prefooterCta: "Mulai penilaian gratis",
         footerCopy: "© 2025 Pengacara Imigrasi Wrocław",
         footerPrivacy: "Kebijakan Privasi",
         footerTerms: "Syarat",
         stickyCta: "Penilaian gratis",
         problemsTitle: "Kasus Anda <span class=\"text-gradient\">macet</span>?",
-        problemsSubtitle: "Banyak orang asing menunggu berbulan-bulan tanpa kemajuan. Anda tidak sendirian — kami dapat membantu.",
+        problemsSubtitle: "Anda telah mengajukan dan sekarang menunggu. Kasus yang sedang berjalan juga perlu diambil alih sepenuhnya — kami masuk di tahap apa pun.",
         problemMostCommon: "Masalah paling umum",
         problem1Title: "Menunggu 12+ bulan untuk sidik jari?",
         problem1Text: "Anda sudah mengajukan aplikasi tapi belum menerima jadwal sidik jari. Ini spesialisasi kami.",
@@ -6893,7 +7466,46 @@
         problem4Title: "Kasus Anda ditolak?",
         problem4Text: "Jangan panik — kami dapat meninjau penolakan Anda dan sering berhasil membatalkan keputusan.",
         problem4Counter: "hari untuk banding",
-        regionTitle: "Lower Silesia",
+        problem5Title: "Proses tidak pernah benar-benar dibuka?",
+        problem5Text: "Situasi paling berbahaya — Anda mengira tinggal Anda legal, tetapi kasusnya tidak pernah benar-benar dimulai. Kami memaksa kantor untuk membukanya atau melanjutkannya.",
+        problem5Stat: "Verifikasi status hukum sebenarnya",
+        regionTitle: "Silesia Bawah",
+        mosDate: "Prosedur baru — mulai 27.04.2026",
+        mosTitle: "Di MOS 2.0, <span class=\"text-gradient\">Anda mengajukan sendiri</span>.",
+        mosLead: "Orang asing memulai kasus sendiri, menyiapkan aplikasi sendiri, dan bertanggung jawab atas kebenarannya — sendiri.",
+        mosRiskLabel: "Risiko",
+        mosRiskTitle: "Satu kesalahan = tinggal ilegal",
+        mosRiskText: "Aplikasi yang diajukan secara tidak benar tidak memiliki efek hukum — Anda mungkin berada di Polandia secara ilegal sambil yakin kasus Anda sedang berjalan.",
+        mosAnswerLabel: "Jawaban kami",
+        mosAnswerTitle: "Kami mengambil alih seluruh kasus",
+        mosAnswerText: "Semua 7 tahap MOS 2.0 — dari Profil Terpercaya hingga keputusan akhir.",
+        mosCta: "Serahkan kasus saya",
+        stepsTitle: "7 tahap <span class=\"text-gradient\">MOS 2.0</span> — setiap tahap kami jalankan",
+        stepsSubtitle: "Setiap tahap prosedur adalah bagian dari satu proses yang koheren. Melewatkan salah satunya meningkatkan risiko kesalahan. Karena itu kami menangani kasus secara komprehensif — dari Profil Terpercaya hingga keputusan akhir.",
+        mosStep1Tag: "Identifikasi",
+        mosStep1Title: "Profil Terpercaya",
+        mosStep1Text: "Kami membantu menyiapkan Profil Terpercaya dan memperkenalkan klien ke sistem administrasi publik.",
+        mosStep2Tag: "Akses sistem",
+        mosStep2Title: "Pendaftaran MOS 2.0",
+        mosStep2Text: "Kami menjalankan proses pendaftaran dan memastikan prosedur dimulai dengan benar sejak hari pertama.",
+        mosStep3Tag: "Aplikasi — tahap kritis",
+        mosStep3Title: "Dasar hukum yang tepat",
+        mosStep3Text: "Kami menganalisis situasi Anda, memilih dasar hukum yang tepat untuk tinggal, dan menyiapkan aplikasi yang benar. Ini adalah tahap yang menentukan legalitas tinggal Anda.",
+        mosStep4Tag: "Dokumen",
+        mosStep4Title: "Kami kumpulkan dan verifikasi",
+        mosStep4Text: "Kami mendefinisikan cakupan dokumen, menghubungi pemberi kerja Anda, dan menyusun serta memverifikasi seluruh dossier.",
+        mosStep5Tag: "Tanda tangan & pengajuan",
+        mosStep5Title: "Pengajuan efektif",
+        mosStep5Text: "Kami mengontrol kebenaran seluruh proses dan bertanggung jawab atas pengajuan aplikasi yang efektif.",
+        mosStep6Tag: "Kunjungan kantor",
+        mosStep6Title: "Kantor Provinsi Silesia Bawah",
+        mosStep6Text: "Kami mengatur pertemuan, menyiapkan klien, dan meminimalkan risiko kesalahan formal di kantor Wrocław.",
+        mosStep7Tag: "Proses",
+        mosStep7Title: "Kami jalankan hingga keputusan",
+        mosStep7Text: "Kami menangani komunikasi dengan kantor, bereaksi terhadap setiap panggilan, dan mengontrol jalannya kasus hingga keputusan akhir.",
+        stepsOutroText: "Melewatkan tahap apa pun berarti risiko. Karena itu kami menjalankan <strong>semua 7 tahap</strong> — Anda tidak perlu belajar sistem atau menebak apakah Anda melakukannya dengan benar.",
+        stepsOutroCta: "Serahkan kasus saya",
+        topBarShort: "Baru: MOS 2.0",
         lmWidgetBtn: "Panduan hukum gratis",
         lmTitle: "Apakah Anda legal di Polandia?",
         lmDesc: "Dapatkan panduan gratis kami dan hindari kesalahan paling umum yang merugikan orang asing.",
@@ -6967,7 +7579,7 @@
       },
       ru: {
         headerCta: "Бесплатная оценка",
-        heroTag: "Миграционная юридическая фирма",
+        heroTag: "Новая процедура: MOS 2.0 — с 27.04.2026",
         heroTitle: "Легализация пребывания в <span class=\"text-gradient\">Польше</span>",
         heroSubtitle: "Вид на жительство, разрешение на работу, гражданство — ведём ваше дело от начала до конца",
         heroCta: "Получить бесплатную оценку",
@@ -7039,15 +7651,18 @@
         infoOnlyTitle: "Мы фокусируемся на ведении дел",
         infoOnlyText: "Мы помогаем клиентам, которые готовы работать с адвокатом над своим делом.<br><br>Когда будете готовы, возвращайтесь — мы будем рады помочь!",
         infoOnlyBtn: "Начать снова когда готовы",
-        prefooterTitle: "Готовы <span class=\"text-gradient\">решить</span> своё дело?",
-        prefooterText: "Получите бесплатную оценку от наших миграционных специалистов. Отвечаем в течение 24 часов.",
+        prefooterTitle: "Передайте своё дело — <span class=\"text-gradient\">от и до</span>",
+        prefooterText: "В MOS 2.0 нет безопасной частичной поддержки — одно дело, одно переймание, одно решение.",
+        prefooterTrust1: "Полное переймание дела",
+        prefooterTrust2: "Все 7 этапов MOS 2.0",
+        prefooterTrust3: "Бесплатно — ответ за 24 ч",
         prefooterCta: "Начать бесплатную оценку",
         footerCopy: "© 2025 Миграционный адвокат Вроцлав",
         footerPrivacy: "Политика конфиденциальности",
         footerTerms: "Условия",
         stickyCta: "Бесплатная оценка",
         problemsTitle: "Ваше дело <span class=\"text-gradient\">застряло</span>?",
-        problemsSubtitle: "Многие иностранцы ждут месяцами без прогресса. Вы не одиноки — мы можем помочь.",
+        problemsSubtitle: "Вы подали заявление и ждёте. Даже текущее дело требует полного переймания — мы вступаем на любом этапе.",
         problemMostCommon: "Самая частая проблема",
         problem1Title: "Ждёте 12+ месяцев отпечатки пальцев?",
         problem1Text: "Вы подали заявку, но до сих пор не получили приглашение на сдачу отпечатков. Это наша специализация.",
@@ -7062,7 +7677,46 @@
         problem4Title: "Ваше дело отклонено?",
         problem4Text: "Не паникуйте — мы можем пересмотреть ваш отказ и часто добиваемся отмены решения.",
         problem4Counter: "дней на апелляцию",
+        problem5Title: "Производство так и не было открыто?",
+        problem5Text: "Самая опасная ситуация — вы считаете, что ваше пребывание законно, но дело на самом деле не было начато. Мы заставляем ведомство открыть или возобновить его.",
+        problem5Stat: "Проверить реальный правовой статус",
         regionTitle: "Нижняя Силезия",
+        mosDate: "Новая процедура — с 27.04.2026",
+        mosTitle: "В MOS 2.0 <span class=\"text-gradient\">вы подаёте сами</span>.",
+        mosLead: "Иностранец сам инициирует дело, сам готовит заявление и сам отвечает за его правильность.",
+        mosRiskLabel: "Риск",
+        mosRiskTitle: "Одна ошибка = незаконное пребывание",
+        mosRiskText: "Неправильно поданное заявление не имеет правовых последствий — вы можете находиться в Польше незаконно, считая, что ваше дело рассматривается.",
+        mosAnswerLabel: "Наш ответ",
+        mosAnswerTitle: "Берём всё дело на себя",
+        mosAnswerText: "Все 7 этапов MOS 2.0 — от Доверенного Профиля до окончательного решения.",
+        mosCta: "Передать дело",
+        stepsTitle: "7 этапов <span class=\"text-gradient\">MOS 2.0</span> — каждый ведём мы",
+        stepsSubtitle: "Каждый этап процедуры — часть единого целостного процесса. Пропуск любого увеличивает риск ошибки. Поэтому мы ведём дело комплексно — от Доверенного Профиля до окончательного решения.",
+        mosStep1Tag: "Идентификация",
+        mosStep1Title: "Доверенный Профиль",
+        mosStep1Text: "Помогаем создать Доверенный Профиль и вводим клиента в систему государственной администрации.",
+        mosStep2Tag: "Доступ к системе",
+        mosStep2Title: "Регистрация в MOS 2.0",
+        mosStep2Text: "Проводим процесс регистрации и обеспечиваем правильное начало процедуры с первого дня.",
+        mosStep3Tag: "Заявление — ключевой этап",
+        mosStep3Title: "Правильное правовое основание",
+        mosStep3Text: "Анализируем вашу ситуацию, подбираем правильное правовое основание для пребывания и готовим корректное заявление. Это этап, который определяет законность пребывания.",
+        mosStep4Tag: "Документы",
+        mosStep4Title: "Собираем и проверяем",
+        mosStep4Text: "Определяем объём документов, связываемся с работодателем, собираем и проверяем всю документацию.",
+        mosStep5Tag: "Подпись и подача",
+        mosStep5Title: "Эффективная подача",
+        mosStep5Text: "Контролируем правильность всего процесса и отвечаем за эффективную подачу заявления.",
+        mosStep6Tag: "Визит в ведомство",
+        mosStep6Title: "Нижнесилезское воеводское управление",
+        mosStep6Text: "Организуем визит, готовим клиента и минимизируем риск формальных ошибок в ведомстве во Вроцлаве.",
+        mosStep7Tag: "Производство",
+        mosStep7Title: "Ведём до решения",
+        mosStep7Text: "Ведём коммуникацию с ведомством, реагируем на каждый вызов и контролируем ход дела вплоть до окончательного решения.",
+        stepsOutroText: "Пропуск любого этапа — это риск. Поэтому мы ведём <strong>все 7 этапов</strong> — вам не нужно учить систему или гадать, правильно ли вы всё сделали.",
+        stepsOutroCta: "Передать дело",
+        topBarShort: "Новое: MOS 2.0",
         lmWidgetBtn: "Бесплатный юридический гид",
         lmTitle: "Вы легально в Польше?",
         lmDesc: "Получите наш бесплатный гид и избегайте самых распространённых ошибок, которые стоят иностранцам их пребывания.",
@@ -7218,7 +7872,17 @@
       setText('.header-cta .btn', 'headerCta');
 
       // Hero
-      setText('.hero-tag', 'heroTag');
+      document.querySelectorAll('.hero-tag-text, .top-bar-text-full').forEach(el => { if (t.heroTag) el.textContent = t.heroTag; });
+
+      // Universal data-i18n loop — handles all new sections (MOS 2.0, 7 steps, top-bar short)
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) el.textContent = t[key];
+      });
+      document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const key = el.getAttribute('data-i18n-html');
+        if (t[key]) el.innerHTML = t[key];
+      });
       setText('.hero-headline h1', 'heroTitle', true);
       setText('.hero-subtitle', 'heroSubtitle');
       setText('.hero-cta-btn', 'heroCta');
@@ -7338,9 +8002,7 @@
       setText('[data-step="info-only"] .btn', 'infoOnlyBtn');
 
       // Prefooter
-      setText('.prefooter h2', 'prefooterTitle', true);
-      setText('.prefooter p', 'prefooterText');
-      setText('.prefooter .btn', 'prefooterCta');
+      // Prefooter handled via data-i18n attributes (see HTML)
 
       // Footer
       setText('.footer-minimal span', 'footerCopy');
@@ -7353,12 +8015,12 @@
       setText('.sticky-cta-mobile .btn', 'stickyCta');
 
       // Problems section
-      setText('.problem-section .section-header h2', 'problemsTitle', true);
-      setText('.problem-section .section-header p', 'problemsSubtitle');
-      setText('.hot-badge', 'problemMostCommon');
+      setText('#problem .section-header h2', 'problemsTitle', true);
+      setText('#problem .section-header p', 'problemsSubtitle');
+      setText('#problem .hot-badge', 'problemMostCommon');
 
       // Problem cards
-      const problemCards = document.querySelectorAll('.problem-card');
+      const problemCards = document.querySelectorAll('#problem .problem-card');
       problemCards.forEach((card, i) => {
         const h3 = card.querySelector('h3');
         const p = card.querySelector('p');
@@ -7385,8 +8047,11 @@
           if (p && t.problem4Text) p.textContent = t.problem4Text;
           const counterLabel = card.querySelector('.counter-label');
           if (counterLabel && t.problem4Counter) counterLabel.textContent = t.problem4Counter;
-        } else if (i === 4) { // Region card
-          if (h3 && t.regionTitle) h3.textContent = t.regionTitle;
+        } else if (i === 4) { // Proceedings never effectively opened
+          if (h3 && t.problem5Title) h3.textContent = t.problem5Title;
+          if (p && t.problem5Text) p.textContent = t.problem5Text;
+          const statSpan = card.querySelector('.problem-stat span');
+          if (statSpan && t.problem5Stat) statSpan.textContent = t.problem5Stat;
         }
       });
 
@@ -7534,6 +8199,39 @@
     document.addEventListener('DOMContentLoaded', () => {
       const detectedLang = detectBrowserLanguage();
       setLanguage(detectedLang);
+
+      // Lazy-load review video — only fetch + play when in viewport
+      const reviewVideo = document.querySelector('.rv-video-el');
+      if (reviewVideo && 'IntersectionObserver' in window) {
+        const videoIo = new IntersectionObserver((entries, obs) => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const v = entry.target;
+            if (!v.src && v.dataset.src) {
+              v.src = v.dataset.src;
+              v.load();
+            }
+            v.play().then(() => {
+              v.closest('.rv-video')?.classList.add('is-playing');
+            }).catch(() => {});
+            obs.unobserve(v);
+          });
+        }, { threshold: 0.25 });
+        videoIo.observe(reviewVideo);
+      }
+
+      // Show top-bar only after hero MOS tag scrolls out of view
+      const heroTag = document.querySelector('.hero-headline .hero-tag-mos');
+      const topBar = document.querySelector('.top-bar');
+      if (heroTag && topBar && 'IntersectionObserver' in window) {
+        const io = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) topBar.classList.remove('is-visible');
+            else topBar.classList.add('is-visible');
+          });
+        }, { threshold: 0, rootMargin: '0px' });
+        io.observe(heroTag);
+      }
     });
   </script>
 
