@@ -5701,6 +5701,12 @@
           <input type="tel" name="lm_phone" placeholder="WhatsApp" required>
           <button type="submit" class="lm-submit">Send me the guide</button>
         </form>
+
+        <div class="lm-success" id="leadMagnetSuccess" style="display:none; text-align:center; padding:12px 0;">
+          <h4 style="margin:0 0 8px; font-size:18px;">Your guide is downloading ✓</h4>
+          <p style="margin:0 0 16px; color:#555; font-size:14px;">Now get a free assessment of your case — it takes 1 minute.</p>
+          <button type="button" class="lm-submit" id="leadMagnetContinue">Get Free Assessment</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5816,14 +5822,15 @@
 
       console.log('Lead Magnet submission:', { email, phone });
 
-      // Save lead magnet submission to Supabase
+      // Save as raw LEAD (not qualified) — pipeline start
       var tracking = getTrackingData();
       db.from("permit_leads").insert([{
         email: email,
         phone: phone,
-        situation: "lead_magnet",
-        lead_type: "WARM",
-        lead_score: 30,
+        situation: "lead_magnet_ebook",
+        lead_type: "COLD",
+        lead_score: 10,
+        status: "new",
         language: window.currentLang || "en",
         user_agent: navigator.userAgent,
         referrer: document.referrer,
@@ -5835,6 +5842,16 @@
         else console.log("Lead magnet saved:", result.data);
       });
 
+      // Trigger PDF download (email delivery TODO — add when email service is ready)
+      try {
+        const a = document.createElement('a');
+        a.href = '/ebook.pdf';
+        a.download = 'getmypermit-ebook.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) { console.error('PDF download failed:', err); }
+
       // Mark as submitted & hide widget
       sessionStorage.setItem('leadMagnetSubmitted', 'true');
       leadMagnetWidget.classList.add('hidden');
@@ -5843,14 +5860,21 @@
       sessionStorage.setItem('lm_email', email);
       sessionStorage.setItem('lm_phone', phone);
 
-      // Close modal
+      // Swap form → success state with CTA to qualification form
+      e.target.style.display = 'none';
+      document.getElementById('leadMagnetSuccess').style.display = 'block';
+    });
+
+    // Continue to qualification form
+    document.getElementById('leadMagnetContinue').addEventListener('click', () => {
+      const email = sessionStorage.getItem('lm_email') || '';
+      const phone = sessionStorage.getItem('lm_phone') || '';
+
       leadMagnetModal.classList.remove('active');
       document.body.style.overflow = '';
 
-      // Scroll to main form
       document.getElementById('form').scrollIntoView({ behavior: 'smooth' });
 
-      // Pre-fill main form fields after a small delay
       setTimeout(() => {
         const phoneInput = document.querySelector('input[name="phone"]');
         const emailInput = document.querySelector('input[name="email"]');
