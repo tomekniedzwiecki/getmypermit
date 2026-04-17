@@ -13,6 +13,7 @@
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
     <script src="components/modals.js" defer></script>
+    <script src="components/composer.js"></script>
     <style>
         .case-header {
             position: sticky;
@@ -133,11 +134,7 @@
                         <!-- Quick contact -->
                         <div id="quick-contact" class="flex gap-1"></div>
                         <span class="mx-1 text-zinc-700">|</span>
-                        <!-- Quick add -->
-                        <button class="quick-action" onclick="openNoteModal()" title="Ctrl+N"><i class="ph ph-note-pencil"></i> Notatka</button>
-                        <button class="quick-action" onclick="openTaskModal()" title="Ctrl+T"><i class="ph ph-plus-square"></i> Zadanie</button>
-                        <button class="quick-action" onclick="openPaymentModal()" title="Ctrl+P"><i class="ph ph-coins"></i> Płatność</button>
-                        <button class="quick-action" onclick="openAppointmentModal()" title="Ctrl+M"><i class="ph ph-calendar-plus"></i> Termin</button>
+                        <button class="quick-action" onclick="scrollToComposer()" title="Szybki dodanie (Przegląd)"><i class="ph ph-plus-circle"></i> Dodaj wpis</button>
                         <span class="mx-1 text-zinc-700">|</span>
                         <button class="quick-action" onclick="togglePin()" id="pin-btn" title="Przypnij"><i class="ph ph-push-pin" id="pin-icon"></i></button>
                         <button class="quick-action" onclick="deleteCase()" title="Usuń"><i class="ph ph-trash text-red-400"></i></button>
@@ -195,17 +192,10 @@
                 <div class="case-main">
                     <!-- OVERVIEW TAB -->
                     <div class="tab-panel" data-panel="overview">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <section class="module-card">
-                                <div class="module-card-header">
-                                    <span><i class="ph ph-note text-zinc-400 mr-1"></i>Ostatnia notatka</span>
-                                    <button class="btn btn-ghost btn-sm" onclick="openNoteModal()"><i class="ph ph-plus"></i></button>
-                                </div>
-                                <div id="overview-last-note" class="p-4">
-                                    <div class="text-zinc-500 text-sm">Brak notatek — dodaj pierwszą!</div>
-                                </div>
-                            </section>
+                        <!-- INLINE COMPOSER -->
+                        <div id="overview-composer" class="mb-4"></div>
 
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <section class="module-card">
                                 <div class="module-card-header">
                                     <span><i class="ph ph-trend-up text-emerald-400 mr-1"></i>Status finansowy</span>
@@ -215,9 +205,9 @@
                                 </div>
                             </section>
 
-                            <section class="module-card md:col-span-2">
+                            <section class="module-card">
                                 <div class="module-card-header">
-                                    <span><i class="ph ph-list-checks text-cyan-400 mr-1"></i>Nadchodzące: zadania + terminy</span>
+                                    <span><i class="ph ph-list-checks text-cyan-400 mr-1"></i>Nadchodzące</span>
                                 </div>
                                 <div id="overview-upcoming" class="divide-y divide-zinc-900/50">
                                     <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
@@ -226,7 +216,7 @@
 
                             <section class="module-card md:col-span-2">
                                 <div class="module-card-header">
-                                    <span><i class="ph ph-clock text-zinc-400 mr-1"></i>Ostatnia aktywność (5)</span>
+                                    <span><i class="ph ph-clock text-zinc-400 mr-1"></i>Ostatnia aktywność</span>
                                     <button class="btn btn-ghost btn-sm" onclick="switchTab('history')">Cała historia →</button>
                                 </div>
                                 <div id="overview-activity" class="p-4">
@@ -238,23 +228,21 @@
 
                     <!-- HISTORY TAB -->
                     <div class="tab-panel hidden" data-panel="history">
+                        <div id="history-composer" class="mb-4"></div>
                         <section class="module-card">
                             <div class="module-card-header">
                                 <span>Historia działań</span>
-                                <div class="flex gap-1">
-                                    <select id="history-filter" class="filter-input text-xs" style="width: 160px">
-                                        <option value="">Wszystkie zdarzenia</option>
-                                        <option value="note">Tylko notatki</option>
-                                        <option value="status_change">Zmiany statusu</option>
-                                        <option value="stage_change">Zmiany etapu</option>
-                                        <option value="task_assigned">Zadania</option>
-                                        <option value="document_added">Dokumenty</option>
-                                        <option value="payment_received">Płatności</option>
-                                        <option value="email_sent,whatsapp_sent">Komunikacja</option>
-                                        <option value="decision_received">Decyzje</option>
-                                    </select>
-                                    <button class="btn btn-primary btn-sm" onclick="openNoteModal()"><i class="ph ph-plus"></i> Dodaj notatkę</button>
-                                </div>
+                                <select id="history-filter" class="filter-input text-xs" style="width: 180px">
+                                    <option value="">Wszystkie zdarzenia</option>
+                                    <option value="note">Tylko notatki</option>
+                                    <option value="status_change">Zmiany statusu</option>
+                                    <option value="stage_change">Zmiany etapu</option>
+                                    <option value="task_assigned">Zadania</option>
+                                    <option value="document_added">Dokumenty</option>
+                                    <option value="payment_received">Płatności</option>
+                                    <option value="email_sent,whatsapp_sent">Komunikacja</option>
+                                    <option value="decision_received">Decyzje</option>
+                                </select>
                             </div>
                             <div id="activities-list" class="p-4">
                                 <div class="text-zinc-500 text-sm">Ładuję...</div>
@@ -264,17 +252,15 @@
 
                     <!-- TASKS TAB -->
                     <div class="tab-panel hidden" data-panel="tasks">
+                        <div id="tasks-composer" class="mb-4"></div>
                         <section class="module-card">
                             <div class="module-card-header">
                                 <span>Zadania</span>
-                                <div class="flex gap-1">
-                                    <select id="tasks-filter" class="filter-input text-xs" style="width: 160px">
-                                        <option value="open">Otwarte</option>
-                                        <option value="done">Ukończone</option>
-                                        <option value="all">Wszystkie</option>
-                                    </select>
-                                    <button class="btn btn-primary btn-sm" onclick="openTaskModal()"><i class="ph ph-plus"></i> Nowe zadanie</button>
-                                </div>
+                                <select id="tasks-filter" class="filter-input text-xs" style="width: 160px">
+                                    <option value="open">Otwarte</option>
+                                    <option value="done">Ukończone</option>
+                                    <option value="all">Wszystkie</option>
+                                </select>
                             </div>
                             <div id="tasks-list" class="divide-y divide-zinc-900/50">
                                 <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
@@ -285,6 +271,7 @@
                     <!-- FINANCE TAB -->
                     <div class="tab-panel hidden" data-panel="finance">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4" id="finance-kpis"></div>
+                        <div id="finance-composer" class="mb-4"></div>
 
                         <section class="module-card mb-4">
                             <div class="module-card-header">
@@ -298,7 +285,6 @@
                         <section class="module-card">
                             <div class="module-card-header">
                                 <span>Historia wpłat</span>
-                                <button class="btn btn-primary btn-sm" onclick="openPaymentModal()"><i class="ph ph-plus"></i> Nowa wpłata</button>
                             </div>
                             <div id="payments-list">
                                 <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
@@ -324,10 +310,10 @@
 
                     <!-- CALENDAR TAB -->
                     <div class="tab-panel hidden" data-panel="calendar">
+                        <div id="calendar-composer" class="mb-4"></div>
                         <section class="module-card">
                             <div class="module-card-header">
                                 <span>Spotkania i terminy</span>
-                                <button class="btn btn-primary btn-sm" onclick="openAppointmentModal()"><i class="ph ph-plus"></i> Nowy termin</button>
                             </div>
                             <div id="appointments-list">
                                 <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
@@ -552,15 +538,15 @@ async function init() {
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable) {
-            // Ctrl+S only in inputs
             if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (isDirty) saveCase(); }
             return;
         }
         if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (isDirty) saveCase(); }
-        if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); openNoteModal(); }
-        if ((e.ctrlKey || e.metaKey) && e.key === 't') { e.preventDefault(); openTaskModal(); }
-        if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); openPaymentModal(); }
-        if ((e.ctrlKey || e.metaKey) && e.key === 'm') { e.preventDefault(); openAppointmentModal(); }
+        // Quick: N = composer notatka, T = zadanie, P = plat, M = termin
+        if (e.key === 'n' || e.key === 'N') { e.preventDefault(); focusComposer('note'); }
+        if (e.key === 't' || e.key === 'T') { e.preventDefault(); focusComposer('task'); }
+        if (e.key === 'p' || e.key === 'P') { e.preventDefault(); focusComposer('payment'); }
+        if (e.key === 'm' || e.key === 'M') { e.preventDefault(); focusComposer('appointment'); }
     });
 
     // File upload
@@ -579,10 +565,35 @@ function switchTab(name) {
 
     // Lazy load
     if (name === 'history' && !tabsLoaded.history) { renderHistory(); tabsLoaded.history = true; }
-    if (name === 'tasks' && !tabsLoaded.tasks) { renderTasksTab(); tabsLoaded.tasks = true; }
-    if (name === 'finance' && !tabsLoaded.finance) { renderFinanceTab(); tabsLoaded.finance = true; }
+    if (name === 'tasks' && !tabsLoaded.tasks) {
+        initComposer('tasks-composer');
+        // Switch composer to task type
+        setTimeout(() => {
+            const tab = document.querySelector('#tasks-composer .composer-tab[data-type="task"]');
+            if (tab) tab.click();
+        }, 50);
+        renderTasksTab();
+        tabsLoaded.tasks = true;
+    }
+    if (name === 'finance' && !tabsLoaded.finance) {
+        initComposer('finance-composer');
+        setTimeout(() => {
+            const tab = document.querySelector('#finance-composer .composer-tab[data-type="payment"]');
+            if (tab) tab.click();
+        }, 50);
+        renderFinanceTab();
+        tabsLoaded.finance = true;
+    }
     if (name === 'documents' && !tabsLoaded.documents) { renderDocumentsTab(); tabsLoaded.documents = true; }
-    if (name === 'calendar' && !tabsLoaded.calendar) { renderCalendarTab(); tabsLoaded.calendar = true; }
+    if (name === 'calendar' && !tabsLoaded.calendar) {
+        initComposer('calendar-composer');
+        setTimeout(() => {
+            const tab = document.querySelector('#calendar-composer .composer-tab[data-type="appointment"]');
+            if (tab) tab.click();
+        }, 50);
+        renderCalendarTab();
+        tabsLoaded.calendar = true;
+    }
 }
 
 async function loadStaffAndDepts() {
@@ -610,12 +621,47 @@ async function loadCase() {
     document.getElementById('case-loading').classList.add('hidden');
     document.getElementById('case-content').classList.remove('hidden');
 
+    // Preload staff for composer
+    await loadStaffForComposer();
+
     // Load data
     await Promise.all([loadActivitiesData(), loadTasksData(), loadPaymentsData(), loadAppointmentsData(), loadDocumentsData(), loadTrustedProfileData()]);
+
+    // Initialize composers
+    initComposer('overview-composer');
+    initComposer('history-composer');
 
     // Render overview (default)
     renderOverview();
     updateCounts();
+
+    // Setup reload callback
+    window._reloadActivities = async () => {
+        await loadActivitiesData();
+        renderOverview();
+        if (activeTab === 'history') renderHistory();
+        updateCounts();
+    };
+}
+
+function initComposer(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container || container._inited) return;
+    container._inited = true;
+    gmpComposer.create(container, {
+        caseId,
+        staffId: window.currentStaff?.id,
+        clientId: caseData.client_id,
+        employerId: caseData.employer_id,
+        onSave: async (type) => {
+            // Reload relevant data
+            if (type === 'note') { await loadActivitiesData(); renderOverview(); if (activeTab === 'history') renderHistory(); }
+            else if (type === 'task') { await Promise.all([loadTasksData(), loadActivitiesData()]); renderOverview(); if (activeTab === 'tasks') renderTasksTab(); }
+            else if (type === 'payment') { await Promise.all([loadPaymentsData(), loadActivitiesData()]); renderOverview(); if (activeTab === 'finance') renderFinanceTab(); }
+            else if (type === 'appointment') { await Promise.all([loadAppointmentsData(), loadActivitiesData()]); renderOverview(); if (activeTab === 'calendar') renderCalendarTab(); }
+            updateCounts();
+        },
+    });
 }
 
 async function createNewCase() {
@@ -881,18 +927,6 @@ function updateCounts() {
 // ============ TAB RENDERERS ============
 
 function renderOverview() {
-    // Last note
-    const lastNote = allActivities.find(a => a.activity_type === 'note');
-    const el = document.getElementById('overview-last-note');
-    if (lastNote) {
-        el.innerHTML = `
-            <div class="text-sm text-zinc-200 mb-2 whitespace-pre-wrap">${esc(lastNote.content || '')}</div>
-            <div class="text-xs text-zinc-500">${esc(lastNote.gmp_staff?.full_name || 'system')} • ${fmt.daysAgo(lastNote.created_at)}</div>
-        `;
-    } else {
-        el.innerHTML = '<div class="text-zinc-500 text-sm">Brak notatek — <button class="text-blue-400 hover:underline" onclick="openNoteModal()">dodaj pierwszą</button></div>';
-    }
-
     // Finance summary
     const totalPaid = allPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
     const planTotal = paymentPlan?.total_amount ? Number(paymentPlan.total_amount) : null;
@@ -947,20 +981,84 @@ function renderOverview() {
         uEl.innerHTML = items.slice(0, 8).map(i => i.html).join('');
     }
 
-    // Recent activity (5)
+    // Recent activity (8)
     const aEl = document.getElementById('overview-activity');
-    const recent = allActivities.slice(0, 5);
+    const recent = allActivities.slice(0, 8);
     if (!recent.length) {
-        aEl.innerHTML = '<div class="text-zinc-500 text-sm">Brak aktywności — zacznij od dodania notatki.</div>';
+        aEl.innerHTML = '<div class="text-zinc-500 text-sm">Brak aktywności — użyj composera powyżej.</div>';
     } else {
-        aEl.innerHTML = '<div>' + recent.map(a => {
-            const conf = TYPE_ICONS[a.activity_type] || { icon: 'ph-circle', color: 'text-zinc-500' };
-            return `<div class="timeline-item" data-type="${a.activity_type}">
-                <div class="text-sm text-zinc-200">${esc(a.content || TYPE_LABELS[a.activity_type] || a.activity_type)}</div>
-                <div class="text-xs text-zinc-500 mt-0.5">${esc(a.gmp_staff?.full_name || 'system')} • ${fmt.daysAgo(a.created_at)}</div>
-            </div>`;
-        }).join('') + '</div>';
+        aEl.innerHTML = '<div>' + recent.map(a => renderTimelineItem(a)).join('') + '</div>';
     }
+}
+
+function renderTimelineItem(a) {
+    const label = TYPE_LABELS[a.activity_type] || a.activity_type;
+    const author = a.gmp_staff?.full_name || 'system';
+    const isEditable = a.activity_type === 'note' && (!a.created_by || a.created_by === window.currentStaff?.id);
+    const actions = `<div class="timeline-actions">
+        ${isEditable ? `<button class="timeline-act-btn" onclick="event.stopPropagation(); editActivityNote('${a.id}')" title="Edytuj"><i class="ph ph-pencil-simple"></i></button>` : ''}
+        <button class="timeline-act-btn danger" onclick="event.stopPropagation(); deleteActivity('${a.id}')" title="Usuń"><i class="ph ph-trash"></i></button>
+    </div>`;
+    return `<div class="timeline-item" data-type="${a.activity_type}" data-activity-id="${a.id}">
+        <div class="flex items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+                <div class="text-sm text-zinc-200 activity-content whitespace-pre-wrap">${esc(a.content || label)}</div>
+                <div class="text-xs text-zinc-500 mt-0.5 flex items-center gap-2">
+                    <span class="uppercase text-[9px] tracking-wider text-zinc-600">${label}</span>
+                    <span>•</span>
+                    <span>${esc(author)}</span>
+                    <span>•</span>
+                    <span>${fmt.daysAgo(a.created_at)}</span>
+                </div>
+            </div>
+            ${actions}
+        </div>
+    </div>`;
+}
+
+async function editActivityNote(activityId) {
+    const activity = allActivities.find(a => a.id === activityId);
+    if (!activity) return;
+    inlineEditNote(activityId, activity.content || '', async (newContent) => {
+        activity.content = newContent;
+        renderOverview();
+        if (activeTab === 'history') renderHistory();
+    });
+}
+
+async function deleteActivity(activityId) {
+    const activity = allActivities.find(a => a.id === activityId);
+    if (!activity) return;
+    // Optimistic removal
+    const idx = allActivities.indexOf(activity);
+    allActivities.splice(idx, 1);
+    renderOverview();
+    if (activeTab === 'history') renderHistory();
+    updateCounts();
+
+    const { error } = await db.from('gmp_case_activities').delete().eq('id', activityId);
+    if (error) {
+        allActivities.splice(idx, 0, activity);
+        renderOverview();
+        if (activeTab === 'history') renderHistory();
+        updateCounts();
+        toast.error(error.message);
+        return;
+    }
+    // Undo toast
+    undoToast('Usunięto wpis', async () => {
+        const { created_by, ...rest } = activity;
+        const { error: insertErr, data: restored } = await db.from('gmp_case_activities').insert({
+            ...rest, created_by: activity.created_by || window.currentStaff?.id,
+        }).select().single();
+        if (!insertErr && restored) {
+            allActivities.splice(idx, 0, restored);
+            renderOverview();
+            if (activeTab === 'history') renderHistory();
+            updateCounts();
+            toast.success('Przywrócono');
+        }
+    });
 }
 
 function renderHistory() {
@@ -988,18 +1086,7 @@ function renderHistory() {
     el.innerHTML = Object.entries(byDay).map(([day, items]) => `
         <div class="mb-6">
             <div class="text-xs text-zinc-600 uppercase tracking-wider mb-3 font-mono">${day} (${fmt.daysAgo(day)})</div>
-            <div>${items.map(a => {
-                const label = TYPE_LABELS[a.activity_type] || a.activity_type;
-                return `<div class="timeline-item" data-type="${a.activity_type}">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[10px] text-zinc-600 uppercase tracking-wider">${label}</span>
-                        <span class="text-zinc-700">•</span>
-                        <span class="text-xs text-zinc-500">${new Date(a.created_at).toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'})}</span>
-                        <span class="text-xs text-zinc-500">• ${esc(a.gmp_staff?.full_name || 'system')}</span>
-                    </div>
-                    <div class="text-sm text-zinc-200 whitespace-pre-wrap">${esc(a.content || '—')}</div>
-                </div>`;
-            }).join('')}</div>
+            <div>${items.map(a => renderTimelineItem(a)).join('')}</div>
         </div>
     `).join('');
 }
@@ -1215,6 +1302,26 @@ async function deleteAppointment(id) {
 }
 
 // ============ ACTIONS ============
+function focusComposer(type) {
+    if (activeTab !== 'overview' && activeTab !== 'history') switchTab('overview');
+    setTimeout(() => {
+        const composer = document.querySelector(activeTab === 'history' ? '#history-composer .composer' : '#overview-composer .composer');
+        if (!composer) return;
+        const tab = composer.querySelector(`.composer-tab[data-type="${type}"]`);
+        if (tab) tab.click();
+        const input = composer.querySelector('.composer-input');
+        if (input) { input.focus(); composer.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    }, 50);
+}
+
+function scrollToComposer() {
+    if (activeTab !== 'overview') switchTab('overview');
+    setTimeout(() => {
+        const c = document.querySelector('#overview-composer .composer-input');
+        if (c) { c.focus(); c.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    }, 100);
+}
+
 async function togglePin() {
     const newVal = !caseData.is_pinned;
     const { error } = await db.from('gmp_cases').update({ is_pinned: newVal }).eq('id', caseId);
