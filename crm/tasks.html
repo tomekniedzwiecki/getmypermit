@@ -121,7 +121,7 @@ async function loadList() {
 async function exportTasks() {
     toast.info('Przygotowuję CSV...');
     const { data } = await db.from('gmp_tasks')
-        .select('*, gmp_staff(full_name), gmp_cases(case_number, gmp_clients(last_name, first_name))')
+        .select('*, gmp_staff!assigned_to(full_name), gmp_cases(case_number, gmp_clients(last_name, first_name))')
         .order('due_date', { ascending: true, nullsLast: true }).limit(5000);
     exportCsv('zadania', data || [], [
         ['Tytuł', 'title'],

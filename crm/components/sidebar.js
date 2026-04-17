@@ -37,6 +37,12 @@
         { href: 'invoices.html', icon: 'ph-receipt', color: 'text-orange-400', label: 'Faktury', id: 'invoices' },
       ]
     },
+    {
+      label: 'BIBLIOTEKA',
+      items: [
+        { href: 'templates.html', icon: 'ph-file-text', color: 'text-zinc-400', label: 'Wzory dokumentów', id: 'templates' },
+      ]
+    },
   ];
 
   function renderItem(item) {

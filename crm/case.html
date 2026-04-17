@@ -49,6 +49,11 @@
                             <span id="case-type-display"></span>
                             <span id="case-employer-display"></span>
                         </div>
+                        <div id="case-last-note" class="mt-2 text-sm text-zinc-300 bg-zinc-900/40 border-l-2 border-zinc-700 px-3 py-2 rounded hidden">
+                            <div class="text-[10px] uppercase tracking-wider text-zinc-500 mb-0.5">Ostatnia notatka</div>
+                            <div id="last-note-content"></div>
+                            <div class="text-xs text-zinc-500 mt-1" id="last-note-meta"></div>
+                        </div>
                     </div>
                     <div class="flex gap-2 flex-wrap">
                         <button class="btn btn-secondary btn-sm" onclick="openNoteModal()">
@@ -159,6 +164,25 @@
                                 <select class="input w-full" data-field="inspector_id" id="inspector-select">
                                     <option value="">—</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label>Kierownik (organ nadrzędny)</label>
+                                <input type="text" class="input w-full" data-field="kierownik">
+                            </div>
+                            <div>
+                                <label>Status aktywności / powód bezczynności</label>
+                                <select class="input w-full" data-field="inactivity_reason">
+                                    <option value="none">—</option>
+                                    <option value="brak_pracownika">❗ Brak działania pracownika</option>
+                                    <option value="brak_urzedu">⏳ Brak reakcji urzędu</option>
+                                    <option value="brak_klienta">📞 Brak reakcji klienta</option>
+                                    <option value="brak_dokumentow">📄 Brak dokumentów</option>
+                                    <option value="inne">Inne</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label>Notatka do statusu aktywności</label>
+                                <input type="text" class="input w-full" data-field="inactivity_note" placeholder="Np. Klient obiecał dokumenty do 15.04">
                             </div>
                             <div class="col-span-2">
                                 <label>Dodatkowy komentarz</label>
@@ -399,13 +423,14 @@ async function loadCase() {
     document.getElementById('case-loading').classList.add('hidden');
     document.getElementById('case-content').classList.remove('hidden');
 
-    // Rownoleg: historia, zadania, platnosci, dokumenty, spotkania
+    // Rownoleg: historia, zadania, platnosci, dokumenty, spotkania, ostatnia notatka
     Promise.all([
         loadActivities(),
         loadTasks(),
         loadPayments(),
         loadDocuments(),
         loadAppointments(),
+        loadLastNote(),
     ]);
 }
 
@@ -484,14 +509,28 @@ function fillForm() {
     // Klient panel
     const cp = document.getElementById('client-panel');
     if (d.gmp_clients) {
+        const c = d.gmp_clients;
+        const phoneDigits = (c.phone || '').replace(/\D/g, '');
+        const phoneIntl = phoneDigits && !phoneDigits.startsWith('48') ? '48' + phoneDigits : phoneDigits;
+        const waUrl = phoneIntl ? `https://wa.me/${phoneIntl}` : null;
+        const mailUrl = c.email ? `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent('Sprawa ' + (d.case_number || d.id.slice(0,8)))}` : null;
+        const callUrl = c.phone ? `tel:${phoneIntl || phoneDigits}` : null;
+
         cp.innerHTML = `
-            <div class="font-medium text-white">${esc(d.gmp_clients.last_name)} ${esc(d.gmp_clients.first_name)}</div>
-            ${d.gmp_clients.birth_date ? `<div class="text-zinc-400"><i class="ph ph-cake text-xs"></i> ${fmt.date(d.gmp_clients.birth_date)}</div>` : ''}
-            ${d.gmp_clients.nationality ? `<div class="text-zinc-400"><i class="ph ph-flag text-xs"></i> ${esc(d.gmp_clients.nationality)}</div>` : ''}
-            ${d.gmp_clients.phone ? `<div class="text-zinc-300 font-mono text-xs"><i class="ph ph-phone"></i> ${esc(d.gmp_clients.phone)}</div>` : ''}
-            ${d.gmp_clients.email ? `<div class="text-zinc-300 text-xs break-all"><i class="ph ph-envelope"></i> ${esc(d.gmp_clients.email)}</div>` : ''}
+            <div class="font-medium text-white">${esc(c.last_name)} ${esc(c.first_name)}</div>
+            ${c.birth_date ? `<div class="text-zinc-400"><i class="ph ph-cake text-xs"></i> ${fmt.date(c.birth_date)}</div>` : ''}
+            ${c.nationality ? `<div class="text-zinc-400"><i class="ph ph-flag text-xs"></i> ${esc(c.nationality)}</div>` : ''}
+            ${c.phone ? `<div class="text-zinc-300 font-mono text-xs"><i class="ph ph-phone"></i> ${esc(c.phone)}</div>` : ''}
+            ${c.email ? `<div class="text-zinc-300 text-xs break-all"><i class="ph ph-envelope"></i> ${esc(c.email)}</div>` : ''}
+
+            <div class="flex gap-1 mt-3 pb-1">
+                ${callUrl ? `<a href="${callUrl}" class="btn btn-secondary btn-sm flex-1" title="Zadzwoń" onclick="logContactActivity('call')"><i class="ph ph-phone-call"></i></a>` : ''}
+                ${waUrl ? `<a href="${waUrl}" target="_blank" class="btn btn-secondary btn-sm flex-1" title="WhatsApp" onclick="logContactActivity('whatsapp_sent')"><i class="ph ph-whatsapp-logo text-green-400"></i></a>` : ''}
+                ${mailUrl ? `<a href="${mailUrl}" class="btn btn-secondary btn-sm flex-1" title="Email" onclick="logContactActivity('email_sent')"><i class="ph ph-envelope"></i></a>` : ''}
+            </div>
+
             <div class="pt-2 flex items-center gap-2">
-                <a href="clients.html?id=${d.gmp_clients.id}" class="text-blue-400 text-xs hover:underline">Kartoteka →</a>
+                <a href="clients.html?id=${c.id}" class="text-blue-400 text-xs hover:underline">Kartoteka →</a>
                 <button class="btn btn-ghost btn-sm" onclick="openClientPicker()" title="Zmień klienta"><i class="ph ph-swap text-xs"></i></button>
             </div>`;
     } else {
@@ -587,6 +626,38 @@ async function saveCase() {
     txt.textContent = 'Zapisz zmiany';
     toast.success('Zapisano');
     loadActivities();
+}
+
+async function loadLastNote() {
+    const { data } = await db.from('gmp_case_activities')
+        .select('content, created_at, activity_type, gmp_staff!created_by(full_name)')
+        .eq('case_id', caseId)
+        .eq('activity_type', 'note')
+        .order('created_at', { ascending: false })
+        .limit(1);
+    if (!data?.length) return;
+    const n = data[0];
+    document.getElementById('last-note-content').textContent = n.content || '';
+    document.getElementById('last-note-meta').textContent = `${n.gmp_staff?.full_name || '—'} • ${fmt.daysAgo(n.created_at)}`;
+    document.getElementById('case-last-note').classList.remove('hidden');
+}
+
+async function logContactActivity(type) {
+    // Loguje kontakt z klientem do historii
+    const labels = {
+        call: 'Zadzwoniono do klienta',
+        whatsapp_sent: 'Otwarto WhatsApp do klienta',
+        email_sent: 'Wysłano/otwarto email do klienta',
+    };
+    const activityType = type === 'call' ? 'note' : type;
+    await db.from('gmp_case_activities').insert({
+        case_id: caseId,
+        activity_type: activityType,
+        content: labels[type] || type,
+        created_by: window.currentStaff?.id,
+    });
+    // Refresh after 500ms
+    setTimeout(() => loadActivities(), 500);
 }
 
 async function loadActivities() {
@@ -861,6 +932,13 @@ function openPaymentModal() {
     openModal(`
         <div class="modal-header">Nowa płatność<button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body grid grid-cols-2 gap-3">
+            <div class="col-span-2">
+                <label>Rodzaj opłaty</label>
+                <select id="pay-kind" class="input w-full">
+                    <option value="fee">💼 Wynagrodzenie kancelarii</option>
+                    <option value="admin_fee">🏛️ Opłata administracyjna (urzędowa)</option>
+                </select>
+            </div>
             <div><label>Kwota</label><input type="number" step="0.01" id="pay-amount" class="input w-full" autofocus></div>
             <div><label>Data</label><input type="date" id="pay-date" class="input w-full" value="${new Date().toISOString().slice(0,10)}"></div>
             <div>
@@ -888,7 +966,6 @@ function openPaymentModal() {
             <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
             <button class="btn btn-primary" onclick="savePayment()">Zapisz</button>
         </div>`);
-    // Domyslnie: jesli jest pracodawca, ustaw employer
     if (caseData.employer_id) document.getElementById('pay-payer').value = 'employer';
 }
 
@@ -901,7 +978,7 @@ async function savePayment() {
         payer_type: payer,
         client_id: payer === 'client' ? caseData.client_id : null,
         employer_id: payer === 'employer' ? caseData.employer_id : null,
-        kind: 'fee',
+        kind: document.getElementById('pay-kind').value,
         amount,
         method: document.getElementById('pay-method').value,
         payment_date: document.getElementById('pay-date').value || null,

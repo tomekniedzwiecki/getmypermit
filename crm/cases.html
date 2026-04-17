@@ -34,6 +34,19 @@
             </div>
         </div>
 
+        <!-- Szybkie zakładki -->
+        <div class="flex gap-1 mb-3 flex-wrap">
+            <button class="btn btn-secondary tab-btn active" data-preset="">Wszystkie</button>
+            <button class="btn btn-secondary tab-btn" data-preset="przyjete">Sprawy przyjęte</button>
+            <button class="btn btn-secondary tab-btn" data-preset="aktywne">Aktywne</button>
+            <button class="btn btn-secondary tab-btn" data-preset="do-zlozenia">Do złożenia</button>
+            <button class="btn btn-secondary tab-btn" data-preset="osobiste">Oczekujące osobistego</button>
+            <button class="btn btn-secondary tab-btn" data-preset="po-osobistym">Po osobistym</button>
+            <button class="btn btn-secondary tab-btn" data-preset="oczek-decyzji">Oczekują decyzji</button>
+            <button class="btn btn-secondary tab-btn" data-preset="odwolania">Odwołania</button>
+            <button class="btn btn-secondary tab-btn" data-preset="zakonczone">Zakończone</button>
+        </div>
+
         <!-- Filtry -->
         <div class="card p-4 mb-4">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
@@ -94,6 +107,12 @@
                     </select>
                 </div>
                 <div>
+                    <label>Pracodawca</label>
+                    <select id="f-employer" class="filter-input w-full">
+                        <option value="">Wszyscy</option>
+                    </select>
+                </div>
+                <div>
                     <label>Metoda złożenia</label>
                     <select id="f-method" class="filter-input w-full">
                         <option value="">Wszystkie</option>
@@ -148,9 +167,22 @@
     </main>
 </div>
 
+<style>.tab-btn{padding:0.4rem 0.75rem;font-size:0.8rem}.tab-btn.active{background:white;color:black}</style>
 <script src="components/sidebar.js" data-active="cases"></script>
 <script>
 const PAGE_SIZE = 50;
+
+const PRESETS = {
+    '': {},
+    'przyjete': { status: 'zlecona' },
+    'aktywne': { status: 'aktywna' },
+    'do-zlozenia': { stage: 'zlozenie_wniosku' },
+    'osobiste': { stage: 'oczekiwanie_na_osobiste' },
+    'po-osobistym': { stage: 'po_osobistym' },
+    'oczek-decyzji': { stage: 'oczekiwanie_na_decyzje' },
+    'odwolania': { stage: 'odwolanie' },
+    'zakonczone': { status: 'zakonczona' },
+};
 let currentPage = 1;
 let totalRows = 0;
 let currentFilters = {};
@@ -171,9 +203,33 @@ async function init() {
     await loadCases();
 
     // Obsluga filtrow
-    ['f-status', 'f-stage', 'f-category', 'f-staff', 'f-department', 'f-method', 'f-date-from', 'f-date-to'].forEach(id => {
+    ['f-status', 'f-stage', 'f-category', 'f-staff', 'f-department', 'f-employer', 'f-method', 'f-date-from', 'f-date-to'].forEach(id => {
         document.getElementById(id).addEventListener('change', () => { currentPage = 1; loadCases(); });
     });
+
+    // Presety zakładek
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            const preset = b.dataset.preset;
+            // Wyzeruj filtry status+stage, zastosuj preset
+            document.getElementById('f-status').value = '';
+            document.getElementById('f-stage').value = '';
+            const p = PRESETS[preset] || {};
+            if (p.status) document.getElementById('f-status').value = p.status;
+            if (p.stage) document.getElementById('f-stage').value = p.stage;
+            currentPage = 1;
+            loadCases();
+        });
+    });
+
+    // Preset z URL (np. ?preset=osobiste)
+    const presetParam = params.get('preset');
+    if (presetParam) {
+        const btn = document.querySelector(`.tab-btn[data-preset="${presetParam}"]`);
+        if (btn) btn.click();
+    }
     let searchTimer;
     document.getElementById('f-search').addEventListener('input', (e) => {
         clearTimeout(searchTimer);
@@ -182,9 +238,10 @@ async function init() {
 }
 
 async function loadFilters() {
-    const [{ data: staff }, { data: depts }] = await Promise.all([
+    const [{ data: staff }, { data: depts }, { data: emps }] = await Promise.all([
         db.from('gmp_staff').select('id, full_name').order('full_name'),
         db.from('gmp_office_departments').select('id, code, name').order('code'),
+        db.from('gmp_employers').select('id, name').order('name').limit(1000),
     ]);
     staffList = staff || [];
     deptList = depts || [];
@@ -199,6 +256,12 @@ async function loadFilters() {
         const o = document.createElement('option');
         o.value = d.id; o.textContent = d.code + (d.name ? ` — ${d.name}` : '');
         deptSel.appendChild(o);
+    });
+    const empSel = document.getElementById('f-employer');
+    (emps || []).forEach(e => {
+        const o = document.createElement('option');
+        o.value = e.id; o.textContent = e.name;
+        empSel.appendChild(o);
     });
 }
 
@@ -232,6 +295,9 @@ function buildQuery() {
 
     const dept = document.getElementById('f-department').value;
     if (dept) q = q.eq('department_id', dept);
+
+    const emp = document.getElementById('f-employer').value;
+    if (emp) q = q.eq('employer_id', emp);
 
     const method = document.getElementById('f-method').value;
     if (method) q = q.eq('submission_method', method);
@@ -374,7 +440,7 @@ function goToPage(p) {
 }
 
 function resetFilters() {
-    ['f-search', 'f-status', 'f-stage', 'f-category', 'f-staff', 'f-department', 'f-method', 'f-date-from', 'f-date-to']
+    ['f-search', 'f-status', 'f-stage', 'f-category', 'f-staff', 'f-department', 'f-employer', 'f-method', 'f-date-from', 'f-date-to']
         .forEach(id => document.getElementById(id).value = '');
     currentPage = 1;
     loadCases();

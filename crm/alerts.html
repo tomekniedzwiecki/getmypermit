@@ -33,12 +33,20 @@
                     <span>Sprawy bez aktywności</span>
                     <span class="ml-auto text-xs text-zinc-500" id="alerts-count">0</span>
                 </div>
-                <div class="flex gap-1 p-2 border-b border-zinc-900">
+                <div class="flex gap-1 p-2 border-b border-zinc-900 flex-wrap">
                     <button class="btn btn-secondary btn-sm tab-btn active" data-level="inactive_30">30+ dni</button>
                     <button class="btn btn-secondary btn-sm tab-btn" data-level="inactive_14">14-30</button>
                     <button class="btn btn-secondary btn-sm tab-btn" data-level="never_active">Bez aktywności</button>
                 </div>
-                <div id="alerts-list" class="divide-y divide-zinc-900/50 max-h-[600px] overflow-y-auto">
+                <div class="flex gap-1 p-2 border-b border-zinc-900 flex-wrap">
+                    <span class="text-xs text-zinc-600 py-1">Przyczyna:</span>
+                    <button class="btn btn-secondary btn-sm reason-btn active" data-reason="">Wszystkie</button>
+                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_pracownika">❗ Pracownik</button>
+                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_urzedu">⏳ Urząd</button>
+                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_klienta">📞 Klient</button>
+                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_dokumentow">📄 Dok.</button>
+                </div>
+                <div id="alerts-list" class="divide-y divide-zinc-900/50 max-h-[560px] overflow-y-auto">
                     <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
                 </div>
             </section>
@@ -73,6 +81,7 @@
 <script src="components/sidebar.js" data-active="alerts"></script>
 <script>
 let alertLevel = 'inactive_30';
+let alertReason = '';
 
 document.addEventListener('gmp-auth-ready', init);
 async function init() {
@@ -81,12 +90,18 @@ async function init() {
         document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
         b.classList.add('active'); alertLevel = b.dataset.level; loadAlerts();
     }));
+    document.querySelectorAll('.reason-btn').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.reason-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active'); alertReason = b.dataset.reason; loadAlerts();
+    }));
 }
 
 async function loadAlerts() {
-    const { data, error } = await db.from('gmp_case_alerts')
+    let q = db.from('gmp_case_alerts')
         .select('*')
-        .eq('inactivity_level', alertLevel)
+        .eq('inactivity_level', alertLevel);
+    if (alertReason) q = q.eq('inactivity_reason', alertReason);
+    const { data, error } = await q
         .order('days_inactive', { ascending: false, nullsFirst: false })
         .limit(200);
 
@@ -99,9 +114,17 @@ async function loadAlerts() {
     const { data: cases } = await db.from('gmp_cases').select('id, case_number, gmp_clients(last_name, first_name), gmp_staff(full_name)').in('id', caseIds);
     const byId = Object.fromEntries((cases || []).map(c => [c.id, c]));
 
+    const reasonLabels = {
+        brak_pracownika: '❗ brak pracownika',
+        brak_urzedu: '⏳ brak urzędu',
+        brak_klienta: '📞 brak klienta',
+        brak_dokumentow: '📄 brak dokumentów',
+        inne: 'inne',
+    };
     el.innerHTML = data.map(a => {
         const c = byId[a.case_id] || {};
         const client = c.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+        const reason = a.inactivity_reason && a.inactivity_reason !== 'none' ? reasonLabels[a.inactivity_reason] : '';
         return `
             <a href="case.html?id=${a.case_id}" class="block p-3 hover:bg-zinc-900/50">
                 <div class="flex items-center justify-between gap-3">
@@ -111,6 +134,7 @@ async function loadAlerts() {
                             #${esc(c.case_number || a.case_id.slice(0,8))} •
                             ${esc(c.gmp_staff?.full_name || '—')}
                         </div>
+                        ${reason ? `<div class="text-xs text-amber-400 mt-0.5">${reason}${a.inactivity_note ? ': ' + esc(a.inactivity_note.slice(0,50)) : ''}</div>` : ''}
                     </div>
                     <div class="text-xs ${alertLevel === 'inactive_30' ? 'text-red-400' : 'text-amber-400'} whitespace-nowrap">
                         ${a.days_inactive ? a.days_inactive + ' dni' : 'nigdy'}

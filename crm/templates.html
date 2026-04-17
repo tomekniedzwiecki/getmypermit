@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wzory dokumentów - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Wzory dokumentów</h1>
+                <p class="page-subtitle" id="count">Ładuję...</p>
+            </div>
+            <label class="btn btn-primary cursor-pointer">
+                <i class="ph ph-upload-simple"></i> Dodaj wzór
+                <input type="file" id="upload-input" class="hidden" multiple>
+            </label>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <div class="flex gap-2 items-end">
+                <div class="flex-1">
+                    <label>Szukaj</label>
+                    <input id="f-search" class="filter-input w-full" placeholder="Nazwa, opis, kategoria...">
+                </div>
+                <div>
+                    <label>Kategoria</label>
+                    <select id="f-cat" class="filter-input" style="width: 200px">
+                        <option value="">Wszystkie</option>
+                        <option value="pelnomocnictwo">Pełnomocnictwo</option>
+                        <option value="wniosek">Wniosek</option>
+                        <option value="odwolanie">Odwołanie</option>
+                        <option value="umowa">Umowa</option>
+                        <option value="oswiadczenie">Oświadczenie</option>
+                        <option value="zezwolenie">Zezwolenie</option>
+                        <option value="inne">Inne</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-280px)]">
+                <table class="gmp-table">
+                    <thead>
+                        <tr>
+                            <th>Nazwa</th>
+                            <th>Kategoria</th>
+                            <th>Opis</th>
+                            <th>Dodano</th>
+                            <th>Aktywny</th>
+                            <th class="w-32">Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                        <tr><td colspan="6" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<div id="modals-container"></div>
+<script src="components/sidebar.js" data-active="templates"></script>
+<script>
+document.addEventListener('gmp-auth-ready', init);
+let templates = [];
+
+async function init() {
+    await loadList();
+    ['f-cat'].forEach(id => document.getElementById(id).addEventListener('change', loadList));
+    let t;
+    document.getElementById('f-search').addEventListener('input', () => { clearTimeout(t); t = setTimeout(loadList, 300); });
+    document.getElementById('upload-input').addEventListener('change', uploadFiles);
+}
+
+async function loadList() {
+    let q = db.from('gmp_document_templates').select('*');
+    const s = document.getElementById('f-search').value.trim();
+    const cat = document.getElementById('f-cat').value;
+    if (s) q = q.or(`name.ilike.%${s}%,description.ilike.%${s}%`);
+    if (cat) q = q.eq('category', cat);
+    q = q.order('category').order('name');
+    const { data, error } = await q;
+    const tbody = document.getElementById('tbody');
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    templates = data || [];
+    document.getElementById('count').textContent = `${templates.length} wzorów`;
+
+    if (!templates.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="ph ph-file-text"></i><div>Brak wzorów. Dodaj pierwszy wzór przyciskiem w prawym górnym rogu.</div></td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = templates.map(t => `
+        <tr>
+            <td><div class="text-white">${esc(t.name)}</div></td>
+            <td class="text-xs"><span class="badge badge-category">${esc(t.category || '—')}</span></td>
+            <td class="text-xs text-zinc-400 max-w-md truncate">${esc(t.description || '')}</td>
+            <td class="text-xs text-zinc-500">${fmt.date(t.created_at)}</td>
+            <td>${t.is_active ? '<span class="badge badge-aktywna">aktywny</span>' : '<span class="badge badge-archiwum">nieaktywny</span>'}</td>
+            <td>
+                <button class="btn btn-ghost btn-sm" onclick="downloadTemplate('${t.id}')" title="Pobierz"><i class="ph ph-download-simple"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="editTemplate('${t.id}')" title="Edytuj"><i class="ph ph-pencil-simple"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="deleteTemplate('${t.id}')" title="Usuń"><i class="ph ph-trash text-red-400"></i></button>
+            </td>
+        </tr>`).join('');
+}
+
+async function uploadFiles(e) {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    for (const file of files) {
+        const path = `templates/${Date.now()}_${file.name}`;
+        const { error: upErr } = await window.supabaseClient.storage
+            .from('documents').upload(path, file);
+        if (upErr) { toast.error('Upload: ' + upErr.message); continue; }
+
+        await db.from('gmp_document_templates').insert({
+            name: file.name.replace(/\.[^.]+$/, ''),
+            storage_path: path,
+            category: 'inne',
+            is_active: true,
+        });
+    }
+    toast.success(`Dodano ${files.length}`);
+    loadList();
+    e.target.value = '';
+}
+
+async function editTemplate(id) {
+    const t = templates.find(x => x.id === id);
+    if (!t) return;
+    const name = prompt('Nazwa:', t.name);
+    if (name === null) return;
+    const category = prompt('Kategoria (pelnomocnictwo/wniosek/odwolanie/umowa/oswiadczenie/zezwolenie/inne):', t.category || 'inne');
+    if (category === null) return;
+    const description = prompt('Opis:', t.description || '');
+    if (description === null) return;
+    const { error } = await db.from('gmp_document_templates').update({
+        name: name.trim(),
+        category: category.trim(),
+        description: description.trim() || null,
+    }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Zapisano');
+    loadList();
+}
+
+async function deleteTemplate(id) {
+    if (!confirm('Usunąć wzór?')) return;
+    const t = templates.find(x => x.id === id);
+    if (t?.storage_path) {
+        await window.supabaseClient.storage.from('documents').remove([t.storage_path]);
+    }
+    const { error } = await db.from('gmp_document_templates').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto');
+    loadList();
+}
+
+async function downloadTemplate(id) {
+    const t = templates.find(x => x.id === id);
+    if (!t?.storage_path) { toast.error('Brak pliku'); return; }
+    const { data, error } = await window.supabaseClient.storage.from('documents').createSignedUrl(t.storage_path, 60);
+    if (error) { toast.error(error.message); return; }
+    window.open(data.signedUrl, '_blank');
+}
+</script>
+</body>
+</html>

@@ -51,8 +51,9 @@
             </div>
         </div>
 
-        <div class="flex gap-1 mb-4">
+        <div class="flex gap-1 mb-4 flex-wrap">
             <button class="btn btn-secondary tab-btn active" data-view="recent">Ostatnie wpłaty</button>
+            <button class="btn btn-secondary tab-btn" data-view="admin">🏛️ Opłaty administracyjne</button>
             <button class="btn btn-secondary tab-btn" data-view="overdue">Zaległości</button>
             <button class="btn btn-secondary tab-btn" data-view="monthly">Podsumowanie miesięczne</button>
         </div>
@@ -159,11 +160,11 @@ async function loadContent() {
     const el = document.getElementById('payments-content');
     el.innerHTML = '<div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>';
 
-    if (currentView === 'recent') {
-        const { data } = await db.from('gmp_payments')
-            .select('id, amount, method, payment_date, installment_number, total_installments, case_id, notes, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
-            .order('payment_date', { ascending: false, nullsLast: true })
-            .limit(200);
+    if (currentView === 'recent' || currentView === 'admin') {
+        let q = db.from('gmp_payments')
+            .select('id, amount, method, kind, payment_date, installment_number, total_installments, case_id, notes, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))');
+        if (currentView === 'admin') q = q.eq('kind', 'admin_fee');
+        const { data } = await q.order('payment_date', { ascending: false, nullsLast: true }).limit(500);
 
         if (!data?.length) { el.innerHTML = '<div class="empty-state"><i class="ph ph-coins"></i><div>Brak wpłat</div></div>'; return; }
         el.innerHTML = `
