@@ -121,46 +121,7 @@
             <div class="text-xs text-zinc-600 px-4 pb-3">Im jaśniejszy odcień tym większy przychód. Kliknij komórkę żeby zobaczyć szczegóły.</div>
         </section>
 
-        <!-- SEKCJA 7: METRYKI EFEKTYWNOSCI -->
-        <section class="card mb-4">
-            <div class="card-header"><i class="ph ph-target text-emerald-400 mr-2"></i>Metryki efektywności</div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-0">
-                <div class="p-4 border-r border-b border-zinc-900">
-                    <div class="text-xs text-zinc-500 mb-1">CONVERSION LEAD → ZLECONA</div>
-                    <div class="text-2xl font-bold text-white" id="m-conversion">—</div>
-                </div>
-                <div class="p-4 border-r border-b border-zinc-900">
-                    <div class="text-xs text-zinc-500 mb-1">AKTYWNE VS ZAKOŃCZONE</div>
-                    <div class="text-2xl font-bold text-white" id="m-active-ratio">—</div>
-                </div>
-                <div class="p-4 border-r border-b border-zinc-900">
-                    <div class="text-xs text-zinc-500 mb-1">WSPÓŁCZYNNIK BEZCZYNNOŚCI</div>
-                    <div class="text-2xl font-bold text-white" id="m-inactivity">—</div>
-                </div>
-                <div class="p-4 border-b border-zinc-900">
-                    <div class="text-xs text-zinc-500 mb-1">ŚREDNI CZAS REAKCJI</div>
-                    <div class="text-2xl font-bold text-white" id="m-reaction">—</div>
-                </div>
-                <div class="p-4 border-r border-zinc-900">
-                    <div class="text-xs text-zinc-500 mb-1">NOWI KLIENCI (ROK)</div>
-                    <div class="text-2xl font-bold text-emerald-400" id="m-new-clients">—</div>
-                </div>
-                <div class="p-4 border-r border-zinc-900">
-                    <div class="text-xs text-zinc-500 mb-1">POWRACAJĄCY KLIENCI</div>
-                    <div class="text-2xl font-bold text-white" id="m-returning">—</div>
-                </div>
-                <div class="p-4 border-r border-zinc-900">
-                    <div class="text-xs text-zinc-500 mb-1">Ø KLIENCI / PRAWNIKA</div>
-                    <div class="text-2xl font-bold text-white" id="m-clients-per-staff">—</div>
-                </div>
-                <div class="p-4">
-                    <div class="text-xs text-zinc-500 mb-1">% SPRAW Z PRACODAWCĄ</div>
-                    <div class="text-2xl font-bold text-white" id="m-with-employer">—</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SEKCJA 8: PROGNOZA KOŃCA ROKU -->
+        <!-- SEKCJA 7: PROGNOZA KOŃCA ROKU -->
         <section class="card mb-4">
             <div class="card-header"><i class="ph ph-sparkle text-amber-400 mr-2"></i>Prognoza przychodu do końca roku</div>
             <div class="p-4">
@@ -188,8 +149,145 @@
 <style>
 .chart-container { position: relative; width: 100%; }
 .chart-period.active { background: rgba(255,255,255,0.1); color: white; }
-.heatmap-cell { width: 52px; height: 28px; border-radius: 3px; text-align: center; font-size: 10px; line-height: 28px; color: rgba(255,255,255,0.7); cursor: pointer; transition: transform 0.15s; }
-.heatmap-cell:hover { transform: scale(1.1); color: white; }
+
+/* Heatmap - full width */
+.heatmap-wrapper { width: 100%; overflow-x: auto; }
+.heatmap-table {
+    width: 100%;
+    min-width: 800px;
+    border-collapse: separate;
+    border-spacing: 3px;
+    table-layout: fixed;
+}
+.heatmap-hdr {
+    font-size: 11px;
+    font-weight: 500;
+    color: #71717a;
+    text-align: center;
+    padding: 6px 4px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.heatmap-hdr-total {
+    font-size: 11px;
+    font-weight: 600;
+    color: #10b981;
+    text-align: right;
+    padding: 6px 10px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.heatmap-year {
+    font-size: 13px;
+    font-weight: 600;
+    color: #a1a1aa;
+    font-family: 'JetBrains Mono', monospace;
+    padding-right: 12px;
+    text-align: right;
+    vertical-align: middle;
+}
+.heatmap-year-footer {
+    font-size: 11px;
+    color: #71717a;
+    text-align: right;
+    padding-right: 12px;
+    padding-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+}
+.heatmap-cell-wrap {
+    padding: 0;
+    vertical-align: middle;
+}
+.heatmap-cell {
+    width: 100%;
+    aspect-ratio: 2.2 / 1;
+    min-height: 44px;
+    max-height: 60px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: -0.02em;
+}
+.heatmap-cell:hover {
+    transform: scale(1.08);
+    filter: brightness(1.25);
+    z-index: 10;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.heatmap-total-cell {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #6ee7b7;
+    padding: 8px 10px;
+    text-align: right;
+    border-radius: 6px;
+    vertical-align: middle;
+}
+.heatmap-footer {
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.heatmap-footer td {
+    padding-top: 8px;
+}
+.heatmap-month-total {
+    width: 100%;
+    min-height: 30px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: #a1a1aa;
+    padding: 4px 2px;
+}
+.heatmap-avg {
+    width: 100%;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #52525b;
+}
+.heatmap-grand-total {
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #10b981;
+    padding: 8px 10px;
+    text-align: right;
+    background: rgba(16,185,129,0.08);
+    border-radius: 6px;
+    vertical-align: middle;
+}
+
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px 4px;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.heatmap-legend-cell {
+    display: inline-block;
+    width: 24px;
+    height: 14px;
+    border-radius: 3px;
+}
 </style>
 <script src="components/sidebar.js" data-active="analytics"></script>
 <script>
@@ -267,7 +365,6 @@ function renderAll() {
     renderTopEmployers();
     renderStructures();
     renderHeatmap();
-    renderEfficiency();
     renderForecast();
 }
 
@@ -615,76 +712,118 @@ function renderHeatmap() {
     const sortedYears = [...years].sort();
     const max = Math.max(...Object.values(byYM), 1);
 
-    let html = '<table style="border-collapse: separate; border-spacing: 2px"><thead><tr><th></th>';
-    monthLabels.forEach(m => html += `<th class="text-xs text-zinc-500 font-normal px-2">${m}</th>`);
-    html += '<th class="text-xs text-zinc-500 font-normal px-2">Razem</th></tr></thead><tbody>';
+    // Aggregaty per miesiąc (dla footer - avg/sum per miesiąc akropujące lata)
+    const byMonthAll = {};
+    const byMonthCount = {};
+    Object.entries(byYM).forEach(([ym, v]) => {
+        const m = ym.slice(5, 7);
+        byMonthAll[m] = (byMonthAll[m] || 0) + v;
+        byMonthCount[m] = (byMonthCount[m] || 0) + 1;
+    });
+
+    // Find best/worst month per year
+    const bestByYear = {};
+    const worstByYear = {};
+    sortedYears.forEach(y => {
+        const values = months.map(m => ({ m, v: byYM[`${y}-${m}`] || 0 })).filter(x => x.v > 0);
+        if (values.length) {
+            bestByYear[y] = values.reduce((a, b) => a.v > b.v ? a : b).m;
+            worstByYear[y] = values.reduce((a, b) => a.v < b.v ? a : b).m;
+        }
+    });
+
+    // Format short (2.5M, 123k, 500)
+    const fmtShort = (v) => {
+        if (v >= 1000000) return (v/1000000).toFixed(1).replace('.0','') + 'M';
+        if (v >= 1000) return Math.round(v/1000) + 'k';
+        return v ? Math.round(v).toString() : '';
+    };
+
+    // Compute grand total
+    const grandTotal = Object.values(byYM).reduce((s, v) => s + v, 0);
+
+    let html = `
+    <div class="heatmap-wrapper">
+      <table class="heatmap-table">
+        <colgroup>
+          <col style="width: 56px">
+          ${months.map(() => '<col>').join('')}
+          <col style="width: 110px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th></th>
+            ${monthLabels.map(m => `<th class="heatmap-hdr">${m}</th>`).join('')}
+            <th class="heatmap-hdr-total">Razem</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
     for (const y of sortedYears) {
-        html += `<tr><td class="text-xs text-zinc-400 pr-3 font-mono">${y}</td>`;
+        html += `<tr><td class="heatmap-year">${y}</td>`;
         let rowSum = 0;
         for (const m of months) {
             const v = byYM[`${y}-${m}`] || 0;
             rowSum += v;
             const intensity = Math.min(1, v / max);
-            const bg = v ? `rgba(16, 185, 129, ${0.1 + intensity * 0.7})` : 'rgba(255,255,255,0.02)';
-            const label = v ? (v >= 1000 ? (v/1000).toFixed(0) + 'k' : String(Math.round(v))) : '';
-            html += `<td><div class="heatmap-cell" style="background: ${bg}" title="${y}-${m}: ${fmt.money(v)}" onclick="drillMonth('${y}-${m}')">${label}</div></td>`;
+            // Green gradient with more contrast
+            const alpha = v ? (0.12 + intensity * 0.78) : 0;
+            const bg = v ? `rgba(16, 185, 129, ${alpha})` : 'rgba(255,255,255,0.015)';
+            const textColor = v && intensity > 0.6 ? 'rgba(255,255,255,0.98)' : (v > 0 ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.2)');
+            const label = fmtShort(v);
+            const isBest = bestByYear[y] === m;
+            const isWorst = worstByYear[y] === m && rowSum > 0;
+            const border = isBest ? 'box-shadow: inset 0 0 0 1px rgba(250,204,21,0.6);' : (isWorst ? 'box-shadow: inset 0 0 0 1px rgba(239,68,68,0.35);' : '');
+            html += `<td class="heatmap-cell-wrap">
+                <div class="heatmap-cell" style="background: ${bg}; color: ${textColor}; ${border}" title="${y}-${m}: ${fmt.money(v)}${isBest ? ' 🏆 Najlepszy miesiąc' : ''}${isWorst ? ' 📉 Najsłabszy' : ''}" onclick="drillMonth('${y}-${m}')">${label}</div>
+            </td>`;
         }
-        html += `<td class="text-xs text-emerald-300 pl-2 font-mono font-bold">${fmt.money(rowSum)}</td>`;
-        html += '</tr>';
+        const yearMax = Math.max(...Object.values(byYM).filter((_, i) => Object.keys(byYM)[i]?.startsWith(y + '-')), 1);
+        const yearIntensity = Math.min(1, rowSum / (grandTotal / sortedYears.length * 1.5));
+        html += `<td class="heatmap-total-cell" style="background: rgba(16,185,129,${0.15 + yearIntensity * 0.25})">${fmt.money(rowSum)}</td></tr>`;
     }
-    html += '</tbody></table>';
+
+    // Footer - totals per month (all years)
+    html += `<tr class="heatmap-footer">
+        <td class="heatmap-year-footer">Razem</td>
+        ${months.map(m => {
+            const v = byMonthAll[m] || 0;
+            return `<td class="heatmap-cell-wrap"><div class="heatmap-month-total" title="${monthLabels[parseInt(m)-1]} (wszystkie lata): ${fmt.money(v)}">${fmtShort(v)}</div></td>`;
+        }).join('')}
+        <td class="heatmap-grand-total">${fmt.money(grandTotal)}</td>
+    </tr>`;
+
+    // Footer - avg per month
+    html += `<tr class="heatmap-footer">
+        <td class="heatmap-year-footer text-zinc-600">Ø / rok</td>
+        ${months.map(m => {
+            const total = byMonthAll[m] || 0;
+            const count = byMonthCount[m] || 1;
+            const avg = total / count;
+            return `<td class="heatmap-cell-wrap"><div class="heatmap-avg">${fmtShort(avg)}</div></td>`;
+        }).join('')}
+        <td></td>
+    </tr>`;
+
+    html += `</tbody></table></div>`;
+
+    // Legenda
+    html += `
+    <div class="heatmap-legend">
+      <span class="text-xs text-zinc-500 mr-3">Mniej</span>
+      ${[0, 0.2, 0.4, 0.6, 0.8, 1].map(i =>
+        `<span class="heatmap-legend-cell" style="background: rgba(16,185,129,${0.12 + i * 0.78})"></span>`
+      ).join('')}
+      <span class="text-xs text-zinc-500 ml-3">Więcej</span>
+      <span class="mx-4 text-xs text-zinc-600">|</span>
+      <span class="text-xs text-zinc-500">Najlepszy miesiąc roku: <span class="heatmap-legend-cell" style="background: rgba(16,185,129,0.6); box-shadow: inset 0 0 0 1px rgba(250,204,21,0.8);"></span></span>
+    </div>`;
+
     document.getElementById('heatmap').innerHTML = html;
 }
 
 function drillMonth(ym) {
     window.location.href = `payments.html?from=${ym}-01&to=${ym}-31`;
-}
-
-function renderEfficiency() {
-    // Conversion lead -> zlecona
-    const leads = allCases.filter(c => c.status === 'lead').length;
-    const zlecona = allCases.filter(c => c.status === 'zlecona').length;
-    const aktywna = allCases.filter(c => c.status === 'aktywna').length;
-    const zakonczona = allCases.filter(c => c.status === 'zakonczona').length;
-    const conv = (leads + zlecona + aktywna + zakonczona) ? Math.round((zlecona + aktywna + zakonczona) / (leads + zlecona + aktywna + zakonczona) * 100) : 0;
-    document.getElementById('m-conversion').textContent = conv + '%';
-
-    // Aktywne vs zakończone
-    const ratio = zakonczona ? (aktywna / zakonczona).toFixed(2) : '—';
-    document.getElementById('m-active-ratio').textContent = ratio;
-
-    // Współczynnik bezczynności (sprawy aktywne z inactivity_reason != 'none')
-    const activeCases = allCases.filter(c => c.status === 'aktywna' || c.status === 'zlecona');
-    const withInactivity = activeCases.filter(c => c.inactivity_reason && c.inactivity_reason !== 'none').length;
-    const inactPct = activeCases.length ? Math.round(withInactivity / activeCases.length * 100) : 0;
-    document.getElementById('m-inactivity').textContent = inactPct + '%';
-
-    // Sredni czas reakcji (dni od date_accepted do date_last_activity)
-    const times = allCases.filter(c => c.date_accepted && c.date_last_activity).map(c => {
-        const diff = (new Date(c.date_last_activity) - new Date(c.date_accepted)) / 86400000;
-        return diff >= 0 ? diff : null;
-    }).filter(t => t !== null);
-    const avgReact = times.length ? Math.round(times.reduce((s, t) => s + t, 0) / times.length) : 0;
-    document.getElementById('m-reaction').textContent = avgReact + ' dni';
-
-    // Nowi klienci (rok)
-    const newClients = allClients.filter(c => c.created_at?.startsWith(String(currentYear))).length;
-    document.getElementById('m-new-clients').textContent = newClients;
-
-    // Powracający (więcej niż 1 sprawa)
-    const casesByClient = {};
-    allCases.forEach(c => { if (c.client_id) casesByClient[c.client_id] = (casesByClient[c.client_id] || 0) + 1; });
-    const returning = Object.values(casesByClient).filter(v => v > 1).length;
-    document.getElementById('m-returning').textContent = returning;
-
-    // Ø klienci / prawnika
-    const clientsPerStaff = allStaff.length ? Math.round(allClients.length / allStaff.filter(s => s.is_active !== false).length) : 0;
-    document.getElementById('m-clients-per-staff').textContent = clientsPerStaff;
-
-    // % spraw z pracodawcą
-    const withEmp = allCases.filter(c => c.employer_id).length;
-    const pctEmp = allCases.length ? Math.round(withEmp / allCases.length * 100) : 0;
-    document.getElementById('m-with-employer').textContent = pctEmp + '%';
 }
 
 function renderForecast() {
