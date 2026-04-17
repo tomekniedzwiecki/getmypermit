@@ -12,6 +12,7 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/modals.js" defer></script>
 </head>
 <body>
 <div class="app-layout">
@@ -270,6 +271,16 @@
                         </div>
                     </section>
 
+                    <section class="card">
+                        <div class="card-header flex items-center justify-between">
+                            <span>Spotkania / Terminy</span>
+                            <button class="btn btn-ghost btn-sm" onclick="openAppointmentModal()"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div id="appointments-list" class="divide-y divide-zinc-900/50 max-h-[300px] overflow-y-auto">
+                            <div class="p-3 text-zinc-600 text-sm">—</div>
+                        </div>
+                    </section>
+
                     <section class="card" id="trusted-profile-card">
                         <div class="card-header flex items-center gap-2">
                             <i class="ph ph-shield-warning text-amber-400"></i>
@@ -388,12 +399,13 @@ async function loadCase() {
     document.getElementById('case-loading').classList.add('hidden');
     document.getElementById('case-content').classList.remove('hidden');
 
-    // Rownoleg: historia, zadania, platnosci, dokumenty
+    // Rownoleg: historia, zadania, platnosci, dokumenty, spotkania
     Promise.all([
         loadActivities(),
         loadTasks(),
         loadPayments(),
         loadDocuments(),
+        loadAppointments(),
     ]);
 }
 
@@ -478,11 +490,17 @@ function fillForm() {
             ${d.gmp_clients.nationality ? `<div class="text-zinc-400"><i class="ph ph-flag text-xs"></i> ${esc(d.gmp_clients.nationality)}</div>` : ''}
             ${d.gmp_clients.phone ? `<div class="text-zinc-300 font-mono text-xs"><i class="ph ph-phone"></i> ${esc(d.gmp_clients.phone)}</div>` : ''}
             ${d.gmp_clients.email ? `<div class="text-zinc-300 text-xs break-all"><i class="ph ph-envelope"></i> ${esc(d.gmp_clients.email)}</div>` : ''}
-            <div class="pt-2"><a href="clients.html?id=${d.gmp_clients.id}" class="text-blue-400 text-xs hover:underline">Zobacz kartotekę →</a></div>`;
+            <div class="pt-2 flex items-center gap-2">
+                <a href="clients.html?id=${d.gmp_clients.id}" class="text-blue-400 text-xs hover:underline">Kartoteka →</a>
+                <button class="btn btn-ghost btn-sm" onclick="openClientPicker()" title="Zmień klienta"><i class="ph ph-swap text-xs"></i></button>
+            </div>`;
     } else {
         cp.innerHTML = `
             <div class="text-zinc-500 text-sm mb-2">Brak przypisanego klienta</div>
-            <button class="btn btn-secondary btn-sm w-full" onclick="openClientPicker()"><i class="ph ph-user-plus"></i> Dodaj klienta</button>`;
+            <div class="flex gap-2">
+                <button class="btn btn-secondary btn-sm flex-1" onclick="openClientPicker()"><i class="ph ph-magnifying-glass"></i> Wybierz</button>
+                <button class="btn btn-secondary btn-sm flex-1" onclick="openNewClientInline()"><i class="ph ph-user-plus"></i> Nowy</button>
+            </div>`;
     }
 
     // Pracodawca panel
@@ -491,9 +509,18 @@ function fillForm() {
         ep.innerHTML = `
             <div class="font-medium text-white">${esc(d.gmp_employers.name)}</div>
             ${d.gmp_employers.nip ? `<div class="text-zinc-400 text-xs mt-1">NIP: ${esc(d.gmp_employers.nip)}</div>` : ''}
-            <div class="pt-2"><a href="employers.html?id=${d.gmp_employers.id}" class="text-blue-400 text-xs hover:underline">Zobacz kartotekę →</a></div>`;
+            <div class="pt-2 flex items-center gap-2">
+                <a href="employers.html?id=${d.gmp_employers.id}" class="text-blue-400 text-xs hover:underline">Kartoteka →</a>
+                <button class="btn btn-ghost btn-sm" onclick="openEmployerPicker()" title="Zmień pracodawcę"><i class="ph ph-swap text-xs"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="db.from('gmp_cases').update({employer_id: null}).eq('id', caseId).then(() => { toast.success('Odłączono'); loadCase(); })" title="Odłącz"><i class="ph ph-x text-xs"></i></button>
+            </div>`;
     } else {
-        ep.innerHTML = `<div class="text-zinc-500 text-sm">Brak pracodawcy</div>`;
+        ep.innerHTML = `
+            <div class="text-zinc-500 text-sm mb-2">Brak pracodawcy</div>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary btn-sm flex-1" onclick="openEmployerPicker()"><i class="ph ph-magnifying-glass"></i> Wybierz</button>
+                <button class="btn btn-secondary btn-sm flex-1" onclick="openNewEmployerInline()"><i class="ph ph-plus"></i> Nowy</button>
+            </div>`;
     }
 }
 
@@ -896,12 +923,148 @@ async function savePayment() {
     loadActivities();
 }
 
+async function loadAppointments() {
+    const { data } = await db.from('gmp_crm_appointments')
+        .select('*, gmp_staff(full_name), gmp_offices(name, city)')
+        .eq('case_id', caseId)
+        .order('scheduled_date', { ascending: true, nullsLast: true });
+    const el = document.getElementById('appointments-list');
+    if (!data?.length) { el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak spotkań</div>'; return; }
+
+    const typeLabels = {
+        konsultacja: 'Konsultacja',
+        follow_up: 'Follow-up',
+        osobiste_odciski: 'Odciski',
+        osobiste_inne: 'Osobiste',
+        hearing: 'Rozprawa',
+    };
+    el.innerHTML = data.map(a => {
+        const past = a.scheduled_date && new Date(a.scheduled_date) < new Date();
+        const label = typeLabels[a.appointment_type] || a.appointment_type;
+        return `
+            <div class="p-2.5 flex items-start gap-2">
+                <i class="ph ph-calendar text-cyan-400 mt-0.5 flex-shrink-0"></i>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm text-zinc-200">${esc(label)}${a.title ? ' — ' + esc(a.title) : ''}</div>
+                    <div class="text-xs ${past ? 'text-zinc-500' : 'text-emerald-400'} mt-0.5">
+                        ${fmt.date(a.scheduled_date)}${a.scheduled_time ? ' ' + a.scheduled_time.slice(0,5) : ''}
+                        ${a.gmp_staff?.full_name ? ' • ' + esc(a.gmp_staff.full_name) : ''}
+                    </div>
+                    ${a.location ? `<div class="text-xs text-zinc-500">${esc(a.location)}</div>` : ''}
+                    ${a.notes ? `<div class="text-xs text-zinc-500 mt-1">${esc(a.notes.slice(0, 100))}</div>` : ''}
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="deleteAppointment('${a.id}')"><i class="ph ph-x"></i></button>
+            </div>`;
+    }).join('');
+}
+
 function openAppointmentModal() {
-    toast.info('Moduł kalendarza — dostępny wkrótce');
+    const staffOpts = Array.from(document.getElementById('staff-select').options)
+        .map(o => `<option value="${o.value}">${esc(o.textContent)}</option>`).join('');
+    openModal(`
+        <div class="modal-header">Nowe spotkanie / termin<button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+                <div><label>Typ</label>
+                    <select id="ap-type" class="input w-full">
+                        <option value="konsultacja">Konsultacja</option>
+                        <option value="follow_up">Follow-up</option>
+                        <option value="osobiste_odciski">Osobiste stawiennictwo - odciski</option>
+                        <option value="osobiste_inne">Inne stawiennictwo</option>
+                        <option value="hearing">Rozprawa</option>
+                    </select>
+                </div>
+                <div><label>Prowadzi</label>
+                    <select id="ap-staff" class="input w-full">${staffOpts}</select>
+                </div>
+                <div><label>Data</label><input type="date" id="ap-date" class="input w-full" autofocus></div>
+                <div><label>Godzina</label><input type="time" id="ap-time" class="input w-full"></div>
+                <div class="col-span-2"><label>Tytuł / Opis</label><input id="ap-title" class="input w-full" placeholder="np. Konsultacja wstępna, odciski w Wałbrzychu..."></div>
+                <div class="col-span-2"><label>Miejsce</label><input id="ap-location" class="input w-full"></div>
+                <div class="col-span-2"><label>Notatki</label><textarea id="ap-notes" class="input w-full" rows="2"></textarea></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="saveAppointment()">Zapisz</button>
+        </div>`);
+    if (window.currentStaff) document.getElementById('ap-staff').value = window.currentStaff.id;
+}
+
+async function saveAppointment() {
+    const date = document.getElementById('ap-date').value;
+    if (!date) { toast.error('Podaj datę'); return; }
+    const type = document.getElementById('ap-type').value;
+    const time = document.getElementById('ap-time').value;
+    const title = document.getElementById('ap-title').value.trim();
+    const loc = document.getElementById('ap-location').value.trim();
+    const notes = document.getElementById('ap-notes').value.trim();
+    const staffId = document.getElementById('ap-staff').value;
+
+    const { error } = await db.from('gmp_crm_appointments').insert({
+        case_id: caseId,
+        client_id: caseData.client_id,
+        staff_id: staffId || null,
+        appointment_type: type,
+        scheduled_date: date,
+        scheduled_time: time || null,
+        title: title || null,
+        location: loc || null,
+        notes: notes || null,
+        status: 'scheduled',
+        created_by: window.currentStaff?.id,
+    });
+    if (error) { toast.error(error.message); return; }
+    closeModal();
+    toast.success('Dodano termin');
+    loadAppointments();
+    await db.from('gmp_case_activities').insert({
+        case_id: caseId,
+        activity_type: 'appointment_created',
+        content: `Spotkanie: ${date}${time ? ' ' + time : ''} - ${title || type}`,
+        metadata: { date, time, type, title },
+        created_by: window.currentStaff?.id,
+    });
+    loadActivities();
+}
+
+async function deleteAppointment(id) {
+    if (!confirm('Usunąć termin?')) return;
+    const { error } = await db.from('gmp_crm_appointments').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto');
+    loadAppointments();
 }
 
 function openClientPicker() {
-    toast.info('Wybór klienta — dostępny wkrótce. Edytuj pole client_id lub idź do kartoteki.');
+    gmpModal.pickClient(async (c) => {
+        const { error } = await db.from('gmp_cases').update({ client_id: c.id }).eq('id', caseId);
+        if (error) { toast.error(error.message); return; }
+        toast.success('Klient przypisany: ' + c.last_name + ' ' + c.first_name);
+        loadCase();
+    });
+}
+function openNewClientInline() {
+    gmpModal.editClient(null, async (c) => {
+        if (!c) return;
+        const { error } = await db.from('gmp_cases').update({ client_id: c.id }).eq('id', caseId);
+        if (!error) { toast.success('Utworzono i przypisano'); loadCase(); }
+    });
+}
+function openEmployerPicker() {
+    gmpModal.pickEmployer(async (e) => {
+        const { error } = await db.from('gmp_cases').update({ employer_id: e.id }).eq('id', caseId);
+        if (error) { toast.error(error.message); return; }
+        toast.success('Pracodawca przypisany: ' + e.name);
+        loadCase();
+    });
+}
+function openNewEmployerInline() {
+    gmpModal.editEmployer(null, async (e) => {
+        if (!e) return;
+        const { error } = await db.from('gmp_cases').update({ employer_id: e.id }).eq('id', caseId);
+        if (!error) { toast.success('Utworzono i przypisano'); loadCase(); }
+    });
 }
 
 async function deleteCase() {

@@ -22,6 +22,7 @@
                 <h1 class="page-title">Płatności</h1>
                 <p class="page-subtitle">Wpływy miesięczne, raty, zaległości</p>
             </div>
+            <button class="btn btn-secondary" onclick="exportPayments()"><i class="ph ph-download-simple"></i> CSV</button>
         </div>
 
         <!-- Karty statystyk -->
@@ -132,6 +133,26 @@ async function loadStats() {
     } else {
         document.getElementById('s-overdue').textContent = fmt.money(0);
     }
+}
+
+async function exportPayments() {
+    toast.info('Przygotowuję CSV...');
+    const { data, error } = await db.from('gmp_payments')
+        .select('*, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
+        .order('payment_date', { ascending: false, nullsLast: true })
+        .limit(10000);
+    if (error) { toast.error(error.message); return; }
+    exportCsv('platnosci', data, [
+        ['Data', 'payment_date'],
+        ['Klient', r => r.gmp_cases?.gmp_clients ? `${r.gmp_cases.gmp_clients.last_name} ${r.gmp_cases.gmp_clients.first_name}` : ''],
+        ['Pracodawca', r => r.gmp_cases?.gmp_employers?.name || ''],
+        ['Nr sprawy', r => r.gmp_cases?.case_number || ''],
+        ['Forma', 'method'],
+        ['Rata nr', 'installment_number'],
+        ['Z łącznie rat', 'total_installments'],
+        ['Kwota', 'amount'],
+        ['Notatki', 'notes'],
+    ]);
 }
 
 async function loadContent() {

@@ -96,6 +96,28 @@ window.fmt = {
   },
 };
 
+// CSV export helper
+// columns: array of [header, valueFn(row)] pairs
+window.exportCsv = function(filename, rows, columns) {
+  if (!rows?.length) { toast.warning('Brak danych do eksportu'); return; }
+  const headers = columns.map(c => c[0]);
+  const data = rows.map(r => columns.map(c => {
+    const v = typeof c[1] === 'function' ? c[1](r) : r[c[1]];
+    return v == null ? '' : String(v);
+  }));
+  const csv = [headers, ...data]
+    .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success(`Pobrano ${rows.length} wierszy`);
+};
+
 // Escape HTML dla bezpiecznego renderowania user-content
 window.esc = function(s) {
   if (s == null) return '';

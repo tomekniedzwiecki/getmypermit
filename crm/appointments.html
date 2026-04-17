@@ -113,9 +113,9 @@ async function renderWeek() {
     document.getElementById('week-header').textContent =
         `${fmtLong(currentWeekStart)} - ${fmtLong(new Date(end.getTime() - 86400000))} ${end.getFullYear()}`;
 
-    // Pobierz eventy z gmp_appointments + submissions_queue (ze scheduled_at)
-    let appointmentsQuery = db.from('gmp_appointments')
-        .select('id, appointment_type, scheduled_date, scheduled_time, client_id, case_id, staff_id, client_name, notes, transport_type, gmp_clients(last_name, first_name), gmp_staff(full_name)')
+    // Pobierz eventy z gmp_crm_appointments + submissions_queue (ze scheduled_at)
+    let appointmentsQuery = db.from('gmp_crm_appointments')
+        .select('id, appointment_type, scheduled_date, scheduled_time, client_id, case_id, staff_id, title, notes, transport_type, contact_name, gmp_clients(last_name, first_name), gmp_staff(full_name)')
         .gte('scheduled_date', currentWeekStart.toISOString().slice(0,10))
         .lt('scheduled_date', end.toISOString().slice(0,10));
     if (typeFilter) appointmentsQuery = appointmentsQuery.eq('appointment_type', typeFilter);
@@ -139,12 +139,12 @@ async function renderWeek() {
     (appts || []).forEach(a => {
         const day = a.scheduled_date;
         if (byDay[day] !== undefined) {
-            const client = a.gmp_clients ? `${a.gmp_clients.last_name} ${a.gmp_clients.first_name}` : (a.client_name || '—');
+            const client = a.gmp_clients ? `${a.gmp_clients.last_name} ${a.gmp_clients.first_name}` : (a.contact_name || a.title || '—');
             byDay[day].push({
                 type: a.appointment_type || 'konsultacja',
                 time: a.scheduled_time || '',
                 title: client,
-                subtitle: a.transport_type || '',
+                subtitle: a.transport_type || a.title || '',
                 href: a.case_id ? `case.html?id=${a.case_id}` : (a.client_id ? `clients.html?id=${a.client_id}` : '#'),
             });
         }

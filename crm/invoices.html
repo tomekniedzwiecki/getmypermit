@@ -22,7 +22,10 @@
                 <h1 class="page-title">Faktury</h1>
                 <p class="page-subtitle" id="count">—</p>
             </div>
-            <button class="btn btn-primary" onclick="openNew()"><i class="ph ph-plus"></i> Nowa faktura</button>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="exportInvoices()"><i class="ph ph-download-simple"></i> CSV</button>
+                <button class="btn btn-primary" onclick="openNew()"><i class="ph ph-plus"></i> Nowa faktura</button>
+            </div>
         </div>
 
         <div class="flex gap-1 mb-4">
@@ -94,6 +97,27 @@ async function loadList() {
                 </td>
             </tr>`;
     }).join('');
+}
+
+async function exportInvoices() {
+    toast.info('Przygotowuję CSV...');
+    const { data, error } = await db.from('gmp_invoices')
+        .select('*, gmp_employers(name, nip), gmp_clients(last_name, first_name), gmp_cases(case_number)')
+        .order('created_at', { ascending: false }).limit(5000);
+    if (error) { toast.error(error.message); return; }
+    exportCsv('faktury', data, [
+        ['Data wystawienia', 'issue_date'],
+        ['Numer', 'invoice_number'],
+        ['Pracodawca', r => r.gmp_employers?.name || ''],
+        ['NIP', r => r.gmp_employers?.nip || ''],
+        ['Klient', r => r.gmp_clients ? `${r.gmp_clients.last_name} ${r.gmp_clients.first_name}` : ''],
+        ['Nr sprawy', r => r.gmp_cases?.case_number || ''],
+        ['Kwota', 'amount'],
+        ['Opis', 'description'],
+        ['Status', 'status'],
+        ['Wysłana do', 'sent_to'],
+        ['Data wysłania', 'sent_at'],
+    ]);
 }
 
 async function changeStatus(id, currentStatus) {

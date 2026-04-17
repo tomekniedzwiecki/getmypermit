@@ -12,6 +12,7 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/modals.js" defer></script>
 </head>
 <body>
 <div class="app-layout">
@@ -23,6 +24,7 @@
                 <p class="page-subtitle" id="count">Ładuję...</p>
             </div>
             <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="exportClients()"><i class="ph ph-download-simple"></i> CSV</button>
                 <button class="btn btn-primary" onclick="openNewClient()"><i class="ph ph-plus"></i> Nowy klient</button>
             </div>
         </div>
@@ -280,8 +282,39 @@ async function openClientDetail(id) {
         </div>`;
 }
 
-function editClient() { toast.info('Edycja — wkrótce.'); }
-function openNewClient() { toast.info('Dodawanie klienta — wkrótce (na razie klienci tworzeni przy sprawach).'); }
+function editClient() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    gmpModal.editClient(id, () => location.reload());
+}
+function openNewClient() {
+    gmpModal.editClient(null, (c) => {
+        if (c) location.href = 'clients.html?id=' + c.id;
+    });
+}
+async function exportClients() {
+    toast.info('Przygotowuję CSV (max 5000)...');
+    const search = document.getElementById('f-search').value.trim();
+    const nat = document.getElementById('f-nat').value;
+    const emp = document.getElementById('f-emp').value;
+    let q = db.from('gmp_clients').select('*, gmp_employers(name)');
+    if (search) { const s = `%${search}%`; q = q.or(`last_name.ilike.${s},first_name.ilike.${s},phone.ilike.${s},email.ilike.${s}`); }
+    if (nat) q = q.eq('nationality', nat);
+    if (emp) q = q.eq('employer_id', emp);
+    q = q.order('last_name').limit(5000);
+    const { data, error } = await q;
+    if (error) { toast.error(error.message); return; }
+    exportCsv('klienci', data, [
+        ['Nazwisko', 'last_name'],
+        ['Imię', 'first_name'],
+        ['Data urodzenia', 'birth_date'],
+        ['Obywatelstwo', 'nationality'],
+        ['Telefon', 'phone'],
+        ['Email', 'email'],
+        ['Pracodawca', r => r.gmp_employers?.name || ''],
+        ['Notatki', 'notes'],
+    ]);
+}
+
 async function addTrustedProfile(clientId) {
     const login = prompt('Login do profilu zaufanego:');
     if (login === null) return;

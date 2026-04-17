@@ -12,6 +12,7 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/modals.js" defer></script>
 </head>
 <body>
 <div class="app-layout">
@@ -414,7 +415,49 @@ async function exportCSV() {
 }
 
 function openNewCaseModal() {
-    window.location.href = 'case.html?new=1';
+    // Wybierz klienta lub dodaj nowego
+    const html = `
+        <div class="modal-header">Nowa sprawa<button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body">
+            <p class="text-zinc-400 text-sm mb-4">Wybierz klienta dla nowej sprawy:</p>
+            <div class="flex gap-2 mb-4">
+                <button class="btn btn-secondary flex-1" onclick="newCasePickClient()"><i class="ph ph-magnifying-glass"></i> Wyszukaj istniejącego</button>
+                <button class="btn btn-secondary flex-1" onclick="newCaseNewClient()"><i class="ph ph-user-plus"></i> Nowy klient</button>
+            </div>
+            <div class="divider"></div>
+            <button class="btn btn-ghost w-full" onclick="newCaseNoClient()">Utwórz bez klienta (dodasz później)</button>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="gmpModal.close()">Anuluj</button>
+        </div>`;
+    gmpModal.openModal(html);
+}
+async function newCasePickClient() {
+    gmpModal.pickClient(async (c) => {
+        await createCaseAndGo(c.id);
+    });
+}
+async function newCaseNewClient() {
+    gmpModal.editClient(null, async (c) => {
+        if (!c) return;
+        await createCaseAndGo(c.id);
+    });
+}
+async function newCaseNoClient() {
+    await createCaseAndGo(null);
+}
+async function createCaseAndGo(clientId) {
+    const { data, error } = await db.from('gmp_cases').insert({
+        client_id: clientId,
+        status: 'lead',
+        kind: 'nowa_sprawa',
+        assigned_to: window.currentStaff?.id,
+        date_accepted: new Date().toISOString().slice(0, 10),
+        import_source: 'manual',
+    }).select().single();
+    if (error) { toast.error(error.message); return; }
+    toast.success('Utworzono sprawę');
+    window.location.href = 'case.html?id=' + data.id;
 }
 </script>
 </body>

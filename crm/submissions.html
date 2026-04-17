@@ -22,7 +22,10 @@
                 <h1 class="page-title">Kolejka wniosków</h1>
                 <p class="page-subtitle" id="count">Ładuję...</p>
             </div>
-            <button class="btn btn-primary" onclick="openNew()"><i class="ph ph-plus"></i> Dodaj do kolejki</button>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="exportSubs()"><i class="ph ph-download-simple"></i> CSV</button>
+                <button class="btn btn-primary" onclick="openNew()"><i class="ph ph-plus"></i> Dodaj do kolejki</button>
+            </div>
         </div>
 
         <!-- Zakladki po urzedach -->
@@ -195,6 +198,25 @@ function renderPagination() {
 }
 function go(p) { const tp = Math.ceil(totalRows/PAGE_SIZE); if(p<1||p>tp) return; currentPage=p; loadList(); }
 function openNew() { toast.info('Dodawanie do kolejki — wkrótce.'); }
+async function exportSubs() {
+    toast.info('Przygotowuję CSV...');
+    const { data } = await db.from('gmp_submissions_queue')
+        .select('*, gmp_clients(last_name, first_name, nationality), gmp_offices(city, code)')
+        .order('scheduled_at', { ascending: true, nullsLast: true }).limit(5000);
+    exportCsv('kolejka_wnioskow', data || [], [
+        ['Klient', r => r.gmp_clients ? `${r.gmp_clients.last_name} ${r.gmp_clients.first_name}` : ''],
+        ['Obywatelstwo', r => r.gmp_clients?.nationality || ''],
+        ['Urząd', r => r.gmp_offices?.city || r.gmp_offices?.code || ''],
+        ['MOS', 'mos_number'],
+        ['PIO', 'pio_number'],
+        ['Nr biletu', 'ticket_number'],
+        ['Data wysłania', 'date_notification_sent'],
+        ['Stawiennictwo', 'scheduled_at'],
+        ['Transport', 'transport_type'],
+        ['Status', 'status'],
+        ['Uwagi', 'notes'],
+    ]);
+}
 </script>
 </body>
 </html>
