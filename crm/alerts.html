@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerty - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Alerty bezczynności</h1>
+                <p class="page-subtitle">Sprawy bez aktywności, zaległe zadania, zaległe płatności</p>
+            </div>
+        </div>
+
+        <!-- 3 kolumny alertow -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <!-- Sprawy bez aktywnosci -->
+            <section class="card">
+                <div class="card-header flex items-center gap-2">
+                    <i class="ph ph-clock-countdown text-red-400"></i>
+                    <span>Sprawy bez aktywności</span>
+                    <span class="ml-auto text-xs text-zinc-500" id="alerts-count">0</span>
+                </div>
+                <div class="flex gap-1 p-2 border-b border-zinc-900">
+                    <button class="btn btn-secondary btn-sm tab-btn active" data-level="inactive_30">30+ dni</button>
+                    <button class="btn btn-secondary btn-sm tab-btn" data-level="inactive_14">14-30</button>
+                    <button class="btn btn-secondary btn-sm tab-btn" data-level="never_active">Bez aktywności</button>
+                </div>
+                <div id="alerts-list" class="divide-y divide-zinc-900/50 max-h-[600px] overflow-y-auto">
+                    <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                </div>
+            </section>
+
+            <!-- Zaleglosci zadan -->
+            <section class="card">
+                <div class="card-header flex items-center gap-2">
+                    <i class="ph ph-list-checks text-amber-400"></i>
+                    <span>Zaległe zadania</span>
+                    <span class="ml-auto text-xs text-zinc-500" id="tasks-count">0</span>
+                </div>
+                <div id="tasks-list" class="divide-y divide-zinc-900/50 max-h-[660px] overflow-y-auto">
+                    <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                </div>
+            </section>
+
+            <!-- Zaleglosci platnosci -->
+            <section class="card">
+                <div class="card-header flex items-center gap-2">
+                    <i class="ph ph-currency-circle-dollar text-yellow-400"></i>
+                    <span>Zaległe płatności</span>
+                    <span class="ml-auto text-xs text-zinc-500" id="payments-count">0</span>
+                </div>
+                <div id="overdue-payments" class="divide-y divide-zinc-900/50 max-h-[660px] overflow-y-auto">
+                    <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+<style>.tab-btn.active{background:white;color:black}</style>
+<script src="components/sidebar.js" data-active="alerts"></script>
+<script>
+let alertLevel = 'inactive_30';
+
+document.addEventListener('gmp-auth-ready', init);
+async function init() {
+    await Promise.all([loadAlerts(), loadOverdueTasks(), loadOverduePayments()]);
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active'); alertLevel = b.dataset.level; loadAlerts();
+    }));
+}
+
+async function loadAlerts() {
+    const { data, error } = await db.from('gmp_case_alerts')
+        .select('*')
+        .eq('inactivity_level', alertLevel)
+        .order('days_inactive', { ascending: false, nullsFirst: false })
+        .limit(200);
+
+    const el = document.getElementById('alerts-list');
+    if (error) { el.innerHTML = `<div class="p-4 text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    document.getElementById('alerts-count').textContent = `${data?.length || 0}${data?.length === 200 ? '+' : ''}`;
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak</div></div>'; return; }
+
+    const caseIds = data.map(r => r.case_id);
+    const { data: cases } = await db.from('gmp_cases').select('id, case_number, gmp_clients(last_name, first_name), gmp_staff(full_name)').in('id', caseIds);
+    const byId = Object.fromEntries((cases || []).map(c => [c.id, c]));
+
+    el.innerHTML = data.map(a => {
+        const c = byId[a.case_id] || {};
+        const client = c.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+        return `
+            <a href="case.html?id=${a.case_id}" class="block p-3 hover:bg-zinc-900/50">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white">${client}</div>
+                        <div class="text-xs text-zinc-500">
+                            #${esc(c.case_number || a.case_id.slice(0,8))} •
+                            ${esc(c.gmp_staff?.full_name || '—')}
+                        </div>
+                    </div>
+                    <div class="text-xs ${alertLevel === 'inactive_30' ? 'text-red-400' : 'text-amber-400'} whitespace-nowrap">
+                        ${a.days_inactive ? a.days_inactive + ' dni' : 'nigdy'}
+                    </div>
+                </div>
+            </a>`;
+    }).join('');
+}
+
+async function loadOverdueTasks() {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data } = await db.from('gmp_tasks')
+        .select('id, title, due_date, case_id, gmp_staff(full_name), gmp_cases(case_number, gmp_clients(last_name, first_name))')
+        .in('status', ['pending', 'in_progress'])
+        .lt('due_date', today)
+        .order('due_date')
+        .limit(200);
+
+    const el = document.getElementById('tasks-list');
+    document.getElementById('tasks-count').textContent = data?.length || 0;
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak</div></div>'; return; }
+
+    el.innerHTML = data.map(t => {
+        const c = t.gmp_cases;
+        const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+        const days = Math.floor((Date.now() - new Date(t.due_date).getTime()) / 86400000);
+        return `
+            <a href="${t.case_id ? 'case.html?id=' + t.case_id : '#'}" class="block p-3 hover:bg-zinc-900/50">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white truncate">${esc(t.title)}</div>
+                        <div class="text-xs text-zinc-500 truncate">${esc(t.gmp_staff?.full_name || '—')} • ${client}</div>
+                    </div>
+                    <div class="text-xs text-red-400 whitespace-nowrap">${days} dni po</div>
+                </div>
+            </a>`;
+    }).join('');
+}
+
+async function loadOverduePayments() {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: plans } = await db.from('gmp_payment_plans')
+        .select('id, case_id, total_amount, due_date, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
+        .lt('due_date', today)
+        .order('due_date')
+        .limit(100);
+
+    const el = document.getElementById('overdue-payments');
+    document.getElementById('payments-count').textContent = plans?.length || 0;
+    if (!plans?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak</div></div>'; return; }
+
+    // Doliczamy wplacone
+    const caseIds = plans.map(p => p.case_id);
+    const { data: paid } = await db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds);
+    const paidByCase = {};
+    (paid || []).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+
+    el.innerHTML = plans.map(p => {
+        const c = p.gmp_cases;
+        const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+        const employer = c?.gmp_employers?.name || '';
+        const remain = Math.max(0, Number(p.total_amount) - (paidByCase[p.case_id] || 0));
+        const days = Math.floor((Date.now() - new Date(p.due_date).getTime()) / 86400000);
+        return `
+            <a href="case.html?id=${p.case_id}" class="block p-3 hover:bg-zinc-900/50">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white">${client}</div>
+                        <div class="text-xs text-zinc-500 truncate">${esc(employer)}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-red-400 font-mono text-sm">${fmt.money(remain)}</div>
+                        <div class="text-xs text-zinc-500">${days} dni po</div>
+                    </div>
+                </div>
+            </a>`;
+    }).join('');
+}
+</script>
+</body>
+</html>

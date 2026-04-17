@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zadania - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Zadania</h1>
+                <p class="page-subtitle">Rozliczalność pracowników</p>
+            </div>
+        </div>
+
+        <div class="flex gap-1 mb-4 flex-wrap">
+            <button class="btn btn-secondary tab-btn active" data-view="mine">Moje</button>
+            <button class="btn btn-secondary tab-btn" data-view="all-open">Wszystkie otwarte</button>
+            <button class="btn btn-secondary tab-btn" data-view="overdue">Po terminie</button>
+            <button class="btn btn-secondary tab-btn" data-view="done">Ukończone</button>
+            <div class="flex-1"></div>
+            <select id="f-staff" class="filter-input" style="width: 200px"><option value="">Wszyscy staff</option></select>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-260px)]">
+                <table class="gmp-table">
+                    <thead>
+                        <tr>
+                            <th>✓</th>
+                            <th>Tytuł</th>
+                            <th>Sprawa</th>
+                            <th>Przypisane do</th>
+                            <th>Termin</th>
+                            <th>Utworzone</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                        <tr><td colspan="7" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<style>.tab-btn{padding:0.4rem 0.75rem;font-size:0.8rem}.tab-btn.active{background:white;color:black}</style>
+<script src="components/sidebar.js" data-active="tasks"></script>
+<script>
+let view = 'mine';
+let staffFilter = '';
+
+document.addEventListener('gmp-auth-ready', init);
+async function init() {
+    // Load staff
+    const { data: staff } = await db.from('gmp_staff').select('id, full_name').order('full_name');
+    const sel = document.getElementById('f-staff');
+    (staff || []).forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.full_name; sel.appendChild(o); });
+
+    await loadList();
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active'); view = b.dataset.view; loadList();
+    }));
+    document.getElementById('f-staff').addEventListener('change', (e) => { staffFilter = e.target.value; loadList(); });
+}
+
+async function loadList() {
+    let q = db.from('gmp_tasks').select('*, gmp_staff(full_name), gmp_cases(id, case_number, gmp_clients(last_name, first_name))');
+
+    const today = new Date().toISOString().slice(0,10);
+    if (view === 'mine') {
+        if (!window.currentStaff) { document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="p-6 text-zinc-500">Brak profilu staff dla bieżącego usera</td></tr>'; return; }
+        q = q.eq('assigned_to', window.currentStaff.id).in('status', ['pending', 'in_progress']);
+    } else if (view === 'all-open') {
+        q = q.in('status', ['pending', 'in_progress']);
+    } else if (view === 'overdue') {
+        q = q.in('status', ['pending', 'in_progress']).lt('due_date', today);
+    } else if (view === 'done') {
+        q = q.eq('status', 'done');
+    }
+
+    if (staffFilter) q = q.eq('assigned_to', staffFilter);
+    q = q.order('due_date', { ascending: true, nullsLast: true }).limit(500);
+
+    const { data, error } = await q;
+    const tbody = document.getElementById('tbody');
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ph ph-check-circle"></i><div>Brak zadań</div></td></tr>'; return; }
+
+    tbody.innerHTML = data.map(t => {
+        const c = t.gmp_cases;
+        const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+        const overdue = t.due_date && t.status !== 'done' && new Date(t.due_date) < new Date();
+        const done = t.status === 'done';
+        return `
+            <tr class="${t.case_id ? 'clickable' : ''}" onclick="${t.case_id ? `if(!event.target.matches('input')) location.href='case.html?id=${t.case_id}'` : ''}">
+                <td><input type="checkbox" ${done ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)"></td>
+                <td><div class="text-sm ${done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${esc(t.title)}</div>${t.description ? `<div class="text-xs text-zinc-500 mt-0.5">${esc(t.description.slice(0,80))}</div>` : ''}</td>
+                <td class="text-xs">${c ? `<div class="text-zinc-400">${client}</div><div class="text-zinc-600 font-mono">${esc(c.case_number || '')}</div>` : '—'}</td>
+                <td class="text-xs text-zinc-400">${esc(t.gmp_staff?.full_name || '—')}</td>
+                <td class="text-xs ${overdue ? 'text-red-400 font-medium' : 'text-zinc-400'}">${t.due_date ? fmt.date(t.due_date) : '—'}</td>
+                <td class="text-xs text-zinc-500">${fmt.daysAgo(t.created_at)}</td>
+                <td><span class="badge ${done ? 'badge-zakonczona' : 'badge-zlecona'}">${esc(t.status)}</span></td>
+            </tr>`;
+    }).join('');
+}
+
+async function toggleTask(id, done) {
+    const updates = { status: done ? 'done' : 'pending' };
+    if (done) updates.completed_at = new Date().toISOString();
+    const { error } = await db.from('gmp_tasks').update(updates).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(done ? 'Ukończone' : 'Otwarte');
+    loadList();
+}
+</script>
+</body>
+</html>

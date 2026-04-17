@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalendarz - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Kalendarz</h1>
+                <p class="page-subtitle">Spotkania, osobiste stawiennictwa, terminy</p>
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" id="prev-week"><i class="ph ph-caret-left"></i></button>
+                <button class="btn btn-secondary" id="today-btn">Dziś</button>
+                <button class="btn btn-secondary" id="next-week"><i class="ph ph-caret-right"></i></button>
+            </div>
+        </div>
+
+        <div class="flex gap-1 mb-4">
+            <button class="btn btn-secondary tab-btn active" data-type="">Wszystkie</button>
+            <button class="btn btn-secondary tab-btn" data-type="konsultacja">Konsultacje</button>
+            <button class="btn btn-secondary tab-btn" data-type="osobiste_odciski">Odciski</button>
+            <button class="btn btn-secondary tab-btn" data-type="osobiste_inne">Inne stawiennictwa</button>
+        </div>
+
+        <!-- Widok kalendarzowy tygodniowy -->
+        <div class="card overflow-hidden">
+            <div class="card-header" id="week-header">Tydzień ...</div>
+            <div class="grid grid-cols-7 border-b border-zinc-900" id="calendar-grid">
+                <!-- dni -->
+            </div>
+        </div>
+
+        <!-- Lista odcisków do pokazania -->
+        <section class="card mt-4">
+            <div class="card-header flex items-center justify-between">
+                <span><i class="ph ph-fingerprint text-cyan-400 mr-2"></i>Nadchodzące odciski (14 dni)</span>
+                <a href="submissions.html" class="text-xs text-zinc-500 hover:text-white">Kolejka wniosków →</a>
+            </div>
+            <div id="odciski-list" class="divide-y divide-zinc-900/50">
+                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<style>
+.tab-btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+.tab-btn.active { background: white; color: black; }
+.cal-day { min-height: 200px; border-right: 1px solid rgba(255,255,255,0.04); padding: 0.5rem; }
+.cal-day:last-child { border-right: none; }
+.cal-day-header { font-size: 0.7rem; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 0.35rem; }
+.cal-day-header.today { color: #3b82f6; }
+.cal-event { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 0.375rem; padding: 0.35rem 0.5rem; margin-bottom: 0.35rem; font-size: 0.75rem; cursor: pointer; transition: all 0.15s; }
+.cal-event:hover { background: rgba(59, 130, 246, 0.2); }
+.cal-event.odciski { background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.3); }
+.cal-event.konsultacja { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
+</style>
+
+<script src="components/sidebar.js" data-active="appointments"></script>
+<script>
+let currentWeekStart = new Date();
+currentWeekStart.setHours(0,0,0,0);
+// Poczatek tygodnia - poniedzialek
+while (currentWeekStart.getDay() !== 1) currentWeekStart.setDate(currentWeekStart.getDate() - 1);
+
+let typeFilter = '';
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    document.getElementById('prev-week').addEventListener('click', () => shiftWeek(-7));
+    document.getElementById('next-week').addEventListener('click', () => shiftWeek(7));
+    document.getElementById('today-btn').addEventListener('click', () => {
+        currentWeekStart = new Date(); currentWeekStart.setHours(0,0,0,0);
+        while (currentWeekStart.getDay() !== 1) currentWeekStart.setDate(currentWeekStart.getDate() - 1);
+        renderWeek();
+    });
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            typeFilter = b.dataset.type;
+            renderWeek();
+        });
+    });
+
+    renderWeek();
+    loadOdciski();
+}
+
+function shiftWeek(days) {
+    currentWeekStart.setDate(currentWeekStart.getDate() + days);
+    renderWeek();
+}
+
+async function renderWeek() {
+    const end = new Date(currentWeekStart); end.setDate(end.getDate() + 7);
+    const fmtLong = (d) => d.toLocaleDateString('pl-PL', { day: '2-digit', month: 'long' });
+    document.getElementById('week-header').textContent =
+        `${fmtLong(currentWeekStart)} - ${fmtLong(new Date(end.getTime() - 86400000))} ${end.getFullYear()}`;
+
+    // Pobierz eventy z gmp_appointments + submissions_queue (ze scheduled_at)
+    let appointmentsQuery = db.from('gmp_appointments')
+        .select('id, appointment_type, scheduled_date, scheduled_time, client_id, case_id, staff_id, client_name, notes, transport_type, gmp_clients(last_name, first_name), gmp_staff(full_name)')
+        .gte('scheduled_date', currentWeekStart.toISOString().slice(0,10))
+        .lt('scheduled_date', end.toISOString().slice(0,10));
+    if (typeFilter) appointmentsQuery = appointmentsQuery.eq('appointment_type', typeFilter);
+
+    const [{ data: appts }, { data: subs }] = await Promise.all([
+        appointmentsQuery,
+        db.from('gmp_submissions_queue')
+            .select('id, scheduled_at, client_id, office_id, mos_number, gmp_clients(last_name, first_name), gmp_offices(city, code)')
+            .gte('scheduled_at', currentWeekStart.toISOString())
+            .lt('scheduled_at', end.toISOString())
+            .not('scheduled_at', 'is', null),
+    ]);
+
+    // Grupuj po dniu
+    const byDay = {};
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(currentWeekStart); d.setDate(d.getDate() + i);
+        byDay[d.toISOString().slice(0,10)] = [];
+    }
+
+    (appts || []).forEach(a => {
+        const day = a.scheduled_date;
+        if (byDay[day] !== undefined) {
+            const client = a.gmp_clients ? `${a.gmp_clients.last_name} ${a.gmp_clients.first_name}` : (a.client_name || '—');
+            byDay[day].push({
+                type: a.appointment_type || 'konsultacja',
+                time: a.scheduled_time || '',
+                title: client,
+                subtitle: a.transport_type || '',
+                href: a.case_id ? `case.html?id=${a.case_id}` : (a.client_id ? `clients.html?id=${a.client_id}` : '#'),
+            });
+        }
+    });
+    (subs || []).forEach(s => {
+        const day = s.scheduled_at.slice(0, 10);
+        if (byDay[day] !== undefined) {
+            const client = s.gmp_clients ? `${s.gmp_clients.last_name} ${s.gmp_clients.first_name}` : '—';
+            const time = s.scheduled_at.slice(11, 16);
+            byDay[day].push({
+                type: 'odciski',
+                time,
+                title: client,
+                subtitle: s.gmp_offices?.city || s.gmp_offices?.code || 'Wniosek',
+                href: s.client_id ? `clients.html?id=${s.client_id}` : '#',
+            });
+        }
+    });
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const weekdays = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'];
+    const grid = document.getElementById('calendar-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(currentWeekStart); d.setDate(d.getDate() + i);
+        const key = d.toISOString().slice(0,10);
+        const isToday = d.getTime() === today.getTime();
+        const events = byDay[key].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+        const cell = document.createElement('div');
+        cell.className = 'cal-day';
+        cell.innerHTML = `
+            <div class="cal-day-header ${isToday ? 'today' : ''}">${weekdays[i]} ${d.getDate()}.${d.getMonth()+1}</div>
+            ${events.length === 0 ? '<div class="text-zinc-700 text-xs text-center pt-8">—</div>' : ''}
+            ${events.map(e => `
+                <a href="${e.href}" class="block">
+                    <div class="cal-event ${e.type}">
+                        ${e.time ? `<span class="font-mono text-zinc-300">${e.time}</span> ` : ''}<span>${esc(e.title)}</span>
+                        ${e.subtitle ? `<div class="text-zinc-500 text-[10px] mt-0.5">${esc(e.subtitle)}</div>` : ''}
+                    </div>
+                </a>`).join('')}`;
+        grid.appendChild(cell);
+    }
+}
+
+async function loadOdciski() {
+    const now = new Date().toISOString();
+    const in14 = new Date(Date.now() + 14 * 86400000).toISOString();
+    const { data } = await db.from('gmp_submissions_queue')
+        .select('id, scheduled_at, client_id, gmp_clients(last_name, first_name, nationality), gmp_offices(city, code), transport_type, notes')
+        .gte('scheduled_at', now)
+        .lt('scheduled_at', in14)
+        .eq('status', 'pending')
+        .order('scheduled_at', { ascending: true })
+        .limit(30);
+
+    const el = document.getElementById('odciski-list');
+    if (!data?.length) { el.innerHTML = '<div class="p-4 text-zinc-500 text-sm">Brak najbliższych odcisków</div>'; return; }
+    el.innerHTML = data.map(d => {
+        const client = d.gmp_clients ? `${esc(d.gmp_clients.last_name)} ${esc(d.gmp_clients.first_name)}` : '—';
+        const nat = d.gmp_clients?.nationality ? `<span class="text-zinc-500 text-xs"> ${esc(d.gmp_clients.nationality)}</span>` : '';
+        const office = d.gmp_offices?.city || d.gmp_offices?.code || '';
+        return `
+            <a href="${d.client_id ? 'clients.html?id=' + d.client_id : '#'}" class="block p-3 hover:bg-zinc-900/50">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white">${client}${nat}</div>
+                        <div class="text-xs text-zinc-500">${esc(office)}${d.transport_type ? ' • ' + esc(d.transport_type) : ''}${d.notes ? ' • ' + esc(d.notes.slice(0, 60)) : ''}</div>
+                    </div>
+                    <div class="text-xs text-zinc-300 font-mono">${fmt.datetime(d.scheduled_at)}</div>
+                </div>
+            </a>`;
+    }).join('');
+}
+</script>
+</body>
+</html>

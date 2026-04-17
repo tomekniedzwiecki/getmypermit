@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprawy - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Sprawy</h1>
+                <p class="page-subtitle" id="page-count">Ładuję...</p>
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="exportCSV()">
+                    <i class="ph ph-download-simple"></i> CSV
+                </button>
+                <button class="btn btn-primary" onclick="openNewCaseModal()">
+                    <i class="ph ph-plus"></i> Nowa sprawa
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtry -->
+        <div class="card p-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                <div>
+                    <label>Szukaj</label>
+                    <input type="text" id="f-search" class="filter-input w-full" placeholder="Nazwisko, imię, nr sprawy, znak sprawy...">
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select id="f-status" class="filter-input w-full">
+                        <option value="">Wszystkie</option>
+                        <option value="lead">Lead</option>
+                        <option value="zlecona">Zlecona</option>
+                        <option value="aktywna">Aktywna</option>
+                        <option value="zakonczona">Zakończona</option>
+                        <option value="archiwum">Archiwum</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Etap</label>
+                    <select id="f-stage" class="filter-input w-full">
+                        <option value="">Wszystkie</option>
+                        <option value="weryfikacja_dokumentow">Weryfikacja dok.</option>
+                        <option value="zlozenie_wniosku">Złożenie wniosku</option>
+                        <option value="oczekiwanie_na_osobiste">Oczek. na osobiste</option>
+                        <option value="wyznaczono_termin">Wyznaczony termin</option>
+                        <option value="po_osobistym">Po osobistym</option>
+                        <option value="oczekiwanie_na_decyzje">Oczek. decyzji</option>
+                        <option value="zakonczenie">Zakończenie</option>
+                        <option value="odwolanie">Odwołanie</option>
+                        <option value="umorzenie">Umorzenie</option>
+                        <option value="przystapienie">Przystąpienie</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Kategoria</label>
+                    <select id="f-category" class="filter-input w-full">
+                        <option value="">Wszystkie</option>
+                        <option value="pobyt">Pobyt</option>
+                        <option value="pozostale">Pozostałe</option>
+                        <option value="rezydent">Rezydent</option>
+                        <option value="zezwolenie_a">Zezwolenie typ A</option>
+                        <option value="smart_work">Smart Work</option>
+                        <option value="lead_ewidencja">Z ewidencji spotkań</option>
+                        <option value="rozliczenie_historyczne">Historyczne (rozliczenia)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Opiekun</label>
+                    <select id="f-staff" class="filter-input w-full">
+                        <option value="">Wszyscy</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Oddział</label>
+                    <select id="f-department" class="filter-input w-full">
+                        <option value="">Wszystkie</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Metoda złożenia</label>
+                    <select id="f-method" class="filter-input w-full">
+                        <option value="">Wszystkie</option>
+                        <option value="osobiscie">Osobiście</option>
+                        <option value="elektronicznie">Elektronicznie</option>
+                        <option value="pocztowo">Pocztowo</option>
+                        <option value="przeniesienie">Przeniesienie</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Data przyjęcia OD</label>
+                    <input type="date" id="f-date-from" class="filter-input w-full">
+                </div>
+                <div>
+                    <label>Data przyjęcia DO</label>
+                    <input type="date" id="f-date-to" class="filter-input w-full">
+                </div>
+                <div class="flex items-end gap-2 xl:col-span-3">
+                    <button class="btn btn-secondary flex-1" onclick="resetFilters()">
+                        <i class="ph ph-eraser"></i> Wyczyść
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
+                <table class="gmp-table">
+                    <thead>
+                        <tr>
+                            <th class="w-32">Nr / Znak</th>
+                            <th>Klient</th>
+                            <th>Pracodawca</th>
+                            <th>Typ sprawy</th>
+                            <th>Kat.</th>
+                            <th>Status</th>
+                            <th>Etap</th>
+                            <th>Opiekun</th>
+                            <th>Przyjęta</th>
+                            <th class="text-right">Kwota</th>
+                            <th class="text-right">Ostatnia akt.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cases-tbody">
+                        <tr><td colspan="11" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </main>
+</div>
+
+<script src="components/sidebar.js" data-active="cases"></script>
+<script>
+const PAGE_SIZE = 50;
+let currentPage = 1;
+let totalRows = 0;
+let currentFilters = {};
+let staffList = [];
+let deptList = [];
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    // Ustaw filtry z URL query
+    const params = new URLSearchParams(window.location.search);
+    ['status', 'stage', 'category', 'staff', 'department', 'method', 'date-from', 'date-to', 'search'].forEach(k => {
+        const v = params.get(k);
+        if (v) document.getElementById('f-' + k).value = v;
+    });
+
+    await loadFilters();
+    await loadCases();
+
+    // Obsluga filtrow
+    ['f-status', 'f-stage', 'f-category', 'f-staff', 'f-department', 'f-method', 'f-date-from', 'f-date-to'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => { currentPage = 1; loadCases(); });
+    });
+    let searchTimer;
+    document.getElementById('f-search').addEventListener('input', (e) => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => { currentPage = 1; loadCases(); }, 300);
+    });
+}
+
+async function loadFilters() {
+    const [{ data: staff }, { data: depts }] = await Promise.all([
+        db.from('gmp_staff').select('id, full_name').order('full_name'),
+        db.from('gmp_office_departments').select('id, code, name').order('code'),
+    ]);
+    staffList = staff || [];
+    deptList = depts || [];
+    const staffSel = document.getElementById('f-staff');
+    staffList.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.full_name;
+        staffSel.appendChild(o);
+    });
+    const deptSel = document.getElementById('f-department');
+    deptList.forEach(d => {
+        const o = document.createElement('option');
+        o.value = d.id; o.textContent = d.code + (d.name ? ` — ${d.name}` : '');
+        deptSel.appendChild(o);
+    });
+}
+
+function buildQuery() {
+    let q = db.from('gmp_cases').select(
+        'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, ' +
+        'gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name), gmp_office_departments(code)',
+        { count: 'exact' }
+    );
+
+    const search = document.getElementById('f-search').value.trim();
+    if (search) {
+        // Szukaj w case_number, znak_sprawy albo w client imie/nazwisko
+        // PostgREST ograniczenie: or() nie przejdzie przez FK, wiec robimy 2 zapytania i laczymy, albo fulltext
+        // Uproszczenie: szukamy po case_number/znak_sprawy OR client name. Użyjemy .or() z ilike.
+        const s = `%${search}%`;
+        q = q.or(`case_number.ilike.${s},znak_sprawy.ilike.${s}`);
+    }
+
+    const status = document.getElementById('f-status').value;
+    if (status) q = q.eq('status', status);
+
+    const stage = document.getElementById('f-stage').value;
+    if (stage) q = q.eq('stage', stage);
+
+    const category = document.getElementById('f-category').value;
+    if (category) q = q.eq('category', category);
+
+    const staff = document.getElementById('f-staff').value;
+    if (staff) q = q.eq('assigned_to', staff);
+
+    const dept = document.getElementById('f-department').value;
+    if (dept) q = q.eq('department_id', dept);
+
+    const method = document.getElementById('f-method').value;
+    if (method) q = q.eq('submission_method', method);
+
+    const dFrom = document.getElementById('f-date-from').value;
+    if (dFrom) q = q.gte('date_accepted', dFrom);
+
+    const dTo = document.getElementById('f-date-to').value;
+    if (dTo) q = q.lte('date_accepted', dTo);
+
+    return q;
+}
+
+async function loadCases() {
+    const tbody = document.getElementById('cases-tbody');
+    tbody.innerHTML = '<tr><td colspan="11" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>';
+
+    const search = document.getElementById('f-search').value.trim();
+
+    // Strategia dla search po client name: najpierw znajdujemy client_id, potem filtrujemy
+    let clientIdFilter = null;
+    if (search && search.length >= 2) {
+        const s = `%${search}%`;
+        const { data: matchedClients } = await db
+            .from('gmp_clients')
+            .select('id')
+            .or(`last_name.ilike.${s},first_name.ilike.${s}`)
+            .limit(500);
+        if (matchedClients?.length) {
+            clientIdFilter = matchedClients.map(c => c.id);
+        }
+    }
+
+    let q = buildQuery();
+
+    // Jesli search znalazl klientow, rozszerz filter
+    if (clientIdFilter?.length) {
+        // Re-build query - tym razem rozszerzamy .or()
+        q = db.from('gmp_cases').select(
+            'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, ' +
+            'gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name), gmp_office_departments(code)',
+            { count: 'exact' }
+        );
+        const s = `%${search}%`;
+        const inList = `(${clientIdFilter.join(',')})`;
+        q = q.or(`case_number.ilike.${s},znak_sprawy.ilike.${s},client_id.in.${inList}`);
+        // Re-apply pozostale filtry
+        const status = document.getElementById('f-status').value;
+        if (status) q = q.eq('status', status);
+        const stage = document.getElementById('f-stage').value;
+        if (stage) q = q.eq('stage', stage);
+        const category = document.getElementById('f-category').value;
+        if (category) q = q.eq('category', category);
+        const staff = document.getElementById('f-staff').value;
+        if (staff) q = q.eq('assigned_to', staff);
+        const dept = document.getElementById('f-department').value;
+        if (dept) q = q.eq('department_id', dept);
+        const method = document.getElementById('f-method').value;
+        if (method) q = q.eq('submission_method', method);
+        const dFrom = document.getElementById('f-date-from').value;
+        if (dFrom) q = q.gte('date_accepted', dFrom);
+        const dTo = document.getElementById('f-date-to').value;
+        if (dTo) q = q.lte('date_accepted', dTo);
+    }
+
+    const from = (currentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    q = q.order('date_last_activity', { ascending: false, nullsFirst: false })
+         .order('created_at', { ascending: false })
+         .range(from, to);
+
+    const { data, error, count } = await q;
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-red-400">Błąd: ${esc(error.message)}</td></tr>`;
+        return;
+    }
+
+    totalRows = count || 0;
+    document.getElementById('page-count').textContent = `${fmt.num(totalRows)} spraw`;
+
+    if (!data?.length) {
+        tbody.innerHTML = '<tr><td colspan="11" class="empty-state"><i class="ph ph-folder-open"></i><div>Brak spraw dla tych filtrów</div></td></tr>';
+        renderPagination();
+        return;
+    }
+
+    tbody.innerHTML = data.map(row => {
+        const client = row.gmp_clients ? `${esc(row.gmp_clients.last_name)} ${esc(row.gmp_clients.first_name)}` : '<span class="text-zinc-600">—</span>';
+        const employer = row.gmp_employers ? esc(row.gmp_employers.name) : '<span class="text-zinc-600">—</span>';
+        const staff = row.gmp_staff?.full_name ? esc(row.gmp_staff.full_name) : '<span class="text-zinc-600">—</span>';
+        const dept = row.gmp_office_departments?.code || '';
+        const nr = row.case_number || (row.znak_sprawy ? row.znak_sprawy.slice(-20) : row.id.slice(0, 8));
+        return `
+            <tr class="clickable" onclick="window.location.href='case.html?id=${row.id}'">
+                <td class="font-mono text-xs">${esc(nr)}</td>
+                <td>${client}</td>
+                <td class="text-zinc-300 text-xs">${employer}</td>
+                <td class="text-zinc-400 text-xs">${esc(row.case_type || '—')}</td>
+                <td class="text-xs">${row.category ? `<span class="badge badge-category">${esc(row.category)}</span>` : ''}</td>
+                <td><span class="badge badge-${row.status}">${esc(row.status || '—')}</span></td>
+                <td class="text-xs">${row.stage ? `<span class="badge badge-stage">${esc(row.stage)}</span>` : ''}</td>
+                <td class="text-zinc-300 text-xs">${staff}</td>
+                <td class="text-zinc-500 text-xs">${fmt.date(row.date_accepted)}</td>
+                <td class="text-right font-mono text-xs ${row.fee_amount ? 'text-emerald-300' : 'text-zinc-600'}">${row.fee_amount ? fmt.money(row.fee_amount) : '—'}</td>
+                <td class="text-right text-zinc-500 text-xs">${fmt.daysAgo(row.date_last_activity)}</td>
+            </tr>`;
+    }).join('');
+
+    renderPagination();
+}
+
+function renderPagination() {
+    const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+    const container = document.getElementById('pagination');
+    if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+    let html = `<button onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}><i class="ph ph-caret-double-left"></i></button>`;
+    html += `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="ph ph-caret-left"></i></button>`;
+
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    if (start > 1) html += `<button onclick="goToPage(1)">1</button>${start > 2 ? '<span class="text-zinc-600 px-1">…</span>' : ''}`;
+    for (let i = start; i <= end; i++) {
+        html += `<button onclick="goToPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+    }
+    if (end < totalPages) html += `${end < totalPages - 1 ? '<span class="text-zinc-600 px-1">…</span>' : ''}<button onclick="goToPage(${totalPages})">${totalPages}</button>`;
+
+    html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}><i class="ph ph-caret-right"></i></button>`;
+    html += `<button onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}><i class="ph ph-caret-double-right"></i></button>`;
+    html += `<span class="text-zinc-500 text-xs ml-3">Strona ${currentPage} / ${totalPages}</span>`;
+    container.innerHTML = html;
+}
+
+function goToPage(p) {
+    const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+    if (p < 1 || p > totalPages) return;
+    currentPage = p;
+    loadCases();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetFilters() {
+    ['f-search', 'f-status', 'f-stage', 'f-category', 'f-staff', 'f-department', 'f-method', 'f-date-from', 'f-date-to']
+        .forEach(id => document.getElementById(id).value = '');
+    currentPage = 1;
+    loadCases();
+}
+
+async function exportCSV() {
+    toast.info('Eksport do CSV... (max 5000 wierszy)');
+    let q = buildQuery();
+    q = q.limit(5000).order('date_accepted', { ascending: false, nullsFirst: false });
+    const { data, error } = await q;
+    if (error) { toast.error(error.message); return; }
+    if (!data?.length) { toast.warning('Brak danych do eksportu'); return; }
+
+    const headers = ['nr_sprawy', 'znak_sprawy', 'klient', 'pracodawca', 'typ', 'kategoria', 'status', 'etap', 'opiekun', 'data_przyjecia', 'kwota', 'ostatnia_akt'];
+    const rows = data.map(r => [
+        r.case_number || '',
+        r.znak_sprawy || '',
+        r.gmp_clients ? `${r.gmp_clients.last_name} ${r.gmp_clients.first_name}` : '',
+        r.gmp_employers?.name || '',
+        r.case_type || '',
+        r.category || '',
+        r.status || '',
+        r.stage || '',
+        r.gmp_staff?.full_name || '',
+        r.date_accepted || '',
+        r.fee_amount || '',
+        r.date_last_activity || '',
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sprawy_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Pobrano ' + data.length + ' wierszy');
+}
+
+function openNewCaseModal() {
+    window.location.href = 'case.html?new=1';
+}
+</script>
+</body>
+</html>

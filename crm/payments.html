@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Płatności - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Płatności</h1>
+                <p class="page-subtitle">Wpływy miesięczne, raty, zaległości</p>
+            </div>
+        </div>
+
+        <!-- Karty statystyk -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">TEN MIESIĄC</div>
+                <div class="text-xl font-bold text-emerald-400" id="s-month">—</div>
+                <div class="text-xs text-zinc-600" id="s-month-count">0 wpłat</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">GOTÓWKA (mies.)</div>
+                <div class="text-xl font-bold text-white" id="s-cash">—</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">PRZELEW (mies.)</div>
+                <div class="text-xl font-bold text-white" id="s-transfer">—</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">FAKTURY (mies.)</div>
+                <div class="text-xl font-bold text-white" id="s-invoice">—</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">ZALEGŁOŚCI</div>
+                <div class="text-xl font-bold text-red-400" id="s-overdue">—</div>
+                <div class="text-xs text-zinc-600" id="s-overdue-count">0 spraw</div>
+            </div>
+        </div>
+
+        <div class="flex gap-1 mb-4">
+            <button class="btn btn-secondary tab-btn active" data-view="recent">Ostatnie wpłaty</button>
+            <button class="btn btn-secondary tab-btn" data-view="overdue">Zaległości</button>
+            <button class="btn btn-secondary tab-btn" data-view="monthly">Podsumowanie miesięczne</button>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div id="payments-content" class="max-h-[calc(100vh-380px)] overflow-y-auto">
+                <div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>
+            </div>
+        </div>
+    </main>
+</div>
+<style>
+.tab-btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+.tab-btn.active { background: white; color: black; }
+</style>
+<script src="components/sidebar.js" data-active="payments"></script>
+<script>
+document.addEventListener('gmp-auth-ready', init);
+
+let currentView = 'recent';
+
+async function init() {
+    await loadStats();
+    await loadContent();
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            currentView = b.dataset.view;
+            loadContent();
+        });
+    });
+}
+
+async function loadStats() {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+    const next = new Date(now.getFullYear(), now.getMonth()+1, 1).toISOString().slice(0,10);
+    const { data: pays } = await db.from('gmp_payments')
+        .select('amount, method')
+        .gte('payment_date', first).lt('payment_date', next);
+
+    let cash = 0, transfer = 0, invoice = 0, other = 0, count = 0;
+    (pays || []).forEach(p => {
+        const a = Number(p.amount) || 0;
+        count++;
+        if (p.method === 'gotowka') cash += a;
+        else if (p.method === 'przelew') transfer += a;
+        else if (p.method === 'faktura') invoice += a;
+        else other += a;
+    });
+    const total = cash + transfer + invoice + other;
+
+    document.getElementById('s-month').textContent = fmt.money(total);
+    document.getElementById('s-month-count').textContent = `${count} wpłat`;
+    document.getElementById('s-cash').textContent = fmt.money(cash);
+    document.getElementById('s-transfer').textContent = fmt.money(transfer);
+    document.getElementById('s-invoice').textContent = fmt.money(invoice);
+
+    // Zaleglosci - plany platnosci z due_date < today
+    const today = new Date().toISOString().slice(0,10);
+    const { data: overduePlans } = await db.from('gmp_payment_plans')
+        .select('id, case_id, total_amount')
+        .lt('due_date', today);
+
+    // Dla kazdego planu - sprawdzmy czy faktyczne wplaty pokrywaja total
+    // Uproszczenie: liczymy liczbe planow po terminie
+    document.getElementById('s-overdue-count').textContent = `${overduePlans?.length || 0} planów`;
+
+    // Przyblizone zaleglosci (plan-total - suma wplat)
+    if (overduePlans?.length) {
+        const planIds = overduePlans.map(p => p.case_id);
+        const { data: paidSums } = await db.from('gmp_payments').select('case_id, amount').in('case_id', planIds);
+        const paidByCase = {};
+        (paidSums || []).forEach(p => { paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0); });
+        const totalOverdue = overduePlans.reduce((s, p) => s + Math.max(0, Number(p.total_amount || 0) - (paidByCase[p.case_id] || 0)), 0);
+        document.getElementById('s-overdue').textContent = fmt.money(totalOverdue);
+    } else {
+        document.getElementById('s-overdue').textContent = fmt.money(0);
+    }
+}
+
+async function loadContent() {
+    const el = document.getElementById('payments-content');
+    el.innerHTML = '<div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>';
+
+    if (currentView === 'recent') {
+        const { data } = await db.from('gmp_payments')
+            .select('id, amount, method, payment_date, installment_number, total_installments, case_id, notes, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
+            .order('payment_date', { ascending: false, nullsLast: true })
+            .limit(200);
+
+        if (!data?.length) { el.innerHTML = '<div class="empty-state"><i class="ph ph-coins"></i><div>Brak wpłat</div></div>'; return; }
+        el.innerHTML = `
+            <table class="gmp-table">
+                <thead><tr><th>Data</th><th>Klient / Pracodawca</th><th>Nr sprawy</th><th>Forma</th><th>Rata</th><th>Notatka</th><th class="text-right">Kwota</th></tr></thead>
+                <tbody>
+                    ${data.map(p => {
+                        const c = p.gmp_cases;
+                        const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+                        const employer = c?.gmp_employers ? esc(c.gmp_employers.name) : '';
+                        return `
+                            <tr class="clickable" onclick="location.href='case.html?id=${p.case_id}'">
+                                <td class="text-xs text-zinc-400">${fmt.date(p.payment_date)}</td>
+                                <td><div class="text-sm">${client}</div>${employer ? `<div class="text-xs text-zinc-500">${employer}</div>` : ''}</td>
+                                <td class="font-mono text-xs text-zinc-500">${esc(c?.case_number || '')}</td>
+                                <td class="text-xs">${esc(p.method || '—')}</td>
+                                <td class="text-xs text-zinc-400">${p.installment_number ? `${p.installment_number}/${p.total_installments || '?'}` : '—'}</td>
+                                <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(p.notes || '')}</td>
+                                <td class="text-right font-mono text-emerald-300">${fmt.money(p.amount)}</td>
+                            </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>`;
+    } else if (currentView === 'overdue') {
+        const today = new Date().toISOString().slice(0,10);
+        const { data: plans } = await db.from('gmp_payment_plans')
+            .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
+            .lt('due_date', today)
+            .order('due_date');
+
+        if (!plans?.length) { el.innerHTML = '<div class="empty-state"><i class="ph ph-check-circle text-emerald-400"></i><div>Brak zaległości</div></div>'; return; }
+
+        const caseIds = plans.map(p => p.case_id);
+        const { data: paid } = await db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds);
+        const paidByCase = {};
+        (paid || []).forEach(p => { paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0); });
+
+        el.innerHTML = `
+            <table class="gmp-table">
+                <thead><tr><th>Klient / Pracodawca</th><th>Termin</th><th>Plan</th><th>Wpłacono</th><th>Zaległość</th></tr></thead>
+                <tbody>
+                    ${plans.map(p => {
+                        const c = p.gmp_cases;
+                        const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+                        const employer = c?.gmp_employers ? esc(c.gmp_employers.name) : '';
+                        const paid = paidByCase[p.case_id] || 0;
+                        const remain = Math.max(0, Number(p.total_amount) - paid);
+                        const daysOverdue = Math.floor((Date.now() - new Date(p.due_date).getTime()) / 86400000);
+                        return `
+                            <tr class="clickable" onclick="location.href='case.html?id=${p.case_id}'">
+                                <td><div class="text-sm">${client}</div>${employer ? `<div class="text-xs text-zinc-500">${employer}</div>` : ''}</td>
+                                <td class="text-xs text-red-400">${fmt.date(p.due_date)} (${daysOverdue} dni po)</td>
+                                <td class="text-right font-mono">${fmt.money(p.total_amount)}</td>
+                                <td class="text-right font-mono text-emerald-400">${fmt.money(paid)}</td>
+                                <td class="text-right font-mono text-red-400 font-bold">${fmt.money(remain)}</td>
+                            </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>`;
+    } else if (currentView === 'monthly') {
+        const { data } = await db.from('gmp_payments').select('amount, method, payment_date').not('payment_date', 'is', null).limit(10000);
+        const byMonth = {};
+        (data || []).forEach(p => {
+            const m = p.payment_date.slice(0, 7);
+            if (!byMonth[m]) byMonth[m] = { gotowka: 0, przelew: 0, faktura: 0, karta: 0, inne: 0, total: 0, count: 0 };
+            const amount = Number(p.amount) || 0;
+            byMonth[m][p.method || 'inne'] = (byMonth[m][p.method || 'inne'] || 0) + amount;
+            byMonth[m].total += amount;
+            byMonth[m].count++;
+        });
+        const sorted = Object.entries(byMonth).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 36);
+
+        el.innerHTML = `
+            <table class="gmp-table">
+                <thead><tr><th>Miesiąc</th><th>Wpłat</th><th>Gotówka</th><th>Przelew</th><th>Faktura</th><th>Inne</th><th class="text-right">Razem</th></tr></thead>
+                <tbody>
+                    ${sorted.map(([m, d]) => `
+                        <tr>
+                            <td class="font-medium text-white">${m}</td>
+                            <td class="text-xs text-zinc-400">${d.count}</td>
+                            <td class="font-mono text-xs">${fmt.money(d.gotowka)}</td>
+                            <td class="font-mono text-xs">${fmt.money(d.przelew)}</td>
+                            <td class="font-mono text-xs">${fmt.money(d.faktura)}</td>
+                            <td class="font-mono text-xs">${fmt.money(d.inne + (d.karta||0))}</td>
+                            <td class="text-right font-mono text-emerald-300 font-bold">${fmt.money(d.total)}</td>
+                        </tr>`).join('')}
+                </tbody>
+            </table>`;
+    }
+}
+</script>
+</body>
+</html>

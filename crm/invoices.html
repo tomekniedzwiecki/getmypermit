@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faktury - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Faktury</h1>
+                <p class="page-subtitle" id="count">—</p>
+            </div>
+            <button class="btn btn-primary" onclick="openNew()"><i class="ph ph-plus"></i> Nowa faktura</button>
+        </div>
+
+        <div class="flex gap-1 mb-4">
+            <button class="btn btn-secondary tab-btn active" data-status="">Wszystkie</button>
+            <button class="btn btn-secondary tab-btn" data-status="to_issue">Do wystawienia</button>
+            <button class="btn btn-secondary tab-btn" data-status="sent">Wysłane</button>
+            <button class="btn btn-secondary tab-btn" data-status="paid">Opłacone</button>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-260px)]">
+                <table class="gmp-table">
+                    <thead>
+                        <tr>
+                            <th>Pracodawca / Klient</th>
+                            <th>Opis</th>
+                            <th>Status</th>
+                            <th>Wysłana do</th>
+                            <th>Data wysłania</th>
+                            <th class="text-right">Kwota</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                        <tr><td colspan="7" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<div id="modals-container"></div>
+<style>.tab-btn{padding:0.4rem 0.75rem;font-size:0.8rem}.tab-btn.active{background:white;color:black}</style>
+<script src="components/sidebar.js" data-active="invoices"></script>
+<script>
+let statusFilter = '';
+document.addEventListener('gmp-auth-ready', init);
+async function init() {
+    await loadList();
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active'); statusFilter = b.dataset.status; loadList();
+    }));
+}
+async function loadList() {
+    let q = db.from('gmp_invoices').select('*, gmp_employers(name, nip), gmp_clients(last_name, first_name), gmp_cases(case_number)', { count: 'exact' });
+    if (statusFilter) q = q.eq('status', statusFilter);
+    q = q.order('created_at', { ascending: false }).limit(500);
+    const { data, error, count } = await q;
+    const tbody = document.getElementById('tbody');
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    document.getElementById('count').textContent = `${fmt.num(count || 0)} faktur`;
+    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ph ph-receipt"></i><div>Brak faktur</div></td></tr>'; return; }
+
+    tbody.innerHTML = data.map(inv => {
+        const party = inv.gmp_employers ? esc(inv.gmp_employers.name) : (inv.gmp_clients ? `${esc(inv.gmp_clients.last_name)} ${esc(inv.gmp_clients.first_name)}` : '—');
+        const nip = inv.gmp_employers?.nip ? `<span class="text-zinc-500 text-xs">NIP: ${esc(inv.gmp_employers.nip)}</span>` : '';
+        const statusClass = inv.status === 'paid' ? 'badge-aktywna' : inv.status === 'sent' ? 'badge-zlecona' : 'badge-lead';
+        return `
+            <tr class="${inv.case_id ? 'clickable' : ''}" onclick="${inv.case_id ? `location.href='case.html?id=${inv.case_id}'` : ''}">
+                <td><div class="text-sm text-white">${party}</div>${nip}</td>
+                <td class="text-xs text-zinc-400 max-w-md"><div class="truncate">${esc(inv.description || '')}</div></td>
+                <td><span class="badge ${statusClass}">${esc(inv.status)}</span></td>
+                <td class="text-xs text-zinc-400">${esc(inv.sent_to || '')}</td>
+                <td class="text-xs text-zinc-400">${fmt.date(inv.sent_at)}</td>
+                <td class="text-right font-mono font-bold text-emerald-300">${fmt.money(inv.amount)}</td>
+                <td class="text-right">
+                    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); changeStatus('${inv.id}', '${inv.status}')" title="Zmień status"><i class="ph ph-arrows-clockwise"></i></button>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+async function changeStatus(id, currentStatus) {
+    const options = ['to_issue', 'issued', 'sent', 'paid', 'cancelled'];
+    const next = prompt('Nowy status: ' + options.join(' / '), currentStatus);
+    if (!next || !options.includes(next)) return;
+    const updates = { status: next };
+    if (next === 'sent' && !['sent','paid'].includes(currentStatus)) updates.sent_at = new Date().toISOString().slice(0, 10);
+    if (next === 'issued') updates.issue_date = updates.issue_date || new Date().toISOString().slice(0, 10);
+    const { error } = await db.from('gmp_invoices').update(updates).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Zmieniono status'); loadList();
+}
+
+function openNew() {
+    document.getElementById('modals-container').innerHTML = `
+        <div class="modal-backdrop" onclick="if(event.target===this) document.getElementById('modals-container').innerHTML=''">
+            <div class="modal-content">
+                <div class="modal-header">Nowa faktura <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modals-container').innerHTML=''"><i class="ph ph-x"></i></button></div>
+                <div class="modal-body space-y-3">
+                    <div><label>Pracodawca (NIP lub nazwa)</label><input id="fx-employer" class="input w-full" list="employers-dl"><datalist id="employers-dl"></datalist></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label>Kwota</label><input type="number" step="0.01" id="fx-amount" class="input w-full"></div>
+                        <div><label>Data wystawienia</label><input type="date" id="fx-date" class="input w-full"></div>
+                    </div>
+                    <div><label>Opis</label><textarea id="fx-desc" class="input w-full" rows="3"></textarea></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="document.getElementById('modals-container').innerHTML=''">Anuluj</button>
+                    <button class="btn btn-primary" onclick="saveInvoice()">Zapisz</button>
+                </div>
+            </div>
+        </div>`;
+    db.from('gmp_employers').select('id, name').order('name').then(({data}) => {
+        const dl = document.getElementById('employers-dl');
+        (data || []).forEach(e => { const o = document.createElement('option'); o.value = e.name; o.dataset.id = e.id; dl.appendChild(o); });
+    });
+}
+async function saveInvoice() {
+    const empName = document.getElementById('fx-employer').value.trim();
+    const amount = Number(document.getElementById('fx-amount').value);
+    if (!amount) { toast.error('Podaj kwotę'); return; }
+    let employer_id = null;
+    if (empName) {
+        const { data: e } = await db.from('gmp_employers').select('id').ilike('name', empName).maybeSingle();
+        employer_id = e?.id || null;
+    }
+    const { error } = await db.from('gmp_invoices').insert({
+        employer_id,
+        amount,
+        issue_date: document.getElementById('fx-date').value || null,
+        description: document.getElementById('fx-desc').value.trim() || null,
+        status: 'to_issue',
+    });
+    if (error) { toast.error(error.message); return; }
+    document.getElementById('modals-container').innerHTML = '';
+    toast.success('Faktura dodana');
+    loadList();
+}
+</script>
+</body>
+</html>

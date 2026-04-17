@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karta sprawy - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="app-main" id="main-content">
+        <div class="flex items-center gap-3 mb-4">
+            <a href="cases.html" class="btn btn-ghost btn-sm"><i class="ph ph-arrow-left"></i> Sprawy</a>
+            <span class="text-zinc-600">/</span>
+            <div id="breadcrumb-case" class="text-zinc-400 text-sm">Ładuję...</div>
+        </div>
+
+        <div id="case-loading" class="p-8 text-center text-zinc-500">
+            <div class="spinner-lg mx-auto mb-3"></div>
+            Ładuję sprawę...
+        </div>
+
+        <div id="case-error" class="hidden card p-6 text-red-300"></div>
+
+        <div id="case-content" class="hidden">
+            <!-- Header: klient + akcje -->
+            <div class="card p-5 mb-4">
+                <div class="flex items-start justify-between gap-4 flex-wrap">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h1 class="text-2xl font-bold text-white" id="case-client-name">—</h1>
+                            <span class="badge badge-lead" id="case-status-badge">—</span>
+                            <span class="badge badge-stage hidden" id="case-stage-badge">—</span>
+                            <span class="badge badge-category hidden" id="case-category-badge">—</span>
+                        </div>
+                        <div class="text-zinc-500 text-sm flex items-center gap-3 flex-wrap">
+                            <span id="case-number-display" class="font-mono text-xs bg-zinc-900 px-2 py-0.5 rounded">—</span>
+                            <span id="case-znak-sprawy" class="font-mono text-xs text-zinc-400"></span>
+                            <span id="case-type-display"></span>
+                            <span id="case-employer-display"></span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                        <button class="btn btn-secondary btn-sm" onclick="openNoteModal()">
+                            <i class="ph ph-note-pencil"></i> Notatka
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="openTaskModal()">
+                            <i class="ph ph-plus-square"></i> Zadanie
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="openPaymentModal()">
+                            <i class="ph ph-coins"></i> Płatność
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="openAppointmentModal()">
+                            <i class="ph ph-calendar-plus"></i> Termin
+                        </button>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteCase()"><i class="ph ph-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layout 2-kolumnowy -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- Lewa kolumna: dane sprawy (edytowalne) -->
+                <div class="lg:col-span-2 space-y-4">
+                    <section class="card">
+                        <div class="card-header">Dane podstawowe</div>
+                        <div class="card-body grid grid-cols-2 gap-4">
+                            <div>
+                                <label>Status</label>
+                                <select class="input w-full" data-field="status">
+                                    <option value="lead">Lead</option>
+                                    <option value="zlecona">Zlecona</option>
+                                    <option value="aktywna">Aktywna</option>
+                                    <option value="zakonczona">Zakończona</option>
+                                    <option value="archiwum">Archiwum</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Etap postępowania</label>
+                                <select class="input w-full" data-field="stage">
+                                    <option value="">—</option>
+                                    <option value="weryfikacja_dokumentow">Weryfikacja dok.</option>
+                                    <option value="zlozenie_wniosku">Złożenie wniosku</option>
+                                    <option value="oczekiwanie_na_osobiste">Oczek. na osobiste</option>
+                                    <option value="wyznaczono_termin">Wyznaczony termin</option>
+                                    <option value="po_osobistym">Po osobistym</option>
+                                    <option value="oczekiwanie_na_decyzje">Oczek. decyzji</option>
+                                    <option value="zakonczenie">Zakończenie</option>
+                                    <option value="odwolanie">Odwołanie</option>
+                                    <option value="umorzenie">Umorzenie</option>
+                                    <option value="przystapienie">Przystąpienie</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label>Uwagi do statusu / notatka o etapie</label>
+                                <textarea class="input w-full" rows="2" data-field="status_notes"></textarea>
+                            </div>
+                            <div>
+                                <label>Rodzaj sprawy</label>
+                                <input type="text" class="input w-full" data-field="case_type" placeholder="np. PRACA, POBYT STAŁY">
+                            </div>
+                            <div>
+                                <label>Uwagi do rodzaju</label>
+                                <input type="text" class="input w-full" data-field="case_type_notes">
+                            </div>
+                            <div>
+                                <label>Typ sprawy</label>
+                                <select class="input w-full" data-field="kind">
+                                    <option value="nowa_sprawa">Nowa sprawa</option>
+                                    <option value="przystapienie_do_sprawy">Przystąpienie</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Metoda złożenia</label>
+                                <select class="input w-full" data-field="submission_method">
+                                    <option value="">—</option>
+                                    <option value="osobiscie">Osobiście</option>
+                                    <option value="elektronicznie">Elektronicznie</option>
+                                    <option value="pocztowo">Pocztowo</option>
+                                    <option value="przeniesienie">Przeniesienie</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Kategoria</label>
+                                <input type="text" class="input w-full" data-field="category">
+                            </div>
+                            <div>
+                                <label>Opiekun</label>
+                                <select class="input w-full" data-field="assigned_to" id="staff-select">
+                                    <option value="">—</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Znak sprawy (urząd)</label>
+                                <input type="text" class="input w-full" data-field="znak_sprawy">
+                            </div>
+                            <div>
+                                <label>Nr sprawy (wewn.)</label>
+                                <input type="text" class="input w-full" data-field="case_number">
+                            </div>
+                            <div>
+                                <label>Oddział</label>
+                                <select class="input w-full" data-field="department_id" id="dept-select">
+                                    <option value="">—</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Inspektor</label>
+                                <select class="input w-full" data-field="inspector_id" id="inspector-select">
+                                    <option value="">—</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label>Dodatkowy komentarz</label>
+                                <textarea class="input w-full" rows="3" data-field="extra_notes"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header">Daty i czynności proceduralne</div>
+                        <div class="card-body grid grid-cols-2 gap-4">
+                            <div><label>Data przyjęcia sprawy</label><input type="date" class="input w-full" data-field="date_accepted"></div>
+                            <div><label>Data złożenia wniosku</label><input type="date" class="input w-full" data-field="date_submitted"></div>
+                            <div><label>Data przystąpienia</label><input type="date" class="input w-full" data-field="date_joined"></div>
+                            <div><label>Data wniosku o przekazanie</label><input type="date" class="input w-full" data-field="date_transfer_request"></div>
+                            <div><label>Data przekazania</label><input type="date" class="input w-full" data-field="date_transferred"></div>
+                            <div><label>Wszczęcie postępowania</label>
+                                <select class="input w-full" data-field="wszczecie_postepowania">
+                                    <option value="false">Nie</option>
+                                    <option value="true">Tak</option>
+                                </select>
+                            </div>
+                            <div><label>Ponaglenie (data)</label><input type="date" class="input w-full" data-field="ponaglenie_date"></div>
+                            <div><label>Skarga (data)</label><input type="date" class="input w-full" data-field="skarga_date"></div>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header">Finanse</div>
+                        <div class="card-body grid grid-cols-2 gap-4">
+                            <div>
+                                <label>Wynagrodzenie</label>
+                                <input type="number" step="0.01" class="input w-full" data-field="fee_amount">
+                            </div>
+                            <div>
+                                <label>Paragon</label>
+                                <select class="input w-full" data-field="paragon">
+                                    <option value="false">Nie</option>
+                                    <option value="true">Tak</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label>Uwagi do wynagrodzenia</label>
+                                <textarea class="input w-full" rows="2" data-field="fee_notes"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Historia -->
+                    <section class="card">
+                        <div class="card-header flex items-center justify-between">
+                            <span>Historia działań</span>
+                            <button class="btn btn-secondary btn-sm" onclick="openNoteModal()"><i class="ph ph-plus"></i> Dodaj</button>
+                        </div>
+                        <div id="activities-list" class="divide-y divide-zinc-900/50 max-h-[500px] overflow-y-auto">
+                            <div class="p-4 text-zinc-600 text-sm">Ładuję...</div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Prawa kolumna: klient + zadania + platnosci + dokumenty -->
+                <div class="space-y-4">
+                    <section class="card">
+                        <div class="card-header">Klient</div>
+                        <div class="card-body space-y-2 text-sm" id="client-panel">
+                            <div class="text-zinc-500">—</div>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header">Pracodawca</div>
+                        <div class="card-body text-sm" id="employer-panel">
+                            <div class="text-zinc-500">—</div>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header flex items-center justify-between">
+                            <span>Zadania</span>
+                            <button class="btn btn-ghost btn-sm" onclick="openTaskModal()"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div id="tasks-list" class="divide-y divide-zinc-900/50 max-h-[300px] overflow-y-auto">
+                            <div class="p-3 text-zinc-600 text-sm">—</div>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header flex items-center justify-between">
+                            <span>Płatności</span>
+                            <button class="btn btn-ghost btn-sm" onclick="openPaymentModal()"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div id="payments-list" class="divide-y divide-zinc-900/50 max-h-[300px] overflow-y-auto">
+                            <div class="p-3 text-zinc-600 text-sm">—</div>
+                        </div>
+                        <div class="p-3 border-t border-zinc-900/50 text-xs space-y-1" id="payment-summary">
+                            <!-- wypełniane -->
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header flex items-center justify-between">
+                            <span>Dokumenty</span>
+                            <label class="btn btn-ghost btn-sm cursor-pointer">
+                                <i class="ph ph-plus"></i>
+                                <input type="file" id="doc-upload" class="hidden" multiple>
+                            </label>
+                        </div>
+                        <div id="documents-list" class="divide-y divide-zinc-900/50 max-h-[250px] overflow-y-auto">
+                            <div class="p-3 text-zinc-600 text-sm">—</div>
+                        </div>
+                    </section>
+
+                    <section class="card" id="trusted-profile-card">
+                        <div class="card-header flex items-center gap-2">
+                            <i class="ph ph-shield-warning text-amber-400"></i>
+                            <span>Profil zaufany</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="bg-amber-900/20 border border-amber-800/50 rounded-md p-2.5 mb-3 text-xs text-amber-200">
+                                <i class="ph ph-warning mr-1"></i>
+                                Dane wrażliwe. Dostęp logowany, wymaga potwierdzenia.
+                            </div>
+                            <button class="btn btn-secondary w-full text-xs" onclick="requestTrustedProfileAccess()">
+                                <i class="ph ph-lock-key"></i> Pokaż login/hasło
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Save floater -->
+            <div id="save-floater" class="fixed bottom-6 right-6 hidden z-30">
+                <button class="btn btn-primary shadow-2xl" onclick="saveCase()">
+                    <i class="ph ph-check"></i>
+                    <span id="save-text">Zapisz zmiany</span>
+                    <span class="spinner hidden" id="save-spinner"></span>
+                </button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modale -->
+<div id="modals-container"></div>
+
+<script src="components/sidebar.js" data-active="cases"></script>
+<script>
+let caseData = null;
+let originalData = {};
+let caseId = null;
+let isDirty = false;
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    const params = new URLSearchParams(window.location.search);
+    caseId = params.get('id');
+    const isNew = params.get('new') === '1';
+
+    await loadStaffAndDepts();
+
+    if (isNew) {
+        await createNewCase();
+    } else if (caseId) {
+        await loadCase();
+    } else {
+        showError('Brak ID sprawy');
+    }
+
+    // Dirty tracking
+    document.querySelectorAll('[data-field]').forEach(el => {
+        el.addEventListener('input', markDirty);
+        el.addEventListener('change', markDirty);
+    });
+
+    // Ctrl+S
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            if (isDirty) saveCase();
+        }
+    });
+
+    // File upload
+    document.getElementById('doc-upload').addEventListener('change', uploadDocuments);
+}
+
+async function loadStaffAndDepts() {
+    const [{ data: staff }, { data: depts }, { data: inspectors }] = await Promise.all([
+        db.from('gmp_staff').select('id, full_name').order('full_name'),
+        db.from('gmp_office_departments').select('id, code, name').order('code'),
+        db.from('gmp_inspectors').select('id, full_name').order('full_name').limit(500),
+    ]);
+    const staffSel = document.getElementById('staff-select');
+    (staff || []).forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.full_name;
+        staffSel.appendChild(o);
+    });
+    const deptSel = document.getElementById('dept-select');
+    (depts || []).forEach(d => {
+        const o = document.createElement('option');
+        o.value = d.id; o.textContent = d.code + (d.name ? ` — ${d.name}` : '');
+        deptSel.appendChild(o);
+    });
+    const inspSel = document.getElementById('inspector-select');
+    (inspectors || []).forEach(i => {
+        const o = document.createElement('option');
+        o.value = i.id; o.textContent = i.full_name;
+        inspSel.appendChild(o);
+    });
+}
+
+async function loadCase() {
+    const { data, error } = await db
+        .from('gmp_cases')
+        .select('*, gmp_clients(*), gmp_employers(*), gmp_staff(full_name), gmp_office_departments(code, name), gmp_inspectors(full_name), gmp_offices(name, city)')
+        .eq('id', caseId)
+        .maybeSingle();
+
+    if (error || !data) {
+        showError(error?.message || 'Nie znaleziono sprawy');
+        return;
+    }
+
+    caseData = data;
+    fillForm();
+    document.getElementById('case-loading').classList.add('hidden');
+    document.getElementById('case-content').classList.remove('hidden');
+
+    // Rownoleg: historia, zadania, platnosci, dokumenty
+    Promise.all([
+        loadActivities(),
+        loadTasks(),
+        loadPayments(),
+        loadDocuments(),
+    ]);
+}
+
+async function createNewCase() {
+    // Tworzymy szkielet sprawy
+    const { data, error } = await db
+        .from('gmp_cases')
+        .insert({
+            status: 'lead',
+            kind: 'nowa_sprawa',
+            import_source: 'manual',
+        })
+        .select()
+        .single();
+    if (error) { showError(error.message); return; }
+    caseId = data.id;
+    // Redirect do URL z id
+    window.history.replaceState({}, '', `case.html?id=${caseId}`);
+    caseData = data;
+    fillForm();
+    document.getElementById('case-loading').classList.add('hidden');
+    document.getElementById('case-content').classList.remove('hidden');
+    toast.success('Utworzono nową sprawę');
+}
+
+function showError(msg) {
+    document.getElementById('case-loading').classList.add('hidden');
+    const err = document.getElementById('case-error');
+    err.textContent = msg;
+    err.classList.remove('hidden');
+}
+
+function fillForm() {
+    const d = caseData;
+    // Header
+    const client = d.gmp_clients ? `${d.gmp_clients.last_name} ${d.gmp_clients.first_name}` : '(bez klienta)';
+    document.getElementById('case-client-name').textContent = client;
+    document.getElementById('breadcrumb-case').textContent = client + (d.case_number ? ` / #${d.case_number}` : '');
+    document.title = `${client} - GetMyPermit CRM`;
+
+    const statusBadge = document.getElementById('case-status-badge');
+    statusBadge.className = `badge badge-${d.status || 'lead'}`;
+    statusBadge.textContent = d.status || 'lead';
+
+    if (d.stage) {
+        document.getElementById('case-stage-badge').textContent = d.stage;
+        document.getElementById('case-stage-badge').classList.remove('hidden');
+    }
+    if (d.category) {
+        document.getElementById('case-category-badge').textContent = d.category;
+        document.getElementById('case-category-badge').classList.remove('hidden');
+    }
+
+    document.getElementById('case-number-display').textContent = d.case_number || d.id.slice(0, 8);
+    if (d.znak_sprawy) document.getElementById('case-znak-sprawy').textContent = d.znak_sprawy;
+    if (d.case_type) document.getElementById('case-type-display').textContent = '• ' + d.case_type;
+    if (d.gmp_employers) document.getElementById('case-employer-display').textContent = '• ' + d.gmp_employers.name;
+
+    // Form fields
+    const fields = document.querySelectorAll('[data-field]');
+    fields.forEach(el => {
+        const f = el.dataset.field;
+        const val = d[f];
+        if (val == null) {
+            el.value = '';
+        } else if (el.type === 'checkbox') {
+            el.checked = !!val;
+        } else if (typeof val === 'boolean') {
+            el.value = val ? 'true' : 'false';
+        } else {
+            el.value = val;
+        }
+        originalData[f] = el.value;
+    });
+
+    // Klient panel
+    const cp = document.getElementById('client-panel');
+    if (d.gmp_clients) {
+        cp.innerHTML = `
+            <div class="font-medium text-white">${esc(d.gmp_clients.last_name)} ${esc(d.gmp_clients.first_name)}</div>
+            ${d.gmp_clients.birth_date ? `<div class="text-zinc-400"><i class="ph ph-cake text-xs"></i> ${fmt.date(d.gmp_clients.birth_date)}</div>` : ''}
+            ${d.gmp_clients.nationality ? `<div class="text-zinc-400"><i class="ph ph-flag text-xs"></i> ${esc(d.gmp_clients.nationality)}</div>` : ''}
+            ${d.gmp_clients.phone ? `<div class="text-zinc-300 font-mono text-xs"><i class="ph ph-phone"></i> ${esc(d.gmp_clients.phone)}</div>` : ''}
+            ${d.gmp_clients.email ? `<div class="text-zinc-300 text-xs break-all"><i class="ph ph-envelope"></i> ${esc(d.gmp_clients.email)}</div>` : ''}
+            <div class="pt-2"><a href="clients.html?id=${d.gmp_clients.id}" class="text-blue-400 text-xs hover:underline">Zobacz kartotekę →</a></div>`;
+    } else {
+        cp.innerHTML = `
+            <div class="text-zinc-500 text-sm mb-2">Brak przypisanego klienta</div>
+            <button class="btn btn-secondary btn-sm w-full" onclick="openClientPicker()"><i class="ph ph-user-plus"></i> Dodaj klienta</button>`;
+    }
+
+    // Pracodawca panel
+    const ep = document.getElementById('employer-panel');
+    if (d.gmp_employers) {
+        ep.innerHTML = `
+            <div class="font-medium text-white">${esc(d.gmp_employers.name)}</div>
+            ${d.gmp_employers.nip ? `<div class="text-zinc-400 text-xs mt-1">NIP: ${esc(d.gmp_employers.nip)}</div>` : ''}
+            <div class="pt-2"><a href="employers.html?id=${d.gmp_employers.id}" class="text-blue-400 text-xs hover:underline">Zobacz kartotekę →</a></div>`;
+    } else {
+        ep.innerHTML = `<div class="text-zinc-500 text-sm">Brak pracodawcy</div>`;
+    }
+}
+
+function markDirty() {
+    isDirty = true;
+    document.getElementById('save-floater').classList.remove('hidden');
+}
+
+async function saveCase() {
+    if (!isDirty) return;
+    const spinner = document.getElementById('save-spinner');
+    const txt = document.getElementById('save-text');
+    spinner.classList.remove('hidden');
+    txt.textContent = 'Zapisywanie...';
+
+    const updates = {};
+    document.querySelectorAll('[data-field]').forEach(el => {
+        const f = el.dataset.field;
+        let v = el.value;
+        if (v === '') v = null;
+        else if (v === 'true') v = true;
+        else if (v === 'false') v = false;
+        else if (el.type === 'number') v = v === '' ? null : Number(v);
+        updates[f] = v;
+    });
+
+    // Wykryj zmianę statusu/etapu by dopisać do historii
+    const oldStatus = caseData.status;
+    const oldStage = caseData.stage;
+
+    const { data, error } = await db.from('gmp_cases').update(updates).eq('id', caseId).select().maybeSingle();
+    if (error) {
+        toast.error('Błąd zapisu: ' + error.message);
+        spinner.classList.add('hidden');
+        txt.textContent = 'Zapisz zmiany';
+        return;
+    }
+
+    caseData = { ...caseData, ...data };
+
+    // Jesli status/etap zmienione - dopisz activity
+    if (updates.status !== oldStatus) {
+        await db.from('gmp_case_activities').insert({
+            case_id: caseId,
+            activity_type: 'status_change',
+            content: `Status: ${oldStatus || '—'} → ${updates.status}`,
+            metadata: { from: oldStatus, to: updates.status },
+            created_by: window.currentStaff?.id,
+        });
+    }
+    if (updates.stage !== oldStage) {
+        await db.from('gmp_case_activities').insert({
+            case_id: caseId,
+            activity_type: 'stage_change',
+            content: `Etap: ${oldStage || '—'} → ${updates.stage || '—'}`,
+            metadata: { from: oldStage, to: updates.stage },
+            created_by: window.currentStaff?.id,
+        });
+    }
+
+    isDirty = false;
+    document.getElementById('save-floater').classList.add('hidden');
+    spinner.classList.add('hidden');
+    txt.textContent = 'Zapisz zmiany';
+    toast.success('Zapisano');
+    loadActivities();
+}
+
+async function loadActivities() {
+    const { data, error } = await db
+        .from('gmp_case_activities')
+        .select('*, gmp_staff(full_name)')
+        .eq('case_id', caseId)
+        .order('created_at', { ascending: false });
+
+    const el = document.getElementById('activities-list');
+    if (error) { el.innerHTML = `<div class="p-4 text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-clock-counter-clockwise"></i><div>Brak historii</div></div>'; return; }
+
+    const typeIcons = {
+        status_change: 'ph-arrows-left-right text-blue-400',
+        stage_change: 'ph-flag text-purple-400',
+        note: 'ph-note text-zinc-400',
+        document_added: 'ph-file-plus text-emerald-400',
+        task_assigned: 'ph-check-square text-cyan-400',
+        email_sent: 'ph-envelope text-blue-300',
+        whatsapp_sent: 'ph-whatsapp-logo text-green-400',
+        payment_received: 'ph-coins text-yellow-400',
+        appointment_created: 'ph-calendar-plus text-cyan-400',
+        decision_received: 'ph-file-text text-emerald-400',
+    };
+
+    el.innerHTML = data.map(a => {
+        const icon = typeIcons[a.activity_type] || 'ph-circle text-zinc-500';
+        const author = a.gmp_staff?.full_name || 'system';
+        return `
+            <div class="p-3 hover:bg-zinc-900/30">
+                <div class="flex items-start gap-3">
+                    <i class="ph ${icon} text-lg mt-0.5 flex-shrink-0"></i>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-zinc-200">${esc(a.content || '—')}</div>
+                        <div class="text-xs text-zinc-500 mt-0.5">${esc(author)} • ${fmt.datetime(a.created_at)} • ${fmt.daysAgo(a.created_at)}</div>
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+async function loadTasks() {
+    const { data, error } = await db
+        .from('gmp_tasks')
+        .select('*, gmp_staff(full_name)')
+        .eq('case_id', caseId)
+        .order('due_date', { ascending: true, nullsLast: true })
+        .order('created_at', { ascending: false });
+
+    const el = document.getElementById('tasks-list');
+    if (error) { el.innerHTML = `<div class="p-3 text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    if (!data?.length) { el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak zadań</div>'; return; }
+
+    el.innerHTML = data.map(t => {
+        const overdue = t.due_date && t.status !== 'done' && new Date(t.due_date) < new Date();
+        const done = t.status === 'done';
+        return `
+            <div class="p-2.5 flex items-start gap-2">
+                <input type="checkbox" ${done ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)" class="mt-1 flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm ${done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${esc(t.title)}</div>
+                    <div class="text-xs text-zinc-500 mt-0.5 ${overdue ? 'text-red-400' : ''}">
+                        ${t.gmp_staff?.full_name || '—'}${t.due_date ? ' • ' + fmt.date(t.due_date) : ''}
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+async function toggleTask(taskId, done) {
+    const status = done ? 'done' : 'pending';
+    const updates = { status };
+    if (done) updates.completed_at = new Date().toISOString();
+    const { error } = await db.from('gmp_tasks').update(updates).eq('id', taskId);
+    if (error) { toast.error(error.message); return; }
+    toast.success(done ? 'Zadanie ukończone' : 'Zadanie otwarte');
+    loadTasks();
+    // dopisz activity
+    await db.from('gmp_case_activities').insert({
+        case_id: caseId,
+        activity_type: 'task_assigned',
+        content: `Zadanie oznaczone jako ${done ? 'ukończone' : 'otwarte'}`,
+        created_by: window.currentStaff?.id,
+    });
+}
+
+async function loadPayments() {
+    const [{ data: payments }, { data: plan }] = await Promise.all([
+        db.from('gmp_payments').select('*').eq('case_id', caseId).order('payment_date', { ascending: true, nullsLast: true }),
+        db.from('gmp_payment_plans').select('*').eq('case_id', caseId).maybeSingle(),
+    ]);
+
+    const el = document.getElementById('payments-list');
+    if (!payments?.length && !plan) {
+        el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak płatności</div>';
+        document.getElementById('payment-summary').innerHTML = '';
+        return;
+    }
+
+    if (payments?.length) {
+        el.innerHTML = payments.map(p => `
+            <div class="p-2.5 flex items-center justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm text-emerald-300 font-mono">${fmt.money(p.amount)}</div>
+                    <div class="text-xs text-zinc-500">
+                        ${p.method || '—'}${p.installment_number ? ' • rata ' + p.installment_number + (p.total_installments ? '/' + p.total_installments : '') : ''}
+                    </div>
+                </div>
+                <div class="text-xs text-zinc-500">${fmt.date(p.payment_date)}</div>
+            </div>`).join('');
+    } else {
+        el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak płatności (jest plan)</div>';
+    }
+
+    // Summary
+    const totalPaid = (payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+    const planTotal = plan?.total_amount ? Number(plan.total_amount) : null;
+    const remaining = planTotal != null ? planTotal - totalPaid : null;
+    document.getElementById('payment-summary').innerHTML = `
+        <div class="flex justify-between"><span class="text-zinc-500">Zapłacone</span><span class="text-emerald-400 font-mono">${fmt.money(totalPaid)}</span></div>
+        ${planTotal != null ? `
+            <div class="flex justify-between"><span class="text-zinc-500">Plan (total)</span><span class="font-mono">${fmt.money(planTotal)}</span></div>
+            <div class="flex justify-between"><span class="text-zinc-500">Pozostało</span><span class="${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'} font-mono">${fmt.money(remaining || 0)}</span></div>
+        ` : ''}
+    `;
+}
+
+async function loadDocuments() {
+    const { data } = await db.from('gmp_documents').select('*').eq('case_id', caseId).order('created_at', { ascending: false });
+    const el = document.getElementById('documents-list');
+    if (!data?.length) { el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak dokumentów</div>'; return; }
+    el.innerHTML = data.map(d => `
+        <div class="p-2.5 flex items-center gap-2">
+            <i class="ph ph-file text-zinc-400"></i>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm text-zinc-200 truncate">${esc(d.name)}</div>
+                <div class="text-xs text-zinc-500">${fmt.daysAgo(d.created_at)}</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="downloadDoc('${d.id}')"><i class="ph ph-download-simple"></i></button>
+        </div>`).join('');
+}
+
+async function uploadDocuments(e) {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    for (const file of files) {
+        const path = `cases/${caseId}/${Date.now()}_${file.name}`;
+        const { error: upErr } = await window.supabaseClient.storage
+            .from('documents')
+            .upload(path, file);
+        if (upErr) {
+            toast.error('Upload: ' + upErr.message);
+            continue;
+        }
+        await db.from('gmp_documents').insert({
+            case_id: caseId,
+            name: file.name,
+            storage_path: path,
+            mime_type: file.type,
+            file_size: file.size,
+            uploaded_by: window.currentStaff?.id,
+        });
+        await db.from('gmp_case_activities').insert({
+            case_id: caseId,
+            activity_type: 'document_added',
+            content: `Dodano dokument: ${file.name}`,
+            created_by: window.currentStaff?.id,
+        });
+    }
+    toast.success(`Uploaded ${files.length}`);
+    loadDocuments();
+    loadActivities();
+    e.target.value = '';
+}
+
+async function downloadDoc(docId) {
+    const { data: doc } = await db.from('gmp_documents').select('*').eq('id', docId).single();
+    if (!doc?.storage_path) { toast.error('Brak ścieżki'); return; }
+    const { data, error } = await window.supabaseClient.storage.from('documents').createSignedUrl(doc.storage_path, 60);
+    if (error) { toast.error(error.message); return; }
+    window.open(data.signedUrl, '_blank');
+}
+
+// ============ MODALE ============
+function openModal(html) {
+    document.getElementById('modals-container').innerHTML = `
+        <div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+            <div class="modal-content">${html}</div>
+        </div>`;
+}
+function closeModal() {
+    document.getElementById('modals-container').innerHTML = '';
+}
+
+function openNoteModal() {
+    openModal(`
+        <div class="modal-header">Nowa notatka<button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body">
+            <label>Treść</label>
+            <textarea id="note-text" class="input w-full" rows="4" autofocus placeholder="Opis działania, rozmowy, decyzji..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="saveNote()">Zapisz</button>
+        </div>`);
+}
+
+async function saveNote() {
+    const content = document.getElementById('note-text').value.trim();
+    if (!content) return;
+    const { error } = await db.from('gmp_case_activities').insert({
+        case_id: caseId,
+        activity_type: 'note',
+        content,
+        created_by: window.currentStaff?.id,
+    });
+    if (error) { toast.error(error.message); return; }
+    closeModal();
+    toast.success('Notatka dodana');
+    loadActivities();
+}
+
+function openTaskModal() {
+    const staffOpts = Array.from(document.getElementById('staff-select').options)
+        .map(o => `<option value="${o.value}">${esc(o.textContent)}</option>`).join('');
+    openModal(`
+        <div class="modal-header">Nowe zadanie<button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body space-y-3">
+            <div><label>Tytuł</label><input id="task-title" class="input w-full" autofocus placeholder="np. Wysłać wezwanie do klienta"></div>
+            <div><label>Opis</label><textarea id="task-desc" class="input w-full" rows="2"></textarea></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label>Przypisz do</label><select id="task-assign" class="input w-full">${staffOpts}</select></div>
+                <div><label>Termin</label><input type="date" id="task-due" class="input w-full"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="saveTask()">Zapisz</button>
+        </div>`);
+    // Pre-select obecnego staffa
+    if (window.currentStaff) document.getElementById('task-assign').value = window.currentStaff.id;
+}
+
+async function saveTask() {
+    const title = document.getElementById('task-title').value.trim();
+    if (!title) return;
+    const { error } = await db.from('gmp_tasks').insert({
+        case_id: caseId,
+        title,
+        description: document.getElementById('task-desc').value.trim() || null,
+        assigned_to: document.getElementById('task-assign').value || null,
+        due_date: document.getElementById('task-due').value || null,
+        status: 'pending',
+        created_by: window.currentStaff?.id,
+    });
+    if (error) { toast.error(error.message); return; }
+    closeModal();
+    toast.success('Zadanie dodane');
+    loadTasks();
+    await db.from('gmp_case_activities').insert({
+        case_id: caseId,
+        activity_type: 'task_assigned',
+        content: 'Dodano zadanie: ' + title,
+        created_by: window.currentStaff?.id,
+    });
+    loadActivities();
+}
+
+function openPaymentModal() {
+    openModal(`
+        <div class="modal-header">Nowa płatność<button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body grid grid-cols-2 gap-3">
+            <div><label>Kwota</label><input type="number" step="0.01" id="pay-amount" class="input w-full" autofocus></div>
+            <div><label>Data</label><input type="date" id="pay-date" class="input w-full" value="${new Date().toISOString().slice(0,10)}"></div>
+            <div>
+                <label>Forma</label>
+                <select id="pay-method" class="input w-full">
+                    <option value="gotowka">Gotówka</option>
+                    <option value="przelew">Przelew</option>
+                    <option value="faktura">Faktura</option>
+                    <option value="karta">Karta</option>
+                    <option value="inne">Inne</option>
+                </select>
+            </div>
+            <div>
+                <label>Płaci</label>
+                <select id="pay-payer" class="input w-full">
+                    <option value="client">Klient</option>
+                    <option value="employer">Pracodawca</option>
+                </select>
+            </div>
+            <div><label>Rata nr</label><input type="number" id="pay-inst" class="input w-full" min="1"></div>
+            <div><label>Z X rat</label><input type="number" id="pay-inst-total" class="input w-full" min="1"></div>
+            <div class="col-span-2"><label>Notatka</label><input id="pay-notes" class="input w-full"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="savePayment()">Zapisz</button>
+        </div>`);
+    // Domyslnie: jesli jest pracodawca, ustaw employer
+    if (caseData.employer_id) document.getElementById('pay-payer').value = 'employer';
+}
+
+async function savePayment() {
+    const amount = Number(document.getElementById('pay-amount').value);
+    if (!amount) { toast.error('Podaj kwotę'); return; }
+    const payer = document.getElementById('pay-payer').value;
+    const { error } = await db.from('gmp_payments').insert({
+        case_id: caseId,
+        payer_type: payer,
+        client_id: payer === 'client' ? caseData.client_id : null,
+        employer_id: payer === 'employer' ? caseData.employer_id : null,
+        kind: 'fee',
+        amount,
+        method: document.getElementById('pay-method').value,
+        payment_date: document.getElementById('pay-date').value || null,
+        installment_number: document.getElementById('pay-inst').value || null,
+        total_installments: document.getElementById('pay-inst-total').value || null,
+        notes: document.getElementById('pay-notes').value || null,
+    });
+    if (error) { toast.error(error.message); return; }
+    closeModal();
+    toast.success('Płatność dodana');
+    loadPayments();
+    await db.from('gmp_case_activities').insert({
+        case_id: caseId,
+        activity_type: 'payment_received',
+        content: `Płatność: ${fmt.money(amount)}`,
+        metadata: { amount, method: document.getElementById('pay-method').value },
+        created_by: window.currentStaff?.id,
+    });
+    loadActivities();
+}
+
+function openAppointmentModal() {
+    toast.info('Moduł kalendarza — dostępny wkrótce');
+}
+
+function openClientPicker() {
+    toast.info('Wybór klienta — dostępny wkrótce. Edytuj pole client_id lub idź do kartoteki.');
+}
+
+async function deleteCase() {
+    if (!confirm('Na pewno usunąć sprawę? Tej akcji nie da się cofnąć.')) return;
+    const { error } = await db.from('gmp_cases').delete().eq('id', caseId);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto');
+    setTimeout(() => window.location.href = 'cases.html', 600);
+}
+
+async function requestTrustedProfileAccess() {
+    if (!confirm('⚠️ Chcesz uzyskać dostęp do danych profilu zaufanego. Ta akcja zostanie zalogowana. Kontynuować?')) return;
+    const { data } = await db.from('gmp_trusted_profile_credentials')
+        .select('*')
+        .eq('client_id', caseData.client_id)
+        .maybeSingle();
+    if (!data) {
+        toast.warning('Brak zapisanych danych profilu zaufanego. Możesz dodać w karcie klienta.');
+        return;
+    }
+    // Log dostep
+    await db.from('gmp_credentials_access_log').insert({
+        credential_id: data.id,
+        accessed_by: window.currentStaff?.id,
+        action: 'view',
+        user_agent: navigator.userAgent,
+    });
+    openModal(`
+        <div class="modal-header">
+            <span><i class="ph ph-shield-warning text-amber-400"></i> Profil zaufany</span>
+            <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body space-y-3">
+            <div class="bg-amber-900/20 border border-amber-800/50 rounded p-3 text-xs text-amber-200">
+                Dostęp zalogowany. Nie udostępniaj tych danych niepowołanym osobom.
+            </div>
+            <div><label>Login</label><input class="input w-full font-mono" value="${esc(data.trusted_profile_login || '')}" readonly></div>
+            <div><label>Hasło</label><input class="input w-full font-mono" value="${esc(data.trusted_profile_password || '')}" readonly></div>
+            ${data.notes ? `<div><label>Uwagi</label><div class="text-sm text-zinc-400">${esc(data.notes)}</div></div>` : ''}
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Zamknij</button>
+        </div>`);
+}
+</script>
+</body>
+</html>

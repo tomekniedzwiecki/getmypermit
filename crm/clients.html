@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klienci - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Klienci</h1>
+                <p class="page-subtitle" id="count">Ładuję...</p>
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-primary" onclick="openNewClient()"><i class="ph ph-plus"></i> Nowy klient</button>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label>Szukaj</label>
+                    <input id="f-search" class="filter-input w-full" placeholder="Nazwisko, imię, telefon, email...">
+                </div>
+                <div>
+                    <label>Obywatelstwo</label>
+                    <select id="f-nat" class="filter-input w-full"><option value="">Wszystkie</option></select>
+                </div>
+                <div>
+                    <label>Pracodawca</label>
+                    <select id="f-emp" class="filter-input w-full"><option value="">Wszyscy</option></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-280px)]">
+                <table class="gmp-table">
+                    <thead>
+                        <tr>
+                            <th>Nazwisko i imię</th>
+                            <th>Data ur.</th>
+                            <th>Obywatelstwo</th>
+                            <th>Pracodawca</th>
+                            <th>Telefon</th>
+                            <th>Email</th>
+                            <th class="text-right">Spraw</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                        <tr><td colspan="7" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </main>
+</div>
+<div id="modals-container"></div>
+<script src="components/sidebar.js" data-active="clients"></script>
+<script>
+const PAGE_SIZE = 100;
+let currentPage = 1;
+let totalRows = 0;
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    const params = new URLSearchParams(window.location.search);
+    const clientId = params.get('id');
+    if (clientId) {
+        openClientDetail(clientId);
+        return;
+    }
+
+    await loadFilterOptions();
+    await loadList();
+
+    ['f-nat', 'f-emp'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => { currentPage = 1; loadList(); });
+    });
+    let t;
+    document.getElementById('f-search').addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(() => { currentPage = 1; loadList(); }, 300);
+    });
+}
+
+async function loadFilterOptions() {
+    const { data: nats } = await db.from('gmp_clients').select('nationality').not('nationality', 'is', null).limit(2000);
+    const uniqueNats = [...new Set((nats || []).map(n => n.nationality).filter(Boolean))].sort();
+    const natSel = document.getElementById('f-nat');
+    uniqueNats.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; natSel.appendChild(o); });
+
+    const { data: emps } = await db.from('gmp_employers').select('id, name').order('name').limit(1000);
+    const empSel = document.getElementById('f-emp');
+    (emps || []).forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.name; empSel.appendChild(o); });
+}
+
+async function loadList() {
+    const search = document.getElementById('f-search').value.trim();
+    const nat = document.getElementById('f-nat').value;
+    const emp = document.getElementById('f-emp').value;
+
+    let q = db.from('gmp_clients').select(
+        'id, last_name, first_name, birth_date, nationality, phone, email, employer_id, gmp_employers(name)',
+        { count: 'exact' }
+    );
+
+    if (search) {
+        const s = `%${search}%`;
+        q = q.or(`last_name.ilike.${s},first_name.ilike.${s},phone.ilike.${s},email.ilike.${s}`);
+    }
+    if (nat) q = q.eq('nationality', nat);
+    if (emp) q = q.eq('employer_id', emp);
+
+    const from = (currentPage - 1) * PAGE_SIZE;
+    q = q.order('last_name').range(from, from + PAGE_SIZE - 1);
+
+    const { data, error, count } = await q;
+    const tbody = document.getElementById('tbody');
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+
+    totalRows = count || 0;
+    document.getElementById('count').textContent = `${fmt.num(totalRows)} klientów`;
+
+    if (!data?.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ph ph-users"></i><div>Brak klientów</div></td></tr>';
+        renderPagination(); return;
+    }
+
+    // Pobierz liczniki spraw per klient (w jednym zapytaniu)
+    const ids = data.map(c => c.id);
+    const { data: casesCount } = await db.from('gmp_cases').select('client_id').in('client_id', ids);
+    const casesByClient = {};
+    (casesCount || []).forEach(c => {
+        casesByClient[c.client_id] = (casesByClient[c.client_id] || 0) + 1;
+    });
+
+    tbody.innerHTML = data.map(c => `
+        <tr class="clickable" onclick="window.location.href='clients.html?id=${c.id}'">
+            <td><span class="text-white">${esc(c.last_name)}</span> <span class="text-zinc-400">${esc(c.first_name)}</span></td>
+            <td class="text-xs text-zinc-400">${fmt.date(c.birth_date)}</td>
+            <td class="text-xs text-zinc-400">${esc(c.nationality || '')}</td>
+            <td class="text-xs text-zinc-400">${esc(c.gmp_employers?.name || '')}</td>
+            <td class="font-mono text-xs text-zinc-300">${esc(c.phone || '')}</td>
+            <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(c.email || '')}</td>
+            <td class="text-right text-zinc-400 text-xs">${casesByClient[c.id] || 0}</td>
+        </tr>
+    `).join('');
+    renderPagination();
+}
+
+function renderPagination() {
+    const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+    const container = document.getElementById('pagination');
+    if (totalPages <= 1) { container.innerHTML = ''; return; }
+    let html = '';
+    html += `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="ph ph-caret-left"></i></button>`;
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    for (let i = start; i <= end; i++) {
+        html += `<button onclick="goToPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+    }
+    html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}><i class="ph ph-caret-right"></i></button>`;
+    html += `<span class="text-zinc-500 text-xs ml-3">${currentPage}/${totalPages}</span>`;
+    container.innerHTML = html;
+}
+function goToPage(p) { const tp = Math.ceil(totalRows/PAGE_SIZE); if (p<1||p>tp) return; currentPage=p; loadList(); }
+
+async function openClientDetail(id) {
+    document.querySelector('main').innerHTML = `
+        <div class="flex items-center gap-3 mb-4">
+            <a href="clients.html" class="btn btn-ghost btn-sm"><i class="ph ph-arrow-left"></i> Klienci</a>
+        </div>
+        <div id="cl-loading" class="p-8 text-center text-zinc-500"><div class="spinner-lg mx-auto mb-3"></div>Ładuję...</div>
+        <div id="cl-body" class="hidden"></div>`;
+
+    const [{ data: client, error }, { data: cases }, { data: creds }] = await Promise.all([
+        db.from('gmp_clients').select('*, gmp_employers(id, name)').eq('id', id).maybeSingle(),
+        db.from('gmp_cases').select('id, case_number, case_type, status, stage, category, date_accepted, fee_amount, gmp_staff(full_name)').eq('client_id', id).order('date_accepted', { ascending: false, nullsLast: true }),
+        db.from('gmp_trusted_profile_credentials').select('id, notes, created_at').eq('client_id', id).maybeSingle(),
+    ]);
+
+    if (error || !client) {
+        document.getElementById('cl-loading').innerHTML = `<div class="text-red-400">Nie znaleziono klienta: ${esc(error?.message || '')}</div>`;
+        return;
+    }
+
+    document.getElementById('cl-loading').classList.add('hidden');
+    const body = document.getElementById('cl-body');
+    body.classList.remove('hidden');
+    body.innerHTML = `
+        <div class="card p-5 mb-4">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-white mb-2" id="cl-name">${esc(client.last_name)} ${esc(client.first_name)}</h1>
+                    <div class="text-zinc-500 text-sm flex items-center gap-3 flex-wrap">
+                        ${client.birth_date ? `<span><i class="ph ph-cake"></i> ${fmt.date(client.birth_date)}</span>` : ''}
+                        ${client.nationality ? `<span><i class="ph ph-flag"></i> ${esc(client.nationality)}</span>` : ''}
+                        ${client.phone ? `<span class="font-mono"><i class="ph ph-phone"></i> ${esc(client.phone)}</span>` : ''}
+                        ${client.email ? `<span><i class="ph ph-envelope"></i> ${esc(client.email)}</span>` : ''}
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="editClient()"><i class="ph ph-pencil-simple"></i> Edytuj</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2">
+                <section class="card">
+                    <div class="card-header">Sprawy klienta (${cases?.length || 0})</div>
+                    <div class="overflow-x-auto">
+                        <table class="gmp-table">
+                            <thead><tr><th>Nr</th><th>Typ</th><th>Kategoria</th><th>Status</th><th>Etap</th><th>Opiekun</th><th>Data</th><th class="text-right">Kwota</th></tr></thead>
+                            <tbody>
+                                ${(cases || []).length === 0 ? '<tr><td colspan="8" class="empty-state"><i class="ph ph-folder"></i><div>Brak spraw</div></td></tr>' :
+                                cases.map(c => `
+                                    <tr class="clickable" onclick="window.location.href='case.html?id=${c.id}'">
+                                        <td class="font-mono text-xs">${esc(c.case_number || c.id.slice(0,8))}</td>
+                                        <td class="text-xs text-zinc-300">${esc(c.case_type || '—')}</td>
+                                        <td>${c.category ? `<span class="badge badge-category">${esc(c.category)}</span>` : ''}</td>
+                                        <td><span class="badge badge-${c.status}">${esc(c.status || '—')}</span></td>
+                                        <td class="text-xs">${c.stage ? `<span class="badge badge-stage">${esc(c.stage)}</span>` : ''}</td>
+                                        <td class="text-xs text-zinc-400">${esc(c.gmp_staff?.full_name || '—')}</td>
+                                        <td class="text-xs text-zinc-400">${fmt.date(c.date_accepted)}</td>
+                                        <td class="text-right font-mono text-xs ${c.fee_amount ? 'text-emerald-300' : 'text-zinc-600'}">${c.fee_amount ? fmt.money(c.fee_amount) : '—'}</td>
+                                    </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <div class="space-y-4">
+                <section class="card">
+                    <div class="card-header">Pracodawca</div>
+                    <div class="card-body text-sm">
+                        ${client.gmp_employers ? `
+                            <div class="font-medium text-white">${esc(client.gmp_employers.name)}</div>
+                            <a href="employers.html?id=${client.gmp_employers.id}" class="text-blue-400 text-xs hover:underline">Zobacz kartotekę →</a>
+                        ` : '<div class="text-zinc-500">—</div>'}
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header flex items-center gap-2">
+                        <i class="ph ph-shield-warning text-amber-400"></i>
+                        <span>Profil zaufany</span>
+                    </div>
+                    <div class="card-body">
+                        ${creds ? `
+                            <div class="text-xs text-zinc-400 mb-2">Dane zapisane ${fmt.date(creds.created_at)}</div>
+                            <button class="btn btn-secondary btn-sm w-full" onclick="alert('Moduł dostępu - przejdź do karty sprawy aby podejrzeć')">Pokaż (log)</button>
+                        ` : `
+                            <div class="text-xs text-zinc-500 mb-2">Brak danych profilu zaufanego</div>
+                            <button class="btn btn-secondary btn-sm w-full" onclick="addTrustedProfile('${client.id}')"><i class="ph ph-plus"></i> Dodaj</button>
+                        `}
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">Notatki</div>
+                    <div class="card-body text-sm">
+                        ${client.notes ? `<div class="text-zinc-300 whitespace-pre-wrap">${esc(client.notes)}</div>` : '<div class="text-zinc-500">Brak notatek</div>'}
+                    </div>
+                </section>
+            </div>
+        </div>`;
+}
+
+function editClient() { toast.info('Edycja — wkrótce.'); }
+function openNewClient() { toast.info('Dodawanie klienta — wkrótce (na razie klienci tworzeni przy sprawach).'); }
+async function addTrustedProfile(clientId) {
+    const login = prompt('Login do profilu zaufanego:');
+    if (login === null) return;
+    const password = prompt('Hasło:');
+    if (password === null) return;
+    const { error } = await db.from('gmp_trusted_profile_credentials').insert({
+        client_id: clientId,
+        trusted_profile_login: login,
+        trusted_profile_password: password,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success('Dodano');
+    location.reload();
+}
+</script>
+</body>
+</html>

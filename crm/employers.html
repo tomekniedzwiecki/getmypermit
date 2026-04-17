@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pracodawcy - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Pracodawcy</h1>
+                <p class="page-subtitle" id="count">Ładuję...</p>
+            </div>
+            <button class="btn btn-primary" onclick="openNew()"><i class="ph ph-plus"></i> Nowy</button>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <input id="f-search" class="filter-input w-full" placeholder="Szukaj: nazwa, NIP, email...">
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-280px)]">
+                <table class="gmp-table">
+                    <thead>
+                        <tr>
+                            <th>Nazwa</th>
+                            <th>NIP</th>
+                            <th>Kontakt</th>
+                            <th>Telefon</th>
+                            <th>Email</th>
+                            <th class="text-right">Klientów</th>
+                            <th class="text-right">Spraw</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                        <tr><td colspan="7" class="p-4 text-zinc-500 text-center"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </main>
+</div>
+<script src="components/sidebar.js" data-active="employers"></script>
+<script>
+const PAGE_SIZE = 100;
+let currentPage = 1;
+let totalRows = 0;
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (id) return openDetail(id);
+
+    await loadList();
+    let t;
+    document.getElementById('f-search').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { currentPage=1; loadList(); }, 300); });
+}
+
+async function loadList() {
+    const s = document.getElementById('f-search').value.trim();
+    let q = db.from('gmp_employers').select('id, name, nip, contact_person, contact_phone, contact_email', { count: 'exact' });
+    if (s) q = q.or(`name.ilike.%${s}%,nip.ilike.%${s}%,contact_email.ilike.%${s}%`);
+    const from = (currentPage - 1) * PAGE_SIZE;
+    q = q.order('name').range(from, from + PAGE_SIZE - 1);
+    const { data, error, count } = await q;
+    const tbody = document.getElementById('tbody');
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    totalRows = count || 0;
+    document.getElementById('count').textContent = `${fmt.num(totalRows)} pracodawców`;
+
+    if (!data?.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ph ph-buildings"></i><div>Brak</div></td></tr>';
+        renderPagination(); return;
+    }
+
+    // Licznik klientów i spraw
+    const ids = data.map(e => e.id);
+    const [{ data: clients }, { data: cases }] = await Promise.all([
+        db.from('gmp_clients').select('employer_id').in('employer_id', ids),
+        db.from('gmp_cases').select('employer_id').in('employer_id', ids),
+    ]);
+    const cByEmp = {}, caseByEmp = {};
+    (clients || []).forEach(c => cByEmp[c.employer_id] = (cByEmp[c.employer_id] || 0) + 1);
+    (cases || []).forEach(c => caseByEmp[c.employer_id] = (caseByEmp[c.employer_id] || 0) + 1);
+
+    tbody.innerHTML = data.map(e => `
+        <tr class="clickable" onclick="location.href='employers.html?id=${e.id}'">
+            <td><span class="text-white">${esc(e.name)}</span></td>
+            <td class="font-mono text-xs text-zinc-400">${esc(e.nip || '')}</td>
+            <td class="text-xs text-zinc-400">${esc(e.contact_person || '')}</td>
+            <td class="font-mono text-xs text-zinc-300">${esc(e.contact_phone || '')}</td>
+            <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(e.contact_email || '')}</td>
+            <td class="text-right text-xs">${cByEmp[e.id] || 0}</td>
+            <td class="text-right text-xs">${caseByEmp[e.id] || 0}</td>
+        </tr>`).join('');
+    renderPagination();
+}
+
+function renderPagination() {
+    const tp = Math.ceil(totalRows / PAGE_SIZE);
+    if (tp <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+    let h = `<button onclick="go(${currentPage-1})" ${currentPage===1?'disabled':''}><i class="ph ph-caret-left"></i></button>`;
+    for (let i = Math.max(1, currentPage-2); i <= Math.min(tp, currentPage+2); i++) {
+        h += `<button onclick="go(${i})" class="${i===currentPage?'active':''}">${i}</button>`;
+    }
+    h += `<button onclick="go(${currentPage+1})" ${currentPage===tp?'disabled':''}><i class="ph ph-caret-right"></i></button>`;
+    h += `<span class="text-zinc-500 text-xs ml-3">${currentPage}/${tp}</span>`;
+    document.getElementById('pagination').innerHTML = h;
+}
+function go(p) { const tp = Math.ceil(totalRows/PAGE_SIZE); if(p<1||p>tp)return; currentPage=p; loadList(); }
+
+async function openDetail(id) {
+    document.querySelector('main').innerHTML = `
+        <div class="flex items-center gap-3 mb-4"><a href="employers.html" class="btn btn-ghost btn-sm"><i class="ph ph-arrow-left"></i> Pracodawcy</a></div>
+        <div id="loading" class="p-8 text-center text-zinc-500"><div class="spinner-lg mx-auto mb-3"></div>Ładuję...</div>
+        <div id="body" class="hidden"></div>`;
+
+    const [{ data: emp }, { data: cases }, { data: clients }, { data: invoices }] = await Promise.all([
+        db.from('gmp_employers').select('*').eq('id', id).maybeSingle(),
+        db.from('gmp_cases').select('id, case_number, case_type, status, date_accepted, fee_amount, gmp_clients(last_name, first_name), gmp_staff(full_name)').eq('employer_id', id).order('date_accepted', { ascending: false, nullsLast: true }),
+        db.from('gmp_clients').select('id, last_name, first_name, phone').eq('employer_id', id).order('last_name'),
+        db.from('gmp_invoices').select('id, amount, description, status, issue_date, sent_at').eq('employer_id', id).order('created_at', { ascending: false }),
+    ]);
+
+    if (!emp) {
+        document.getElementById('loading').innerHTML = '<div class="text-red-400">Nie znaleziono pracodawcy</div>';
+        return;
+    }
+
+    document.getElementById('loading').classList.add('hidden');
+    const body = document.getElementById('body');
+    body.classList.remove('hidden');
+
+    const totalRevenue = (cases || []).reduce((s, c) => s + (Number(c.fee_amount) || 0), 0);
+    const pendingInvoices = (invoices || []).filter(i => i.status === 'to_issue').length;
+
+    body.innerHTML = `
+        <div class="card p-5 mb-4">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold text-white mb-2">${esc(emp.name)}</h1>
+                    <div class="text-zinc-500 text-sm flex items-center gap-3 flex-wrap">
+                        ${emp.nip ? `<span class="font-mono">NIP: ${esc(emp.nip)}</span>` : ''}
+                        ${emp.contact_phone ? `<span class="font-mono"><i class="ph ph-phone"></i> ${esc(emp.contact_phone)}</span>` : ''}
+                        ${emp.contact_email ? `<span><i class="ph ph-envelope"></i> ${esc(emp.contact_email)}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-zinc-900">
+                <div><div class="text-xs text-zinc-500">SPRAWY</div><div class="text-xl font-bold text-white">${cases?.length || 0}</div></div>
+                <div><div class="text-xs text-zinc-500">KLIENCI</div><div class="text-xl font-bold text-white">${clients?.length || 0}</div></div>
+                <div><div class="text-xs text-zinc-500">PRZYCHÓD</div><div class="text-xl font-bold text-emerald-400">${fmt.money(totalRevenue)}</div></div>
+                <div><div class="text-xs text-zinc-500">FAKT. DO WYST.</div><div class="text-xl font-bold text-amber-400">${pendingInvoices}</div></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <section class="card lg:col-span-2">
+                <div class="card-header">Sprawy (${cases?.length || 0})</div>
+                <div class="overflow-x-auto max-h-[500px]">
+                    <table class="gmp-table">
+                        <thead><tr><th>Klient</th><th>Typ</th><th>Nr</th><th>Status</th><th>Opiekun</th><th>Data</th><th class="text-right">Kwota</th></tr></thead>
+                        <tbody>
+                            ${(cases || []).length === 0 ? '<tr><td colspan="7" class="empty-state"><i class="ph ph-folder"></i><div>Brak spraw</div></td></tr>' :
+                            cases.map(c => `
+                                <tr class="clickable" onclick="location.href='case.html?id=${c.id}'">
+                                    <td class="text-xs">${c.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—'}</td>
+                                    <td class="text-xs text-zinc-400">${esc(c.case_type || '—')}</td>
+                                    <td class="font-mono text-xs text-zinc-500">${esc(c.case_number || '')}</td>
+                                    <td><span class="badge badge-${c.status}">${esc(c.status)}</span></td>
+                                    <td class="text-xs text-zinc-400">${esc(c.gmp_staff?.full_name || '—')}</td>
+                                    <td class="text-xs text-zinc-400">${fmt.date(c.date_accepted)}</td>
+                                    <td class="text-right font-mono text-xs ${c.fee_amount ? 'text-emerald-300' : 'text-zinc-600'}">${c.fee_amount ? fmt.money(c.fee_amount) : '—'}</td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="space-y-4">
+                <section class="card">
+                    <div class="card-header">Pracownicy (${clients?.length || 0})</div>
+                    <div class="max-h-[300px] overflow-y-auto divide-y divide-zinc-900/50">
+                        ${(clients || []).length === 0 ? '<div class="p-3 text-zinc-500 text-sm">Brak</div>' :
+                        clients.map(c => `
+                            <a href="clients.html?id=${c.id}" class="block p-2.5 hover:bg-zinc-900/50 text-sm">
+                                <div class="text-zinc-200">${esc(c.last_name)} ${esc(c.first_name)}</div>
+                                ${c.phone ? `<div class="text-xs text-zinc-500 font-mono">${esc(c.phone)}</div>` : ''}
+                            </a>`).join('')}
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">Faktury (${invoices?.length || 0})</div>
+                    <div class="max-h-[300px] overflow-y-auto divide-y divide-zinc-900/50">
+                        ${(invoices || []).length === 0 ? '<div class="p-3 text-zinc-500 text-sm">Brak</div>' :
+                        invoices.map(i => `
+                            <div class="p-2.5 flex items-center justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm text-zinc-200 truncate">${esc(i.description || '')}</div>
+                                    <div class="text-xs text-zinc-500">${esc(i.status)}${i.issue_date ? ' • ' + fmt.date(i.issue_date) : ''}</div>
+                                </div>
+                                <div class="text-emerald-300 font-mono text-sm">${fmt.money(i.amount)}</div>
+                            </div>`).join('')}
+                    </div>
+                </section>
+            </div>
+        </div>`;
+}
+
+function openNew() { toast.info('Dodawanie pracodawców — wkrótce (na razie tworzeni przy sprawach).'); }
+</script>
+</body>
+</html>

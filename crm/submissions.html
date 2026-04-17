@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kolejka wniosków - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Kolejka wniosków</h1>
+                <p class="page-subtitle" id="count">Ładuję...</p>
+            </div>
+            <button class="btn btn-primary" onclick="openNew()"><i class="ph ph-plus"></i> Dodaj do kolejki</button>
+        </div>
+
+        <!-- Zakladki po urzedach -->
+        <div class="flex gap-1 mb-4 overflow-x-auto">
+            <button class="btn btn-secondary tab-btn active" data-office="">Wszystkie</button>
+            <button class="btn btn-secondary tab-btn" data-office="SUW_WALBRZYCH">Wałbrzych</button>
+            <button class="btn btn-secondary tab-btn" data-office="SUW_LEGNICA">Legnica</button>
+            <button class="btn btn-secondary tab-btn" data-office="DUW_WROCLAW">Wrocław</button>
+            <button class="btn btn-secondary tab-btn" data-office="electronic">Elektronicznie</button>
+            <button class="btn btn-secondary tab-btn" data-office="pending">Tylko oczekujące</button>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label>Szukaj</label>
+                    <input id="f-search" class="filter-input w-full" placeholder="Nazwisko, imię, MOS, PIO...">
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select id="f-status" class="filter-input w-full">
+                        <option value="">Wszystkie</option>
+                        <option value="pending">Oczekujące</option>
+                        <option value="done">Zrealizowane</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Data stawiennictwa</label>
+                    <input type="date" id="f-date" class="filter-input w-full">
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-320px)]">
+                <table class="gmp-table">
+                    <thead>
+                        <tr>
+                            <th>Klient</th>
+                            <th>Urząd</th>
+                            <th>MOS / PIO</th>
+                            <th>Nr biletu</th>
+                            <th>Data wysłania</th>
+                            <th>Stawiennictwo</th>
+                            <th>Transport</th>
+                            <th>Status</th>
+                            <th>Uwagi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                        <tr><td colspan="9" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </main>
+</div>
+
+<style>
+.tab-btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+.tab-btn.active { background: white; color: black; }
+</style>
+
+<script src="components/sidebar.js" data-active="submissions"></script>
+<script>
+const PAGE_SIZE = 100;
+let currentPage = 1;
+let totalRows = 0;
+let officeFilter = '';
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    await loadList();
+
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            officeFilter = b.dataset.office;
+            currentPage = 1;
+            loadList();
+        });
+    });
+
+    ['f-status', 'f-date'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => { currentPage=1; loadList(); });
+    });
+    let t;
+    document.getElementById('f-search').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { currentPage=1; loadList(); }, 300); });
+}
+
+async function loadList() {
+    let q = db.from('gmp_submissions_queue').select(
+        'id, client_id, office_id, status, mos_number, pio_number, ticket_number, date_notification_sent, scheduled_at, transport_type, notes, import_source, gmp_clients(last_name, first_name, nationality), gmp_offices(code, name, city)',
+        { count: 'exact' }
+    );
+
+    // Tabs: office filter
+    if (officeFilter === 'electronic') {
+        q = q.eq('import_source', 'skladane_wnioski_elektroniczne');
+    } else if (officeFilter === 'pending') {
+        q = q.eq('status', 'pending');
+    } else if (officeFilter) {
+        // Trzeba wyszukac office_id po kodzie
+        const { data: off } = await db.from('gmp_offices').select('id').eq('code', officeFilter).maybeSingle();
+        if (off) q = q.eq('office_id', off.id);
+    }
+
+    const search = document.getElementById('f-search').value.trim();
+    if (search) {
+        const s = `%${search}%`;
+        q = q.or(`mos_number.ilike.${s},pio_number.ilike.${s},ticket_number.ilike.${s},notes.ilike.${s}`);
+    }
+    const status = document.getElementById('f-status').value;
+    if (status) q = q.eq('status', status);
+    const d = document.getElementById('f-date').value;
+    if (d) {
+        const dStart = d + 'T00:00:00';
+        const dEnd = d + 'T23:59:59';
+        q = q.gte('scheduled_at', dStart).lte('scheduled_at', dEnd);
+    }
+
+    const from = (currentPage - 1) * PAGE_SIZE;
+    q = q.order('scheduled_at', { ascending: true, nullsLast: true }).range(from, from + PAGE_SIZE - 1);
+
+    const { data, error, count } = await q;
+    const tbody = document.getElementById('tbody');
+    if (error) { tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    totalRows = count || 0;
+    document.getElementById('count').textContent = `${fmt.num(totalRows)} wpisów`;
+
+    if (!data?.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><i class="ph ph-paper-plane-tilt"></i><div>Brak wpisów</div></td></tr>';
+        renderPagination(); return;
+    }
+
+    tbody.innerHTML = data.map(r => {
+        const client = r.gmp_clients ? `${esc(r.gmp_clients.last_name)} ${esc(r.gmp_clients.first_name)}` : '—';
+        const nat = r.gmp_clients?.nationality ? ` <span class="text-zinc-500 text-xs">${esc(r.gmp_clients.nationality)}</span>` : '';
+        const office = r.gmp_offices ? esc(r.gmp_offices.city || r.gmp_offices.code) : '—';
+        const electronic = r.import_source === 'skladane_wnioski_elektroniczne';
+        return `
+            <tr class="${r.client_id ? 'clickable' : ''}" onclick="${r.client_id ? `location.href='clients.html?id=${r.client_id}'` : ''}">
+                <td>${client}${nat}</td>
+                <td class="text-xs text-zinc-400">${electronic ? '<span class="badge badge-stage">elektronicznie</span>' : office}</td>
+                <td class="font-mono text-xs text-zinc-400">${esc(r.mos_number || '')} / ${esc(r.pio_number || '')}</td>
+                <td class="font-mono text-xs text-zinc-400">${esc(r.ticket_number || '')}</td>
+                <td class="text-xs text-zinc-400">${fmt.date(r.date_notification_sent)}</td>
+                <td class="text-xs text-zinc-300">${fmt.datetime(r.scheduled_at)}</td>
+                <td class="text-xs text-zinc-400">${esc(r.transport_type || '')}</td>
+                <td><span class="badge badge-${r.status === 'done' ? 'zakonczona' : 'zlecona'}">${esc(r.status)}</span></td>
+                <td class="text-xs text-zinc-400 truncate max-w-md">${esc(r.notes || '')}</td>
+            </tr>`;
+    }).join('');
+    renderPagination();
+}
+
+function renderPagination() {
+    const tp = Math.ceil(totalRows / PAGE_SIZE);
+    if (tp <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+    let h = `<button onclick="go(${currentPage-1})" ${currentPage===1?'disabled':''}><i class="ph ph-caret-left"></i></button>`;
+    for (let i = Math.max(1, currentPage-2); i <= Math.min(tp, currentPage+2); i++) {
+        h += `<button onclick="go(${i})" class="${i===currentPage?'active':''}">${i}</button>`;
+    }
+    h += `<button onclick="go(${currentPage+1})" ${currentPage===tp?'disabled':''}><i class="ph ph-caret-right"></i></button>`;
+    h += `<span class="text-zinc-500 text-xs ml-3">${currentPage}/${tp}</span>`;
+    document.getElementById('pagination').innerHTML = h;
+}
+function go(p) { const tp = Math.ceil(totalRows/PAGE_SIZE); if(p<1||p>tp) return; currentPage=p; loadList(); }
+function openNew() { toast.info('Dodawanie do kolejki — wkrótce.'); }
+</script>
+</body>
+</html>

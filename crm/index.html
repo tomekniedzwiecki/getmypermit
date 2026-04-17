@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logowanie - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } }
+    </script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js" data-require-auth="false"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center relative overflow-hidden">
+    <!-- Gradient background -->
+    <div class="absolute inset-0 opacity-40 pointer-events-none">
+        <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-blue-600/30 to-purple-600/30 blur-3xl rounded-full"></div>
+        <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-purple-600/20 to-pink-600/20 blur-3xl rounded-full"></div>
+    </div>
+
+    <div class="w-full max-w-md px-6 relative z-10 animate-enter">
+        <!-- Logo -->
+        <div class="flex items-center justify-center gap-3 mb-10">
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-xl">
+                <i class="ph ph-scales text-white text-2xl"></i>
+            </div>
+            <div>
+                <div class="text-white font-bold text-xl">GetMyPermit</div>
+                <div class="text-zinc-500 text-xs">Panel kancelarii</div>
+            </div>
+        </div>
+
+        <!-- Login card -->
+        <div class="card p-8">
+            <h1 class="text-lg font-semibold text-white mb-2">Zaloguj się</h1>
+            <p class="text-zinc-500 text-sm mb-6">Dostęp tylko dla pracowników kancelarii.</p>
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label>Email</label>
+                    <input type="email" id="email" class="input w-full" required autocomplete="email" placeholder="imie@getmypermit.pl">
+                </div>
+                <div>
+                    <label>Hasło</label>
+                    <input type="password" id="password" class="input w-full" required autocomplete="current-password">
+                </div>
+                <button type="submit" id="login-btn" class="btn btn-primary w-full">
+                    <span id="login-btn-text">Zaloguj</span>
+                    <span id="login-btn-spinner" class="hidden spinner"></span>
+                </button>
+            </form>
+
+            <div class="my-5 flex items-center gap-3">
+                <div class="flex-1 h-px bg-zinc-900"></div>
+                <span class="text-zinc-600 text-xs">lub</span>
+                <div class="flex-1 h-px bg-zinc-900"></div>
+            </div>
+
+            <button id="magic-link-btn" class="btn btn-secondary w-full">
+                <i class="ph ph-envelope-simple"></i>
+                Wyślij magic link
+            </button>
+
+            <div id="msg" class="mt-4 text-sm hidden"></div>
+        </div>
+
+        <div class="text-center mt-6 text-zinc-600 text-xs">
+            Problemy z logowaniem? Skontaktuj się z Tomkiem.
+        </div>
+    </div>
+
+    <script>
+        // Jesli juz zalogowany - redirect
+        (async () => {
+            const session = await window.gmpAuth.getSession();
+            if (session) {
+                const params = new URLSearchParams(window.location.search);
+                const returnTo = params.get('return') || 'dashboard.html';
+                window.location.href = returnTo;
+            }
+        })();
+
+        const $ = (s) => document.querySelector(s);
+        const msgEl = $('#msg');
+
+        function showMsg(text, type = 'error') {
+            msgEl.className = 'mt-4 text-sm px-3 py-2 rounded-md ' + (
+                type === 'error' ? 'bg-red-900/30 border border-red-800/50 text-red-300' :
+                type === 'success' ? 'bg-emerald-900/30 border border-emerald-800/50 text-emerald-300' :
+                'bg-blue-900/30 border border-blue-800/50 text-blue-300'
+            );
+            msgEl.textContent = text;
+            msgEl.classList.remove('hidden');
+        }
+
+        function setLoading(loading) {
+            $('#login-btn').disabled = loading;
+            $('#login-btn-text').classList.toggle('hidden', loading);
+            $('#login-btn-spinner').classList.toggle('hidden', !loading);
+        }
+
+        $('#login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = $('#email').value.trim();
+            const password = $('#password').value;
+            setLoading(true);
+            try {
+                await window.gmpAuth.login(email, password);
+                showMsg('Zalogowano. Przekierowanie...', 'success');
+                const params = new URLSearchParams(window.location.search);
+                const returnTo = params.get('return') || 'dashboard.html';
+                setTimeout(() => window.location.href = returnTo, 400);
+            } catch (err) {
+                showMsg(err.message || 'Błąd logowania');
+                setLoading(false);
+            }
+        });
+
+        $('#magic-link-btn').addEventListener('click', async () => {
+            const email = $('#email').value.trim();
+            if (!email) { showMsg('Podaj najpierw email'); return; }
+            try {
+                await window.gmpAuth.sendMagicLink(email);
+                showMsg('Link wysłany na ' + email + '. Sprawdź pocztę.', 'success');
+            } catch (err) {
+                showMsg(err.message || 'Błąd wysyłania linku');
+            }
+        });
+    </script>
+</body>
+</html>

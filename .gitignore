@@ -1,1 +1,18 @@
 .vercel
+.env
+.env.local
+.env.*.local
+*.env
+node_modules/
+
+# Wrazliwe dane - NIGDY na git ani na Vercel
+dane_od_pawla/
+dane_od_pawla/_preview/
+*.numbers
+*.xlsx
+CRM.docx
+
+# Dokumenty planowania CRM - opisuja strukture wrazliwych danych Pawla
+CRM_PLAN.md
+CRM_UI_PLAN.md
+CRM_*_PLAN.md

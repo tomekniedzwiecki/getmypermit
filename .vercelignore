@@ -1,0 +1,8 @@
+dane_od_pawla/
+*.numbers
+*.xlsx
+CRM.docx
+scripts/
+.env
+node_modules/
+supabase/

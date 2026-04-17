@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Dashboard</h1>
+                <p class="page-subtitle">Podsumowanie pracy kancelarii</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="cases.html?status=lead" class="btn btn-secondary">
+                    <i class="ph ph-plus"></i> Nowy lead
+                </a>
+            </div>
+        </div>
+
+        <!-- Statystyki -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="stats-grid">
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">SPRAWY AKTYWNE</div>
+                <div class="text-2xl font-bold text-white" id="stat-active">—</div>
+                <div class="text-xs text-zinc-600 mt-1">w tym <span id="stat-zlecona" class="text-blue-400">0</span> zlecone</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">LEADÓW</div>
+                <div class="text-2xl font-bold text-white" id="stat-leads">—</div>
+                <div class="text-xs text-zinc-600 mt-1">oczekujące na konwersję</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">ZALEGŁOŚCI</div>
+                <div class="text-2xl font-bold text-white" id="stat-overdue">—</div>
+                <div class="text-xs text-zinc-600 mt-1">spraw bez aktywności &gt;14 dni</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">KLIENCI</div>
+                <div class="text-2xl font-bold text-white" id="stat-clients">—</div>
+                <div class="text-xs text-zinc-600 mt-1"><span id="stat-employers">0</span> pracodawców</div>
+            </div>
+        </div>
+
+        <!-- Alerty + ostatnie sprawy + statystyki finansowe -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Alerty bezczynności -->
+            <section class="card">
+                <div class="card-header flex items-center justify-between">
+                    <span><i class="ph ph-bell-ringing text-amber-400 mr-2"></i>Alerty bezczynności</span>
+                    <a href="alerts.html" class="text-xs text-zinc-500 hover:text-white">Wszystkie →</a>
+                </div>
+                <div id="alerts-list" class="divide-y divide-zinc-900/50 max-h-[400px] overflow-y-auto">
+                    <div class="p-4 text-zinc-600 text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
+                </div>
+            </section>
+
+            <!-- Najnowsze sprawy -->
+            <section class="card">
+                <div class="card-header flex items-center justify-between">
+                    <span><i class="ph ph-folder-plus text-emerald-400 mr-2"></i>Ostatnio dodane</span>
+                    <a href="cases.html" class="text-xs text-zinc-500 hover:text-white">Wszystkie sprawy →</a>
+                </div>
+                <div id="recent-cases" class="divide-y divide-zinc-900/50 max-h-[400px] overflow-y-auto">
+                    <div class="p-4 text-zinc-600 text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
+                </div>
+            </section>
+
+            <!-- Zadania pracownika -->
+            <section class="card">
+                <div class="card-header flex items-center justify-between">
+                    <span><i class="ph ph-check-square text-emerald-400 mr-2"></i>Moje zadania</span>
+                    <a href="tasks.html" class="text-xs text-zinc-500 hover:text-white">Wszystkie →</a>
+                </div>
+                <div id="my-tasks" class="divide-y divide-zinc-900/50 max-h-[400px] overflow-y-auto">
+                    <div class="p-4 text-zinc-600 text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
+                </div>
+            </section>
+
+            <!-- Finanse miesiac -->
+            <section class="card">
+                <div class="card-header flex items-center justify-between">
+                    <span><i class="ph ph-coins text-yellow-400 mr-2"></i>Finanse (bieżący miesiąc)</span>
+                    <a href="payments.html" class="text-xs text-zinc-500 hover:text-white">Szczegóły →</a>
+                </div>
+                <div id="finance-summary" class="p-4 space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-zinc-500 text-sm">Wpływy gotówkowe</span>
+                        <span class="text-white font-medium" id="fin-cash">—</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-zinc-500 text-sm">Wpływy przelewowe</span>
+                        <span class="text-white font-medium" id="fin-transfer">—</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-zinc-500 text-sm">Faktury</span>
+                        <span class="text-white font-medium" id="fin-invoice">—</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="flex justify-between">
+                        <span class="text-white font-semibold">Razem w miesiącu</span>
+                        <span class="text-emerald-400 font-bold" id="fin-total">—</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-zinc-500 text-sm">Zaległe płatności</span>
+                        <span class="text-red-400 font-medium" id="fin-overdue">—</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script src="components/sidebar.js" data-active="dashboard"></script>
+<script>
+document.addEventListener('gmp-auth-ready', loadDashboard);
+
+async function loadDashboard() {
+    // Statystyki
+    const [
+        { count: totalActive },
+        { count: totalZlecona },
+        { count: totalLeads },
+        { count: totalClients },
+        { count: totalEmployers },
+    ] = await Promise.all([
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('status', 'aktywna'),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('status', 'zlecona'),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('status', 'lead'),
+        db.from('gmp_clients').select('id', { count: 'exact', head: true }),
+        db.from('gmp_employers').select('id', { count: 'exact', head: true }),
+    ]);
+
+    document.getElementById('stat-active').textContent = fmt.num(totalActive ?? 0);
+    document.getElementById('stat-zlecona').textContent = fmt.num(totalZlecona ?? 0);
+    document.getElementById('stat-leads').textContent = fmt.num(totalLeads ?? 0);
+    document.getElementById('stat-clients').textContent = fmt.num(totalClients ?? 0);
+    document.getElementById('stat-employers').textContent = fmt.num(totalEmployers ?? 0);
+
+    // Alerty bezczynności
+    loadAlerts();
+    loadRecentCases();
+    loadMyTasks();
+    loadFinance();
+}
+
+async function loadAlerts() {
+    const { data, error } = await db
+        .from('gmp_case_alerts')
+        .select('*')
+        .in('inactivity_level', ['inactive_14', 'inactive_30', 'never_active'])
+        .order('days_inactive', { ascending: false, nullsFirst: false })
+        .limit(10);
+
+    const el = document.getElementById('alerts-list');
+    if (error) { el.innerHTML = `<div class="p-4 text-red-400 text-sm">Błąd: ${esc(error.message)}</div>`; return; }
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak alertów</div></div>'; return; }
+
+    // Dociągnij imiona klientów
+    const caseIds = data.map(r => r.case_id);
+    const { data: cases } = await db.from('gmp_cases').select('id, case_number, client_id, gmp_clients(last_name, first_name)').in('id', caseIds);
+    const casesById = Object.fromEntries((cases || []).map(c => [c.id, c]));
+
+    const overdueCount = data.filter(a => a.inactivity_level === 'inactive_30').length;
+    document.getElementById('stat-overdue').textContent = fmt.num(overdueCount + data.filter(a => a.inactivity_level === 'inactive_14').length);
+
+    el.innerHTML = data.map(alert => {
+        const c = casesById[alert.case_id] || {};
+        const client = c.gmp_clients ? `${c.gmp_clients.last_name} ${c.gmp_clients.first_name}` : 'Brak klienta';
+        const levelBadge = alert.inactivity_level === 'inactive_30'
+            ? '<span class="badge badge-inactive-30">30+ dni</span>'
+            : alert.inactivity_level === 'never_active'
+            ? '<span class="badge badge-inactive-30">bez aktywności</span>'
+            : '<span class="badge badge-inactive-14">14+ dni</span>';
+        return `
+            <a href="case.html?id=${alert.case_id}" class="block p-3 hover:bg-zinc-900/50 transition-colors">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white truncate">${esc(client)}</div>
+                        <div class="text-xs text-zinc-500 truncate">#${esc(c.case_number || alert.case_id.slice(0,8))} • ${alert.days_inactive ? alert.days_inactive + ' dni bez aktywności' : 'nigdy nie było aktywności'}</div>
+                    </div>
+                    ${levelBadge}
+                </div>
+            </a>`;
+    }).join('');
+}
+
+async function loadRecentCases() {
+    const { data, error } = await db
+        .from('gmp_cases')
+        .select('id, case_number, case_type, status, category, created_at, gmp_clients(last_name, first_name), gmp_staff(full_name)')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+    const el = document.getElementById('recent-cases');
+    if (error) { el.innerHTML = `<div class="p-4 text-red-400 text-sm">Błąd: ${esc(error.message)}</div>`; return; }
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-folder-open"></i><div>Brak spraw</div></div>'; return; }
+
+    el.innerHTML = data.map(c => {
+        const client = c.gmp_clients ? `${c.gmp_clients.last_name} ${c.gmp_clients.first_name}` : '—';
+        const staff = c.gmp_staff?.full_name || '—';
+        return `
+            <a href="case.html?id=${c.id}" class="block p-3 hover:bg-zinc-900/50 transition-colors">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white truncate">${esc(client)}</div>
+                        <div class="text-xs text-zinc-500 truncate">${esc(c.case_type || '—')} • ${esc(staff)} • ${fmt.daysAgo(c.created_at)}</div>
+                    </div>
+                    <span class="badge badge-${c.status}">${esc(c.status)}</span>
+                </div>
+            </a>`;
+    }).join('');
+}
+
+async function loadMyTasks() {
+    const el = document.getElementById('my-tasks');
+    if (!window.currentStaff) {
+        el.innerHTML = '<div class="p-4 text-zinc-600 text-sm">Brak profilu staff - nie pokazuję zadań</div>';
+        return;
+    }
+    const { data, error } = await db
+        .from('gmp_tasks')
+        .select('id, title, due_date, status, case_id')
+        .eq('assigned_to', window.currentStaff.id)
+        .in('status', ['pending', 'in_progress'])
+        .order('due_date', { ascending: true, nullsLast: true })
+        .limit(10);
+
+    if (error) { el.innerHTML = `<div class="p-4 text-red-400 text-sm">Błąd: ${esc(error.message)}</div>`; return; }
+    if (!data?.length) {
+        el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check-circle"></i><div>Brak otwartych zadań</div></div>';
+        return;
+    }
+    el.innerHTML = data.map(t => {
+        const overdue = t.due_date && new Date(t.due_date) < new Date();
+        return `
+            <a href="case.html?id=${t.case_id}" class="block p-3 hover:bg-zinc-900/50 transition-colors">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white truncate">${esc(t.title)}</div>
+                        <div class="text-xs ${overdue ? 'text-red-400' : 'text-zinc-500'}">${t.due_date ? 'Termin: ' + fmt.date(t.due_date) : 'Brak terminu'}</div>
+                    </div>
+                    <span class="badge badge-${t.status === 'pending' ? 'lead' : 'zlecona'}">${esc(t.status)}</span>
+                </div>
+            </a>`;
+    }).join('');
+}
+
+async function loadFinance() {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().slice(0, 10);
+
+    const { data: pays } = await db
+        .from('gmp_payments')
+        .select('amount, method')
+        .gte('payment_date', first)
+        .lt('payment_date', next);
+
+    let cash = 0, transfer = 0, invoice = 0, other = 0;
+    (pays || []).forEach(p => {
+        const a = Number(p.amount) || 0;
+        if (p.method === 'gotowka') cash += a;
+        else if (p.method === 'przelew') transfer += a;
+        else if (p.method === 'faktura') invoice += a;
+        else other += a;
+    });
+
+    document.getElementById('fin-cash').textContent = fmt.money(cash);
+    document.getElementById('fin-transfer').textContent = fmt.money(transfer);
+    document.getElementById('fin-invoice').textContent = fmt.money(invoice);
+    document.getElementById('fin-total').textContent = fmt.money(cash + transfer + invoice + other);
+
+    // Zaległości - różnica między plan total i wpłatami
+    // (uproszczona wersja - w pełni zaimplementowana w payments.html)
+    const { count: overdueCount } = await db
+        .from('gmp_payment_plans')
+        .select('id', { count: 'exact', head: true })
+        .lt('due_date', new Date().toISOString().slice(0, 10));
+    document.getElementById('fin-overdue').textContent = overdueCount ? `${overdueCount} planów po terminie` : 'Brak';
+}
+</script>
+</body>
+</html>
