@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windykacja - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">🔺 Windykacja</h1>
+                <p class="page-subtitle" id="subtitle">Ściągnięcie zaległych należności</p>
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="refreshPriorities()" title="Przelicz priorytety"><i class="ph ph-arrows-clockwise"></i> Przelicz</button>
+                <button class="btn btn-secondary" onclick="exportCSV()"><i class="ph ph-download-simple"></i> CSV</button>
+            </div>
+        </div>
+
+        <!-- HERO KPI -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">DO ODZYSKANIA</div>
+                <div class="text-2xl font-bold text-red-400" id="k-total">—</div>
+                <div class="text-xs text-zinc-600" id="k-total-count">— spraw</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Z KONTAKTEM</div>
+                <div class="text-2xl font-bold text-emerald-400" id="k-contactable">—</div>
+                <div class="text-xs text-zinc-600">do bezpośredniego ścigania</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">WEIGHTED EXPECTED</div>
+                <div class="text-2xl font-bold text-amber-300" id="k-expected">—</div>
+                <div class="text-xs text-zinc-600">probability × kwota</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">DZIŚ DO WYKONANIA</div>
+                <div class="text-2xl font-bold text-white" id="k-today">—</div>
+                <div class="text-xs text-zinc-600">kontaktów zaplanowanych</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">PROMISES DO SPRAWDZENIA</div>
+                <div class="text-2xl font-bold text-cyan-300" id="k-promises">—</div>
+                <div class="text-xs text-zinc-600">obietnice zapłaty</div>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="flex gap-1 mb-4 flex-wrap">
+            <button class="btn btn-secondary tab-btn active" data-view="worklist">🎯 Worklist dnia</button>
+            <button class="btn btn-secondary tab-btn" data-view="dashboard">📊 Dashboard</button>
+            <button class="btn btn-secondary tab-btn" data-view="all">📋 Wszystkie zaległości</button>
+            <button class="btn btn-secondary tab-btn" data-view="promises">🤝 Promise-to-pay</button>
+            <button class="btn btn-secondary tab-btn" data-view="no-contact">📵 Bez kontaktu</button>
+            <button class="btn btn-secondary tab-btn" data-view="old">🏛️ 365+ dni (EPU candidates)</button>
+        </div>
+
+        <!-- CONTENT -->
+        <div id="view-content">
+            <div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>
+        </div>
+    </main>
+</div>
+<div id="modals-container"></div>
+
+<style>
+.tab-btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+.tab-btn.active { background: white; color: black; }
+.level-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500; white-space: nowrap; }
+.level-new { background: rgba(156,163,175,0.15); color: #d1d5db; }
+.level-reminder_soft { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+.level-reminder_firm { background: rgba(245,158,11,0.12); color: #fcd34d; }
+.level-demand_1 { background: rgba(239,68,68,0.12); color: #fca5a5; }
+.level-demand_final { background: rgba(239,68,68,0.20); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
+.level-pre_court { background: rgba(168,85,247,0.15); color: #d8b4fe; }
+.level-epu, .level-court { background: rgba(239,68,68,0.3); color: white; font-weight: 600; }
+.level-settled { background: rgba(16,185,129,0.2); color: #10b981; }
+.level-write_off { background: rgba(113,113,122,0.2); color: #a1a1aa; text-decoration: line-through; }
+
+.priority-bar { width: 50px; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+.priority-bar-fill { height: 100%; }
+
+.worklist-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px; transition: border-color 0.15s; }
+.worklist-card:hover { border-color: rgba(59,130,246,0.3); }
+.worklist-card.overdue-action { border-color: rgba(239,68,68,0.3); background: linear-gradient(135deg, rgba(10,10,10,1), rgba(239,68,68,0.03)); }
+
+.age-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+.age-0-30 { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+.age-31-60 { background: rgba(245,158,11,0.15); color: #fcd34d; }
+.age-61-90 { background: rgba(249,115,22,0.15); color: #fdba74; }
+.age-91-180 { background: rgba(239,68,68,0.15); color: #fca5a5; }
+.age-181-365 { background: rgba(220,38,38,0.2); color: #fecaca; }
+.age-365-plus { background: rgba(127,29,29,0.4); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+
+.chart-container { position: relative; height: 280px; width: 100%; }
+</style>
+
+<script src="components/sidebar.js" data-active="receivables"></script>
+<script>
+let currentView = 'worklist';
+let allCollections = [];
+let staffList = [];
+let charts = {};
+
+const LEVEL_LABELS = {
+    new: 'Nowa', reminder_soft: 'Przypomnienie', reminder_firm: 'Ponaglenie',
+    demand_1: 'Wezwanie #1', demand_final: 'Ostateczne', pre_court: 'Przed sądem',
+    epu: 'EPU', court: 'Sąd', settled: 'Opłacona', write_off: 'Odpisana'
+};
+
+const TONE_LABELS = { friendly: '😊 Przyjazny', neutral: '— Neutralny', firm: '⚠️ Stanowczy', severe: '🔥 Twardy' };
+
+const BUCKETS = [
+    { name: '0-30', min: 0, max: 30, color: '#10b981', cls: 'age-0-30' },
+    { name: '31-60', min: 31, max: 60, color: '#f59e0b', cls: 'age-31-60' },
+    { name: '61-90', min: 61, max: 90, color: '#f97316', cls: 'age-61-90' },
+    { name: '91-180', min: 91, max: 180, color: '#ef4444', cls: 'age-91-180' },
+    { name: '181-365', min: 181, max: 365, color: '#dc2626', cls: 'age-181-365' },
+    { name: '365+', min: 366, max: 99999, color: '#7f1d1d', cls: 'age-365-plus' },
+];
+
+// Odsetki ustawowe 2026: stopa ref. NBP + 5.5pp (zakladamy ref = 5.75%, czyli 11.25%)
+const INTEREST_RATE = 0.1125; // Odsetki ustawowe za opóźnienie
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    const [{ data: staff }] = await Promise.all([
+        db.from('gmp_staff').select('id, full_name, color').order('full_name'),
+    ]);
+    staffList = staff || [];
+
+    await loadCollections();
+
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentView = b.dataset.view;
+        render();
+    }));
+
+    render();
+    renderKPIs();
+}
+
+async function loadCollections() {
+    allCollections = await fetchAll(() => db.from('gmp_collection_overview').select('*').eq('status', 'active'));
+    console.log('Loaded collections:', allCollections.length);
+}
+
+function getBucket(days) {
+    if (days == null) return null;
+    return BUCKETS.find(b => days >= b.min && days <= b.max);
+}
+
+function getAgeDays(c) {
+    const d = c.date_last_activity || c.date_accepted;
+    if (!d) return null;
+    return Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+}
+
+function hasContact(c) {
+    return !!(c.phone || c.email || c.employer_phone || c.employer_email);
+}
+
+function calcInterest(amount, days) {
+    return (Number(amount) * INTEREST_RATE * days) / 365;
+}
+
+function renderKPIs() {
+    const total = allCollections.reduce((s, c) => s + Number(c.remaining_amount || 0), 0);
+    const contactable = allCollections.filter(hasContact);
+    const contactableSum = contactable.reduce((s, c) => s + Number(c.remaining_amount || 0), 0);
+
+    // Weighted expected = sum(amount × probability)
+    const expected = allCollections.reduce((s, c) => s + Number(c.remaining_amount || 0) * (c.probability_score / 100), 0);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const todayWork = allCollections.filter(c => c.next_action_at && c.next_action_at.slice(0, 10) <= today);
+
+    const promises = allCollections.filter(c => c.promise_to_pay_date);
+
+    document.getElementById('k-total').textContent = fmt.money(total);
+    document.getElementById('k-total-count').textContent = allCollections.length + ' spraw';
+    document.getElementById('k-contactable').textContent = fmt.money(contactableSum);
+    document.getElementById('k-expected').textContent = fmt.money(expected);
+    document.getElementById('k-today').textContent = todayWork.length;
+    document.getElementById('k-promises').textContent = promises.length;
+}
+
+function render() {
+    if (currentView === 'worklist') renderWorklist();
+    else if (currentView === 'dashboard') renderDashboard();
+    else if (currentView === 'all') renderAll();
+    else if (currentView === 'promises') renderPromises();
+    else if (currentView === 'no-contact') renderNoContact();
+    else if (currentView === 'old') renderOldCandidates();
+}
+
+function renderWorklistCard(c) {
+    const client = (c.last_name || '—') + ' ' + (c.first_name || '');
+    const age = getAgeDays(c);
+    const bucket = getBucket(age);
+    const contact = hasContact(c);
+    const interest = age ? calcInterest(c.remaining_amount, age) : 0;
+    const totalWithInterest = Number(c.remaining_amount) + interest;
+
+    const phoneDigits = (c.phone || '').replace(/\D/g, '');
+    const phoneIntl = phoneDigits && !phoneDigits.startsWith('48') ? '48' + phoneDigits : phoneDigits;
+    const waUrl = phoneIntl ? `https://wa.me/${phoneIntl}` : null;
+    const mailUrl = c.email ? `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent('Pilne: zaległość ' + (c.case_number || ''))}` : null;
+    const callUrl = phoneDigits ? `tel:${phoneIntl || phoneDigits}` : null;
+
+    const promiseDue = c.promise_to_pay_date && c.promise_to_pay_date < new Date().toISOString().slice(0, 10);
+    const promiseBadge = promiseDue ? '<span class="badge badge-inactive-30">obietnica niedotrzymana</span>' : (c.promise_to_pay_date ? `<span class="badge badge-zlecona">obiecał ${c.promise_to_pay_date}</span>` : '');
+
+    return `
+    <div class="worklist-card ${c.priority_score >= 70 ? 'overdue-action' : ''}">
+        <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-start gap-3 flex-1 min-w-0">
+                ${window.avatar(client, 'lg')}
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                        <a href="case.html?id=${c.case_id}" class="text-white font-semibold hover:underline">${esc(client)}</a>
+                        ${c.employer_name ? `<span class="text-xs text-zinc-500">${esc(c.employer_name)}</span>` : ''}
+                        <span class="level-badge level-${c.level}">${LEVEL_LABELS[c.level] || c.level}</span>
+                        ${bucket ? `<span class="age-badge ${bucket.cls}">${age} dni</span>` : ''}
+                        ${promiseBadge}
+                    </div>
+                    <div class="text-xs text-zinc-500 flex items-center gap-2 flex-wrap">
+                        ${c.case_number ? `<span class="font-mono">#${esc(c.case_number)}</span>` : ''}
+                        ${c.assigned_name ? `<span>• ${esc(c.assigned_name)}</span>` : '<span class="text-amber-400">• nieprzypisana</span>'}
+                        ${c.phone ? `<span class="font-mono">• ${esc(c.phone)}</span>` : ''}
+                        ${c.email ? `<span class="truncate">• ${esc(c.email)}</span>` : ''}
+                        ${!contact ? '<span class="text-red-400">• ❗ brak kontaktu</span>' : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+                <div class="text-xl font-bold text-red-400 font-mono">${fmt.money(c.remaining_amount)}</div>
+                ${interest > 50 ? `<div class="text-xs text-amber-300">+${fmt.money(interest)} odsetki</div>` : ''}
+                <div class="text-xs text-zinc-500">Priorytet: ${c.priority_score}</div>
+                <div class="priority-bar mt-1 inline-block">
+                    <div class="priority-bar-fill" style="width: ${Math.min(100, c.priority_score)}%; background: ${c.priority_score >= 70 ? '#ef4444' : c.priority_score >= 40 ? '#f59e0b' : '#71717a'}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-1 flex-wrap">
+            ${callUrl ? `<a href="${callUrl}" class="btn btn-secondary btn-sm" onclick="logActivity('${c.collection_id}', 'phone_call')"><i class="ph ph-phone-call text-emerald-400"></i> Dzwoń</a>` : ''}
+            ${waUrl ? `<a href="${waUrl}" target="_blank" class="btn btn-secondary btn-sm" onclick="logActivity('${c.collection_id}', 'whatsapp')"><i class="ph ph-whatsapp-logo text-green-400"></i> WA</a>` : ''}
+            ${mailUrl ? `<a href="${mailUrl}" class="btn btn-secondary btn-sm" onclick="logActivity('${c.collection_id}', 'email')"><i class="ph ph-envelope text-blue-400"></i> Email</a>` : ''}
+            <button class="btn btn-secondary btn-sm" onclick="openLogModal('${c.collection_id}')"><i class="ph ph-pencil-simple"></i> Zapisz kontakt</button>
+            <button class="btn btn-secondary btn-sm" onclick="openPromiseModal('${c.collection_id}')"><i class="ph ph-handshake"></i> Obietnica</button>
+            <button class="btn btn-secondary btn-sm" onclick="generateDemandPDF('${c.collection_id}')" title="Wygeneruj wezwanie PDF"><i class="ph ph-file-pdf text-red-400"></i> Wezwanie</button>
+            <button class="btn btn-secondary btn-sm" onclick="escalate('${c.collection_id}', '${c.level}')"><i class="ph ph-arrow-up"></i> Eskalacja</button>
+            <span class="flex-1"></span>
+            <button class="btn btn-ghost btn-sm" onclick="markAsPaid('${c.collection_id}')" title="Oznacz jako opłacone"><i class="ph ph-check text-emerald-400"></i></button>
+            <button class="btn btn-ghost btn-sm" onclick="pauseCollection('${c.collection_id}')" title="Wstrzymaj"><i class="ph ph-pause"></i></button>
+            <button class="btn btn-ghost btn-sm" onclick="writeOff('${c.collection_id}')" title="Odpisz"><i class="ph ph-x-circle text-red-400"></i></button>
+        </div>
+    </div>`;
+}
+
+function renderWorklist() {
+    const el = document.getElementById('view-content');
+    const sorted = [...allCollections].filter(c => c.remaining_amount > 0).sort((a, b) => b.priority_score - a.priority_score);
+    const today = sorted.filter(c => c.next_action_at && c.next_action_at.slice(0, 10) <= new Date().toISOString().slice(0, 10));
+    const all = sorted;
+
+    el.innerHTML = `
+        <div class="card p-4 mb-4" style="background: linear-gradient(135deg, rgba(239,68,68,0.06), rgba(245,158,11,0.04)); border-color: rgba(239,68,68,0.2)">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-semibold">🎯 Lista do wykonania dziś — <span class="text-red-400">${today.length}</span> spraw</span>
+                <span class="text-xs text-zinc-500">Sortowane po priorytecie (kwota × wiek × prawdopodobieństwo odzyskania)</span>
+            </div>
+            <div class="text-xs text-zinc-600">Realistyczny cel dnia: skontaktuj się z <b class="text-white">10-20 dłużnikami</b>. Zaczynaj od góry listy.</div>
+        </div>
+
+        <div class="space-y-3" id="worklist-items">
+            ${(today.length ? today : all).slice(0, 50).map(c => renderWorklistCard(c)).join('')}
+        </div>
+
+        ${all.length > 50 ? `<div class="text-center mt-4 text-zinc-500 text-sm">Pokazuję 50 z ${all.length} spraw. Zobacz <button class="text-blue-400 hover:underline" onclick="document.querySelector('.tab-btn[data-view=\\'all\\']').click()">wszystkie zaległości →</button></div>` : ''}
+    `;
+}
+
+function renderDashboard() {
+    const el = document.getElementById('view-content');
+
+    // Aging buckets
+    const byBucket = {};
+    BUCKETS.forEach(b => byBucket[b.name] = { count: 0, amount: 0, withContact: 0, withContactSum: 0 });
+    byBucket['brak_daty'] = { count: 0, amount: 0, withContact: 0, withContactSum: 0 };
+    allCollections.forEach(c => {
+        const age = getAgeDays(c);
+        const b = getBucket(age);
+        const key = b ? b.name : 'brak_daty';
+        byBucket[key].count++;
+        byBucket[key].amount += Number(c.remaining_amount || 0);
+        if (hasContact(c)) {
+            byBucket[key].withContact++;
+            byBucket[key].withContactSum += Number(c.remaining_amount || 0);
+        }
+    });
+
+    // Per staff
+    const byStaff = {};
+    allCollections.forEach(c => {
+        const name = c.assigned_name || '(nieprzypisana)';
+        if (!byStaff[name]) byStaff[name] = { count: 0, amount: 0 };
+        byStaff[name].count++;
+        byStaff[name].amount += Number(c.remaining_amount || 0);
+    });
+    const staffRanking = Object.entries(byStaff).sort((a, b) => b[1].amount - a[1].amount);
+
+    // Per level
+    const byLevel = {};
+    allCollections.forEach(c => {
+        byLevel[c.level] = (byLevel[c.level] || 0) + 1;
+    });
+
+    el.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <section class="card">
+                <div class="card-header">Aging - struktura zaległości</div>
+                <div class="p-4"><div class="chart-container"><canvas id="chart-aging"></canvas></div></div>
+            </section>
+            <section class="card">
+                <div class="card-header">Poziomy eskalacji</div>
+                <div class="p-4"><div class="chart-container"><canvas id="chart-levels"></canvas></div></div>
+            </section>
+        </div>
+
+        <section class="card mb-4">
+            <div class="card-header">Aging buckets - szczegóły</div>
+            <div class="overflow-x-auto">
+                <table class="gmp-table">
+                    <thead><tr><th>Wiek</th><th class="text-right">Spraw</th><th class="text-right">Kwota</th><th class="text-right">Z kontaktem</th><th class="text-right">% odzyskiwalne</th><th class="text-right">Expected</th></tr></thead>
+                    <tbody>${Object.entries(byBucket).map(([name, b]) => {
+                        const bucket = BUCKETS.find(x => x.name === name) || { color: '#71717a' };
+                        const probs = { '0-30': 90, '31-60': 75, '61-90': 55, '91-180': 35, '181-365': 20, '365+': 10, 'brak_daty': 30 };
+                        const prob = probs[name] || 30;
+                        const expected = b.amount * prob / 100;
+                        return `<tr><td><span class="age-badge ${bucket.cls || ''}">${name}</span></td><td class="text-right">${b.count}</td><td class="text-right font-mono">${fmt.money(b.amount)}</td><td class="text-right text-emerald-400 font-mono">${fmt.money(b.withContactSum)}</td><td class="text-right">${prob}%</td><td class="text-right font-mono text-amber-300">${fmt.money(expected)}</td></tr>`;
+                    }).join('')}</tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">Per opiekun</div>
+            <div class="p-4 space-y-2">
+                ${staffRanking.map(([name, d]) => {
+                    const max = staffRanking[0][1].amount || 1;
+                    const pct = Math.round(100 * d.amount / max);
+                    return `<div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>${esc(name)}</span>
+                            <span class="font-mono">${fmt.money(d.amount)} <span class="text-zinc-500 text-xs">(${d.count} spraw)</span></span>
+                        </div>
+                        <div class="h-2 bg-zinc-900 rounded overflow-hidden">
+                            <div class="h-full ${name === '(nieprzypisana)' ? 'bg-red-500' : 'bg-blue-500'}" style="width: ${pct}%"></div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </section>
+    `;
+
+    // Charts
+    const bucketColors = BUCKETS.map(b => b.color).concat(['#52525b']);
+    const bucketLabels = [...BUCKETS.map(b => b.name), 'brak_daty'];
+    const bucketData = bucketLabels.map(n => byBucket[n].amount);
+
+    new Chart(document.getElementById('chart-aging'), {
+        type: 'doughnut',
+        data: {
+            labels: bucketLabels,
+            datasets: [{ data: bucketData, backgroundColor: bucketColors, borderColor: '#050505', borderWidth: 2 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { color: '#a1a1aa', font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt.money(ctx.parsed)}` } }
+            }
+        }
+    });
+
+    const levelLabels = Object.keys(byLevel).map(k => LEVEL_LABELS[k] || k);
+    const levelData = Object.values(byLevel);
+
+    new Chart(document.getElementById('chart-levels'), {
+        type: 'bar',
+        data: {
+            labels: levelLabels,
+            datasets: [{ data: levelData, backgroundColor: '#6366f1', borderWidth: 0 }]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#71717a' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: '#a1a1aa', font: { size: 10 } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function renderAll() {
+    const el = document.getElementById('view-content');
+    const sorted = [...allCollections].sort((a, b) => b.priority_score - a.priority_score);
+
+    el.innerHTML = `
+        <div class="card p-3 mb-4">
+            <div class="flex gap-2 items-center flex-wrap">
+                <input id="f-search" class="filter-input text-sm" placeholder="Szukaj: nazwisko, nr..." style="width: 200px">
+                <select id="f-level" class="filter-input text-sm">
+                    <option value="">Wszystkie poziomy</option>
+                    ${Object.entries(LEVEL_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
+                </select>
+                <select id="f-staff" class="filter-input text-sm">
+                    <option value="">Wszyscy opiekunowie</option>
+                    <option value="__unassigned__">Nieprzypisane</option>
+                    ${staffList.map(s => `<option value="${s.id}">${esc(s.full_name)}</option>`).join('')}
+                </select>
+                <select id="f-bucket" class="filter-input text-sm">
+                    <option value="">Dowolny wiek</option>
+                    ${BUCKETS.map(b => `<option value="${b.name}">${b.name} dni</option>`).join('')}
+                </select>
+                <label class="text-xs text-zinc-500"><input type="checkbox" id="f-contact"> Tylko z kontaktem</label>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-420px)]">
+                <table class="gmp-table">
+                    <thead><tr>
+                        <th>Klient / Pracodawca</th>
+                        <th>Nr</th>
+                        <th>Poziom</th>
+                        <th class="text-right">Wiek</th>
+                        <th class="text-right">Kwota</th>
+                        <th>Opiekun</th>
+                        <th>Ost. kontakt</th>
+                        <th>Nast. akcja</th>
+                        <th class="text-right">Prob.</th>
+                        <th class="text-right">Prio.</th>
+                    </tr></thead>
+                    <tbody id="all-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    function filter() {
+        const s = document.getElementById('f-search').value.toLowerCase().trim();
+        const level = document.getElementById('f-level').value;
+        const staff = document.getElementById('f-staff').value;
+        const bucket = document.getElementById('f-bucket').value;
+        const onlyContact = document.getElementById('f-contact').checked;
+
+        const filtered = sorted.filter(c => {
+            if (s) {
+                const fn = `${c.last_name || ''} ${c.first_name || ''} ${c.case_number || ''} ${c.employer_name || ''}`.toLowerCase();
+                if (!fn.includes(s)) return false;
+            }
+            if (level && c.level !== level) return false;
+            if (staff === '__unassigned__' && c.assigned_to) return false;
+            if (staff && staff !== '__unassigned__' && c.assigned_to !== staff) return false;
+            if (bucket) {
+                const age = getAgeDays(c);
+                const b = getBucket(age);
+                if (!b || b.name !== bucket) return false;
+            }
+            if (onlyContact && !hasContact(c)) return false;
+            return true;
+        });
+
+        document.getElementById('all-tbody').innerHTML = filtered.map(c => {
+            const client = (c.last_name || '—') + ' ' + (c.first_name || '');
+            const age = getAgeDays(c);
+            const bucket = getBucket(age);
+            return `<tr class="clickable" onclick="window.location.href='case.html?id=${c.case_id}'">
+                <td><div class="flex items-center gap-2">${window.avatar(client, 'sm')}<div><div class="text-sm">${esc(client)}</div>${c.employer_name ? `<div class="text-xs text-zinc-500">${esc(c.employer_name)}</div>` : ''}</div></div></td>
+                <td class="font-mono text-xs">${esc(c.case_number || '—')}</td>
+                <td><span class="level-badge level-${c.level}">${LEVEL_LABELS[c.level] || c.level}</span></td>
+                <td class="text-right">${bucket ? `<span class="age-badge ${bucket.cls}">${age}d</span>` : '—'}</td>
+                <td class="text-right font-mono font-bold text-red-400">${fmt.money(c.remaining_amount)}</td>
+                <td class="text-xs">${esc(c.assigned_name || '—')}</td>
+                <td class="text-xs text-zinc-400">${c.last_contact_at ? fmt.daysAgo(c.last_contact_at) : '—'}</td>
+                <td class="text-xs text-amber-300">${c.next_action_at ? fmt.date(c.next_action_at) : '—'}</td>
+                <td class="text-right font-mono text-xs">${c.probability_score}%</td>
+                <td class="text-right font-mono text-sm font-bold">${c.priority_score}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    ['f-search', 'f-level', 'f-staff', 'f-bucket', 'f-contact'].forEach(id => {
+        document.getElementById(id).addEventListener('input', filter);
+        document.getElementById(id).addEventListener('change', filter);
+    });
+    filter();
+}
+
+function renderPromises() {
+    const el = document.getElementById('view-content');
+    const promises = allCollections.filter(c => c.promise_to_pay_date);
+    const today = new Date().toISOString().slice(0, 10);
+    const broken = promises.filter(c => c.promise_to_pay_date < today);
+    const upcoming = promises.filter(c => c.promise_to_pay_date >= today);
+
+    el.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <div class="card p-4 border-red-900/50">
+                <div class="text-xs text-zinc-500 mb-1">OBIETNICE NIEDOTRZYMANE</div>
+                <div class="text-2xl font-bold text-red-400">${broken.length}</div>
+                <div class="text-xs text-zinc-600">${fmt.money(broken.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">NADCHODZĄCE OBIETNICE</div>
+                <div class="text-2xl font-bold text-cyan-300">${upcoming.length}</div>
+                <div class="text-xs text-zinc-600">${fmt.money(upcoming.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
+            </div>
+        </div>
+
+        ${broken.length ? `
+        <section class="card mb-4">
+            <div class="card-header text-red-400">⚠️ Niedotrzymane obietnice (${broken.length})</div>
+            <div class="p-4 space-y-3">${broken.map(renderWorklistCard).join('')}</div>
+        </section>` : ''}
+
+        ${upcoming.length ? `
+        <section class="card">
+            <div class="card-header">Nadchodzące obietnice</div>
+            <div class="p-4 space-y-3">${upcoming.slice(0, 30).map(renderWorklistCard).join('')}</div>
+        </section>` : ''}
+
+        ${!broken.length && !upcoming.length ? '<div class="empty-state card p-8"><i class="ph ph-handshake"></i><div>Brak obietnic — dodaj pierwszą z worklist (przycisk "Obietnica")</div></div>' : ''}
+    `;
+}
+
+function renderNoContact() {
+    const el = document.getElementById('view-content');
+    const noContact = allCollections.filter(c => !hasContact(c)).sort((a, b) => b.remaining_amount - a.remaining_amount);
+
+    el.innerHTML = `
+        <div class="card p-4 mb-4 border-amber-900/50">
+            <div class="text-sm text-amber-300 mb-2">📵 ${noContact.length} spraw bez żadnego kontaktu do klienta lub pracodawcy</div>
+            <div class="text-lg font-bold">${fmt.money(noContact.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
+            <div class="text-xs text-zinc-600 mt-2">Te kwoty są nieodzyskiwalne bez odnalezienia kontaktu. Sprawdź w starych dokumentach, zapytaj pracowników, sprawdź portal CEIDG/KRS dla firm, rejestry mieszkańców.</div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="gmp-table">
+                    <thead><tr><th>Klient</th><th>Nr</th><th>Pracodawca</th><th class="text-right">Kwota</th><th class="text-right">Wiek</th><th>Opiekun</th><th>Akcje</th></tr></thead>
+                    <tbody>${noContact.map(c => {
+                        const client = (c.last_name || '—') + ' ' + (c.first_name || '');
+                        const age = getAgeDays(c);
+                        const bucket = getBucket(age);
+                        return `<tr class="clickable" onclick="window.location.href='case.html?id=${c.case_id}'">
+                            <td>${esc(client)}</td>
+                            <td class="font-mono text-xs">${esc(c.case_number || '—')}</td>
+                            <td class="text-xs">${esc(c.employer_name || '—')}</td>
+                            <td class="text-right font-mono text-red-400">${fmt.money(c.remaining_amount)}</td>
+                            <td class="text-right">${bucket ? `<span class="age-badge ${bucket.cls}">${age}d</span>` : '—'}</td>
+                            <td class="text-xs">${esc(c.assigned_name || '—')}</td>
+                            <td onclick="event.stopPropagation()"><button class="btn btn-ghost btn-sm" onclick="openLogModal('${c.collection_id}')">Dodaj kontakt</button></td>
+                        </tr>`;
+                    }).join('')}</tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function renderOldCandidates() {
+    const el = document.getElementById('view-content');
+    const old = allCollections.filter(c => {
+        const age = getAgeDays(c);
+        return age !== null && age >= 365;
+    }).sort((a, b) => b.remaining_amount - a.remaining_amount);
+
+    const withContact = old.filter(hasContact);
+    const withContactSum = withContact.reduce((s, c) => s + Number(c.remaining_amount || 0), 0);
+
+    // Przedawnienie alert - <90 dni do 3 lat (1095 dni od date_accepted)
+    const nearLimitation = old.filter(c => {
+        const age = getAgeDays(c);
+        return age && age >= 1095 - 90 && age < 1095 + 30;
+    });
+
+    el.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">SPRAW 365+ DNI</div>
+                <div class="text-2xl font-bold text-red-400">${old.length}</div>
+                <div class="text-xs text-zinc-600">${fmt.money(old.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 mb-1">Z KONTAKTEM (EPU KANDYDACI)</div>
+                <div class="text-2xl font-bold text-amber-300">${withContact.length}</div>
+                <div class="text-xs text-zinc-600">${fmt.money(withContactSum)}</div>
+            </div>
+            <div class="card p-4 ${nearLimitation.length ? 'border-red-900' : ''}">
+                <div class="text-xs text-zinc-500 mb-1">⏰ BLISKO PRZEDAWNIENIA (3 LATA)</div>
+                <div class="text-2xl font-bold ${nearLimitation.length ? 'text-red-400' : 'text-zinc-600'}">${nearLimitation.length}</div>
+                <div class="text-xs text-zinc-600">do pozwów natychmiast!</div>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-4" style="background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.2)">
+            <div class="text-sm font-semibold text-red-400 mb-2">🏛️ Rekomendacja: kierowanie do E-sądu (EPU)</div>
+            <div class="text-xs text-zinc-400 space-y-1">
+                <div>• Koszt opłaty sądowej: 1,25% wartości sporu (min 30 PLN)</div>
+                <div>• Dla 134 spraw z kontaktem × średnio 1900 PLN = ~<b class="text-white">3 200 PLN kosztów</b> za wszystkie pozwy</div>
+                <div>• Nakaz zapłaty wydawany w 2-8 tygodni</div>
+                <div>• Po nakazie → komornik</div>
+                <div>• Przedawnienie: 3 lata (art. 118 KC) od wymagalności roszczenia</div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="gmp-table">
+                    <thead><tr><th>Klient</th><th>Nr</th><th class="text-right">Kwota</th><th class="text-right">Wiek</th><th>Kontakt</th><th>Opiekun</th><th class="text-right">Prob.</th><th>Akcje</th></tr></thead>
+                    <tbody>${old.map(c => {
+                        const client = (c.last_name || '—') + ' ' + (c.first_name || '');
+                        const age = getAgeDays(c);
+                        const contact = hasContact(c);
+                        const nearLimit = age && age >= 1095 - 90;
+                        return `<tr class="clickable ${nearLimit ? 'bg-red-950/20' : ''}" onclick="window.location.href='case.html?id=${c.case_id}'">
+                            <td>${esc(client)}${nearLimit ? ' <span class="badge badge-inactive-30" title="Blisko przedawnienia">⏰</span>' : ''}</td>
+                            <td class="font-mono text-xs">${esc(c.case_number || '—')}</td>
+                            <td class="text-right font-mono text-red-400">${fmt.money(c.remaining_amount)}</td>
+                            <td class="text-right"><span class="age-badge age-365-plus">${age}d</span></td>
+                            <td class="text-xs ${contact ? 'text-emerald-400' : 'text-red-400'}">${contact ? '✓' : '✗'}</td>
+                            <td class="text-xs">${esc(c.assigned_name || '—')}</td>
+                            <td class="text-right font-mono">${c.probability_score}%</td>
+                            <td onclick="event.stopPropagation()">
+                                ${contact ? `<button class="btn btn-ghost btn-sm" onclick="generateDemandPDF('${c.collection_id}')" title="Wezwanie PDF"><i class="ph ph-file-pdf text-red-400"></i></button>` : ''}
+                                <button class="btn btn-ghost btn-sm" onclick="writeOff('${c.collection_id}')" title="Odpisz"><i class="ph ph-x-circle"></i></button>
+                            </td>
+                        </tr>`;
+                    }).join('')}</tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// ============ ACTIONS ============
+
+async function logActivity(collectionId, type) {
+    // Quick log - tylko typ, potem mozna edytowac
+    const c = allCollections.find(x => x.collection_id === collectionId);
+    if (!c) return;
+    await db.from('gmp_collection_activities').insert({
+        collection_id: collectionId,
+        case_id: c.case_id,
+        activity_type: type,
+        direction: 'outbound',
+        content: `Proba kontaktu: ${type}`,
+        created_by: window.currentStaff?.id,
+    });
+    await db.from('gmp_collections').update({
+        last_contact_at: new Date().toISOString(),
+        attempted_calls: type === 'phone_call' ? (c.attempted_calls || 0) + 1 : undefined,
+        attempted_emails: (type === 'email' || type === 'sms' || type === 'whatsapp') ? (c.attempted_emails || 0) + 1 : undefined,
+    }).eq('id', collectionId);
+    toast.success('Zalogowano kontakt');
+}
+
+function openLogModal(collectionId) {
+    const c = allCollections.find(x => x.collection_id === collectionId);
+    if (!c) return;
+    const html = `
+        <div class="modal-header">Zapisz kontakt — ${esc((c.last_name || '') + ' ' + (c.first_name || ''))}<button class="btn btn-ghost btn-sm" onclick="closeLogModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+                <div><label>Typ</label>
+                    <select id="la-type" class="input w-full">
+                        <option value="phone_call">📞 Telefon</option>
+                        <option value="email">✉️ Email</option>
+                        <option value="sms">💬 SMS</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="letter">✉️ List</option>
+                        <option value="letter_certified">📬 List polecony ZPO</option>
+                        <option value="meeting">🤝 Spotkanie</option>
+                        <option value="note">📝 Notatka</option>
+                    </select>
+                </div>
+                <div><label>Wynik</label>
+                    <select id="la-result" class="input w-full">
+                        <option value="no_answer">Brak odpowiedzi</option>
+                        <option value="contact_made">Udało się skontaktować</option>
+                        <option value="promised">Obiecał zapłacić</option>
+                        <option value="refused">Odmowa</option>
+                        <option value="paid_partial">Zapłacił część</option>
+                        <option value="paid_full">Zapłacił całość</option>
+                        <option value="disputed">Kwestionuje</option>
+                        <option value="wrong_contact">Zły kontakt</option>
+                        <option value="deceased">Klient nie żyje</option>
+                        <option value="other">Inne</option>
+                    </select>
+                </div>
+            </div>
+            <div><label>Opis / treść</label><textarea id="la-content" class="input w-full" rows="3" placeholder="np. Klient odebrał, obiecał przelew do piątku 25.04..."></textarea></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label>Następna akcja (data)</label><input type="date" id="la-followup" class="input w-full"></div>
+                <div><label>Promise-to-pay (data)</label><input type="date" id="la-promise-date" class="input w-full"></div>
+            </div>
+            <div><label>Promise-to-pay kwota</label><input type="number" step="0.01" id="la-promise-amount" class="input w-full"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeLogModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="saveLogActivity('${collectionId}')">Zapisz</button>
+        </div>`;
+    document.getElementById('modals-container').innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) closeLogModal()"><div class="modal-content">${html}</div></div>`;
+}
+function closeLogModal() { document.getElementById('modals-container').innerHTML = ''; }
+
+async function saveLogActivity(collectionId) {
+    const c = allCollections.find(x => x.collection_id === collectionId);
+    if (!c) return;
+
+    const type = document.getElementById('la-type').value;
+    const result = document.getElementById('la-result').value;
+    const content = document.getElementById('la-content').value.trim();
+    const followup = document.getElementById('la-followup').value;
+    const promiseDate = document.getElementById('la-promise-date').value;
+    const promiseAmount = Number(document.getElementById('la-promise-amount').value);
+
+    await db.from('gmp_collection_activities').insert({
+        collection_id: collectionId,
+        case_id: c.case_id,
+        activity_type: type,
+        direction: 'outbound',
+        content,
+        result,
+        followup_at: followup ? new Date(followup).toISOString() : null,
+        promise_date: promiseDate || null,
+        promise_amount: promiseAmount || null,
+        created_by: window.currentStaff?.id,
+    });
+
+    const updates = { last_contact_at: new Date().toISOString() };
+    if (followup) updates.next_action_at = new Date(followup).toISOString();
+    if (promiseDate) {
+        updates.promise_to_pay_date = promiseDate;
+        updates.promise_to_pay_amount = promiseAmount || null;
+    }
+    if (result === 'paid_full') updates.status = 'paid';
+    if (result === 'wrong_contact') updates.status = 'paused';
+
+    await db.from('gmp_collections').update(updates).eq('id', collectionId);
+
+    // Dodaj tez w gmp_case_activities
+    await db.from('gmp_case_activities').insert({
+        case_id: c.case_id,
+        activity_type: 'note',
+        content: `[Windykacja/${type}] ${content} (wynik: ${result})`,
+        created_by: window.currentStaff?.id,
+    });
+
+    closeLogModal();
+    toast.success('Zapisano');
+    await loadCollections();
+    render();
+    renderKPIs();
+}
+
+function openPromiseModal(collectionId) {
+    const c = allCollections.find(x => x.collection_id === collectionId);
+    if (!c) return;
+    const html = `
+        <div class="modal-header">Obietnica zapłaty — ${esc((c.last_name || '') + ' ' + (c.first_name || ''))}<button class="btn btn-ghost btn-sm" onclick="closeLogModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+                <div><label>Data obietnicy</label><input type="date" id="pr-date" class="input w-full" value="${new Date(Date.now() + 7 * 86400000).toISOString().slice(0,10)}"></div>
+                <div><label>Kwota (PLN)</label><input type="number" step="0.01" id="pr-amount" class="input w-full" value="${c.remaining_amount}"></div>
+            </div>
+            <div><label>Notatka</label><input id="pr-note" class="input w-full" placeholder="np. Klient przeleje w piątek po wypłacie"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeLogModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="savePromise('${collectionId}')">Zapisz obietnicę</button>
+        </div>`;
+    document.getElementById('modals-container').innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) closeLogModal()"><div class="modal-content">${html}</div></div>`;
+}
+
+async function savePromise(collectionId) {
+    const c = allCollections.find(x => x.collection_id === collectionId);
+    const date = document.getElementById('pr-date').value;
+    const amount = Number(document.getElementById('pr-amount').value);
+    const note = document.getElementById('pr-note').value.trim();
+
+    await db.from('gmp_collections').update({
+        promise_to_pay_date: date,
+        promise_to_pay_amount: amount,
+        next_action_at: new Date(new Date(date).getTime() + 86400000).toISOString(),  // dzień po
+    }).eq('id', collectionId);
+
+    await db.from('gmp_collection_activities').insert({
+        collection_id: collectionId,
+        case_id: c.case_id,
+        activity_type: 'promise_to_pay',
+        direction: 'inbound',
+        content: note || `Klient obiecał zapłacić ${amount} PLN do ${date}`,
+        promise_date: date, promise_amount: amount,
+        created_by: window.currentStaff?.id,
+    });
+
+    closeLogModal();
+    toast.success('Obietnica zapisana');
+    await loadCollections();
+    render();
+    renderKPIs();
+}
+
+async function escalate(collectionId, currentLevel) {
+    const levels = ['new', 'reminder_soft', 'reminder_firm', 'demand_1', 'demand_final', 'pre_court', 'epu'];
+    const idx = levels.indexOf(currentLevel);
+    if (idx === -1 || idx >= levels.length - 1) { toast.warning('Najwyższy poziom'); return; }
+    const nextLevel = levels[idx + 1];
+    if (!confirm(`Eskalować z "${LEVEL_LABELS[currentLevel]}" do "${LEVEL_LABELS[nextLevel]}"?`)) return;
+    await db.from('gmp_collections').update({ level: nextLevel }).eq('id', collectionId);
+    const c = allCollections.find(x => x.collection_id === collectionId);
+    await db.from('gmp_collection_activities').insert({
+        collection_id: collectionId, case_id: c.case_id,
+        activity_type: 'escalation',
+        content: `Eskalacja: ${LEVEL_LABELS[currentLevel]} → ${LEVEL_LABELS[nextLevel]}`,
+        created_by: window.currentStaff?.id,
+    });
+    toast.success('Eskalowano');
+    await loadCollections();
+    render();
+}
+
+async function markAsPaid(collectionId) {
+    if (!confirm('Oznaczyć jako w pełni opłacone?')) return;
+    await db.from('gmp_collections').update({ status: 'paid', level: 'settled' }).eq('id', collectionId);
+    toast.success('Oznaczono');
+    await loadCollections();
+    render();
+    renderKPIs();
+}
+
+async function pauseCollection(collectionId) {
+    const reason = prompt('Powód wstrzymania windykacji:', '');
+    if (reason === null) return;
+    await db.from('gmp_collections').update({ status: 'paused', internal_notes: reason }).eq('id', collectionId);
+    toast.success('Wstrzymano');
+    await loadCollections();
+    render();
+}
+
+async function writeOff(collectionId) {
+    if (!confirm('Odpisać jako stratę? Sprawa zniknie z worklistu.')) return;
+    await db.from('gmp_collections').update({ status: 'written_off', level: 'write_off' }).eq('id', collectionId);
+    toast.success('Odpisano');
+    await loadCollections();
+    render();
+    renderKPIs();
+}
+
+// ============ PDF WEZWANIE ============
+
+async function generateDemandPDF(collectionId) {
+    const c = allCollections.find(x => x.collection_id === collectionId);
+    if (!c) return;
+
+    // Pobierz szablon odpowiedni do poziomu
+    const level = c.level === 'demand_final' ? 'demand_final' : 'demand_1';
+    const { data: tmpl } = await db.from('gmp_collection_templates')
+        .select('*').eq('escalation_level', level).eq('channel', 'letter_certified')
+        .limit(1).maybeSingle();
+
+    const age = getAgeDays(c) || 0;
+    const interest = calcInterest(c.remaining_amount, age);
+    const total = Number(c.remaining_amount) + interest;
+
+    const params = {
+        client_name: ((c.last_name || '') + ' ' + (c.first_name || '')).trim(),
+        case_number: c.case_number || c.case_id.slice(0, 8),
+        amount: Number(c.remaining_amount).toFixed(2),
+        due_date: c.date_accepted || '',
+        days_overdue: age,
+        interest: interest.toFixed(2),
+        total: total.toFixed(2),
+        today: new Date().toLocaleDateString('pl-PL'),
+        amount_words: numberToWords(total),
+    };
+
+    let body = tmpl?.body_template || `WEZWANIE DO ZAPŁATY
+
+${params.client_name}
+
+Wzywam do zapłaty kwoty ${params.total} PLN tytułem nieopłaconych usług w sprawie ${params.case_number}.
+
+- Należność główna: ${params.amount} PLN
+- Dni opóźnienia: ${params.days_overdue}
+- Odsetki ustawowe (11,25%): ${params.interest} PLN
+
+Termin zapłaty: 14 dni od doręczenia.`;
+
+    // Replace placeholders
+    Object.entries(params).forEach(([k, v]) => {
+        body = body.replace(new RegExp('\\{' + k + '\\}', 'g'), String(v));
+    });
+
+    // Generate PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Removing polish chars (jsPDF default doesn't support)
+    const toAscii = (s) => String(s).replace(/[ąęłńóśźżĄĘŁŃÓŚŹŻ]/g, c => ({'ą':'a','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'A','Ę':'E','Ł':'L','Ń':'N','Ó':'O','Ś':'S','Ź':'Z','Ż':'Z'}[c] || c));
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text(toAscii('WEZWANIE DO ZAPLATY'), 105, 25, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const lines = doc.splitTextToSize(toAscii(body), 170);
+    doc.text(lines, 20, 40);
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text(toAscii(`Wygenerowano: ${new Date().toLocaleString('pl-PL')} | GetMyPermit CRM | ${params.client_name}`), 20, 285);
+
+    doc.save(`wezwanie_${toAscii(params.case_number)}_${Date.now()}.pdf`);
+
+    // Log activity
+    await db.from('gmp_collection_activities').insert({
+        collection_id: collectionId, case_id: c.case_id,
+        activity_type: 'letter',
+        subject: level === 'demand_final' ? 'Ostateczne wezwanie do zapłaty' : 'Wezwanie do zapłaty #1',
+        content: `Wygenerowano PDF wezwania (poziom: ${level}). Kwota: ${total.toFixed(2)} PLN (z odsetkami).`,
+        metadata: { amount: Number(c.remaining_amount), interest, total, days_overdue: age },
+        created_by: window.currentStaff?.id,
+    });
+    await db.from('gmp_collections').update({
+        last_contact_at: new Date().toISOString(),
+        attempted_letters: (c.attempted_letters || 0) + 1,
+    }).eq('id', collectionId);
+
+    toast.success('PDF wygenerowany + zalogowano');
+    await loadCollections();
+    render();
+}
+
+function numberToWords(n) {
+    // Simplified - just return numeric with currency
+    return Number(n).toFixed(2).replace('.', ',') + ' zl';
+}
+
+async function refreshPriorities() {
+    toast.info('Przeliczanie priorytetów...');
+    // Re-run init script logic client-side
+    for (const c of allCollections) {
+        const age = getAgeDays(c);
+        let ageScore = 30;
+        if (age === null) ageScore = 20;
+        else if (age <= 30) ageScore = 5;
+        else if (age <= 90) ageScore = 15;
+        else if (age <= 180) ageScore = 30;
+        else if (age <= 365) ageScore = 40;
+        else ageScore = 25;
+        const amountScore = Math.min(40, Math.sqrt(Number(c.remaining_amount)) / 2);
+        const priority = Math.round(ageScore + amountScore + c.probability_score * 0.3);
+        if (priority !== c.priority_score) {
+            await db.from('gmp_collections').update({ priority_score: priority }).eq('id', c.collection_id);
+        }
+    }
+    toast.success('Przeliczono');
+    await loadCollections();
+    render();
+    renderKPIs();
+}
+
+async function exportCSV() {
+    toast.info('CSV...');
+    exportCsv('windykacja', allCollections, [
+        ['Klient nazwisko', 'last_name'],
+        ['Imię', 'first_name'],
+        ['Pracodawca', 'employer_name'],
+        ['Nr sprawy', 'case_number'],
+        ['Telefon', 'phone'],
+        ['Email', 'email'],
+        ['Kwota zaległa', 'remaining_amount'],
+        ['Poziom', r => LEVEL_LABELS[r.level] || r.level],
+        ['Opiekun', 'assigned_name'],
+        ['Priority', 'priority_score'],
+        ['Probability', 'probability_score'],
+        ['Ostatni kontakt', 'last_contact_at'],
+        ['Następna akcja', 'next_action_at'],
+        ['Obietnica (data)', 'promise_to_pay_date'],
+        ['Obietnica (kwota)', 'promise_to_pay_amount'],
+    ]);
+}
+</script>
+</body>
+</html>
