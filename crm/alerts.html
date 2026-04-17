@@ -41,10 +41,10 @@
                 <div class="flex gap-1 p-2 border-b border-zinc-900 flex-wrap">
                     <span class="text-xs text-zinc-600 py-1">Przyczyna:</span>
                     <button class="btn btn-secondary btn-sm reason-btn active" data-reason="">Wszystkie</button>
-                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_pracownika">❗ Pracownik</button>
-                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_urzedu">⏳ Urząd</button>
-                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_klienta">📞 Klient</button>
-                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_dokumentow">📄 Dok.</button>
+                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_pracownika">Pracownik</button>
+                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_urzedu">Urząd</button>
+                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_klienta">Klient</button>
+                    <button class="btn btn-secondary btn-sm reason-btn" data-reason="brak_dokumentow">Dokumenty</button>
                 </div>
                 <div id="alerts-list" class="divide-y divide-zinc-900/50 max-h-[560px] overflow-y-auto">
                     <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
@@ -115,10 +115,10 @@ async function loadAlerts() {
     const byId = Object.fromEntries((cases || []).map(c => [c.id, c]));
 
     const reasonLabels = {
-        brak_pracownika: '❗ brak pracownika',
-        brak_urzedu: '⏳ brak urzędu',
-        brak_klienta: '📞 brak klienta',
-        brak_dokumentow: '📄 brak dokumentów',
+        brak_pracownika: 'brak pracownika',
+        brak_urzedu: 'brak urzędu',
+        brak_klienta: 'brak klienta',
+        brak_dokumentow: 'brak dokumentów',
         inne: 'inne',
     };
     el.innerHTML = data.map(a => {

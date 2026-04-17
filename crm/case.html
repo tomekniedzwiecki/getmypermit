@@ -395,10 +395,10 @@
                                     <label>Status aktywności</label>
                                     <select class="input w-full" data-field="inactivity_reason">
                                         <option value="none">—</option>
-                                        <option value="brak_pracownika">❗ Brak działania pracownika</option>
-                                        <option value="brak_urzedu">⏳ Brak reakcji urzędu</option>
-                                        <option value="brak_klienta">📞 Brak reakcji klienta</option>
-                                        <option value="brak_dokumentow">📄 Brak dokumentów</option>
+                                        <option value="brak_pracownika">Brak działania pracownika</option>
+                                        <option value="brak_urzedu">Brak reakcji urzędu</option>
+                                        <option value="brak_klienta">Brak reakcji klienta</option>
+                                        <option value="brak_dokumentow">Brak dokumentów</option>
                                         <option value="inne">Inne</option>
                                     </select>
                                 </div>
@@ -1164,7 +1164,7 @@ function renderFinanceTab() {
         pEl.innerHTML = `
             <div class="grid grid-cols-2 gap-4 text-sm">
                 <div><div class="text-zinc-500 text-xs mb-1">Kwota planowana</div><div class="font-mono">${fmt.money(paymentPlan.total_amount)}</div></div>
-                <div><div class="text-zinc-500 text-xs mb-1">Płatnik</div><div>${paymentPlan.payer_type === 'employer' ? '🏢 Pracodawca' : '👤 Klient'}</div></div>
+                <div><div class="text-zinc-500 text-xs mb-1">Płatnik</div><div>${paymentPlan.payer_type === 'employer' ? 'Pracodawca' : 'Klient'}</div></div>
                 <div><div class="text-zinc-500 text-xs mb-1">Rat zaplanowanych</div><div>${paymentPlan.installments_planned || 1}</div></div>
                 <div><div class="text-zinc-500 text-xs mb-1">Termin</div><div>${fmt.date(paymentPlan.due_date)}</div></div>
             </div>`;
@@ -1185,7 +1185,7 @@ function renderFinanceTab() {
             <td class="text-xs">${fmt.date(p.payment_date)}</td>
             <td class="font-mono text-emerald-300 font-semibold">${fmt.money(p.amount)}</td>
             <td class="text-xs">${esc(p.method || '—')}</td>
-            <td class="text-xs">${p.kind === 'admin_fee' ? '🏛️ Admin.' : '💼 Wynagr.'}</td>
+            <td class="text-xs">${p.kind === 'admin_fee' ? 'Admin.' : 'Wynagrodz.'}</td>
             <td class="text-xs">${p.installment_number ? p.installment_number + '/' + (p.total_installments || '?') : '—'}</td>
             <td class="text-xs text-zinc-400 max-w-xs truncate">${esc(p.notes || '')}</td>
             <td><button class="btn btn-ghost btn-sm" onclick="deletePayment('${p.id}')"><i class="ph ph-trash text-red-400"></i></button></td>
@@ -1246,7 +1246,7 @@ function renderCalendarTab() {
         el.innerHTML = '<div class="p-6 empty-state"><i class="ph ph-calendar-x"></i><div>Brak terminów</div></div>';
         return;
     }
-    const typeLabels = { konsultacja: '💬 Konsultacja', follow_up: '🔁 Follow-up', osobiste_odciski: '🖐️ Odciski', osobiste_inne: '🏛️ Osobiste', hearing: '⚖️ Rozprawa' };
+    const typeLabels = { konsultacja: 'Konsultacja', follow_up: 'Follow-up', osobiste_odciski: 'Odciski', osobiste_inne: 'Osobiste', hearing: 'Rozprawa' };
     const today = new Date().toISOString().slice(0, 10);
 
     const upcoming = allAppointments.filter(a => !a.scheduled_date || a.scheduled_date >= today);
@@ -1461,8 +1461,8 @@ function openPaymentModal() {
             <div class="col-span-2">
                 <label>Rodzaj</label>
                 <select id="pay-kind" class="input w-full">
-                    <option value="fee">💼 Wynagrodzenie kancelarii</option>
-                    <option value="admin_fee">🏛️ Opłata administracyjna</option>
+                    <option value="fee">Wynagrodzenie kancelarii</option>
+                    <option value="admin_fee">Opłata administracyjna</option>
                 </select>
             </div>
             <div><label>Kwota</label><input type="number" step="0.01" id="pay-amount" class="input w-full" autofocus></div>
@@ -1624,7 +1624,7 @@ function openEmployerPicker() { gmpModal.pickEmployer(async (e) => { await db.fr
 function openNewEmployerInline() { gmpModal.editEmployer(null, async (e) => { if (e) { await db.from('gmp_cases').update({ employer_id: e.id }).eq('id', caseId); toast.success('Utworzono i przypisano'); loadCase(); } }); }
 
 async function requestTrustedProfileAccess() {
-    if (!confirm('⚠️ Chcesz uzyskać dostęp do danych profilu zaufanego. Ta akcja zostanie zalogowana. Kontynuować?')) return;
+    if (!confirm('UWAGA: Chcesz uzyskać dostęp do danych profilu zaufanego. Ta akcja zostanie zalogowana. Kontynuować?')) return;
     const { data } = await db.from('gmp_trusted_profile_credentials').select('*').eq('client_id', caseData.client_id).maybeSingle();
     if (!data) { toast.warning('Brak zapisanych danych'); return; }
     await db.from('gmp_credentials_access_log').insert({

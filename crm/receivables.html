@@ -16,138 +16,287 @@
     <script src="components/auth.js"></script>
 </head>
 <body>
+
+<style>
+/* Module-specific refinements */
+.hero-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-2xl);
+    padding: 24px 28px;
+}
+.hero-value {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--fs-hero);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.hero-label {
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.metric-card {
+    padding: 16px 20px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.metric-value { font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.metric-label { font-size: var(--fs-xs); color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+.metric-sub { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 4px; }
+
+/* Level badges - subtle, consistent */
+.lvl {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--r-sm);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+.lvl-new          { background: rgba(161,161,170,0.10); color: #d4d4d8; }
+.lvl-reminder_soft { background: rgba(16,185,129,0.10); color: #6ee7b7; }
+.lvl-reminder_firm { background: rgba(245,158,11,0.10); color: #fcd34d; }
+.lvl-demand_1     { background: rgba(249,115,22,0.10); color: #fdba74; }
+.lvl-demand_final { background: rgba(239,68,68,0.10); color: #fca5a5; }
+.lvl-pre_court    { background: rgba(168,85,247,0.12); color: #d8b4fe; }
+.lvl-epu          { background: rgba(220,38,38,0.15); color: #fca5a5; border-color: rgba(220,38,38,0.25); }
+.lvl-court        { background: rgba(220,38,38,0.2); color: white; }
+.lvl-settled      { background: rgba(16,185,129,0.15); color: #10b981; }
+.lvl-write_off    { background: rgba(113,113,122,0.15); color: var(--text-muted); text-decoration: line-through; }
+
+/* Age pills - minimal */
+.age {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+}
+.age-0      { background: rgba(16,185,129,0.08); color: #6ee7b7; }
+.age-1      { background: rgba(245,158,11,0.08); color: #fcd34d; }
+.age-2      { background: rgba(249,115,22,0.08); color: #fdba74; }
+.age-3      { background: rgba(239,68,68,0.08); color: #fca5a5; }
+.age-4      { background: rgba(239,68,68,0.14); color: #fca5a5; }
+.age-5      { background: rgba(127,29,29,0.3); color: #fca5a5; }
+
+/* Worklist row - clean, minimal */
+.work-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--bg-elevated);
+    transition: all 120ms;
+    position: relative;
+}
+.work-row:hover { border-color: var(--border-hover); }
+.work-row .row-actions { opacity: 0; transition: opacity 120ms; }
+.work-row:hover .row-actions { opacity: 1; }
+.work-row::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: transparent;
+    border-radius: 2px;
+    transition: background 150ms;
+}
+.work-row[data-priority="high"]::before { background: var(--danger); }
+.work-row[data-priority="mid"]::before { background: var(--warn); }
+
+.work-main { min-width: 0; }
+.work-title { font-size: var(--fs-md); font-weight: 500; color: var(--text); line-height: 1.3; }
+.work-sub { font-size: var(--fs-xs); color: var(--text-tertiary); margin-top: 3px; display: flex; gap: 8px; flex-wrap: wrap; }
+.work-sub .dot { color: var(--text-disabled); }
+
+.work-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+.work-interest { font-size: var(--fs-xs); color: var(--warn); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+.row-actions { display: flex; gap: 2px; }
+.row-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--r-md);
+    color: var(--text-tertiary);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 100ms;
+    font-size: 15px;
+}
+.row-action:hover { background: var(--bg-hover); color: var(--text); }
+.row-action.primary { color: var(--accent); }
+.row-action.primary:hover { background: var(--accent-subtle); }
+
+/* Dropdown menu */
+.dropdown {
+    position: absolute;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg);
+    padding: 4px;
+    z-index: 20;
+    min-width: 200px;
+}
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: var(--r-sm);
+    color: var(--text);
+    font-size: var(--fs-base);
+    cursor: pointer;
+    transition: background 100ms;
+}
+.dropdown-item:hover { background: var(--bg-hover); }
+.dropdown-item.danger { color: #fca5a5; }
+.dropdown-item.danger:hover { background: rgba(239,68,68,0.1); }
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--bg-elevated);
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.toolbar .filter-input { width: auto; padding: 6px 10px; font-size: var(--fs-base); }
+
+.chart-container { position: relative; height: 260px; width: 100%; }
+
+/* Sort indicators */
+.sort-caret { display: inline-flex; flex-direction: column; gap: 0; margin-left: 4px; opacity: 0.3; }
+</style>
+
 <div class="app-layout">
     <div id="sidebar-placeholder"></div>
+
     <main class="app-main">
+        <!-- Header -->
         <div class="page-header">
             <div>
-                <h1 class="page-title">🔺 Windykacja</h1>
-                <p class="page-subtitle" id="subtitle">Ściągnięcie zaległych należności</p>
+                <h1 class="page-title">Windykacja</h1>
+                <p class="page-subtitle">Aktywny proces odzyskiwania należności</p>
             </div>
             <div class="flex gap-2">
-                <button class="btn btn-secondary" onclick="refreshPriorities()" title="Przelicz priorytety"><i class="ph ph-arrows-clockwise"></i> Przelicz</button>
-                <button class="btn btn-secondary" onclick="exportCSV()"><i class="ph ph-download-simple"></i> CSV</button>
+                <button class="btn btn-secondary btn-sm" onclick="refreshPriorities()">
+                    <i class="ph ph-arrow-clockwise"></i> Przelicz priorytety
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="exportCSV()">
+                    <i class="ph ph-download-simple"></i> Export CSV
+                </button>
             </div>
         </div>
 
-        <!-- HERO KPI -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-            <div class="card p-3">
-                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">DO ODZYSKANIA</div>
-                <div class="text-2xl font-bold text-red-400" id="k-total">—</div>
-                <div class="text-xs text-zinc-600" id="k-total-count">— spraw</div>
+        <!-- Hero metric + secondary metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+            <div class="hero-card md:col-span-1" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div class="hero-label">Do odzyskania</div>
+                <div class="hero-value" id="k-total">—</div>
+                <div class="metric-sub" id="k-total-count">—</div>
             </div>
-            <div class="card p-3">
-                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Z KONTAKTEM</div>
-                <div class="text-2xl font-bold text-emerald-400" id="k-contactable">—</div>
-                <div class="text-xs text-zinc-600">do bezpośredniego ścigania</div>
+            <div class="metric-card">
+                <div class="metric-label">Z kontaktem</div>
+                <div class="metric-value text-success" id="k-contactable">—</div>
+                <div class="metric-sub" id="k-contactable-sub">—</div>
             </div>
-            <div class="card p-3">
-                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">WEIGHTED EXPECTED</div>
-                <div class="text-2xl font-bold text-amber-300" id="k-expected">—</div>
-                <div class="text-xs text-zinc-600">probability × kwota</div>
+            <div class="metric-card">
+                <div class="metric-label">Prognoza odzysku</div>
+                <div class="metric-value text-warn" id="k-expected">—</div>
+                <div class="metric-sub">ważona probability</div>
             </div>
-            <div class="card p-3">
-                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">DZIŚ DO WYKONANIA</div>
-                <div class="text-2xl font-bold text-white" id="k-today">—</div>
-                <div class="text-xs text-zinc-600">kontaktów zaplanowanych</div>
-            </div>
-            <div class="card p-3">
-                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">PROMISES DO SPRAWDZENIA</div>
-                <div class="text-2xl font-bold text-cyan-300" id="k-promises">—</div>
-                <div class="text-xs text-zinc-600">obietnice zapłaty</div>
+            <div class="metric-card">
+                <div class="metric-label">Do zrobienia dziś</div>
+                <div class="metric-value" id="k-today">—</div>
+                <div class="metric-sub" id="k-today-sub">kontaktów zaplanowanych</div>
             </div>
         </div>
 
-        <!-- TABS -->
-        <div class="flex gap-1 mb-4 flex-wrap">
-            <button class="btn btn-secondary tab-btn active" data-view="worklist">🎯 Worklist dnia</button>
-            <button class="btn btn-secondary tab-btn" data-view="dashboard">📊 Dashboard</button>
-            <button class="btn btn-secondary tab-btn" data-view="all">📋 Wszystkie zaległości</button>
-            <button class="btn btn-secondary tab-btn" data-view="promises">🤝 Promise-to-pay</button>
-            <button class="btn btn-secondary tab-btn" data-view="no-contact">📵 Bez kontaktu</button>
-            <button class="btn btn-secondary tab-btn" data-view="old">🏛️ 365+ dni (EPU candidates)</button>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-view="worklist">Worklist <span class="tab-count" id="tc-worklist">—</span></button>
+            <button class="tab" data-view="dashboard">Dashboard</button>
+            <button class="tab" data-view="all">Wszystkie</button>
+            <button class="tab" data-view="promises">Obietnice <span class="tab-count" id="tc-promises">—</span></button>
+            <button class="tab" data-view="no-contact">Bez kontaktu <span class="tab-count" id="tc-nocontact">—</span></button>
+            <button class="tab" data-view="old">EPU (365+) <span class="tab-count" id="tc-old">—</span></button>
         </div>
 
-        <!-- CONTENT -->
         <div id="view-content">
-            <div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>
+            <div class="empty-state"><div class="spinner-lg mx-auto"></div></div>
         </div>
     </main>
 </div>
+
 <div id="modals-container"></div>
-
-<style>
-.tab-btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
-.tab-btn.active { background: white; color: black; }
-.level-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500; white-space: nowrap; }
-.level-new { background: rgba(156,163,175,0.15); color: #d1d5db; }
-.level-reminder_soft { background: rgba(16,185,129,0.12); color: #6ee7b7; }
-.level-reminder_firm { background: rgba(245,158,11,0.12); color: #fcd34d; }
-.level-demand_1 { background: rgba(239,68,68,0.12); color: #fca5a5; }
-.level-demand_final { background: rgba(239,68,68,0.20); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
-.level-pre_court { background: rgba(168,85,247,0.15); color: #d8b4fe; }
-.level-epu, .level-court { background: rgba(239,68,68,0.3); color: white; font-weight: 600; }
-.level-settled { background: rgba(16,185,129,0.2); color: #10b981; }
-.level-write_off { background: rgba(113,113,122,0.2); color: #a1a1aa; text-decoration: line-through; }
-
-.priority-bar { width: 50px; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
-.priority-bar-fill { height: 100%; }
-
-.worklist-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px; transition: border-color 0.15s; }
-.worklist-card:hover { border-color: rgba(59,130,246,0.3); }
-.worklist-card.overdue-action { border-color: rgba(239,68,68,0.3); background: linear-gradient(135deg, rgba(10,10,10,1), rgba(239,68,68,0.03)); }
-
-.age-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
-.age-0-30 { background: rgba(16,185,129,0.15); color: #6ee7b7; }
-.age-31-60 { background: rgba(245,158,11,0.15); color: #fcd34d; }
-.age-61-90 { background: rgba(249,115,22,0.15); color: #fdba74; }
-.age-91-180 { background: rgba(239,68,68,0.15); color: #fca5a5; }
-.age-181-365 { background: rgba(220,38,38,0.2); color: #fecaca; }
-.age-365-plus { background: rgba(127,29,29,0.4); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
-
-.chart-container { position: relative; height: 280px; width: 100%; }
-</style>
 
 <script src="components/sidebar.js" data-active="receivables"></script>
 <script>
 let currentView = 'worklist';
 let allCollections = [];
 let staffList = [];
-let charts = {};
 
 const LEVEL_LABELS = {
     new: 'Nowa', reminder_soft: 'Przypomnienie', reminder_firm: 'Ponaglenie',
-    demand_1: 'Wezwanie #1', demand_final: 'Ostateczne', pre_court: 'Przed sądem',
+    demand_1: 'Wezwanie', demand_final: 'Ostateczne', pre_court: 'Przedsądowe',
     epu: 'EPU', court: 'Sąd', settled: 'Opłacona', write_off: 'Odpisana'
 };
 
-const TONE_LABELS = { friendly: '😊 Przyjazny', neutral: '— Neutralny', firm: '⚠️ Stanowczy', severe: '🔥 Twardy' };
-
 const BUCKETS = [
-    { name: '0-30', min: 0, max: 30, color: '#10b981', cls: 'age-0-30' },
-    { name: '31-60', min: 31, max: 60, color: '#f59e0b', cls: 'age-31-60' },
-    { name: '61-90', min: 61, max: 90, color: '#f97316', cls: 'age-61-90' },
-    { name: '91-180', min: 91, max: 180, color: '#ef4444', cls: 'age-91-180' },
-    { name: '181-365', min: 181, max: 365, color: '#dc2626', cls: 'age-181-365' },
-    { name: '365+', min: 366, max: 99999, color: '#7f1d1d', cls: 'age-365-plus' },
+    { name: '0-30', min: 0, max: 30, cls: 'age-0', color: '#10b981' },
+    { name: '31-60', min: 31, max: 60, cls: 'age-1', color: '#f59e0b' },
+    { name: '61-90', min: 61, max: 90, cls: 'age-2', color: '#f97316' },
+    { name: '91-180', min: 91, max: 180, cls: 'age-3', color: '#ef4444' },
+    { name: '181-365', min: 181, max: 365, cls: 'age-4', color: '#dc2626' },
+    { name: '365+', min: 366, max: 99999, cls: 'age-5', color: '#7f1d1d' },
 ];
 
-// Odsetki ustawowe 2026: stopa ref. NBP + 5.5pp (zakladamy ref = 5.75%, czyli 11.25%)
-const INTEREST_RATE = 0.1125; // Odsetki ustawowe za opóźnienie
+const INTEREST_RATE = 0.1125;
 
 document.addEventListener('gmp-auth-ready', init);
 
 async function init() {
-    const [{ data: staff }] = await Promise.all([
-        db.from('gmp_staff').select('id, full_name, color').order('full_name'),
-    ]);
+    const { data: staff } = await db.from('gmp_staff').select('id, full_name, color').order('full_name');
     staffList = staff || [];
-
     await loadCollections();
 
-    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
         b.classList.add('active');
         currentView = b.dataset.view;
         render();
@@ -158,151 +307,136 @@ async function init() {
 }
 
 async function loadCollections() {
-    allCollections = await fetchAll(() => db.from('gmp_collection_overview').select('*').eq('status', 'active'));
-    console.log('Loaded collections:', allCollections.length);
+    // Tylko aktywne z remaining > 0
+    allCollections = await fetchAll(() =>
+        db.from('gmp_collection_overview').select('*').eq('status', 'active').gt('remaining_amount', 0)
+    );
 }
 
-function getBucket(days) {
-    if (days == null) return null;
-    return BUCKETS.find(b => days >= b.min && days <= b.max);
-}
-
-function getAgeDays(c) {
-    const d = c.date_last_activity || c.date_accepted;
-    if (!d) return null;
-    return Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
-}
-
-function hasContact(c) {
-    return !!(c.phone || c.email || c.employer_phone || c.employer_email);
-}
-
-function calcInterest(amount, days) {
-    return (Number(amount) * INTEREST_RATE * days) / 365;
-}
+function getBucket(days) { if (days == null) return null; return BUCKETS.find(b => days >= b.min && days <= b.max); }
+function getAgeDays(c) { const d = c.date_last_activity || c.date_accepted; if (!d) return null; return Math.floor((Date.now() - new Date(d).getTime()) / 86400000); }
+function hasContact(c) { return !!(c.phone || c.email || c.employer_phone || c.employer_email); }
+function calcInterest(amount, days) { return (Number(amount) * INTEREST_RATE * days) / 365; }
 
 function renderKPIs() {
     const total = allCollections.reduce((s, c) => s + Number(c.remaining_amount || 0), 0);
     const contactable = allCollections.filter(hasContact);
     const contactableSum = contactable.reduce((s, c) => s + Number(c.remaining_amount || 0), 0);
-
-    // Weighted expected = sum(amount × probability)
     const expected = allCollections.reduce((s, c) => s + Number(c.remaining_amount || 0) * (c.probability_score / 100), 0);
-
     const today = new Date().toISOString().slice(0, 10);
     const todayWork = allCollections.filter(c => c.next_action_at && c.next_action_at.slice(0, 10) <= today);
-
     const promises = allCollections.filter(c => c.promise_to_pay_date);
+    const noContact = allCollections.filter(c => !hasContact(c));
+    const old = allCollections.filter(c => { const age = getAgeDays(c); return age !== null && age >= 365; });
 
     document.getElementById('k-total').textContent = fmt.money(total);
-    document.getElementById('k-total-count').textContent = allCollections.length + ' spraw';
+    document.getElementById('k-total-count').textContent = `${allCollections.length} spraw • średnio ${fmt.money(total / (allCollections.length || 1))}`;
     document.getElementById('k-contactable').textContent = fmt.money(contactableSum);
+    document.getElementById('k-contactable-sub').textContent = `${contactable.length} z ${allCollections.length} spraw`;
     document.getElementById('k-expected').textContent = fmt.money(expected);
-    document.getElementById('k-today').textContent = todayWork.length;
-    document.getElementById('k-promises').textContent = promises.length;
+    document.getElementById('k-today').textContent = fmt.num(todayWork.length);
+    document.getElementById('k-today-sub').textContent = `${allCollections.length - todayWork.length} zaplanowanych na później`;
+
+    // Tab counts
+    document.getElementById('tc-worklist').textContent = todayWork.length || allCollections.length;
+    document.getElementById('tc-promises').textContent = promises.length;
+    document.getElementById('tc-nocontact').textContent = noContact.length;
+    document.getElementById('tc-old').textContent = old.length;
 }
 
 function render() {
+    const el = document.getElementById('view-content');
     if (currentView === 'worklist') renderWorklist();
     else if (currentView === 'dashboard') renderDashboard();
     else if (currentView === 'all') renderAll();
     else if (currentView === 'promises') renderPromises();
     else if (currentView === 'no-contact') renderNoContact();
-    else if (currentView === 'old') renderOldCandidates();
+    else if (currentView === 'old') renderOld();
 }
 
-function renderWorklistCard(c) {
+function workRow(c) {
     const client = (c.last_name || '—') + ' ' + (c.first_name || '');
     const age = getAgeDays(c);
     const bucket = getBucket(age);
-    const contact = hasContact(c);
     const interest = age ? calcInterest(c.remaining_amount, age) : 0;
-    const totalWithInterest = Number(c.remaining_amount) + interest;
+    const priorityClass = c.priority_score >= 70 ? 'high' : (c.priority_score >= 45 ? 'mid' : '');
+    const contact = hasContact(c);
 
     const phoneDigits = (c.phone || '').replace(/\D/g, '');
     const phoneIntl = phoneDigits && !phoneDigits.startsWith('48') ? '48' + phoneDigits : phoneDigits;
     const waUrl = phoneIntl ? `https://wa.me/${phoneIntl}` : null;
-    const mailUrl = c.email ? `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent('Pilne: zaległość ' + (c.case_number || ''))}` : null;
+    const mailUrl = c.email ? `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent('Zaległość - ' + (c.case_number || ''))}` : null;
     const callUrl = phoneDigits ? `tel:${phoneIntl || phoneDigits}` : null;
 
     const promiseDue = c.promise_to_pay_date && c.promise_to_pay_date < new Date().toISOString().slice(0, 10);
-    const promiseBadge = promiseDue ? '<span class="badge badge-inactive-30">obietnica niedotrzymana</span>' : (c.promise_to_pay_date ? `<span class="badge badge-zlecona">obiecał ${c.promise_to_pay_date}</span>` : '');
+    const promiseLabel = promiseDue ? `<span class="lvl lvl-demand_final"><i class="ph ph-x-circle"></i>&nbsp;obietnica niedotrzymana</span>` :
+                       (c.promise_to_pay_date ? `<span class="lvl lvl-reminder_soft"><i class="ph ph-handshake"></i>&nbsp;obiecał ${fmt.date(c.promise_to_pay_date)}</span>` : '');
 
     return `
-    <div class="worklist-card ${c.priority_score >= 70 ? 'overdue-action' : ''}">
-        <div class="flex items-start justify-between gap-3 mb-3">
-            <div class="flex items-start gap-3 flex-1 min-w-0">
-                ${window.avatar(client, 'lg')}
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap mb-1">
-                        <a href="case.html?id=${c.case_id}" class="text-white font-semibold hover:underline">${esc(client)}</a>
-                        ${c.employer_name ? `<span class="text-xs text-zinc-500">${esc(c.employer_name)}</span>` : ''}
-                        <span class="level-badge level-${c.level}">${LEVEL_LABELS[c.level] || c.level}</span>
-                        ${bucket ? `<span class="age-badge ${bucket.cls}">${age} dni</span>` : ''}
-                        ${promiseBadge}
-                    </div>
-                    <div class="text-xs text-zinc-500 flex items-center gap-2 flex-wrap">
-                        ${c.case_number ? `<span class="font-mono">#${esc(c.case_number)}</span>` : ''}
-                        ${c.assigned_name ? `<span>• ${esc(c.assigned_name)}</span>` : '<span class="text-amber-400">• nieprzypisana</span>'}
-                        ${c.phone ? `<span class="font-mono">• ${esc(c.phone)}</span>` : ''}
-                        ${c.email ? `<span class="truncate">• ${esc(c.email)}</span>` : ''}
-                        ${!contact ? '<span class="text-red-400">• ❗ brak kontaktu</span>' : ''}
-                    </div>
-                </div>
+    <div class="work-row" data-priority="${priorityClass}" data-id="${c.collection_id}">
+        ${window.avatar(client)}
+        <div class="work-main">
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="case.html?id=${c.case_id}" class="work-title hover:text-accent hover:underline">${esc(client)}</a>
+                <span class="lvl lvl-${c.level}">${LEVEL_LABELS[c.level] || c.level}</span>
+                ${bucket ? `<span class="age ${bucket.cls}">${age}d</span>` : ''}
+                ${promiseLabel}
+                ${!contact ? `<span class="lvl lvl-demand_final"><i class="ph ph-phone-slash"></i>&nbsp;brak kontaktu</span>` : ''}
             </div>
-            <div class="text-right flex-shrink-0">
-                <div class="text-xl font-bold text-red-400 font-mono">${fmt.money(c.remaining_amount)}</div>
-                ${interest > 50 ? `<div class="text-xs text-amber-300">+${fmt.money(interest)} odsetki</div>` : ''}
-                <div class="text-xs text-zinc-500">Priorytet: ${c.priority_score}</div>
-                <div class="priority-bar mt-1 inline-block">
-                    <div class="priority-bar-fill" style="width: ${Math.min(100, c.priority_score)}%; background: ${c.priority_score >= 70 ? '#ef4444' : c.priority_score >= 40 ? '#f59e0b' : '#71717a'}"></div>
-                </div>
+            <div class="work-sub">
+                ${c.case_number ? `<span class="mono">#${esc(c.case_number)}</span>` : ''}
+                ${c.employer_name ? `<span class="dot">·</span><span>${esc(c.employer_name)}</span>` : ''}
+                ${c.assigned_name ? `<span class="dot">·</span><span>${esc(c.assigned_name)}</span>` : '<span class="dot">·</span><span class="text-warn">nieprzypisana</span>'}
+                ${c.phone ? `<span class="dot">·</span><span class="mono">${esc(c.phone)}</span>` : ''}
+                ${c.last_contact_at ? `<span class="dot">·</span><span>ostatni kontakt ${fmt.daysAgo(c.last_contact_at)}</span>` : ''}
             </div>
         </div>
-
-        <div class="flex gap-1 flex-wrap">
-            ${callUrl ? `<a href="${callUrl}" class="btn btn-secondary btn-sm" onclick="logActivity('${c.collection_id}', 'phone_call')"><i class="ph ph-phone-call text-emerald-400"></i> Dzwoń</a>` : ''}
-            ${waUrl ? `<a href="${waUrl}" target="_blank" class="btn btn-secondary btn-sm" onclick="logActivity('${c.collection_id}', 'whatsapp')"><i class="ph ph-whatsapp-logo text-green-400"></i> WA</a>` : ''}
-            ${mailUrl ? `<a href="${mailUrl}" class="btn btn-secondary btn-sm" onclick="logActivity('${c.collection_id}', 'email')"><i class="ph ph-envelope text-blue-400"></i> Email</a>` : ''}
-            <button class="btn btn-secondary btn-sm" onclick="openLogModal('${c.collection_id}')"><i class="ph ph-pencil-simple"></i> Zapisz kontakt</button>
-            <button class="btn btn-secondary btn-sm" onclick="openPromiseModal('${c.collection_id}')"><i class="ph ph-handshake"></i> Obietnica</button>
-            <button class="btn btn-secondary btn-sm" onclick="generateDemandPDF('${c.collection_id}')" title="Wygeneruj wezwanie PDF"><i class="ph ph-file-pdf text-red-400"></i> Wezwanie</button>
-            <button class="btn btn-secondary btn-sm" onclick="escalate('${c.collection_id}', '${c.level}')"><i class="ph ph-arrow-up"></i> Eskalacja</button>
-            <span class="flex-1"></span>
-            <button class="btn btn-ghost btn-sm" onclick="markAsPaid('${c.collection_id}')" title="Oznacz jako opłacone"><i class="ph ph-check text-emerald-400"></i></button>
-            <button class="btn btn-ghost btn-sm" onclick="pauseCollection('${c.collection_id}')" title="Wstrzymaj"><i class="ph ph-pause"></i></button>
-            <button class="btn btn-ghost btn-sm" onclick="writeOff('${c.collection_id}')" title="Odpisz"><i class="ph ph-x-circle text-red-400"></i></button>
+        <div>
+            <div class="work-amount">${fmt.money(c.remaining_amount)}</div>
+            ${interest > 50 ? `<div class="work-interest">+${fmt.money(interest)} odsetki</div>` : ''}
+        </div>
+        <div class="row-actions">
+            ${callUrl ? `<a href="${callUrl}" class="row-action primary" onclick="logActivity('${c.collection_id}', 'phone_call')" title="Zadzwoń"><i class="ph ph-phone-call"></i></a>` : ''}
+            ${waUrl ? `<a href="${waUrl}" target="_blank" class="row-action" onclick="logActivity('${c.collection_id}', 'whatsapp')" title="WhatsApp"><i class="ph ph-whatsapp-logo"></i></a>` : ''}
+            ${mailUrl ? `<a href="${mailUrl}" class="row-action" onclick="logActivity('${c.collection_id}', 'email')" title="Email"><i class="ph ph-envelope"></i></a>` : ''}
+            <button class="row-action" onclick="openLogModal('${c.collection_id}')" title="Zapisz kontakt"><i class="ph ph-chat-text"></i></button>
+            <button class="row-action" onclick="openPromiseModal('${c.collection_id}')" title="Obietnica zapłaty"><i class="ph ph-handshake"></i></button>
+            <button class="row-action" onclick="generateDemandPDF('${c.collection_id}')" title="Generuj wezwanie PDF"><i class="ph ph-file-pdf"></i></button>
+            <button class="row-action" onclick="openMoreMenu(event, '${c.collection_id}')" title="Więcej"><i class="ph ph-dots-three"></i></button>
         </div>
     </div>`;
 }
 
 function renderWorklist() {
     const el = document.getElementById('view-content');
-    const sorted = [...allCollections].filter(c => c.remaining_amount > 0).sort((a, b) => b.priority_score - a.priority_score);
-    const today = sorted.filter(c => c.next_action_at && c.next_action_at.slice(0, 10) <= new Date().toISOString().slice(0, 10));
-    const all = sorted;
+    const sorted = [...allCollections].sort((a, b) => b.priority_score - a.priority_score);
+    const today = new Date().toISOString().slice(0, 10);
+    const todayItems = sorted.filter(c => c.next_action_at && c.next_action_at.slice(0, 10) <= today);
+    const list = todayItems.length ? todayItems : sorted;
 
     el.innerHTML = `
-        <div class="card p-4 mb-4" style="background: linear-gradient(135deg, rgba(239,68,68,0.06), rgba(245,158,11,0.04)); border-color: rgba(239,68,68,0.2)">
-            <div class="flex items-center justify-between mb-2">
-                <span class="font-semibold">🎯 Lista do wykonania dziś — <span class="text-red-400">${today.length}</span> spraw</span>
-                <span class="text-xs text-zinc-500">Sortowane po priorytecie (kwota × wiek × prawdopodobieństwo odzyskania)</span>
+        <div class="flex items-center justify-between mb-3">
+            <div class="text-sm text-secondary">
+                ${todayItems.length ? `<span class="text-danger">${todayItems.length}</span> spraw zaplanowanych na dziś` : `Brak zaplanowanych na dziś — pokazuję <span class="text-danger">${sorted.length}</span> najpilniejszych`}
             </div>
-            <div class="text-xs text-zinc-600">Realistyczny cel dnia: skontaktuj się z <b class="text-white">10-20 dłużnikami</b>. Zaczynaj od góry listy.</div>
+            <div class="text-xs text-tertiary">Sortowane wg priorytetu (wiek × kwota × probability)</div>
         </div>
 
-        <div class="space-y-3" id="worklist-items">
-            ${(today.length ? today : all).slice(0, 50).map(c => renderWorklistCard(c)).join('')}
+        <div class="space-y-2" id="work-list">
+            ${list.slice(0, 50).map(workRow).join('')}
         </div>
 
-        ${all.length > 50 ? `<div class="text-center mt-4 text-zinc-500 text-sm">Pokazuję 50 z ${all.length} spraw. Zobacz <button class="text-blue-400 hover:underline" onclick="document.querySelector('.tab-btn[data-view=\\'all\\']').click()">wszystkie zaległości →</button></div>` : ''}
+        ${list.length > 50 ? `<div class="text-center mt-4 text-sm text-tertiary">Pokazuję 50 z ${list.length}. <button class="text-accent hover:underline" onclick="switchTabTo('all')">Wszystkie →</button></div>` : ''}
     `;
+}
+
+function switchTabTo(name) {
+    document.querySelector(`.tab[data-view="${name}"]`)?.click();
 }
 
 function renderDashboard() {
     const el = document.getElementById('view-content');
 
-    // Aging buckets
     const byBucket = {};
     BUCKETS.forEach(b => byBucket[b.name] = { count: 0, amount: 0, withContact: 0, withContactSum: 0 });
     byBucket['brak_daty'] = { count: 0, amount: 0, withContact: 0, withContactSum: 0 };
@@ -318,7 +452,6 @@ function renderDashboard() {
         }
     });
 
-    // Per staff
     const byStaff = {};
     allCollections.forEach(c => {
         const name = c.assigned_name || '(nieprzypisana)';
@@ -328,53 +461,56 @@ function renderDashboard() {
     });
     const staffRanking = Object.entries(byStaff).sort((a, b) => b[1].amount - a[1].amount);
 
-    // Per level
-    const byLevel = {};
-    allCollections.forEach(c => {
-        byLevel[c.level] = (byLevel[c.level] || 0) + 1;
-    });
+    const probs = { '0-30': 90, '31-60': 75, '61-90': 55, '91-180': 35, '181-365': 20, '365+': 10, 'brak_daty': 30 };
 
     el.innerHTML = `
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
             <section class="card">
-                <div class="card-header">Aging - struktura zaległości</div>
-                <div class="p-4"><div class="chart-container"><canvas id="chart-aging"></canvas></div></div>
+                <div class="card-header">Struktura wg wieku</div>
+                <div class="card-body"><div class="chart-container"><canvas id="chart-aging"></canvas></div></div>
             </section>
             <section class="card">
                 <div class="card-header">Poziomy eskalacji</div>
-                <div class="p-4"><div class="chart-container"><canvas id="chart-levels"></canvas></div></div>
+                <div class="card-body"><div class="chart-container"><canvas id="chart-levels"></canvas></div></div>
             </section>
         </div>
 
         <section class="card mb-4">
-            <div class="card-header">Aging buckets - szczegóły</div>
+            <div class="card-header">Aging - szczegóły i prognoza odzysku</div>
             <div class="overflow-x-auto">
                 <table class="gmp-table">
-                    <thead><tr><th>Wiek</th><th class="text-right">Spraw</th><th class="text-right">Kwota</th><th class="text-right">Z kontaktem</th><th class="text-right">% odzyskiwalne</th><th class="text-right">Expected</th></tr></thead>
+                    <thead><tr><th>Bucket</th><th class="text-right">Spraw</th><th class="text-right">Kwota</th><th class="text-right">Z kontaktem</th><th class="text-right">Recovery rate</th><th class="text-right">Prognoza odzysku</th></tr></thead>
                     <tbody>${Object.entries(byBucket).map(([name, b]) => {
-                        const bucket = BUCKETS.find(x => x.name === name) || { color: '#71717a' };
-                        const probs = { '0-30': 90, '31-60': 75, '61-90': 55, '91-180': 35, '181-365': 20, '365+': 10, 'brak_daty': 30 };
+                        if (b.count === 0) return '';
                         const prob = probs[name] || 30;
                         const expected = b.amount * prob / 100;
-                        return `<tr><td><span class="age-badge ${bucket.cls || ''}">${name}</span></td><td class="text-right">${b.count}</td><td class="text-right font-mono">${fmt.money(b.amount)}</td><td class="text-right text-emerald-400 font-mono">${fmt.money(b.withContactSum)}</td><td class="text-right">${prob}%</td><td class="text-right font-mono text-amber-300">${fmt.money(expected)}</td></tr>`;
+                        return `<tr>
+                            <td><span class="age ${(BUCKETS.find(x => x.name === name) || {}).cls || ''}">${name}</span></td>
+                            <td class="text-right mono">${b.count}</td>
+                            <td class="text-right mono">${fmt.money(b.amount)}</td>
+                            <td class="text-right mono text-success">${fmt.money(b.withContactSum)}</td>
+                            <td class="text-right mono text-tertiary">${prob}%</td>
+                            <td class="text-right mono text-warn font-semibold">${fmt.money(expected)}</td>
+                        </tr>`;
                     }).join('')}</tbody>
                 </table>
             </div>
         </section>
 
         <section class="card">
-            <div class="card-header">Per opiekun</div>
-            <div class="p-4 space-y-2">
+            <div class="card-header">Zaległości per opiekun</div>
+            <div class="card-body space-y-3">
                 ${staffRanking.map(([name, d]) => {
                     const max = staffRanking[0][1].amount || 1;
                     const pct = Math.round(100 * d.amount / max);
+                    const unassigned = name === '(nieprzypisana)';
                     return `<div>
-                        <div class="flex justify-between text-sm mb-1">
-                            <span>${esc(name)}</span>
-                            <span class="font-mono">${fmt.money(d.amount)} <span class="text-zinc-500 text-xs">(${d.count} spraw)</span></span>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-sm ${unassigned ? 'text-warn' : ''}">${esc(name)}</span>
+                            <span class="mono text-sm">${fmt.money(d.amount)} <span class="text-tertiary">· ${d.count} spr.</span></span>
                         </div>
-                        <div class="h-2 bg-zinc-900 rounded overflow-hidden">
-                            <div class="h-full ${name === '(nieprzypisana)' ? 'bg-red-500' : 'bg-blue-500'}" style="width: ${pct}%"></div>
+                        <div class="h-1.5 bg-subtle rounded-full overflow-hidden" style="background: var(--bg-subtle)">
+                            <div class="h-full rounded-full" style="width: ${pct}%; background: ${unassigned ? 'var(--warn)' : 'var(--accent)'}"></div>
                         </div>
                     </div>`;
                 }).join('')}
@@ -382,41 +518,40 @@ function renderDashboard() {
         </section>
     `;
 
-    // Charts
-    const bucketColors = BUCKETS.map(b => b.color).concat(['#52525b']);
-    const bucketLabels = [...BUCKETS.map(b => b.name), 'brak_daty'];
+    // Aging chart
+    const bucketLabels = BUCKETS.filter(b => (byBucket[b.name]?.count || 0) > 0).map(b => b.name);
     const bucketData = bucketLabels.map(n => byBucket[n].amount);
+    const bucketColors = bucketLabels.map(n => (BUCKETS.find(b => b.name === n) || {}).color || '#71717a');
 
     new Chart(document.getElementById('chart-aging'), {
         type: 'doughnut',
-        data: {
-            labels: bucketLabels,
-            datasets: [{ data: bucketData, backgroundColor: bucketColors, borderColor: '#050505', borderWidth: 2 }]
-        },
+        data: { labels: bucketLabels, datasets: [{ data: bucketData, backgroundColor: bucketColors, borderColor: 'var(--bg)', borderWidth: 2 }] },
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'right', labels: { color: '#a1a1aa', font: { size: 11 } } },
+                legend: { position: 'right', labels: { color: '#a1a1aa', font: { size: 11, family: 'Inter' }, boxWidth: 12 } },
                 tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt.money(ctx.parsed)}` } }
             }
         }
     });
 
-    const levelLabels = Object.keys(byLevel).map(k => LEVEL_LABELS[k] || k);
-    const levelData = Object.values(byLevel);
+    // Levels
+    const byLevel = {};
+    allCollections.forEach(c => { byLevel[c.level] = (byLevel[c.level] || 0) + 1; });
+    const levelEntries = Object.entries(byLevel).sort((a,b) => b[1] - a[1]);
 
     new Chart(document.getElementById('chart-levels'), {
         type: 'bar',
         data: {
-            labels: levelLabels,
-            datasets: [{ data: levelData, backgroundColor: '#6366f1', borderWidth: 0 }]
+            labels: levelEntries.map(e => LEVEL_LABELS[e[0]] || e[0]),
+            datasets: [{ data: levelEntries.map(e => e[1]), backgroundColor: '#6366f1cc', borderWidth: 0, borderRadius: 4 }]
         },
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
                 x: { ticks: { color: '#71717a' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-                y: { ticks: { color: '#a1a1aa', font: { size: 10 } }, grid: { display: false } }
+                y: { ticks: { color: '#a1a1aa', font: { size: 11 } }, grid: { display: false } }
             }
         }
     });
@@ -427,40 +562,38 @@ function renderAll() {
     const sorted = [...allCollections].sort((a, b) => b.priority_score - a.priority_score);
 
     el.innerHTML = `
-        <div class="card p-3 mb-4">
-            <div class="flex gap-2 items-center flex-wrap">
-                <input id="f-search" class="filter-input text-sm" placeholder="Szukaj: nazwisko, nr..." style="width: 200px">
-                <select id="f-level" class="filter-input text-sm">
-                    <option value="">Wszystkie poziomy</option>
-                    ${Object.entries(LEVEL_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
-                </select>
-                <select id="f-staff" class="filter-input text-sm">
-                    <option value="">Wszyscy opiekunowie</option>
-                    <option value="__unassigned__">Nieprzypisane</option>
-                    ${staffList.map(s => `<option value="${s.id}">${esc(s.full_name)}</option>`).join('')}
-                </select>
-                <select id="f-bucket" class="filter-input text-sm">
-                    <option value="">Dowolny wiek</option>
-                    ${BUCKETS.map(b => `<option value="${b.name}">${b.name} dni</option>`).join('')}
-                </select>
-                <label class="text-xs text-zinc-500"><input type="checkbox" id="f-contact"> Tylko z kontaktem</label>
-            </div>
+        <div class="toolbar">
+            <input id="f-search" class="filter-input" placeholder="Szukaj: nazwisko, nr..." style="width: 240px">
+            <select id="f-level" class="filter-input">
+                <option value="">Wszystkie poziomy</option>
+                ${Object.entries(LEVEL_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
+            </select>
+            <select id="f-staff" class="filter-input">
+                <option value="">Wszyscy opiekunowie</option>
+                <option value="__unassigned__">Nieprzypisane</option>
+                ${staffList.map(s => `<option value="${s.id}">${esc(s.full_name)}</option>`).join('')}
+            </select>
+            <select id="f-bucket" class="filter-input">
+                <option value="">Dowolny wiek</option>
+                ${BUCKETS.map(b => `<option value="${b.name}">${b.name} dni</option>`).join('')}
+            </select>
+            <label class="text-xs text-tertiary flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" id="f-contact"> Tylko z kontaktem
+            </label>
         </div>
 
-        <div class="card overflow-hidden">
-            <div class="overflow-x-auto max-h-[calc(100vh-420px)]">
+        <div class="card">
+            <div class="overflow-x-auto" style="max-height: calc(100vh - 420px)">
                 <table class="gmp-table">
                     <thead><tr>
-                        <th>Klient / Pracodawca</th>
-                        <th>Nr</th>
+                        <th data-sort="client">Klient</th>
+                        <th>Pracodawca</th>
                         <th>Poziom</th>
-                        <th class="text-right">Wiek</th>
-                        <th class="text-right">Kwota</th>
+                        <th class="text-right" data-sort="age">Wiek</th>
+                        <th class="text-right" data-sort="amount">Kwota</th>
                         <th>Opiekun</th>
-                        <th>Ost. kontakt</th>
-                        <th>Nast. akcja</th>
-                        <th class="text-right">Prob.</th>
-                        <th class="text-right">Prio.</th>
+                        <th>Ostatni kontakt</th>
+                        <th class="text-right" data-sort="priority">Priorytet</th>
                     </tr></thead>
                     <tbody id="all-tbody"></tbody>
                 </table>
@@ -497,91 +630,99 @@ function renderAll() {
             const age = getAgeDays(c);
             const bucket = getBucket(age);
             return `<tr class="clickable" onclick="window.location.href='case.html?id=${c.case_id}'">
-                <td><div class="flex items-center gap-2">${window.avatar(client, 'sm')}<div><div class="text-sm">${esc(client)}</div>${c.employer_name ? `<div class="text-xs text-zinc-500">${esc(c.employer_name)}</div>` : ''}</div></div></td>
-                <td class="font-mono text-xs">${esc(c.case_number || '—')}</td>
-                <td><span class="level-badge level-${c.level}">${LEVEL_LABELS[c.level] || c.level}</span></td>
-                <td class="text-right">${bucket ? `<span class="age-badge ${bucket.cls}">${age}d</span>` : '—'}</td>
-                <td class="text-right font-mono font-bold text-red-400">${fmt.money(c.remaining_amount)}</td>
-                <td class="text-xs">${esc(c.assigned_name || '—')}</td>
-                <td class="text-xs text-zinc-400">${c.last_contact_at ? fmt.daysAgo(c.last_contact_at) : '—'}</td>
-                <td class="text-xs text-amber-300">${c.next_action_at ? fmt.date(c.next_action_at) : '—'}</td>
-                <td class="text-right font-mono text-xs">${c.probability_score}%</td>
-                <td class="text-right font-mono text-sm font-bold">${c.priority_score}</td>
+                <td>
+                    <div class="flex items-center gap-2">
+                        ${window.avatar(client, 'sm')}
+                        <div>
+                            <div>${esc(client)}</div>
+                            <div class="text-xs text-tertiary mono">${esc(c.case_number || '—')}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-sm text-tertiary">${esc(c.employer_name || '—')}</td>
+                <td><span class="lvl lvl-${c.level}">${LEVEL_LABELS[c.level] || c.level}</span></td>
+                <td class="text-right">${bucket ? `<span class="age ${bucket.cls}">${age}d</span>` : '—'}</td>
+                <td class="text-right mono font-semibold">${fmt.money(c.remaining_amount)}</td>
+                <td class="text-sm">${esc(c.assigned_name || '—')}</td>
+                <td class="text-sm text-tertiary">${c.last_contact_at ? fmt.daysAgo(c.last_contact_at) : '—'}</td>
+                <td class="text-right mono text-sm font-semibold">${c.priority_score}</td>
             </tr>`;
         }).join('');
     }
 
     ['f-search', 'f-level', 'f-staff', 'f-bucket', 'f-contact'].forEach(id => {
-        document.getElementById(id).addEventListener('input', filter);
-        document.getElementById(id).addEventListener('change', filter);
+        const el = document.getElementById(id);
+        el.addEventListener('input', filter);
+        el.addEventListener('change', filter);
     });
     filter();
 }
 
 function renderPromises() {
     const el = document.getElementById('view-content');
-    const promises = allCollections.filter(c => c.promise_to_pay_date);
     const today = new Date().toISOString().slice(0, 10);
+    const promises = allCollections.filter(c => c.promise_to_pay_date).sort((a, b) => (a.promise_to_pay_date || '').localeCompare(b.promise_to_pay_date || ''));
     const broken = promises.filter(c => c.promise_to_pay_date < today);
     const upcoming = promises.filter(c => c.promise_to_pay_date >= today);
 
     el.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            <div class="card p-4 border-red-900/50">
-                <div class="text-xs text-zinc-500 mb-1">OBIETNICE NIEDOTRZYMANE</div>
-                <div class="text-2xl font-bold text-red-400">${broken.length}</div>
-                <div class="text-xs text-zinc-600">${fmt.money(broken.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="metric-card" ${broken.length ? 'style="border-color: rgba(239,68,68,0.25)"' : ''}>
+                <div class="metric-label">Niedotrzymane</div>
+                <div class="metric-value ${broken.length ? 'text-danger' : ''}">${broken.length}</div>
+                <div class="metric-sub">${fmt.money(broken.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
             </div>
-            <div class="card p-4">
-                <div class="text-xs text-zinc-500 mb-1">NADCHODZĄCE OBIETNICE</div>
-                <div class="text-2xl font-bold text-cyan-300">${upcoming.length}</div>
-                <div class="text-xs text-zinc-600">${fmt.money(upcoming.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
+            <div class="metric-card">
+                <div class="metric-label">Nadchodzące</div>
+                <div class="metric-value">${upcoming.length}</div>
+                <div class="metric-sub">${fmt.money(upcoming.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
             </div>
         </div>
 
         ${broken.length ? `
-        <section class="card mb-4">
-            <div class="card-header text-red-400">⚠️ Niedotrzymane obietnice (${broken.length})</div>
-            <div class="p-4 space-y-3">${broken.map(renderWorklistCard).join('')}</div>
-        </section>` : ''}
+            <div class="text-xs text-tertiary uppercase tracking-wider mb-2" style="letter-spacing: 0.06em; font-weight: 500">Niedotrzymane obietnice</div>
+            <div class="space-y-2 mb-6">${broken.map(workRow).join('')}</div>
+        ` : ''}
 
         ${upcoming.length ? `
-        <section class="card">
-            <div class="card-header">Nadchodzące obietnice</div>
-            <div class="p-4 space-y-3">${upcoming.slice(0, 30).map(renderWorklistCard).join('')}</div>
-        </section>` : ''}
+            <div class="text-xs text-tertiary uppercase tracking-wider mb-2" style="letter-spacing: 0.06em; font-weight: 500">Nadchodzące</div>
+            <div class="space-y-2">${upcoming.map(workRow).join('')}</div>
+        ` : ''}
 
-        ${!broken.length && !upcoming.length ? '<div class="empty-state card p-8"><i class="ph ph-handshake"></i><div>Brak obietnic — dodaj pierwszą z worklist (przycisk "Obietnica")</div></div>' : ''}
+        ${!broken.length && !upcoming.length ? `
+            <div class="empty-state"><i class="ph ph-handshake"></i><div class="empty-state-title">Brak obietnic zapłaty</div><div class="text-sm text-tertiary mt-1">Gdy klient obieca zapłacić w konkretnym terminie — kliknij ikonę uścisku dłoni w wierszu worklistu.</div></div>
+        ` : ''}
     `;
 }
 
 function renderNoContact() {
     const el = document.getElementById('view-content');
     const noContact = allCollections.filter(c => !hasContact(c)).sort((a, b) => b.remaining_amount - a.remaining_amount);
+    const total = noContact.reduce((s, c) => s + Number(c.remaining_amount || 0), 0);
 
     el.innerHTML = `
-        <div class="card p-4 mb-4 border-amber-900/50">
-            <div class="text-sm text-amber-300 mb-2">📵 ${noContact.length} spraw bez żadnego kontaktu do klienta lub pracodawcy</div>
-            <div class="text-lg font-bold">${fmt.money(noContact.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
-            <div class="text-xs text-zinc-600 mt-2">Te kwoty są nieodzyskiwalne bez odnalezienia kontaktu. Sprawdź w starych dokumentach, zapytaj pracowników, sprawdź portal CEIDG/KRS dla firm, rejestry mieszkańców.</div>
+        <div class="metric-card mb-4" style="max-width: 420px; border-color: rgba(245,158,11,0.25)">
+            <div class="metric-label">Do odnalezienia kontaktu</div>
+            <div class="metric-value text-warn">${fmt.money(total)}</div>
+            <div class="metric-sub">${noContact.length} spraw · sprawdź CEIDG, KRS, stare dokumenty</div>
         </div>
 
-        <div class="card overflow-hidden">
+        <div class="card">
             <div class="overflow-x-auto">
                 <table class="gmp-table">
-                    <thead><tr><th>Klient</th><th>Nr</th><th>Pracodawca</th><th class="text-right">Kwota</th><th class="text-right">Wiek</th><th>Opiekun</th><th>Akcje</th></tr></thead>
+                    <thead><tr><th>Klient</th><th>Pracodawca</th><th>Nr sprawy</th><th class="text-right">Wiek</th><th class="text-right">Kwota</th><th>Opiekun</th><th></th></tr></thead>
                     <tbody>${noContact.map(c => {
                         const client = (c.last_name || '—') + ' ' + (c.first_name || '');
                         const age = getAgeDays(c);
                         const bucket = getBucket(age);
                         return `<tr class="clickable" onclick="window.location.href='case.html?id=${c.case_id}'">
                             <td>${esc(client)}</td>
-                            <td class="font-mono text-xs">${esc(c.case_number || '—')}</td>
-                            <td class="text-xs">${esc(c.employer_name || '—')}</td>
-                            <td class="text-right font-mono text-red-400">${fmt.money(c.remaining_amount)}</td>
-                            <td class="text-right">${bucket ? `<span class="age-badge ${bucket.cls}">${age}d</span>` : '—'}</td>
-                            <td class="text-xs">${esc(c.assigned_name || '—')}</td>
-                            <td onclick="event.stopPropagation()"><button class="btn btn-ghost btn-sm" onclick="openLogModal('${c.collection_id}')">Dodaj kontakt</button></td>
+                            <td class="text-sm text-tertiary">${esc(c.employer_name || '—')}</td>
+                            <td class="mono text-xs text-tertiary">${esc(c.case_number || '—')}</td>
+                            <td class="text-right">${bucket ? `<span class="age ${bucket.cls}">${age}d</span>` : '—'}</td>
+                            <td class="text-right mono font-semibold">${fmt.money(c.remaining_amount)}</td>
+                            <td class="text-sm">${esc(c.assigned_name || '—')}</td>
+                            <td onclick="event.stopPropagation()"><button class="btn btn-ghost btn-sm" onclick="openLogModal('${c.collection_id}')"><i class="ph ph-plus"></i> Kontakt</button></td>
                         </tr>`;
                     }).join('')}</tbody>
                 </table>
@@ -590,72 +731,67 @@ function renderNoContact() {
     `;
 }
 
-function renderOldCandidates() {
+function renderOld() {
     const el = document.getElementById('view-content');
-    const old = allCollections.filter(c => {
-        const age = getAgeDays(c);
-        return age !== null && age >= 365;
-    }).sort((a, b) => b.remaining_amount - a.remaining_amount);
-
+    const old = allCollections.filter(c => { const age = getAgeDays(c); return age !== null && age >= 365; }).sort((a, b) => b.remaining_amount - a.remaining_amount);
     const withContact = old.filter(hasContact);
     const withContactSum = withContact.reduce((s, c) => s + Number(c.remaining_amount || 0), 0);
-
-    // Przedawnienie alert - <90 dni do 3 lat (1095 dni od date_accepted)
-    const nearLimitation = old.filter(c => {
-        const age = getAgeDays(c);
-        return age && age >= 1095 - 90 && age < 1095 + 30;
-    });
+    const nearLimitation = old.filter(c => { const age = getAgeDays(c); return age && age >= 1005 && age < 1125; });
 
     el.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            <div class="card p-4">
-                <div class="text-xs text-zinc-500 mb-1">SPRAW 365+ DNI</div>
-                <div class="text-2xl font-bold text-red-400">${old.length}</div>
-                <div class="text-xs text-zinc-600">${fmt.money(old.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
+            <div class="metric-card">
+                <div class="metric-label">Spraw 365+ dni</div>
+                <div class="metric-value">${old.length}</div>
+                <div class="metric-sub">${fmt.money(old.reduce((s, c) => s + Number(c.remaining_amount || 0), 0))}</div>
             </div>
-            <div class="card p-4">
-                <div class="text-xs text-zinc-500 mb-1">Z KONTAKTEM (EPU KANDYDACI)</div>
-                <div class="text-2xl font-bold text-amber-300">${withContact.length}</div>
-                <div class="text-xs text-zinc-600">${fmt.money(withContactSum)}</div>
+            <div class="metric-card">
+                <div class="metric-label">EPU kandydaci (z kontaktem)</div>
+                <div class="metric-value text-warn">${withContact.length}</div>
+                <div class="metric-sub">${fmt.money(withContactSum)}</div>
             </div>
-            <div class="card p-4 ${nearLimitation.length ? 'border-red-900' : ''}">
-                <div class="text-xs text-zinc-500 mb-1">⏰ BLISKO PRZEDAWNIENIA (3 LATA)</div>
-                <div class="text-2xl font-bold ${nearLimitation.length ? 'text-red-400' : 'text-zinc-600'}">${nearLimitation.length}</div>
-                <div class="text-xs text-zinc-600">do pozwów natychmiast!</div>
-            </div>
-        </div>
-
-        <div class="card p-4 mb-4" style="background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.2)">
-            <div class="text-sm font-semibold text-red-400 mb-2">🏛️ Rekomendacja: kierowanie do E-sądu (EPU)</div>
-            <div class="text-xs text-zinc-400 space-y-1">
-                <div>• Koszt opłaty sądowej: 1,25% wartości sporu (min 30 PLN)</div>
-                <div>• Dla 134 spraw z kontaktem × średnio 1900 PLN = ~<b class="text-white">3 200 PLN kosztów</b> za wszystkie pozwy</div>
-                <div>• Nakaz zapłaty wydawany w 2-8 tygodni</div>
-                <div>• Po nakazie → komornik</div>
-                <div>• Przedawnienie: 3 lata (art. 118 KC) od wymagalności roszczenia</div>
+            <div class="metric-card" ${nearLimitation.length ? 'style="border-color: rgba(239,68,68,0.3)"' : ''}>
+                <div class="metric-label">Blisko przedawnienia (3 lata)</div>
+                <div class="metric-value ${nearLimitation.length ? 'text-danger' : 'text-tertiary'}">${nearLimitation.length}</div>
+                <div class="metric-sub">pilne pozwy</div>
             </div>
         </div>
 
-        <div class="card overflow-hidden">
+        <div class="card mb-4" style="background: rgba(99,102,241,0.04); border-color: rgba(99,102,241,0.2)">
+            <div class="card-body">
+                <div class="flex items-start gap-3">
+                    <i class="ph ph-gavel text-accent" style="font-size: 20px; margin-top: 2px"></i>
+                    <div class="flex-1">
+                        <div class="font-semibold mb-2">Rekomendacja: skierowanie do E-sądu (EPU)</div>
+                        <div class="text-sm text-secondary space-y-1">
+                            <div>· Opłata sądowa: 1,25% wartości sporu (min. 30 PLN)</div>
+                            <div>· Dla ${withContact.length} spraw × średnio ${fmt.money(withContactSum / (withContact.length || 1))} = ok. ${fmt.money(withContactSum * 0.0125)} kosztów pozwów</div>
+                            <div>· Nakaz zapłaty w 2-8 tygodni, bez konieczności dołączania dokumentów</div>
+                            <div>· Przedawnienie: 3 lata od wymagalności (art. 118 KC)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
             <div class="overflow-x-auto">
                 <table class="gmp-table">
-                    <thead><tr><th>Klient</th><th>Nr</th><th class="text-right">Kwota</th><th class="text-right">Wiek</th><th>Kontakt</th><th>Opiekun</th><th class="text-right">Prob.</th><th>Akcje</th></tr></thead>
+                    <thead><tr><th>Klient</th><th class="text-right">Kwota</th><th class="text-right">Wiek</th><th>Kontakt</th><th>Opiekun</th><th class="text-right">Prob.</th><th></th></tr></thead>
                     <tbody>${old.map(c => {
                         const client = (c.last_name || '—') + ' ' + (c.first_name || '');
                         const age = getAgeDays(c);
                         const contact = hasContact(c);
-                        const nearLimit = age && age >= 1095 - 90;
-                        return `<tr class="clickable ${nearLimit ? 'bg-red-950/20' : ''}" onclick="window.location.href='case.html?id=${c.case_id}'">
-                            <td>${esc(client)}${nearLimit ? ' <span class="badge badge-inactive-30" title="Blisko przedawnienia">⏰</span>' : ''}</td>
-                            <td class="font-mono text-xs">${esc(c.case_number || '—')}</td>
-                            <td class="text-right font-mono text-red-400">${fmt.money(c.remaining_amount)}</td>
-                            <td class="text-right"><span class="age-badge age-365-plus">${age}d</span></td>
-                            <td class="text-xs ${contact ? 'text-emerald-400' : 'text-red-400'}">${contact ? '✓' : '✗'}</td>
-                            <td class="text-xs">${esc(c.assigned_name || '—')}</td>
-                            <td class="text-right font-mono">${c.probability_score}%</td>
+                        const nearLimit = age && age >= 1005;
+                        return `<tr class="clickable" onclick="window.location.href='case.html?id=${c.case_id}'" ${nearLimit ? 'style="background: rgba(239,68,68,0.04)"' : ''}>
+                            <td>${esc(client)} ${nearLimit ? '<i class="ph ph-hourglass text-danger" title="Blisko przedawnienia" style="font-size: 12px"></i>' : ''}</td>
+                            <td class="text-right mono font-semibold">${fmt.money(c.remaining_amount)}</td>
+                            <td class="text-right"><span class="age age-5">${age}d</span></td>
+                            <td>${contact ? '<i class="ph ph-check text-success"></i>' : '<i class="ph ph-x text-danger"></i>'}</td>
+                            <td class="text-sm">${esc(c.assigned_name || '—')}</td>
+                            <td class="text-right mono text-sm">${c.probability_score}%</td>
                             <td onclick="event.stopPropagation()">
-                                ${contact ? `<button class="btn btn-ghost btn-sm" onclick="generateDemandPDF('${c.collection_id}')" title="Wezwanie PDF"><i class="ph ph-file-pdf text-red-400"></i></button>` : ''}
-                                <button class="btn btn-ghost btn-sm" onclick="writeOff('${c.collection_id}')" title="Odpisz"><i class="ph ph-x-circle"></i></button>
+                                ${contact ? `<button class="btn btn-ghost btn-sm" onclick="generateDemandPDF('${c.collection_id}')" title="Wygeneruj wezwanie"><i class="ph ph-file-pdf"></i></button>` : ''}
                             </td>
                         </tr>`;
                     }).join('')}</tbody>
@@ -665,25 +801,43 @@ function renderOldCandidates() {
     `;
 }
 
-// ============ ACTIONS ============
+// ============ DROPDOWN ============
+let openDropdown = null;
+function openMoreMenu(e, collectionId) {
+    e.stopPropagation();
+    if (openDropdown) { openDropdown.remove(); openDropdown = null; }
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    const menu = document.createElement('div');
+    menu.className = 'dropdown';
+    menu.style.top = (rect.bottom + 4) + 'px';
+    menu.style.right = (window.innerWidth - rect.right) + 'px';
+    menu.innerHTML = `
+        <div class="dropdown-item" onclick="escalate('${collectionId}')"><i class="ph ph-arrow-up"></i>Eskalacja do wyższego poziomu</div>
+        <div class="dropdown-item" onclick="markAsPaid('${collectionId}')"><i class="ph ph-check-circle"></i>Oznacz jako opłacone</div>
+        <div class="dropdown-item" onclick="pauseCollection('${collectionId}')"><i class="ph ph-pause"></i>Wstrzymaj windykację</div>
+        <div class="dropdown-item danger" onclick="writeOff('${collectionId}')"><i class="ph ph-x-circle"></i>Odpisz jako stratę</div>
+    `;
+    document.body.appendChild(menu);
+    openDropdown = menu;
+    setTimeout(() => document.addEventListener('click', closeDropdownOnOutside, { once: true }), 10);
+}
+function closeDropdownOnOutside() { if (openDropdown) { openDropdown.remove(); openDropdown = null; } }
 
+// ============ ACTIONS ============
 async function logActivity(collectionId, type) {
-    // Quick log - tylko typ, potem mozna edytowac
     const c = allCollections.find(x => x.collection_id === collectionId);
     if (!c) return;
     await db.from('gmp_collection_activities').insert({
-        collection_id: collectionId,
-        case_id: c.case_id,
-        activity_type: type,
-        direction: 'outbound',
-        content: `Proba kontaktu: ${type}`,
+        collection_id: collectionId, case_id: c.case_id,
+        activity_type: type, direction: 'outbound',
+        content: `Próba kontaktu: ${type}`,
         created_by: window.currentStaff?.id,
     });
-    await db.from('gmp_collections').update({
-        last_contact_at: new Date().toISOString(),
-        attempted_calls: type === 'phone_call' ? (c.attempted_calls || 0) + 1 : undefined,
-        attempted_emails: (type === 'email' || type === 'sms' || type === 'whatsapp') ? (c.attempted_emails || 0) + 1 : undefined,
-    }).eq('id', collectionId);
+    const updates = { last_contact_at: new Date().toISOString() };
+    if (type === 'phone_call') updates.attempted_calls = (c.attempted_calls || 0) + 1;
+    else updates.attempted_emails = (c.attempted_emails || 0) + 1;
+    await db.from('gmp_collections').update(updates).eq('id', collectionId);
     toast.success('Zalogowano kontakt');
 }
 
@@ -691,23 +845,26 @@ function openLogModal(collectionId) {
     const c = allCollections.find(x => x.collection_id === collectionId);
     if (!c) return;
     const html = `
-        <div class="modal-header">Zapisz kontakt — ${esc((c.last_name || '') + ' ' + (c.first_name || ''))}<button class="btn btn-ghost btn-sm" onclick="closeLogModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-header">
+            <span>Zapisz kontakt — ${esc((c.last_name || '') + ' ' + (c.first_name || ''))}</span>
+            <button class="btn btn-ghost btn-sm" onclick="closeLogModal()"><i class="ph ph-x"></i></button>
+        </div>
         <div class="modal-body space-y-3">
             <div class="grid grid-cols-2 gap-3">
                 <div><label>Typ</label>
-                    <select id="la-type" class="input w-full">
-                        <option value="phone_call">📞 Telefon</option>
-                        <option value="email">✉️ Email</option>
-                        <option value="sms">💬 SMS</option>
+                    <select id="la-type" class="input">
+                        <option value="phone_call">Telefon</option>
+                        <option value="email">Email</option>
+                        <option value="sms">SMS</option>
                         <option value="whatsapp">WhatsApp</option>
-                        <option value="letter">✉️ List</option>
-                        <option value="letter_certified">📬 List polecony ZPO</option>
-                        <option value="meeting">🤝 Spotkanie</option>
-                        <option value="note">📝 Notatka</option>
+                        <option value="letter">List</option>
+                        <option value="letter_certified">List polecony ZPO</option>
+                        <option value="meeting">Spotkanie</option>
+                        <option value="note">Notatka</option>
                     </select>
                 </div>
                 <div><label>Wynik</label>
-                    <select id="la-result" class="input w-full">
+                    <select id="la-result" class="input">
                         <option value="no_answer">Brak odpowiedzi</option>
                         <option value="contact_made">Udało się skontaktować</option>
                         <option value="promised">Obiecał zapłacić</option>
@@ -716,20 +873,19 @@ function openLogModal(collectionId) {
                         <option value="paid_full">Zapłacił całość</option>
                         <option value="disputed">Kwestionuje</option>
                         <option value="wrong_contact">Zły kontakt</option>
-                        <option value="deceased">Klient nie żyje</option>
                         <option value="other">Inne</option>
                     </select>
                 </div>
             </div>
-            <div><label>Opis / treść</label><textarea id="la-content" class="input w-full" rows="3" placeholder="np. Klient odebrał, obiecał przelew do piątku 25.04..."></textarea></div>
+            <div><label>Opis / treść</label><textarea id="la-content" class="input" rows="3" placeholder="np. Klient odebrał, obiecał przelew..."></textarea></div>
             <div class="grid grid-cols-2 gap-3">
-                <div><label>Następna akcja (data)</label><input type="date" id="la-followup" class="input w-full"></div>
-                <div><label>Promise-to-pay (data)</label><input type="date" id="la-promise-date" class="input w-full"></div>
+                <div><label>Następna akcja</label><input type="date" id="la-followup" class="input"></div>
+                <div><label>Obietnica (data)</label><input type="date" id="la-promise-date" class="input"></div>
             </div>
-            <div><label>Promise-to-pay kwota</label><input type="number" step="0.01" id="la-promise-amount" class="input w-full"></div>
+            <div><label>Obietnica (kwota)</label><input type="number" step="0.01" id="la-promise-amount" class="input"></div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeLogModal()">Anuluj</button>
+            <button class="btn btn-ghost" onclick="closeLogModal()">Anuluj</button>
             <button class="btn btn-primary" onclick="saveLogActivity('${collectionId}')">Zapisz</button>
         </div>`;
     document.getElementById('modals-container').innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) closeLogModal()"><div class="modal-content">${html}</div></div>`;
@@ -739,7 +895,6 @@ function closeLogModal() { document.getElementById('modals-container').innerHTML
 async function saveLogActivity(collectionId) {
     const c = allCollections.find(x => x.collection_id === collectionId);
     if (!c) return;
-
     const type = document.getElementById('la-type').value;
     const result = document.getElementById('la-result').value;
     const content = document.getElementById('la-content').value.trim();
@@ -748,33 +903,23 @@ async function saveLogActivity(collectionId) {
     const promiseAmount = Number(document.getElementById('la-promise-amount').value);
 
     await db.from('gmp_collection_activities').insert({
-        collection_id: collectionId,
-        case_id: c.case_id,
-        activity_type: type,
-        direction: 'outbound',
-        content,
-        result,
+        collection_id: collectionId, case_id: c.case_id,
+        activity_type: type, direction: 'outbound',
+        content, result,
         followup_at: followup ? new Date(followup).toISOString() : null,
-        promise_date: promiseDate || null,
-        promise_amount: promiseAmount || null,
+        promise_date: promiseDate || null, promise_amount: promiseAmount || null,
         created_by: window.currentStaff?.id,
     });
 
     const updates = { last_contact_at: new Date().toISOString() };
     if (followup) updates.next_action_at = new Date(followup).toISOString();
-    if (promiseDate) {
-        updates.promise_to_pay_date = promiseDate;
-        updates.promise_to_pay_amount = promiseAmount || null;
-    }
+    if (promiseDate) { updates.promise_to_pay_date = promiseDate; updates.promise_to_pay_amount = promiseAmount || null; }
     if (result === 'paid_full') updates.status = 'paid';
     if (result === 'wrong_contact') updates.status = 'paused';
-
     await db.from('gmp_collections').update(updates).eq('id', collectionId);
 
-    // Dodaj tez w gmp_case_activities
     await db.from('gmp_case_activities').insert({
-        case_id: c.case_id,
-        activity_type: 'note',
+        case_id: c.case_id, activity_type: 'note',
         content: `[Windykacja/${type}] ${content} (wynik: ${result})`,
         created_by: window.currentStaff?.id,
     });
@@ -790,17 +935,20 @@ function openPromiseModal(collectionId) {
     const c = allCollections.find(x => x.collection_id === collectionId);
     if (!c) return;
     const html = `
-        <div class="modal-header">Obietnica zapłaty — ${esc((c.last_name || '') + ' ' + (c.first_name || ''))}<button class="btn btn-ghost btn-sm" onclick="closeLogModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-header">
+            <span>Obietnica zapłaty — ${esc((c.last_name || '') + ' ' + (c.first_name || ''))}</span>
+            <button class="btn btn-ghost btn-sm" onclick="closeLogModal()"><i class="ph ph-x"></i></button>
+        </div>
         <div class="modal-body space-y-3">
             <div class="grid grid-cols-2 gap-3">
-                <div><label>Data obietnicy</label><input type="date" id="pr-date" class="input w-full" value="${new Date(Date.now() + 7 * 86400000).toISOString().slice(0,10)}"></div>
-                <div><label>Kwota (PLN)</label><input type="number" step="0.01" id="pr-amount" class="input w-full" value="${c.remaining_amount}"></div>
+                <div><label>Data obietnicy</label><input type="date" id="pr-date" class="input" value="${new Date(Date.now() + 7 * 86400000).toISOString().slice(0,10)}"></div>
+                <div><label>Kwota (PLN)</label><input type="number" step="0.01" id="pr-amount" class="input" value="${c.remaining_amount}"></div>
             </div>
-            <div><label>Notatka</label><input id="pr-note" class="input w-full" placeholder="np. Klient przeleje w piątek po wypłacie"></div>
+            <div><label>Notatka</label><input id="pr-note" class="input" placeholder="np. Klient przeleje w piątek"></div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeLogModal()">Anuluj</button>
-            <button class="btn btn-primary" onclick="savePromise('${collectionId}')">Zapisz obietnicę</button>
+            <button class="btn btn-ghost" onclick="closeLogModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="savePromise('${collectionId}')">Zapisz</button>
         </div>`;
     document.getElementById('modals-container').innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) closeLogModal()"><div class="modal-content">${html}</div></div>`;
 }
@@ -810,23 +958,17 @@ async function savePromise(collectionId) {
     const date = document.getElementById('pr-date').value;
     const amount = Number(document.getElementById('pr-amount').value);
     const note = document.getElementById('pr-note').value.trim();
-
     await db.from('gmp_collections').update({
-        promise_to_pay_date: date,
-        promise_to_pay_amount: amount,
-        next_action_at: new Date(new Date(date).getTime() + 86400000).toISOString(),  // dzień po
+        promise_to_pay_date: date, promise_to_pay_amount: amount,
+        next_action_at: new Date(new Date(date).getTime() + 86400000).toISOString(),
     }).eq('id', collectionId);
-
     await db.from('gmp_collection_activities').insert({
-        collection_id: collectionId,
-        case_id: c.case_id,
-        activity_type: 'promise_to_pay',
-        direction: 'inbound',
+        collection_id: collectionId, case_id: c.case_id,
+        activity_type: 'promise_to_pay', direction: 'inbound',
         content: note || `Klient obiecał zapłacić ${amount} PLN do ${date}`,
         promise_date: date, promise_amount: amount,
         created_by: window.currentStaff?.id,
     });
-
     closeLogModal();
     toast.success('Obietnica zapisana');
     await loadCollections();
@@ -834,18 +976,20 @@ async function savePromise(collectionId) {
     renderKPIs();
 }
 
-async function escalate(collectionId, currentLevel) {
-    const levels = ['new', 'reminder_soft', 'reminder_firm', 'demand_1', 'demand_final', 'pre_court', 'epu'];
-    const idx = levels.indexOf(currentLevel);
-    if (idx === -1 || idx >= levels.length - 1) { toast.warning('Najwyższy poziom'); return; }
-    const nextLevel = levels[idx + 1];
-    if (!confirm(`Eskalować z "${LEVEL_LABELS[currentLevel]}" do "${LEVEL_LABELS[nextLevel]}"?`)) return;
-    await db.from('gmp_collections').update({ level: nextLevel }).eq('id', collectionId);
+async function escalate(collectionId) {
+    closeDropdownOnOutside();
     const c = allCollections.find(x => x.collection_id === collectionId);
+    if (!c) return;
+    const levels = ['new', 'reminder_soft', 'reminder_firm', 'demand_1', 'demand_final', 'pre_court', 'epu'];
+    const idx = levels.indexOf(c.level);
+    if (idx === -1 || idx >= levels.length - 1) { toast.warning('Najwyższy poziom'); return; }
+    const next = levels[idx + 1];
+    if (!confirm(`Eskalować z "${LEVEL_LABELS[c.level]}" do "${LEVEL_LABELS[next]}"?`)) return;
+    await db.from('gmp_collections').update({ level: next }).eq('id', collectionId);
     await db.from('gmp_collection_activities').insert({
         collection_id: collectionId, case_id: c.case_id,
         activity_type: 'escalation',
-        content: `Eskalacja: ${LEVEL_LABELS[currentLevel]} → ${LEVEL_LABELS[nextLevel]}`,
+        content: `Eskalacja: ${LEVEL_LABELS[c.level]} → ${LEVEL_LABELS[next]}`,
         created_by: window.currentStaff?.id,
     });
     toast.success('Eskalowano');
@@ -854,16 +998,17 @@ async function escalate(collectionId, currentLevel) {
 }
 
 async function markAsPaid(collectionId) {
+    closeDropdownOnOutside();
     if (!confirm('Oznaczyć jako w pełni opłacone?')) return;
     await db.from('gmp_collections').update({ status: 'paid', level: 'settled' }).eq('id', collectionId);
     toast.success('Oznaczono');
     await loadCollections();
-    render();
-    renderKPIs();
+    render(); renderKPIs();
 }
 
 async function pauseCollection(collectionId) {
-    const reason = prompt('Powód wstrzymania windykacji:', '');
+    closeDropdownOnOutside();
+    const reason = prompt('Powód wstrzymania:', '');
     if (reason === null) return;
     await db.from('gmp_collections').update({ status: 'paused', internal_notes: reason }).eq('id', collectionId);
     toast.success('Wstrzymano');
@@ -872,25 +1017,20 @@ async function pauseCollection(collectionId) {
 }
 
 async function writeOff(collectionId) {
+    closeDropdownOnOutside();
     if (!confirm('Odpisać jako stratę? Sprawa zniknie z worklistu.')) return;
     await db.from('gmp_collections').update({ status: 'written_off', level: 'write_off' }).eq('id', collectionId);
     toast.success('Odpisano');
     await loadCollections();
-    render();
-    renderKPIs();
+    render(); renderKPIs();
 }
-
-// ============ PDF WEZWANIE ============
 
 async function generateDemandPDF(collectionId) {
     const c = allCollections.find(x => x.collection_id === collectionId);
     if (!c) return;
-
-    // Pobierz szablon odpowiedni do poziomu
     const level = c.level === 'demand_final' ? 'demand_final' : 'demand_1';
     const { data: tmpl } = await db.from('gmp_collection_templates')
-        .select('*').eq('escalation_level', level).eq('channel', 'letter_certified')
-        .limit(1).maybeSingle();
+        .select('*').eq('escalation_level', level).eq('channel', 'letter_certified').limit(1).maybeSingle();
 
     const age = getAgeDays(c) || 0;
     const interest = calcInterest(c.remaining_amount, age);
@@ -905,31 +1045,16 @@ async function generateDemandPDF(collectionId) {
         interest: interest.toFixed(2),
         total: total.toFixed(2),
         today: new Date().toLocaleDateString('pl-PL'),
-        amount_words: numberToWords(total),
+        amount_words: Number(total).toFixed(2).replace('.', ',') + ' zl',
     };
 
-    let body = tmpl?.body_template || `WEZWANIE DO ZAPŁATY
-
-${params.client_name}
-
-Wzywam do zapłaty kwoty ${params.total} PLN tytułem nieopłaconych usług w sprawie ${params.case_number}.
-
-- Należność główna: ${params.amount} PLN
-- Dni opóźnienia: ${params.days_overdue}
-- Odsetki ustawowe (11,25%): ${params.interest} PLN
-
-Termin zapłaty: 14 dni od doręczenia.`;
-
-    // Replace placeholders
+    let body = tmpl?.body_template || `WEZWANIE DO ZAPLATY\n\n${params.client_name}\n\nWzywam do zaplaty kwoty ${params.total} PLN.`;
     Object.entries(params).forEach(([k, v]) => {
         body = body.replace(new RegExp('\\{' + k + '\\}', 'g'), String(v));
     });
 
-    // Generate PDF
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-
-    // Removing polish chars (jsPDF default doesn't support)
     const toAscii = (s) => String(s).replace(/[ąęłńóśźżĄĘŁŃÓŚŹŻ]/g, c => ({'ą':'a','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'A','Ę':'E','Ł':'L','Ń':'N','Ó':'O','Ś':'S','Ź':'Z','Ż':'Z'}[c] || c));
 
     doc.setFont('helvetica', 'bold');
@@ -941,19 +1066,17 @@ Termin zapłaty: 14 dni od doręczenia.`;
     const lines = doc.splitTextToSize(toAscii(body), 170);
     doc.text(lines, 20, 40);
 
-    // Footer
     doc.setFontSize(8);
     doc.setTextColor(120);
-    doc.text(toAscii(`Wygenerowano: ${new Date().toLocaleString('pl-PL')} | GetMyPermit CRM | ${params.client_name}`), 20, 285);
+    doc.text(toAscii(`Wygenerowano: ${new Date().toLocaleString('pl-PL')} | GetMyPermit CRM`), 20, 285);
 
     doc.save(`wezwanie_${toAscii(params.case_number)}_${Date.now()}.pdf`);
 
-    // Log activity
     await db.from('gmp_collection_activities').insert({
         collection_id: collectionId, case_id: c.case_id,
         activity_type: 'letter',
-        subject: level === 'demand_final' ? 'Ostateczne wezwanie do zapłaty' : 'Wezwanie do zapłaty #1',
-        content: `Wygenerowano PDF wezwania (poziom: ${level}). Kwota: ${total.toFixed(2)} PLN (z odsetkami).`,
+        subject: level === 'demand_final' ? 'Ostateczne wezwanie' : 'Wezwanie #1',
+        content: `PDF wezwania (${level}). Kwota: ${total.toFixed(2)} PLN z odsetkami.`,
         metadata: { amount: Number(c.remaining_amount), interest, total, days_overdue: age },
         created_by: window.currentStaff?.id,
     });
@@ -962,19 +1085,13 @@ Termin zapłaty: 14 dni od doręczenia.`;
         attempted_letters: (c.attempted_letters || 0) + 1,
     }).eq('id', collectionId);
 
-    toast.success('PDF wygenerowany + zalogowano');
+    toast.success('PDF wygenerowany');
     await loadCollections();
     render();
 }
 
-function numberToWords(n) {
-    // Simplified - just return numeric with currency
-    return Number(n).toFixed(2).replace('.', ',') + ' zl';
-}
-
 async function refreshPriorities() {
-    toast.info('Przeliczanie priorytetów...');
-    // Re-run init script logic client-side
+    toast.info('Przeliczanie...');
     for (const c of allCollections) {
         const age = getAgeDays(c);
         let ageScore = 30;
@@ -992,30 +1109,23 @@ async function refreshPriorities() {
     }
     toast.success('Przeliczono');
     await loadCollections();
-    render();
-    renderKPIs();
+    render(); renderKPIs();
 }
 
 async function exportCSV() {
-    toast.info('CSV...');
     exportCsv('windykacja', allCollections, [
-        ['Klient nazwisko', 'last_name'],
-        ['Imię', 'first_name'],
-        ['Pracodawca', 'employer_name'],
-        ['Nr sprawy', 'case_number'],
-        ['Telefon', 'phone'],
-        ['Email', 'email'],
-        ['Kwota zaległa', 'remaining_amount'],
+        ['Nazwisko', 'last_name'], ['Imię', 'first_name'],
+        ['Pracodawca', 'employer_name'], ['Nr sprawy', 'case_number'],
+        ['Telefon', 'phone'], ['Email', 'email'],
+        ['Kwota', 'remaining_amount'],
         ['Poziom', r => LEVEL_LABELS[r.level] || r.level],
         ['Opiekun', 'assigned_name'],
-        ['Priority', 'priority_score'],
-        ['Probability', 'probability_score'],
-        ['Ostatni kontakt', 'last_contact_at'],
-        ['Następna akcja', 'next_action_at'],
-        ['Obietnica (data)', 'promise_to_pay_date'],
-        ['Obietnica (kwota)', 'promise_to_pay_amount'],
+        ['Priorytet', 'priority_score'], ['Probability', 'probability_score'],
+        ['Ostatni kontakt', 'last_contact_at'], ['Następna akcja', 'next_action_at'],
+        ['Obietnica data', 'promise_to_pay_date'], ['Obietnica kwota', 'promise_to_pay_amount'],
     ]);
 }
 </script>
+
 </body>
 </html>

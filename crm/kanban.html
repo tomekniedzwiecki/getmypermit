@@ -249,7 +249,7 @@ function renderCard(c) {
     const client = c.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '(brak klienta)';
     const staffAva = c.gmp_staff?.full_name ? window.avatar(c.gmp_staff.full_name, 'sm') : '';
     const staffName = c.gmp_staff?.full_name ? esc(c.gmp_staff.full_name) : '—';
-    const reasonBadge = c.inactivity_reason && c.inactivity_reason !== 'none' ? ` <span class="text-[9px] text-amber-400" title="Przyczyna bezczynności: ${c.inactivity_reason}">⚠</span>` : '';
+    const reasonBadge = c.inactivity_reason && c.inactivity_reason !== 'none' ? ` <i class="ph ph-warning text-amber-400 text-xs" title="Przyczyna bezczynności: ${c.inactivity_reason}"></i>` : '';
     return `
         <div class="kanban-card ${c.is_pinned ? 'pinned' : ''}" draggable="true" data-id="${c.id}" onclick="if(!window._drag) window.location.href='case.html?id=${c.id}'">
             <div class="kanban-card-head">

@@ -20,7 +20,7 @@
     <main class="app-main">
         <div class="page-header">
             <div>
-                <h1 class="page-title">📈 Analiza i raporty</h1>
+                <h1 class="page-title">Analiza i raporty</h1>
                 <p class="page-subtitle">Trendy, prognozy, efektywność kancelarii</p>
             </div>
             <div class="flex gap-2 items-center">
@@ -775,7 +775,7 @@ function renderHeatmap() {
             const isWorst = worstByYear[y] === m && rowSum > 0;
             const border = isBest ? 'box-shadow: inset 0 0 0 1px rgba(250,204,21,0.6);' : (isWorst ? 'box-shadow: inset 0 0 0 1px rgba(239,68,68,0.35);' : '');
             html += `<td class="heatmap-cell-wrap">
-                <div class="heatmap-cell" style="background: ${bg}; color: ${textColor}; ${border}" title="${y}-${m}: ${fmt.money(v)}${isBest ? ' 🏆 Najlepszy miesiąc' : ''}${isWorst ? ' 📉 Najsłabszy' : ''}" onclick="drillMonth('${y}-${m}')">${label}</div>
+                <div class="heatmap-cell" style="background: ${bg}; color: ${textColor}; ${border}" title="${y}-${m}: ${fmt.money(v)}${isBest ? ' — najlepszy miesiąc roku' : ''}${isWorst ? ' — najsłabszy' : ''}" onclick="drillMonth('${y}-${m}')">${label}</div>
             </td>`;
         }
         const yearMax = Math.max(...Object.values(byYM).filter((_, i) => Object.keys(byYM)[i]?.startsWith(y + '-')), 1);

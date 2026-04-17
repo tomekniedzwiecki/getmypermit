@@ -100,12 +100,12 @@
 
         <!-- ZAKŁADKI -->
         <div class="flex gap-1 mb-4 flex-wrap">
-            <button class="btn btn-secondary tab-btn active" data-view="overview">📊 Przegląd</button>
-            <button class="btn btn-secondary tab-btn" data-view="payments">💰 Wpłaty</button>
-            <button class="btn btn-secondary tab-btn" data-view="admin">🏛️ Opłaty administracyjne</button>
-            <button class="btn btn-secondary tab-btn" data-view="overdue">⚠️ Zaległości</button>
-            <button class="btn btn-secondary tab-btn" data-view="forecast">📅 Prognoza</button>
-            <button class="btn btn-secondary tab-btn" data-view="monthly">📆 Miesiące</button>
+            <button class="btn btn-secondary tab-btn active" data-view="overview"><i class="ph ph-chart-pie"></i> Przegląd</button>
+            <button class="btn btn-secondary tab-btn" data-view="payments"><i class="ph ph-coins"></i> Wpłaty</button>
+            <button class="btn btn-secondary tab-btn" data-view="admin"><i class="ph ph-bank"></i> Opłaty administracyjne</button>
+            <button class="btn btn-secondary tab-btn" data-view="overdue"><i class="ph ph-warning"></i> Zaległości</button>
+            <button class="btn btn-secondary tab-btn" data-view="forecast"><i class="ph ph-calendar"></i> Prognoza</button>
+            <button class="btn btn-secondary tab-btn" data-view="monthly"><i class="ph ph-calendar-check"></i> Miesiące</button>
         </div>
 
         <!-- KONTENT -->
@@ -543,7 +543,7 @@ async function renderPayments() {
                                         ${emp ? `<div class="text-xs text-zinc-500">${esc(emp)}</div>` : ''}
                                     </td>
                                     <td class="font-mono text-xs text-zinc-500">${esc(c?.case_number || '')}</td>
-                                    <td class="text-xs">${p.kind === 'admin_fee' ? '🏛️ Admin.' : '💼 Wynagr.'}</td>
+                                    <td class="text-xs">${p.kind === 'admin_fee' ? 'Admin.' : 'Wynagrodz.'}</td>
                                     <td class="text-xs">${esc(p.method || '—')}</td>
                                     <td class="text-xs text-zinc-400">${p.installment_number ? `${p.installment_number}/${p.total_installments || '?'}` : '—'}</td>
                                     <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(p.notes || '')}</td>
@@ -720,7 +720,7 @@ async function renderForecast() {
                                 <td class="text-xs text-zinc-400">${r.days_to_due} dni</td>
                                 <td><div class="text-sm">${client}</div>${emp ? `<div class="text-xs text-zinc-500">${esc(emp)}</div>` : ''}</td>
                                 <td class="text-xs text-zinc-400">${esc(c?.gmp_staff?.full_name || '—')}</td>
-                                <td class="text-xs">${r.payer_type === 'employer' ? '🏢 Pracodawca' : '👤 Klient'}</td>
+                                <td class="text-xs">${r.payer_type === 'employer' ? 'Pracodawca' : 'Klient'}</td>
                                 <td class="text-right font-mono">${fmt.money(r.total_amount)}</td>
                                 <td class="text-right font-mono text-emerald-400">${fmt.money(r.paid)}</td>
                                 <td class="text-right font-mono text-amber-300 font-bold">${fmt.money(r.expected)}</td>

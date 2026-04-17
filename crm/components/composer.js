@@ -248,8 +248,8 @@
                         <div class="composer-field">
                             <label>Rodzaj:</label>
                             <select id="f-kind">
-                                <option value="fee">💼 Wynagrodzenie</option>
-                                <option value="admin_fee">🏛️ Opłata admin.</option>
+                                <option value="fee">Wynagrodzenie</option>
+                                <option value="admin_fee">Opłata administracyjna</option>
                             </select>
                         </div>
                         <div class="composer-field">
@@ -266,11 +266,11 @@
                         <div class="composer-field">
                             <label>Typ:</label>
                             <select id="f-ap-type">
-                                <option value="konsultacja">💬 Konsultacja</option>
-                                <option value="follow_up">🔁 Follow-up</option>
-                                <option value="osobiste_odciski">🖐️ Odciski</option>
-                                <option value="osobiste_inne">🏛️ Inne osobiste</option>
-                                <option value="hearing">⚖️ Rozprawa</option>
+                                <option value="konsultacja">Konsultacja</option>
+                                <option value="follow_up">Follow-up</option>
+                                <option value="osobiste_odciski">Odciski</option>
+                                <option value="osobiste_inne">Inne osobiste</option>
+                                <option value="hearing">Rozprawa</option>
                             </select>
                         </div>
                         <div class="composer-field">
