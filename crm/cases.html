@@ -138,23 +138,35 @@
             </div>
         </div>
 
+        <!-- Bulk actions bar -->
+        <div id="bulk-bar" class="hidden card p-3 mb-3" style="background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3)">
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-sm text-white">Zaznaczono <span id="bulk-count" class="font-bold">0</span> spraw</span>
+                <button class="btn btn-secondary btn-sm" onclick="bulkAssignStaff()"><i class="ph ph-user"></i> Przypisz opiekuna</button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkChangeStatus()"><i class="ph ph-arrows-left-right"></i> Zmień status</button>
+                <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.case-chk').forEach(c => c.checked = false); document.getElementById('sel-all').checked = false; updateBulkBar();">Wyczyść</button>
+            </div>
+        </div>
+
         <!-- Tabela -->
         <div class="card overflow-hidden">
             <div class="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
                 <table class="gmp-table">
                     <thead>
                         <tr>
-                            <th class="w-32">Nr / Znak</th>
-                            <th>Klient</th>
-                            <th>Pracodawca</th>
-                            <th>Typ sprawy</th>
-                            <th>Kat.</th>
-                            <th>Status</th>
-                            <th>Etap</th>
-                            <th>Opiekun</th>
-                            <th>Przyjęta</th>
-                            <th class="text-right">Kwota</th>
-                            <th class="text-right">Ostatnia akt.</th>
+                            <th class="w-8"><input type="checkbox" id="sel-all" title="Zaznacz wszystkie"></th>
+                            <th class="w-6"></th>
+                            <th class="w-32" data-sort="case_number">Nr / Znak</th>
+                            <th data-sort="client">Klient</th>
+                            <th data-sort="employer">Pracodawca</th>
+                            <th data-sort="case_type">Typ sprawy</th>
+                            <th data-sort="category">Kat.</th>
+                            <th data-sort="status">Status</th>
+                            <th data-sort="stage">Etap</th>
+                            <th data-sort="staff">Opiekun</th>
+                            <th data-sort="date_accepted">Przyjęta</th>
+                            <th class="text-right" data-sort="fee_amount">Kwota</th>
+                            <th class="text-right" data-sort="date_last_activity">Ostatnia akt.</th>
                         </tr>
                     </thead>
                     <tbody id="cases-tbody">
@@ -230,6 +242,45 @@ async function init() {
         const btn = document.querySelector(`.tab-btn[data-preset="${presetParam}"]`);
         if (btn) btn.click();
     }
+
+    // Select all
+    document.getElementById('sel-all').addEventListener('change', (e) => {
+        document.querySelectorAll('.case-chk').forEach(c => c.checked = e.target.checked);
+        updateBulkBar();
+    });
+
+    // Sortowanie kolumn
+    const thead = document.querySelector('.gmp-table thead');
+    thead.querySelectorAll('th[data-sort]').forEach(th => {
+        let dir = null;
+        th.addEventListener('click', () => {
+            thead.querySelectorAll('th').forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
+            dir = dir === 'asc' ? 'desc' : 'asc';
+            th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+            const key = th.dataset.sort;
+            const getters = {
+                case_number: r => r.case_number || r.znak_sprawy || '',
+                client: r => r.gmp_clients ? r.gmp_clients.last_name + ' ' + r.gmp_clients.first_name : '',
+                employer: r => r.gmp_employers?.name || '',
+                case_type: r => r.case_type || '',
+                category: r => r.category || '',
+                status: r => r.status || '',
+                stage: r => r.stage || '',
+                staff: r => r.gmp_staff?.full_name || '',
+                date_accepted: r => r.date_accepted || '',
+                fee_amount: r => Number(r.fee_amount) || 0,
+                date_last_activity: r => r.date_last_activity || '',
+            };
+            const getter = getters[key];
+            if (!getter) return;
+            currentData.sort((a, b) => {
+                const va = getter(a), vb = getter(b);
+                if (typeof va === 'number' && typeof vb === 'number') return dir === 'asc' ? va - vb : vb - va;
+                return dir === 'asc' ? String(va).localeCompare(String(vb), 'pl') : String(vb).localeCompare(String(va), 'pl');
+            });
+            renderRows();
+        });
+    });
     let searchTimer;
     document.getElementById('f-search').addEventListener('input', (e) => {
         clearTimeout(searchTimer);
@@ -267,7 +318,7 @@ async function loadFilters() {
 
 function buildQuery() {
     let q = db.from('gmp_cases').select(
-        'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, ' +
+        'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, is_pinned, ' +
         'gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name), gmp_office_departments(code)',
         { count: 'exact' }
     );
@@ -365,7 +416,8 @@ async function loadCases() {
 
     const from = (currentPage - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    q = q.order('date_last_activity', { ascending: false, nullsFirst: false })
+    q = q.order('is_pinned', { ascending: false })
+         .order('date_last_activity', { ascending: false, nullsFirst: false })
          .order('created_at', { ascending: false })
          .range(from, to);
 
@@ -384,29 +436,96 @@ async function loadCases() {
         return;
     }
 
-    tbody.innerHTML = data.map(row => {
+    currentData = data;
+    renderRows();
+    renderPagination();
+}
+
+let currentData = [];
+
+function renderRows() {
+    const tbody = document.getElementById('cases-tbody');
+    tbody.innerHTML = currentData.map(row => {
         const client = row.gmp_clients ? `${esc(row.gmp_clients.last_name)} ${esc(row.gmp_clients.first_name)}` : '<span class="text-zinc-600">—</span>';
         const employer = row.gmp_employers ? esc(row.gmp_employers.name) : '<span class="text-zinc-600">—</span>';
         const staff = row.gmp_staff?.full_name ? esc(row.gmp_staff.full_name) : '<span class="text-zinc-600">—</span>';
-        const dept = row.gmp_office_departments?.code || '';
+        const staffAva = row.gmp_staff?.full_name ? window.avatar(row.gmp_staff.full_name, 'sm') : '';
         const nr = row.case_number || (row.znak_sprawy ? row.znak_sprawy.slice(-20) : row.id.slice(0, 8));
         return `
-            <tr class="clickable" onclick="window.location.href='case.html?id=${row.id}'">
-                <td class="font-mono text-xs">${esc(nr)}</td>
-                <td>${client}</td>
-                <td class="text-zinc-300 text-xs">${employer}</td>
-                <td class="text-zinc-400 text-xs">${esc(row.case_type || '—')}</td>
-                <td class="text-xs">${row.category ? `<span class="badge badge-category">${esc(row.category)}</span>` : ''}</td>
-                <td><span class="badge badge-${row.status}">${esc(row.status || '—')}</span></td>
-                <td class="text-xs">${row.stage ? `<span class="badge badge-stage">${esc(row.stage)}</span>` : ''}</td>
-                <td class="text-zinc-300 text-xs">${staff}</td>
-                <td class="text-zinc-500 text-xs">${fmt.date(row.date_accepted)}</td>
-                <td class="text-right font-mono text-xs ${row.fee_amount ? 'text-emerald-300' : 'text-zinc-600'}">${row.fee_amount ? fmt.money(row.fee_amount) : '—'}</td>
-                <td class="text-right text-zinc-500 text-xs">${fmt.daysAgo(row.date_last_activity)}</td>
+            <tr class="clickable" data-id="${row.id}">
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="case-chk" value="${row.id}"></td>
+                <td onclick="togglePin('${row.id}', ${row.is_pinned ? 'true' : 'false'}); event.stopPropagation();" style="cursor: pointer">
+                    <i class="ph ${row.is_pinned ? 'ph-fill ph-push-pin text-amber-400' : 'ph-push-pin text-zinc-700'}" title="${row.is_pinned ? 'Odepnij' : 'Przypnij'}"></i>
+                </td>
+                <td class="font-mono text-xs row-nav">${esc(nr)}</td>
+                <td class="row-nav">${client}</td>
+                <td class="text-zinc-300 text-xs row-nav">${employer}</td>
+                <td class="text-zinc-400 text-xs row-nav">${esc(row.case_type || '—')}</td>
+                <td class="text-xs row-nav">${row.category ? `<span class="badge badge-category">${esc(row.category)}</span>` : ''}</td>
+                <td class="row-nav"><span class="badge badge-${row.status}">${esc(row.status || '—')}</span></td>
+                <td class="text-xs row-nav">${row.stage ? `<span class="badge badge-stage">${esc(row.stage)}</span>` : ''}</td>
+                <td class="text-zinc-300 text-xs row-nav"><div class="flex items-center gap-2">${staffAva}<span>${staff}</span></div></td>
+                <td class="text-zinc-500 text-xs row-nav">${fmt.date(row.date_accepted)}</td>
+                <td class="text-right font-mono text-xs ${row.fee_amount ? 'text-emerald-300' : 'text-zinc-600'} row-nav">${row.fee_amount ? fmt.money(row.fee_amount) : '—'}</td>
+                <td class="text-right text-zinc-500 text-xs row-nav">${fmt.daysAgo(row.date_last_activity)}</td>
             </tr>`;
     }).join('');
 
-    renderPagination();
+    // Navigation handlers
+    tbody.querySelectorAll('tr').forEach(tr => {
+        const id = tr.dataset.id;
+        tr.querySelectorAll('.row-nav').forEach(td => {
+            td.addEventListener('click', () => window.location.href = 'case.html?id=' + id);
+        });
+    });
+    tbody.querySelectorAll('.case-chk').forEach(chk => {
+        chk.addEventListener('change', updateBulkBar);
+    });
+}
+
+async function togglePin(id, isPinned) {
+    const newValue = !isPinned;
+    const { error } = await db.from('gmp_cases').update({ is_pinned: newValue }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(newValue ? 'Przypięto' : 'Odpięto');
+    loadCases();
+}
+
+function updateBulkBar() {
+    const selected = document.querySelectorAll('.case-chk:checked');
+    const bar = document.getElementById('bulk-bar');
+    if (selected.length > 0) {
+        bar.classList.remove('hidden');
+        document.getElementById('bulk-count').textContent = selected.length;
+    } else {
+        bar.classList.add('hidden');
+    }
+}
+
+async function bulkAssignStaff() {
+    const selected = Array.from(document.querySelectorAll('.case-chk:checked')).map(c => c.value);
+    if (!selected.length) return;
+    const { data: staffList } = await db.from('gmp_staff').select('id, full_name').order('full_name');
+    const opts = staffList.map((s, i) => `${i+1}. ${s.full_name}`).join('\n');
+    const pick = prompt(`Przypisz ${selected.length} spraw do opiekuna. Wybierz numer:\n${opts}`);
+    const idx = parseInt(pick) - 1;
+    if (isNaN(idx) || !staffList[idx]) return;
+    const { error } = await db.from('gmp_cases').update({ assigned_to: staffList[idx].id }).in('id', selected);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Przypisano ${selected.length} spraw do ${staffList[idx].full_name}`);
+    loadCases();
+}
+
+async function bulkChangeStatus() {
+    const selected = Array.from(document.querySelectorAll('.case-chk:checked')).map(c => c.value);
+    if (!selected.length) return;
+    const statuses = ['lead', 'zlecona', 'aktywna', 'zakonczona', 'archiwum'];
+    const pick = prompt(`Zmień status ${selected.length} spraw. Wpisz:\n${statuses.join(' / ')}`);
+    if (!pick || !statuses.includes(pick.trim())) return;
+    const { error } = await db.from('gmp_cases').update({ status: pick.trim() }).in('id', selected);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Zmieniono status ${selected.length} spraw`);
+    loadCases();
 }
 
 function renderPagination() {

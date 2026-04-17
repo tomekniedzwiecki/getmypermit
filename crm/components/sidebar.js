@@ -11,6 +11,7 @@
       items: [
         { href: 'dashboard.html', icon: 'ph-house', color: 'text-blue-400', label: 'Dashboard', id: 'dashboard' },
         { href: 'cases.html', icon: 'ph-folders', color: 'text-white', label: 'Sprawy', id: 'cases' },
+        { href: 'kanban.html', icon: 'ph-kanban', color: 'text-purple-400', label: 'Kanban', id: 'kanban' },
         { href: 'tasks.html', icon: 'ph-check-square', color: 'text-emerald-400', label: 'Zadania', id: 'tasks' },
         { href: 'alerts.html', icon: 'ph-bell-ringing', color: 'text-red-400', label: 'Alerty', id: 'alerts' },
       ]
@@ -93,12 +94,35 @@
               </div>
             </div>
           </div>
+          <div class="flex gap-1 mb-2">
+            <button class="sidebar-link flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg text-zinc-500 hover:text-white text-xs" onclick="gmpSearch && gmpSearch.open()" title="Szukaj (Ctrl+K)">
+              <i class="ph ph-magnifying-glass"></i>
+              <span>Szukaj</span>
+            </button>
+            <button class="sidebar-link flex items-center justify-center px-3 py-2 rounded-lg text-zinc-500 hover:text-white" onclick="window.gmpTheme && gmpTheme.toggle()" title="Przełącz motyw">
+              <i class="ph ph-moon" id="theme-icon"></i>
+            </button>
+            <button class="sidebar-link flex items-center justify-center px-3 py-2 rounded-lg text-zinc-500 hover:text-white" onclick="gmpSearch && gmpSearch.help()" title="Pomoc (?)">
+              <i class="ph ph-question"></i>
+            </button>
+          </div>
           <button id="sidebar-logout" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-900 text-sm transition-colors">
             <i class="ph ph-sign-out text-lg"></i>
             <span>Wyloguj</span>
           </button>
         </div>
       </aside>`;
+  }
+
+  // Auto-load shortcuts.js + theme.js
+  if (!window._gmpShortcutsLoaded) {
+    window._gmpShortcutsLoaded = true;
+    const s = document.createElement('script');
+    s.src = 'components/shortcuts.js';
+    document.head.appendChild(s);
+    const t = document.createElement('script');
+    t.src = 'components/theme.js';
+    document.head.appendChild(t);
   }
 
   document.addEventListener('DOMContentLoaded', function() {

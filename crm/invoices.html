@@ -6,6 +6,7 @@
     <title>Faktury - GetMyPermit CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="components/layout.css">
@@ -92,8 +93,9 @@ async function loadList() {
                 <td class="text-xs text-zinc-400">${esc(inv.sent_to || '')}</td>
                 <td class="text-xs text-zinc-400">${fmt.date(inv.sent_at)}</td>
                 <td class="text-right font-mono font-bold text-emerald-300">${fmt.money(inv.amount)}</td>
-                <td class="text-right">
-                    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); changeStatus('${inv.id}', '${inv.status}')" title="Zmień status"><i class="ph ph-arrows-clockwise"></i></button>
+                <td class="text-right" onclick="event.stopPropagation()">
+                    <button class="btn btn-ghost btn-sm" onclick="generatePDF('${inv.id}')" title="PDF"><i class="ph ph-file-pdf text-red-400"></i></button>
+                    <button class="btn btn-ghost btn-sm" onclick="changeStatus('${inv.id}', '${inv.status}')" title="Zmień status"><i class="ph ph-arrows-clockwise"></i></button>
                 </td>
             </tr>`;
     }).join('');
@@ -117,6 +119,88 @@ async function exportInvoices() {
         ['Wysłana do', 'sent_to'],
         ['Data wysłania', 'sent_at'],
     ]);
+}
+
+async function generatePDF(invoiceId) {
+    const { data: inv, error } = await db.from('gmp_invoices')
+        .select('*, gmp_employers(name, nip, address, invoice_data), gmp_clients(last_name, first_name)')
+        .eq('id', invoiceId).single();
+    if (error) { toast.error(error.message); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const party = inv.gmp_employers ? inv.gmp_employers.name : (inv.gmp_clients ? `${inv.gmp_clients.last_name} ${inv.gmp_clients.first_name}` : '');
+    const nip = inv.gmp_employers?.nip || '';
+    const addr = inv.gmp_employers?.address || '';
+    const num = inv.invoice_number || `PROJEKT-${inv.id.slice(0,8)}`;
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('Faktura / Rachunek', 20, 25);
+
+    doc.setFontSize(11);
+    doc.text(`Nr: ${num}`, 140, 25);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Data wystawienia: ${inv.issue_date || '—'}`, 140, 32);
+    if (inv.sent_at) doc.text(`Data wyslania: ${inv.sent_at}`, 140, 37);
+
+    // Seller (kancelaria) - placeholder
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Sprzedawca:', 20, 50);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Kancelaria GetMyPermit', 20, 56);
+    doc.text('[adres kancelarii]', 20, 62);
+    doc.text('NIP: [NIP kancelarii]', 20, 68);
+
+    // Buyer
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nabywca:', 110, 50);
+    doc.setFont('helvetica', 'normal');
+    const partyClean = party.replace(/[^\x00-\x7F]/g, (c) => {
+        const map = { 'ą':'a','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'A','Ę':'E','Ł':'L','Ń':'N','Ó':'O','Ś':'S','Ź':'Z','Ż':'Z' };
+        return map[c] || c;
+    });
+    doc.text(partyClean || '—', 110, 56);
+    if (nip) doc.text(`NIP: ${nip}`, 110, 62);
+    if (addr) doc.text(String(addr).slice(0, 60), 110, 68);
+
+    // Items table
+    doc.setDrawColor(180);
+    doc.line(20, 85, 190, 85);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Opis', 20, 92);
+    doc.text('Kwota', 160, 92);
+    doc.line(20, 94, 190, 94);
+
+    doc.setFont('helvetica', 'normal');
+    const description = (inv.description || '—').replace(/[^\x00-\x7F]/g, (c) => {
+        const map = { 'ą':'a','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'A','Ę':'E','Ł':'L','Ń':'N','Ó':'O','Ś':'S','Ź':'Z','Ż':'Z' };
+        return map[c] || c;
+    });
+    const descLines = doc.splitTextToSize(description, 130);
+    doc.text(descLines, 20, 102);
+    const amountText = Number(inv.amount).toLocaleString('pl-PL', { minimumFractionDigits: 2 }) + ' PLN';
+    doc.text(amountText, 160, 102);
+
+    // Total
+    const endY = 102 + descLines.length * 6 + 10;
+    doc.line(20, endY, 190, endY);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Razem do zaplaty:', 20, endY + 8);
+    doc.text(amountText, 160, endY + 8);
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120);
+    doc.text(`Wygenerowano: ${new Date().toLocaleString('pl-PL')} | GetMyPermit CRM`, 20, 280);
+
+    doc.save(`faktura_${num.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+    toast.success('PDF pobrany');
 }
 
 async function changeStatus(id, currentStatus) {

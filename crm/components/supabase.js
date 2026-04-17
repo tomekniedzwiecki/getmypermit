@@ -96,6 +96,76 @@ window.fmt = {
   },
 };
 
+// Breadcrumbs helper
+// Usage: renderBreadcrumbs('#crumb-el', [{label: 'Sprawy', href: 'cases.html'}, {label: 'Kowalski Jan'}])
+window.renderBreadcrumbs = function(selector, crumbs) {
+  const el = typeof selector === 'string' ? document.querySelector(selector) : selector;
+  if (!el) return;
+  el.innerHTML = crumbs.map((c, i) => {
+    const isLast = i === crumbs.length - 1;
+    if (isLast) return `<span class="text-zinc-300">${esc(c.label)}</span>`;
+    return `<a href="${c.href}" class="text-zinc-500 hover:text-white">${esc(c.label)}</a><span class="text-zinc-700 mx-1">/</span>`;
+  }).join('');
+};
+
+// Avatar helper - inicjaly + deterministyczny gradient
+window.avatar = function(name, size = 'normal') {
+  if (!name) return '<span class="avatar" style="--avatar-color: #52525b; --avatar-color2: #27272a">?</span>';
+  const parts = name.trim().split(/\s+/);
+  const init = parts.length >= 2
+    ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+    : parts[0].slice(0, 2).toUpperCase();
+  // Deterministyczny kolor z hash
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = ((hash << 5) - hash) + name.charCodeAt(i);
+  const palettes = [
+    ['#3b82f6', '#8b5cf6'], ['#10b981', '#06b6d4'], ['#f59e0b', '#ef4444'],
+    ['#ec4899', '#f59e0b'], ['#a855f7', '#ec4899'], ['#06b6d4', '#3b82f6'],
+    ['#10b981', '#3b82f6'], ['#f59e0b', '#10b981'], ['#ef4444', '#f59e0b'],
+    ['#6366f1', '#a855f7'],
+  ];
+  const [c1, c2] = palettes[Math.abs(hash) % palettes.length];
+  const cls = size === 'sm' ? 'avatar avatar-sm' : size === 'lg' ? 'avatar avatar-lg' : 'avatar';
+  return `<span class="${cls}" style="--avatar-color: ${c1}; --avatar-color2: ${c2}">${init}</span>`;
+};
+
+// Table sort helper
+// Usage: makeSortable(tableEl, { colName: (row) => row.someField, 'colName2': (row) => row.other })
+window.makeSortable = function(tbody, getRows, setRows, columnsMap) {
+  const table = tbody.closest('table');
+  if (!table) return;
+  const thead = table.querySelector('thead');
+  if (!thead) return;
+  let sortKey = null;
+  let sortDir = 'asc';
+
+  thead.querySelectorAll('th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.sort;
+      if (sortKey === key) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortKey = key;
+        sortDir = 'asc';
+      }
+      thead.querySelectorAll('th').forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
+      th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      const rows = getRows();
+      const getter = columnsMap[key];
+      if (!getter) return;
+      rows.sort((a, b) => {
+        const va = getter(a), vb = getter(b);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        if (typeof va === 'number' && typeof vb === 'number') return sortDir === 'asc' ? va - vb : vb - va;
+        return sortDir === 'asc' ? String(va).localeCompare(String(vb), 'pl') : String(vb).localeCompare(String(va), 'pl');
+      });
+      setRows(rows);
+    });
+  });
+};
+
 // Paginated fetch - omija domyslny limit 1000 PostgREST
 // Usage: const rows = await fetchAllRows(db.from('gmp_payments').select('*').eq('kind','fee'));
 window.fetchAllRows = async function(queryBuilder, batchSize = 1000, maxRows = 100000) {
