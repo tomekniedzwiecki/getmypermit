@@ -123,7 +123,7 @@ async function loadAlerts() {
 async function loadOverdueTasks() {
     const today = new Date().toISOString().slice(0, 10);
     const { data } = await db.from('gmp_tasks')
-        .select('id, title, due_date, case_id, gmp_staff(full_name), gmp_cases(case_number, gmp_clients(last_name, first_name))')
+        .select('id, title, due_date, case_id, gmp_staff!assigned_to(full_name), gmp_cases(case_number, gmp_clients(last_name, first_name))')
         .in('status', ['pending', 'in_progress'])
         .lt('due_date', today)
         .order('due_date')

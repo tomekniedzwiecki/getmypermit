@@ -592,7 +592,7 @@ async function saveCase() {
 async function loadActivities() {
     const { data, error } = await db
         .from('gmp_case_activities')
-        .select('*, gmp_staff(full_name)')
+        .select('*, gmp_staff!created_by(full_name)')
         .eq('case_id', caseId)
         .order('created_at', { ascending: false });
 
@@ -632,7 +632,7 @@ async function loadActivities() {
 async function loadTasks() {
     const { data, error } = await db
         .from('gmp_tasks')
-        .select('*, gmp_staff(full_name)')
+        .select('*, gmp_staff!assigned_to(full_name)')
         .eq('case_id', caseId)
         .order('due_date', { ascending: true, nullsLast: true })
         .order('created_at', { ascending: false });
@@ -925,7 +925,7 @@ async function savePayment() {
 
 async function loadAppointments() {
     const { data } = await db.from('gmp_crm_appointments')
-        .select('*, gmp_staff(full_name), gmp_offices(name, city)')
+        .select('*, gmp_staff!staff_id(full_name), gmp_offices(name, city)')
         .eq('case_id', caseId)
         .order('scheduled_date', { ascending: true, nullsLast: true });
     const el = document.getElementById('appointments-list');

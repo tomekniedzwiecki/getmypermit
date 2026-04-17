@@ -115,7 +115,7 @@ async function renderWeek() {
 
     // Pobierz eventy z gmp_crm_appointments + submissions_queue (ze scheduled_at)
     let appointmentsQuery = db.from('gmp_crm_appointments')
-        .select('id, appointment_type, scheduled_date, scheduled_time, client_id, case_id, staff_id, title, notes, transport_type, contact_name, gmp_clients(last_name, first_name), gmp_staff(full_name)')
+        .select('id, appointment_type, scheduled_date, scheduled_time, client_id, case_id, staff_id, title, notes, transport_type, contact_name, gmp_clients(last_name, first_name), gmp_staff!staff_id(full_name)')
         .gte('scheduled_date', currentWeekStart.toISOString().slice(0,10))
         .lt('scheduled_date', end.toISOString().slice(0,10));
     if (typeFilter) appointmentsQuery = appointmentsQuery.eq('appointment_type', typeFilter);

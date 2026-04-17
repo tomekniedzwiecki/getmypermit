@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prawnicy - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div id="list-view">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Prawnicy kancelarii</h1>
+                    <p class="page-subtitle" id="count">Ładuję...</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-secondary" onclick="exportStaff()"><i class="ph ph-download-simple"></i> CSV</button>
+                    <button class="btn btn-primary" onclick="openNewStaff()"><i class="ph ph-plus"></i> Nowy</button>
+                </div>
+            </div>
+
+            <!-- Summary cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div class="card p-4">
+                    <div class="text-xs text-zinc-500 mb-1">PRACOWNIKÓW AKTYWNYCH</div>
+                    <div class="text-2xl font-bold text-white" id="s-active">—</div>
+                </div>
+                <div class="card p-4">
+                    <div class="text-xs text-zinc-500 mb-1">SPRAW PRZYDZIELONYCH</div>
+                    <div class="text-2xl font-bold text-white" id="s-assigned">—</div>
+                    <div class="text-xs text-zinc-600" id="s-unassigned">0 nieprzypisanych</div>
+                </div>
+                <div class="card p-4">
+                    <div class="text-xs text-zinc-500 mb-1">ŚREDNIO SPRAW/OPIEKUNA</div>
+                    <div class="text-2xl font-bold text-white" id="s-avg">—</div>
+                </div>
+                <div class="card p-4">
+                    <div class="text-xs text-zinc-500 mb-1">TOP: PRZYCHÓD</div>
+                    <div class="text-lg font-bold text-emerald-400" id="s-top-name">—</div>
+                    <div class="text-xs text-zinc-500" id="s-top-amount">—</div>
+                </div>
+            </div>
+
+            <!-- Tabela -->
+            <div class="card overflow-hidden">
+                <div class="overflow-x-auto max-h-[calc(100vh-340px)]">
+                    <table class="gmp-table">
+                        <thead>
+                            <tr>
+                                <th>Imię i nazwisko</th>
+                                <th>Rola</th>
+                                <th class="text-right">Klientów</th>
+                                <th class="text-right">Spraw</th>
+                                <th class="text-right">Aktywnych</th>
+                                <th class="text-right">Zakończonych</th>
+                                <th class="text-right">Leadów</th>
+                                <th class="text-right">Przychód</th>
+                                <th class="text-right">Zadań otw.</th>
+                                <th class="text-right">Zaległych</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody">
+                            <tr><td colspan="10" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Analizuję dane...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail view (hidden by default) -->
+        <div id="detail-view" class="hidden"></div>
+    </main>
+</div>
+<div id="modals-container"></div>
+<script src="components/sidebar.js" data-active="staff"></script>
+<script src="components/modals.js" defer></script>
+<script>
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (id) {
+        document.getElementById('list-view').classList.add('hidden');
+        document.getElementById('detail-view').classList.remove('hidden');
+        await loadDetail(id);
+    } else {
+        await loadList();
+    }
+}
+
+async function loadList() {
+    // Pobierz staff + wszystkie dane do analizy
+    const [
+        { data: staff },
+        { data: cases },
+        { data: payments },
+        { data: tasks },
+    ] = await Promise.all([
+        db.from('gmp_staff').select('*').order('full_name'),
+        db.from('gmp_cases').select('id, client_id, status, fee_amount, assigned_to'),
+        db.from('gmp_payments').select('amount, case_id'),
+        db.from('gmp_tasks').select('assigned_to, status, due_date'),
+    ]);
+
+    // Case id -> assigned_to, dla agregatow platnosci
+    const caseToStaff = {};
+    cases.forEach(c => { if (c.assigned_to) caseToStaff[c.id] = c.assigned_to; });
+
+    // Agregaty per staff
+    const agg = {};
+    staff.forEach(s => {
+        agg[s.id] = {
+            ...s,
+            clients: new Set(),
+            cases_total: 0,
+            cases_active: 0,
+            cases_done: 0,
+            cases_lead: 0,
+            revenue_fee: 0,
+            revenue_paid: 0,
+            tasks_open: 0,
+            tasks_overdue: 0,
+        };
+    });
+
+    cases.forEach(c => {
+        if (!c.assigned_to || !agg[c.assigned_to]) return;
+        const a = agg[c.assigned_to];
+        a.cases_total++;
+        if (c.client_id) a.clients.add(c.client_id);
+        if (c.status === 'aktywna' || c.status === 'zlecona') a.cases_active++;
+        if (c.status === 'zakonczona') a.cases_done++;
+        if (c.status === 'lead') a.cases_lead++;
+        if (c.fee_amount) a.revenue_fee += Number(c.fee_amount);
+    });
+
+    payments.forEach(p => {
+        const staffId = caseToStaff[p.case_id];
+        if (staffId && agg[staffId]) agg[staffId].revenue_paid += Number(p.amount || 0);
+    });
+
+    const today = new Date().toISOString().slice(0, 10);
+    tasks.forEach(t => {
+        if (!t.assigned_to || !agg[t.assigned_to]) return;
+        const a = agg[t.assigned_to];
+        if (t.status === 'pending' || t.status === 'in_progress') {
+            a.tasks_open++;
+            if (t.due_date && t.due_date < today) a.tasks_overdue++;
+        }
+    });
+
+    const rows = Object.values(agg);
+
+    // Statystyki summary
+    const unassignedCount = cases.filter(c => !c.assigned_to).length;
+    const activeStaffCount = rows.filter(r => r.cases_total > 0).length;
+    const totalAssigned = cases.filter(c => c.assigned_to).length;
+    const avg = activeStaffCount ? (totalAssigned / activeStaffCount).toFixed(1) : 0;
+    const top = rows.slice().sort((a, b) => b.revenue_fee - a.revenue_fee)[0];
+
+    document.getElementById('s-active').textContent = activeStaffCount;
+    document.getElementById('s-assigned').textContent = fmt.num(totalAssigned);
+    document.getElementById('s-unassigned').textContent = `${unassignedCount} spraw nieprzypisanych`;
+    document.getElementById('s-avg').textContent = avg;
+    if (top && top.revenue_fee > 0) {
+        document.getElementById('s-top-name').textContent = top.full_name;
+        document.getElementById('s-top-amount').textContent = fmt.money(top.revenue_fee);
+    }
+
+    document.getElementById('count').textContent = `${rows.length} pracowników (${activeStaffCount} z przydzielonymi sprawami)`;
+
+    // Sortuj po przychodzie
+    rows.sort((a, b) => b.revenue_fee - a.revenue_fee || b.cases_total - a.cases_total);
+
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = rows.map(r => `
+        <tr class="clickable" onclick="location.href='staff.html?id=${r.id}'">
+            <td>
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-black" style="background: ${esc(r.color || '#3b82f6')}">${esc(r.full_name[0])}</span>
+                    <span class="text-white">${esc(r.full_name)}</span>
+                </div>
+            </td>
+            <td class="text-xs"><span class="badge ${r.role === 'admin' ? 'badge-aktywna' : 'badge-lead'}">${esc(r.role || 'staff')}</span></td>
+            <td class="text-right font-mono">${fmt.num(r.clients.size)}</td>
+            <td class="text-right font-mono">${fmt.num(r.cases_total)}</td>
+            <td class="text-right font-mono text-emerald-400">${r.cases_active || '—'}</td>
+            <td class="text-right font-mono text-zinc-400">${r.cases_done || '—'}</td>
+            <td class="text-right font-mono text-zinc-500">${r.cases_lead || '—'}</td>
+            <td class="text-right font-mono text-emerald-300 font-bold">${r.revenue_fee ? fmt.money(r.revenue_fee) : '—'}</td>
+            <td class="text-right font-mono">${r.tasks_open || '—'}</td>
+            <td class="text-right font-mono ${r.tasks_overdue ? 'text-red-400 font-bold' : 'text-zinc-500'}">${r.tasks_overdue || '—'}</td>
+        </tr>`).join('');
+}
+
+async function loadDetail(staffId) {
+    const view = document.getElementById('detail-view');
+    view.innerHTML = `
+        <div class="flex items-center gap-3 mb-4">
+            <a href="staff.html" class="btn btn-ghost btn-sm"><i class="ph ph-arrow-left"></i> Prawnicy</a>
+        </div>
+        <div class="p-8 text-center text-zinc-500"><div class="spinner-lg mx-auto mb-3"></div>Analizuję dane...</div>`;
+
+    const { data: staff, error } = await db.from('gmp_staff').select('*').eq('id', staffId).maybeSingle();
+    if (error || !staff) {
+        view.innerHTML = '<div class="card p-6 text-red-400">Nie znaleziono pracownika</div>';
+        return;
+    }
+
+    // Pobierz wszystko naraz
+    const [
+        { data: cases },
+        { data: payments },
+        { data: tasks },
+        { data: activities },
+        { data: appointments },
+    ] = await Promise.all([
+        db.from('gmp_cases')
+            .select('id, case_number, status, stage, case_type, category, date_accepted, date_last_activity, fee_amount, client_id, employer_id, gmp_clients(last_name, first_name), gmp_employers(name)')
+            .eq('assigned_to', staffId)
+            .order('date_accepted', { ascending: false, nullsLast: true }),
+        db.from('gmp_payments').select('amount, method, payment_date, case_id'),
+        db.from('gmp_tasks').select('id, title, status, due_date, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))')
+            .eq('assigned_to', staffId).order('due_date', { ascending: true, nullsLast: true }),
+        db.from('gmp_case_activities').select('id, activity_type, content, created_at, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))')
+            .eq('created_by', staffId).order('created_at', { ascending: false }).limit(50),
+        db.from('gmp_crm_appointments').select('id, appointment_type, scheduled_date, title, case_id, client_id, gmp_clients(last_name, first_name)')
+            .eq('staff_id', staffId).order('scheduled_date', { ascending: false, nullsLast: true }).limit(30),
+    ]);
+
+    // Filtr płatności do tych spraw
+    const caseIds = new Set((cases || []).map(c => c.id));
+    const myPayments = (payments || []).filter(p => caseIds.has(p.case_id));
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Statystyki
+    const uniqueClients = new Set((cases || []).map(c => c.client_id).filter(Boolean));
+    const active = cases.filter(c => c.status === 'aktywna' || c.status === 'zlecona').length;
+    const done = cases.filter(c => c.status === 'zakonczona').length;
+    const leads = cases.filter(c => c.status === 'lead').length;
+    const revenue = cases.reduce((s, c) => s + (Number(c.fee_amount) || 0), 0);
+    const paid = myPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+    const outstanding = revenue - paid;
+
+    // Przychód per miesiąc (12 ostatnich)
+    const byMonth = {};
+    myPayments.forEach(p => {
+        if (!p.payment_date) return;
+        const m = p.payment_date.slice(0, 7);
+        byMonth[m] = (byMonth[m] || 0) + Number(p.amount || 0);
+    });
+    const months12 = Object.entries(byMonth).sort((a, b) => a[0].localeCompare(b[0])).slice(-12);
+
+    // Breakdown po typach spraw
+    const byType = {};
+    cases.forEach(c => { byType[c.case_type || '—'] = (byType[c.case_type || '—'] || 0) + 1; });
+    const topTypes = Object.entries(byType).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+    // Breakdown statusów
+    const byStatus = { lead: leads, zlecona: 0, aktywna: 0, zakonczona: done, archiwum: 0 };
+    cases.forEach(c => { if (byStatus[c.status] !== undefined) byStatus[c.status]++; });
+
+    const tasksOpen = tasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length;
+    const tasksOverdue = tasks.filter(t => (t.status === 'pending' || t.status === 'in_progress') && t.due_date && t.due_date < today).length;
+
+    // Last active - max date_last_activity
+    const lastActive = cases.reduce((latest, c) => {
+        if (c.date_last_activity && c.date_last_activity > (latest || '')) return c.date_last_activity;
+        return latest;
+    }, null);
+
+    view.innerHTML = `
+        <div class="flex items-center gap-3 mb-4">
+            <a href="staff.html" class="btn btn-ghost btn-sm"><i class="ph ph-arrow-left"></i> Prawnicy</a>
+        </div>
+
+        <div class="card p-5 mb-4">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-black" style="background: ${esc(staff.color || '#3b82f6')}">
+                        ${esc(staff.full_name[0])}
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white mb-1">${esc(staff.full_name)}</h1>
+                        <div class="flex items-center gap-3 text-sm text-zinc-400">
+                            <span class="badge ${staff.role === 'admin' ? 'badge-aktywna' : 'badge-lead'}">${esc(staff.role)}</span>
+                            ${staff.email ? `<span><i class="ph ph-envelope"></i> ${esc(staff.email)}</span>` : ''}
+                            ${staff.phone ? `<span><i class="ph ph-phone"></i> ${esc(staff.phone)}</span>` : ''}
+                            ${lastActive ? `<span class="text-zinc-600">ostatnia aktywność ${fmt.daysAgo(lastActive)}</span>` : ''}
+                        </div>
+                        ${staff.aliases?.length ? `<div class="text-xs text-zinc-600 mt-1">aliasy: ${staff.aliases.map(a => esc(a)).join(', ')}</div>` : ''}
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-secondary" onclick="editStaff('${staff.id}')"><i class="ph ph-pencil-simple"></i> Edytuj</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-4 mt-5 pt-5 border-t border-zinc-900">
+                <div><div class="text-xs text-zinc-500">SPRAW</div><div class="text-xl font-bold">${fmt.num(cases.length)}</div></div>
+                <div><div class="text-xs text-zinc-500">KLIENTÓW</div><div class="text-xl font-bold">${fmt.num(uniqueClients.size)}</div></div>
+                <div><div class="text-xs text-zinc-500">AKTYWNE</div><div class="text-xl font-bold text-emerald-400">${active}</div></div>
+                <div><div class="text-xs text-zinc-500">ZAKOŃCZONE</div><div class="text-xl font-bold text-zinc-400">${done}</div></div>
+                <div><div class="text-xs text-zinc-500">PRZYCHÓD</div><div class="text-xl font-bold text-emerald-300">${fmt.money(revenue)}</div></div>
+                <div><div class="text-xs text-zinc-500">DO ROZLICZ.</div><div class="text-xl font-bold ${outstanding > 0 ? 'text-amber-400' : 'text-zinc-400'}">${outstanding > 0 ? fmt.money(outstanding) : '—'}</div></div>
+            </div>
+        </div>
+
+        <!-- Rozbicia -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <section class="card">
+                <div class="card-header">Typy spraw (top 8)</div>
+                <div class="p-4 space-y-2">
+                    ${topTypes.map(([type, n]) => {
+                        const pct = Math.round(100 * n / cases.length);
+                        return `
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-zinc-300">${esc(type)}</span>
+                                    <span class="text-zinc-500">${n} (${pct}%)</span>
+                                </div>
+                                <div class="h-1.5 bg-zinc-900 rounded overflow-hidden">
+                                    <div class="h-full bg-blue-500" style="width: ${pct}%"></div>
+                                </div>
+                            </div>`;
+                    }).join('') || '<div class="text-zinc-500 text-sm">Brak danych</div>'}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">Statusy spraw</div>
+                <div class="p-4 space-y-2">
+                    ${Object.entries(byStatus).map(([status, n]) => {
+                        const pct = cases.length ? Math.round(100 * n / cases.length) : 0;
+                        return `
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="badge badge-${status}">${status}</span>
+                                    <span class="text-zinc-500">${n} (${pct}%)</span>
+                                </div>
+                                <div class="h-1.5 bg-zinc-900 rounded overflow-hidden">
+                                    <div class="h-full bg-emerald-500" style="width: ${pct}%"></div>
+                                </div>
+                            </div>`;
+                    }).join('')}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">Przychody miesięczne (12 mies.)</div>
+                <div class="p-4 space-y-2">
+                    ${months12.length === 0 ? '<div class="text-zinc-500 text-sm">Brak płatności</div>' :
+                    (() => {
+                        const max = Math.max(...months12.map(m => m[1]));
+                        return months12.map(([m, v]) => {
+                            const pct = max ? Math.round(100 * v / max) : 0;
+                            return `
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-zinc-400 font-mono">${m}</span>
+                                        <span class="text-emerald-400">${fmt.money(v)}</span>
+                                    </div>
+                                    <div class="h-1.5 bg-zinc-900 rounded overflow-hidden">
+                                        <div class="h-full bg-emerald-500" style="width: ${pct}%"></div>
+                                    </div>
+                                </div>`;
+                        }).join('');
+                    })()}
+                </div>
+            </section>
+        </div>
+
+        <!-- Zadania + sprawy + aktywnosc -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <section class="card lg:col-span-2">
+                <div class="card-header flex items-center justify-between">
+                    <span>Sprawy (${cases.length})</span>
+                    <a href="cases.html?staff=${staff.id}" class="text-xs text-zinc-500 hover:text-white">Filtruj w liście →</a>
+                </div>
+                <div class="overflow-x-auto max-h-[500px]">
+                    <table class="gmp-table">
+                        <thead><tr><th>Nr</th><th>Klient</th><th>Typ</th><th>Status</th><th>Etap</th><th>Data</th><th class="text-right">Kwota</th></tr></thead>
+                        <tbody>
+                            ${cases.length === 0 ? '<tr><td colspan="7" class="empty-state"><i class="ph ph-folder"></i><div>Brak spraw</div></td></tr>' :
+                            cases.map(c => `
+                                <tr class="clickable" onclick="location.href='case.html?id=${c.id}'">
+                                    <td class="font-mono text-xs">${esc(c.case_number || '')}</td>
+                                    <td class="text-xs">${c.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—'}</td>
+                                    <td class="text-xs text-zinc-400">${esc(c.case_type || '—')}</td>
+                                    <td><span class="badge badge-${c.status}">${esc(c.status)}</span></td>
+                                    <td class="text-xs">${c.stage ? `<span class="badge badge-stage">${esc(c.stage)}</span>` : ''}</td>
+                                    <td class="text-xs text-zinc-400">${fmt.date(c.date_accepted)}</td>
+                                    <td class="text-right font-mono text-xs ${c.fee_amount ? 'text-emerald-300' : 'text-zinc-600'}">${c.fee_amount ? fmt.money(c.fee_amount) : '—'}</td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="space-y-4">
+                <section class="card">
+                    <div class="card-header">Zadania (${tasksOpen} otwarte${tasksOverdue ? ', ' + tasksOverdue + ' po terminie' : ''})</div>
+                    <div class="divide-y divide-zinc-900/50 max-h-[300px] overflow-y-auto">
+                        ${tasks.length === 0 ? '<div class="p-3 text-zinc-500 text-sm">Brak zadań</div>' :
+                        tasks.map(t => {
+                            const overdue = t.due_date && t.status !== 'done' && t.due_date < today;
+                            return `
+                                <a href="${t.case_id ? 'case.html?id=' + t.case_id : '#'}" class="block p-2.5 hover:bg-zinc-900/50">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm ${t.status === 'done' ? 'line-through text-zinc-500' : 'text-zinc-200'}">${esc(t.title)}</div>
+                                            <div class="text-xs ${overdue ? 'text-red-400' : 'text-zinc-500'}">${t.due_date ? fmt.date(t.due_date) : 'brak terminu'}${t.gmp_cases?.gmp_clients ? ' • ' + esc(t.gmp_cases.gmp_clients.last_name) : ''}</div>
+                                        </div>
+                                        <span class="badge ${t.status === 'done' ? 'badge-zakonczona' : 'badge-zlecona'} text-[10px]">${esc(t.status)}</span>
+                                    </div>
+                                </a>`;
+                        }).join('')}
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">Ostatnia aktywność (50)</div>
+                    <div class="divide-y divide-zinc-900/50 max-h-[300px] overflow-y-auto">
+                        ${activities.length === 0 ? '<div class="p-3 text-zinc-500 text-sm">Brak zapisanych działań</div>' :
+                        activities.map(a => `
+                            <a href="${a.case_id ? 'case.html?id=' + a.case_id : '#'}" class="block p-2.5 hover:bg-zinc-900/50">
+                                <div class="text-xs text-zinc-200">${esc(a.content || a.activity_type)}</div>
+                                <div class="text-xs text-zinc-600 mt-0.5">
+                                    ${a.gmp_cases?.gmp_clients ? esc(a.gmp_cases.gmp_clients.last_name) + ' ' + esc(a.gmp_cases.gmp_clients.first_name) + ' • ' : ''}${fmt.daysAgo(a.created_at)}
+                                </div>
+                            </a>`).join('')}
+                    </div>
+                </section>
+            </div>
+        </div>`;
+}
+
+async function exportStaff() {
+    toast.info('Przygotowuję CSV...');
+    const [
+        { data: staff },
+        { data: cases },
+        { data: payments },
+    ] = await Promise.all([
+        db.from('gmp_staff').select('*').order('full_name'),
+        db.from('gmp_cases').select('id, client_id, status, fee_amount, assigned_to'),
+        db.from('gmp_payments').select('amount, case_id'),
+    ]);
+    const caseToStaff = {};
+    cases.forEach(c => { if (c.assigned_to) caseToStaff[c.id] = c.assigned_to; });
+    const agg = {};
+    staff.forEach(s => { agg[s.id] = { ...s, clients: new Set(), cases: 0, revenue_fee: 0, revenue_paid: 0 }; });
+    cases.forEach(c => {
+        if (agg[c.assigned_to]) {
+            agg[c.assigned_to].cases++;
+            if (c.client_id) agg[c.assigned_to].clients.add(c.client_id);
+            if (c.fee_amount) agg[c.assigned_to].revenue_fee += Number(c.fee_amount);
+        }
+    });
+    payments.forEach(p => {
+        const sid = caseToStaff[p.case_id];
+        if (agg[sid]) agg[sid].revenue_paid += Number(p.amount || 0);
+    });
+    exportCsv('prawnicy', Object.values(agg), [
+        ['Imię i nazwisko', 'full_name'],
+        ['Rola', 'role'],
+        ['Email', 'email'],
+        ['Telefon', 'phone'],
+        ['Spraw', 'cases'],
+        ['Klientów', r => r.clients.size],
+        ['Przychód (fee)', 'revenue_fee'],
+        ['Wpłaty', 'revenue_paid'],
+        ['Aktywny', 'is_active'],
+    ]);
+}
+
+function openNewStaff() {
+    openStaffModal(null);
+}
+
+function editStaff(id) {
+    openStaffModal(id);
+}
+
+async function openStaffModal(id) {
+    let s = {};
+    if (id) {
+        const { data } = await db.from('gmp_staff').select('*').eq('id', id).maybeSingle();
+        s = data || {};
+    }
+    const aliases = (s.aliases || []).join(', ');
+    gmpModal.openModal(`
+        <div class="modal-header">${id ? 'Edytuj pracownika' : 'Nowy pracownik'} <button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body grid grid-cols-2 gap-3">
+            <div class="col-span-2"><label>Imię i nazwisko *</label><input id="st-name" class="input w-full" value="${esc(s.full_name || '')}" autofocus></div>
+            <div><label>Email</label><input type="email" id="st-email" class="input w-full" value="${esc(s.email || '')}"></div>
+            <div><label>Telefon</label><input id="st-phone" class="input w-full" value="${esc(s.phone || '')}"></div>
+            <div><label>Rola</label>
+                <select id="st-role" class="input w-full">
+                    <option value="staff" ${s.role === 'staff' ? 'selected' : ''}>Staff</option>
+                    <option value="lawyer" ${s.role === 'lawyer' ? 'selected' : ''}>Prawnik</option>
+                    <option value="assistant" ${s.role === 'assistant' ? 'selected' : ''}>Asystent</option>
+                    <option value="admin" ${s.role === 'admin' ? 'selected' : ''}>Admin</option>
+                </select>
+            </div>
+            <div><label>Kolor (HEX)</label><input id="st-color" class="input w-full font-mono" value="${esc(s.color || '#3b82f6')}"></div>
+            <div class="col-span-2"><label>Aktywny</label>
+                <select id="st-active" class="input w-full">
+                    <option value="true" ${s.is_active !== false ? 'selected' : ''}>Tak</option>
+                    <option value="false" ${s.is_active === false ? 'selected' : ''}>Nie</option>
+                </select>
+            </div>
+            <div class="col-span-2"><label>Aliasy (imiona w arkuszach Pawła, oddzielone przecinkami)</label>
+                <input id="st-aliases" class="input w-full" value="${esc(aliases)}" placeholder="Julka, JULIA">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="gmpModal.close()">Anuluj</button>
+            <button class="btn btn-primary" onclick="saveStaff('${id || ''}')">${id ? 'Zapisz' : 'Dodaj'}</button>
+        </div>`);
+}
+
+async function saveStaff(id) {
+    const name = document.getElementById('st-name').value.trim();
+    if (!name) { toast.error('Nazwa jest wymagana'); return; }
+    const aliases = document.getElementById('st-aliases').value.split(',').map(s => s.trim()).filter(Boolean);
+    const payload = {
+        full_name: name,
+        email: document.getElementById('st-email').value.trim() || null,
+        phone: document.getElementById('st-phone').value.trim() || null,
+        role: document.getElementById('st-role').value,
+        color: document.getElementById('st-color').value.trim() || '#3b82f6',
+        is_active: document.getElementById('st-active').value === 'true',
+        aliases,
+    };
+    const result = id
+        ? await db.from('gmp_staff').update(payload).eq('id', id).select().single()
+        : await db.from('gmp_staff').insert(payload).select().single();
+    if (result.error) { toast.error(result.error.message); return; }
+    toast.success(id ? 'Zapisano' : 'Dodano');
+    gmpModal.close();
+    setTimeout(() => location.reload(), 300);
+}
+</script>
+</body>
+</html>

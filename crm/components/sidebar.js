@@ -27,6 +27,7 @@
       items: [
         { href: 'clients.html', icon: 'ph-users', color: 'text-purple-400', label: 'Klienci', id: 'clients' },
         { href: 'employers.html', icon: 'ph-buildings', color: 'text-indigo-400', label: 'Pracodawcy', id: 'employers' },
+        { href: 'staff.html', icon: 'ph-scales', color: 'text-pink-400', label: 'Prawnicy', id: 'staff' },
       ]
     },
     {

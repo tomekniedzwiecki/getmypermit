@@ -78,7 +78,7 @@ async function init() {
 }
 
 async function loadList() {
-    let q = db.from('gmp_tasks').select('*, gmp_staff(full_name), gmp_cases(id, case_number, gmp_clients(last_name, first_name))');
+    let q = db.from('gmp_tasks').select('*, gmp_staff!assigned_to(full_name), gmp_cases(id, case_number, gmp_clients(last_name, first_name))');
 
     const today = new Date().toISOString().slice(0,10);
     if (view === 'mine') {
