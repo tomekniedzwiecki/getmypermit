@@ -186,11 +186,11 @@ async function loadOverduePayments() {
     document.getElementById('payments-count').textContent = plans?.length || 0;
     if (!plans?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak</div></div>'; return; }
 
-    // Doliczamy wplacone
+    // Doliczamy wplacone (paginowane - wiele płatności może być dla tych caseIds)
     const caseIds = plans.map(p => p.case_id);
-    const { data: paid } = await db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds);
+    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds));
     const paidByCase = {};
-    (paid || []).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    paid.forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
 
     el.innerHTML = plans.map(p => {
         const c = p.gmp_cases;

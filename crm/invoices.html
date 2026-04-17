@@ -101,10 +101,9 @@ async function loadList() {
 
 async function exportInvoices() {
     toast.info('Przygotowuję CSV...');
-    const { data, error } = await db.from('gmp_invoices')
+    const data = await fetchAll(() => db.from('gmp_invoices')
         .select('*, gmp_employers(name, nip), gmp_clients(last_name, first_name), gmp_cases(case_number)')
-        .order('created_at', { ascending: false }).limit(5000);
-    if (error) { toast.error(error.message); return; }
+        .order('created_at', { ascending: false }));
     exportCsv('faktury', data, [
         ['Data wystawienia', 'issue_date'],
         ['Numer', 'invoice_number'],

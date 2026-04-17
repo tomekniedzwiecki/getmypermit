@@ -96,6 +96,41 @@ window.fmt = {
   },
 };
 
+// Paginated fetch - omija domyslny limit 1000 PostgREST
+// Usage: const rows = await fetchAllRows(db.from('gmp_payments').select('*').eq('kind','fee'));
+window.fetchAllRows = async function(queryBuilder, batchSize = 1000, maxRows = 100000) {
+  const out = [];
+  let from = 0;
+  while (from < maxRows) {
+    const { data, error } = await queryBuilder.range(from, from + batchSize - 1);
+    if (error) { console.error('fetchAllRows error:', error); break; }
+    if (!data || data.length === 0) break;
+    out.push(...data);
+    if (data.length < batchSize) break;
+    from += batchSize;
+    // Zabezpieczenie przed klonowaniem query builder - Supabase JS builder nie jest reusable
+    // Uzytkownik musi przekazac builder wg wzorca. Nie problem przy sukcesie
+    // ale dla bezpieczenstwa - jesli query builder zwrocil mniej niz batch, koncz.
+  }
+  return out;
+};
+
+// Wersja ktora sama buduje query z callbacka (fabryka) - bezpieczniejsza reuse
+window.fetchAll = async function(queryFn, batchSize = 1000, maxRows = 100000) {
+  const out = [];
+  let from = 0;
+  while (from < maxRows) {
+    const q = queryFn().range(from, from + batchSize - 1);
+    const { data, error } = await q;
+    if (error) { console.error('fetchAll error:', error); break; }
+    if (!data || data.length === 0) break;
+    out.push(...data);
+    if (data.length < batchSize) break;
+    from += batchSize;
+  }
+  return out;
+};
+
 // CSV export helper
 // columns: array of [header, valueFn(row)] pairs
 window.exportCsv = function(filename, rows, columns) {

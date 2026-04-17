@@ -90,15 +90,15 @@ async function loadList() {
         renderPagination(); return;
     }
 
-    // Licznik klientów i spraw
+    // Licznik klientów i spraw (paginowane - wielu klientów/spraw per pracodawca)
     const ids = data.map(e => e.id);
-    const [{ data: clients }, { data: cases }] = await Promise.all([
-        db.from('gmp_clients').select('employer_id').in('employer_id', ids),
-        db.from('gmp_cases').select('employer_id').in('employer_id', ids),
+    const [clients, cases] = await Promise.all([
+        fetchAll(() => db.from('gmp_clients').select('employer_id').in('employer_id', ids)),
+        fetchAll(() => db.from('gmp_cases').select('employer_id').in('employer_id', ids)),
     ]);
     const cByEmp = {}, caseByEmp = {};
-    (clients || []).forEach(c => cByEmp[c.employer_id] = (cByEmp[c.employer_id] || 0) + 1);
-    (cases || []).forEach(c => caseByEmp[c.employer_id] = (caseByEmp[c.employer_id] || 0) + 1);
+    clients.forEach(c => cByEmp[c.employer_id] = (cByEmp[c.employer_id] || 0) + 1);
+    cases.forEach(c => caseByEmp[c.employer_id] = (caseByEmp[c.employer_id] || 0) + 1);
 
     tbody.innerHTML = data.map(e => `
         <tr class="clickable" onclick="location.href='employers.html?id=${e.id}'">
@@ -238,9 +238,7 @@ async function exportEmployers() {
     const s = document.getElementById('f-search').value.trim();
     let q = db.from('gmp_employers').select('*');
     if (s) q = q.or(`name.ilike.%${s}%,nip.ilike.%${s}%,contact_email.ilike.%${s}%`);
-    q = q.order('name').limit(5000);
-    const { data, error } = await q;
-    if (error) { toast.error(error.message); return; }
+    const data = await fetchAll(() => q.order('name'));
     exportCsv('pracodawcy', data, [
         ['Nazwa', 'name'],
         ['NIP', 'nip'],

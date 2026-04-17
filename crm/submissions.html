@@ -200,10 +200,10 @@ function go(p) { const tp = Math.ceil(totalRows/PAGE_SIZE); if(p<1||p>tp) return
 function openNew() { toast.info('Dodawanie do kolejki — wkrótce.'); }
 async function exportSubs() {
     toast.info('Przygotowuję CSV...');
-    const { data } = await db.from('gmp_submissions_queue')
+    const data = await fetchAll(() => db.from('gmp_submissions_queue')
         .select('*, gmp_clients(last_name, first_name, nationality), gmp_offices(city, code)')
-        .order('scheduled_at', { ascending: true, nullsLast: true }).limit(5000);
-    exportCsv('kolejka_wnioskow', data || [], [
+        .order('scheduled_at', { ascending: true, nullsLast: true }));
+    exportCsv('kolejka_wnioskow', data, [
         ['Klient', r => r.gmp_clients ? `${r.gmp_clients.last_name} ${r.gmp_clients.first_name}` : ''],
         ['Obywatelstwo', r => r.gmp_clients?.nationality || ''],
         ['Urząd', r => r.gmp_offices?.city || r.gmp_offices?.code || ''],

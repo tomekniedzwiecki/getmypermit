@@ -263,14 +263,15 @@ async function loadFinance() {
     const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
     const next = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().slice(0, 10);
 
-    const { data: pays } = await db
+    // Wąski zakres (1 miesiąc) - pobranie paginowane na wszelki wypadek
+    const pays = await fetchAll(() => db
         .from('gmp_payments')
         .select('amount, method')
         .gte('payment_date', first)
-        .lt('payment_date', next);
+        .lt('payment_date', next));
 
     let cash = 0, transfer = 0, invoice = 0, other = 0;
-    (pays || []).forEach(p => {
+    pays.forEach(p => {
         const a = Number(p.amount) || 0;
         if (p.method === 'gotowka') cash += a;
         else if (p.method === 'przelew') transfer += a;

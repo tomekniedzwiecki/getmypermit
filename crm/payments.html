@@ -215,23 +215,34 @@ function applyFilters(q) {
     return { query: q, staffFilter: staff };
 }
 
-// Fetch wszystkie payments w zakresie + filtry
+// Fetch wszystkie payments w zakresie + filtry (paginowane)
 async function fetchPayments() {
     const { from, to } = getRange();
-    let q = db.from('gmp_payments')
-        .select('id, amount, method, kind, payer_type, payment_date, installment_number, total_installments, case_id, client_id, employer_id, notes, gmp_cases(case_number, assigned_to, category, gmp_clients(last_name, first_name), gmp_employers(name)), gmp_employers(name), gmp_clients(last_name, first_name)')
-        .gte('payment_date', from)
-        .lte('payment_date', to);
+    const method = document.getElementById('f-method').value;
+    const payer = document.getElementById('f-payer').value;
+    const kind = document.getElementById('f-kind').value;
+    const staffFilter = document.getElementById('f-staff').value;
 
-    const { query, staffFilter } = applyFilters(q);
-    q = query;
-    const { data, error } = await q.order('payment_date', { ascending: false, nullsLast: true }).limit(10000);
-    if (error) { toast.error(error.message); return []; }
-    let rows = data || [];
+    // Sanityzacja zakresu
+    const SAFE_FROM = from >= '2020-01-01' && from <= '2030-12-31' ? from : '2020-01-01';
+    const SAFE_TO = to >= '2020-01-01' && to <= '2030-12-31' ? to : '2030-12-31';
+
+    const rows = await fetchAll(() => {
+        let q = db.from('gmp_payments')
+            .select('id, amount, method, kind, payer_type, payment_date, installment_number, total_installments, case_id, client_id, employer_id, notes, gmp_cases(case_number, assigned_to, category, gmp_clients(last_name, first_name), gmp_employers(name)), gmp_employers(name), gmp_clients(last_name, first_name)')
+            .gte('payment_date', SAFE_FROM)
+            .lte('payment_date', SAFE_TO);
+        if (method) q = q.eq('method', method);
+        if (payer) q = q.eq('payer_type', payer);
+        if (kind) q = q.eq('kind', kind);
+        return q.order('payment_date', { ascending: false, nullsLast: true });
+    });
+
+    let filtered = rows;
     if (staffFilter) {
-        rows = rows.filter(p => p.gmp_cases?.assigned_to === staffFilter);
+        filtered = rows.filter(p => p.gmp_cases?.assigned_to === staffFilter);
     }
-    return rows;
+    return filtered;
 }
 
 async function renderAll() {
@@ -274,9 +285,9 @@ async function renderKPIs() {
     const thisMStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
     const lastMStart = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString().slice(0,10);
     const lastMEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0,10);
-    const { data: momData } = await db.from('gmp_payments').select('amount, payment_date').gte('payment_date', lastMStart).lte('payment_date', today);
-    const thisM = (momData || []).filter(p => p.payment_date >= thisMStart).reduce((s, p) => s + Number(p.amount || 0), 0);
-    const lastM = (momData || []).filter(p => p.payment_date >= lastMStart && p.payment_date <= lastMEnd).reduce((s, p) => s + Number(p.amount || 0), 0);
+    const momData = await fetchAll(() => db.from('gmp_payments').select('amount, payment_date').gte('payment_date', lastMStart).lte('payment_date', today));
+    const thisM = momData.filter(p => p.payment_date >= thisMStart).reduce((s, p) => s + Number(p.amount || 0), 0);
+    const lastM = momData.filter(p => p.payment_date >= lastMStart && p.payment_date <= lastMEnd).reduce((s, p) => s + Number(p.amount || 0), 0);
     const momEl = document.getElementById('k-mom');
     const momLabel = document.getElementById('k-mom-label');
     if (lastM > 0) {
@@ -291,9 +302,9 @@ async function renderKPIs() {
     // Zaległości
     if (overduePlans.data?.length) {
         const caseIds = overduePlans.data.map(p => p.case_id);
-        const { data: paid } = await db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds);
+        const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds));
         const paidByCase = {};
-        (paid || []).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+        paid.forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
         const outstanding = overduePlans.data.reduce((s, p) => s + Math.max(0, Number(p.total_amount) - (paidByCase[p.case_id] || 0)), 0);
         document.getElementById('k-overdue').textContent = fmt.money(outstanding);
         document.getElementById('k-overdue-count').textContent = `${overduePlans.data.length} spraw`;
@@ -548,10 +559,10 @@ async function renderPayments() {
 async function renderAdmin() {
     const el = document.getElementById('view-content');
     const { from, to } = getRange();
-    const { data } = await db.from('gmp_payments')
+    const data = await fetchAll(() => db.from('gmp_payments')
         .select('*, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
         .eq('kind', 'admin_fee').gte('payment_date', from).lte('payment_date', to)
-        .order('payment_date', { ascending: false, nullsLast: true }).limit(1000);
+        .order('payment_date', { ascending: false, nullsLast: true }));
 
     const total = (data || []).reduce((s, p) => s + Number(p.amount || 0), 0);
     el.innerHTML = `
@@ -581,9 +592,9 @@ async function renderAdmin() {
 async function renderOverdue() {
     const el = document.getElementById('view-content');
     const today = new Date().toISOString().slice(0, 10);
-    const { data: plans } = await db.from('gmp_payment_plans')
+    const plans = await fetchAll(() => db.from('gmp_payment_plans')
         .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, status, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name))')
-        .lt('due_date', today).order('due_date');
+        .lt('due_date', today).order('due_date'));
 
     if (!plans?.length) {
         el.innerHTML = '<div class="card empty-state p-8"><i class="ph ph-check-circle text-emerald-400"></i><div>Brak zaległości</div></div>';
@@ -591,9 +602,9 @@ async function renderOverdue() {
     }
 
     const caseIds = plans.map(p => p.case_id);
-    const { data: paid } = await db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds);
+    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds));
     const paidByCase = {};
-    (paid || []).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    paid.forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
 
     const rows = plans.map(p => ({
         ...p,
@@ -645,10 +656,10 @@ async function renderForecast() {
     const now = new Date().toISOString().slice(0, 10);
     const in90 = new Date(Date.now() + 90*86400000).toISOString().slice(0, 10);
 
-    const { data: plans } = await db.from('gmp_payment_plans')
+    const plans = await fetchAll(() => db.from('gmp_payment_plans')
         .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, status, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name))')
         .gte('due_date', now).lte('due_date', in90)
-        .order('due_date');
+        .order('due_date'));
 
     if (!plans?.length) {
         el.innerHTML = '<div class="card empty-state p-8"><i class="ph ph-calendar"></i><div>Brak planowanych rat w najbliższych 90 dniach</div></div>';
@@ -656,9 +667,9 @@ async function renderForecast() {
     }
 
     const caseIds = plans.map(p => p.case_id);
-    const { data: paid } = await db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds);
+    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds));
     const paidByCase = {};
-    (paid || []).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    paid.forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
 
     const rows = plans.map(p => ({
         ...p,
@@ -740,9 +751,11 @@ async function renderForecast() {
 
 async function renderMonthly() {
     const el = document.getElementById('view-content');
-    const { data } = await db.from('gmp_payments').select('amount, method, kind, payer_type, payment_date').not('payment_date', 'is', null).limit(20000);
+    // Paginowane pobranie wszystkich platnosci z sanityzacja dat
+    const rawData = await fetchAll(() => db.from('gmp_payments').select('amount, method, kind, payer_type, payment_date').not('payment_date', 'is', null));
+    const data = rawData.filter(p => p.payment_date >= '2020-01-01' && p.payment_date <= '2030-12-31');
     const byMonth = {};
-    (data || []).forEach(p => {
+    data.forEach(p => {
         const m = p.payment_date.slice(0, 7);
         if (!byMonth[m]) byMonth[m] = { gotowka: 0, przelew: 0, faktura: 0, karta: 0, inne: 0, admin: 0, fee: 0, client: 0, employer: 0, total: 0, count: 0 };
         const amount = Number(p.amount) || 0;

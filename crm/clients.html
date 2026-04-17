@@ -142,11 +142,11 @@ async function loadList() {
         renderPagination(); return;
     }
 
-    // Pobierz liczniki spraw per klient (w jednym zapytaniu)
+    // Pobierz liczniki spraw per klient (paginowane)
     const ids = data.map(c => c.id);
-    const { data: casesCount } = await db.from('gmp_cases').select('client_id').in('client_id', ids);
+    const casesCount = await fetchAll(() => db.from('gmp_cases').select('client_id').in('client_id', ids));
     const casesByClient = {};
-    (casesCount || []).forEach(c => {
+    casesCount.forEach(c => {
         casesByClient[c.client_id] = (casesByClient[c.client_id] || 0) + 1;
     });
 
@@ -300,9 +300,7 @@ async function exportClients() {
     if (search) { const s = `%${search}%`; q = q.or(`last_name.ilike.${s},first_name.ilike.${s},phone.ilike.${s},email.ilike.${s}`); }
     if (nat) q = q.eq('nationality', nat);
     if (emp) q = q.eq('employer_id', emp);
-    q = q.order('last_name').limit(5000);
-    const { data, error } = await q;
-    if (error) { toast.error(error.message); return; }
+    const data = await fetchAll(() => q.order('last_name'));
     exportCsv('klienci', data, [
         ['Nazwisko', 'last_name'],
         ['Imię', 'first_name'],

@@ -218,23 +218,29 @@ async function init() {
 }
 
 async function loadData() {
-    const [
-        { data: payments },
-        { data: cases },
-        { data: clients },
-        { data: employers },
-        { data: staff },
-    ] = await Promise.all([
-        db.from('gmp_payments').select('amount, method, kind, payer_type, payment_date, case_id, client_id, employer_id').not('payment_date', 'is', null).limit(50000),
-        db.from('gmp_cases').select('id, client_id, employer_id, assigned_to, status, stage, case_type, category, date_accepted, date_submitted, date_last_activity, fee_amount, created_at, inactivity_reason').limit(50000),
-        db.from('gmp_clients').select('id, created_at').limit(50000),
-        db.from('gmp_employers').select('id, name').limit(10000),
-        db.from('gmp_staff').select('id, full_name, color'),
+    // Paginowany fetch - omija domyslny limit 1000 PostgREST
+    const [payments, cases, clients, employers] = await Promise.all([
+        fetchAll(() => db.from('gmp_payments').select('amount, method, kind, payer_type, payment_date, case_id, client_id, employer_id').not('payment_date', 'is', null)),
+        fetchAll(() => db.from('gmp_cases').select('id, client_id, employer_id, assigned_to, status, stage, case_type, category, date_accepted, date_submitted, date_last_activity, fee_amount, created_at, inactivity_reason')),
+        fetchAll(() => db.from('gmp_clients').select('id, created_at')),
+        fetchAll(() => db.from('gmp_employers').select('id, name')),
     ]);
-    allPayments = payments || [];
-    allCases = cases || [];
-    allClients = clients || [];
-    allEmployers = employers || [];
+    const { data: staff } = await db.from('gmp_staff').select('id, full_name, color, is_active');
+
+    // Sanityzacja: odrzuc platnosci z datami spoza 2020-2030 (literowki, bugi Excela)
+    const MIN_DATE = '2020-01-01';
+    const MAX_DATE = '2030-12-31';
+    allPayments = payments.filter(p => p.payment_date >= MIN_DATE && p.payment_date <= MAX_DATE);
+
+    const rejected = payments.length - allPayments.length;
+    if (rejected > 0) {
+        console.warn(`Odrzucono ${rejected} płatności z nieprawidłowymi datami (poza 2020-2030)`);
+    }
+    console.log(`Loaded: ${allPayments.length} payments, ${cases.length} cases, ${clients.length} clients, ${employers.length} employers`);
+
+    allCases = cases;
+    allClients = clients;
+    allEmployers = employers;
     allStaff = staff || [];
 }
 

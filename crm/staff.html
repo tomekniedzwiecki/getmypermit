@@ -99,18 +99,14 @@ async function init() {
 }
 
 async function loadList() {
-    // Pobierz staff + wszystkie dane do analizy
-    const [
-        { data: staff },
-        { data: cases },
-        { data: payments },
-        { data: tasks },
-    ] = await Promise.all([
+    // Pobierz staff + wszystkie dane do analizy (paginowane - omija limit 1000)
+    const [staffRes, cases, payments, tasks] = await Promise.all([
         db.from('gmp_staff').select('*').order('full_name'),
-        db.from('gmp_cases').select('id, client_id, status, fee_amount, assigned_to'),
-        db.from('gmp_payments').select('amount, case_id'),
-        db.from('gmp_tasks').select('assigned_to, status, due_date'),
+        fetchAll(() => db.from('gmp_cases').select('id, client_id, status, fee_amount, assigned_to')),
+        fetchAll(() => db.from('gmp_payments').select('amount, case_id')),
+        fetchAll(() => db.from('gmp_tasks').select('assigned_to, status, due_date')),
     ]);
+    const staff = staffRes.data;
 
     // Case id -> assigned_to, dla agregatow platnosci
     const caseToStaff = {};
@@ -217,26 +213,22 @@ async function loadDetail(staffId) {
         return;
     }
 
-    // Pobierz wszystko naraz
-    const [
-        { data: cases },
-        { data: payments },
-        { data: tasks },
-        { data: activities },
-        { data: appointments },
-    ] = await Promise.all([
-        db.from('gmp_cases')
+    // Pobierz wszystko naraz (cases + payments paginowane bo mogą > 1000)
+    const [cases, payments, tasks, activitiesRes, appointmentsRes] = await Promise.all([
+        fetchAll(() => db.from('gmp_cases')
             .select('id, case_number, status, stage, case_type, category, date_accepted, date_last_activity, fee_amount, client_id, employer_id, gmp_clients(last_name, first_name), gmp_employers(name)')
             .eq('assigned_to', staffId)
-            .order('date_accepted', { ascending: false, nullsLast: true }),
-        db.from('gmp_payments').select('amount, method, payment_date, case_id'),
-        db.from('gmp_tasks').select('id, title, status, due_date, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))')
-            .eq('assigned_to', staffId).order('due_date', { ascending: true, nullsLast: true }),
+            .order('date_accepted', { ascending: false, nullsLast: true })),
+        fetchAll(() => db.from('gmp_payments').select('amount, method, payment_date, case_id')),
+        fetchAll(() => db.from('gmp_tasks').select('id, title, status, due_date, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))')
+            .eq('assigned_to', staffId).order('due_date', { ascending: true, nullsLast: true })),
         db.from('gmp_case_activities').select('id, activity_type, content, created_at, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))')
             .eq('created_by', staffId).order('created_at', { ascending: false }).limit(50),
         db.from('gmp_crm_appointments').select('id, appointment_type, scheduled_date, title, case_id, client_id, gmp_clients(last_name, first_name)')
             .eq('staff_id', staffId).order('scheduled_date', { ascending: false, nullsLast: true }).limit(30),
     ]);
+    const activities = activitiesRes.data || [];
+    const appointments = appointmentsRes.data || [];
 
     // Filtr płatności do tych spraw
     const caseIds = new Set((cases || []).map(c => c.id));
@@ -448,15 +440,12 @@ async function loadDetail(staffId) {
 
 async function exportStaff() {
     toast.info('Przygotowuję CSV...');
-    const [
-        { data: staff },
-        { data: cases },
-        { data: payments },
-    ] = await Promise.all([
+    const [staffRes, cases, payments] = await Promise.all([
         db.from('gmp_staff').select('*').order('full_name'),
-        db.from('gmp_cases').select('id, client_id, status, fee_amount, assigned_to'),
-        db.from('gmp_payments').select('amount, case_id'),
+        fetchAll(() => db.from('gmp_cases').select('id, client_id, status, fee_amount, assigned_to')),
+        fetchAll(() => db.from('gmp_payments').select('amount, case_id')),
     ]);
+    const staff = staffRes.data;
     const caseToStaff = {};
     cases.forEach(c => { if (c.assigned_to) caseToStaff[c.id] = c.assigned_to; });
     const agg = {};
