@@ -35,6 +35,7 @@
       items: [
         { href: 'payments.html', icon: 'ph-coins', color: 'text-yellow-400', label: 'Płatności', id: 'payments' },
         { href: 'invoices.html', icon: 'ph-receipt', color: 'text-orange-400', label: 'Faktury', id: 'invoices' },
+        { href: 'analytics.html', icon: 'ph-chart-line-up', color: 'text-emerald-400', label: 'Analiza', id: 'analytics' },
       ]
     },
     {

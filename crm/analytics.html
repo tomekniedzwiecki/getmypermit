@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analiza - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">📈 Analiza i raporty</h1>
+                <p class="page-subtitle">Trendy, prognozy, efektywność kancelarii</p>
+            </div>
+            <div class="flex gap-2 items-center">
+                <label class="text-xs text-zinc-500">Rok bazowy:</label>
+                <select id="f-year" class="filter-input text-sm"></select>
+            </div>
+        </div>
+
+        <!-- TOP HERO KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div class="card p-4 relative overflow-hidden">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">PRZYCHÓD ROKU <span id="y-label"></span></div>
+                <div class="text-3xl font-bold text-emerald-300" id="hero-ytd">—</div>
+                <div class="text-xs mt-1" id="hero-ytd-delta">—</div>
+                <canvas id="spark-ytd" class="absolute bottom-0 right-0 opacity-30" style="width: 100%; height: 60px; pointer-events: none;"></canvas>
+            </div>
+            <div class="card p-4">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">ŚREDNIO / MIESIĄC</div>
+                <div class="text-3xl font-bold text-white" id="hero-avg-month">—</div>
+                <div class="text-xs text-zinc-500 mt-1">z 12 ostatnich miesięcy</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">ŚREDNIO NA SPRAWĘ</div>
+                <div class="text-3xl font-bold text-white" id="hero-avg-case">—</div>
+                <div class="text-xs text-zinc-500 mt-1" id="hero-avg-case-sub">—</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">NOWE SPRAWY (MIES.)</div>
+                <div class="text-3xl font-bold text-white" id="hero-new-cases">—</div>
+                <div class="text-xs mt-1" id="hero-new-cases-delta">—</div>
+            </div>
+        </div>
+
+        <!-- SEKCJA 1: PRZYCHÓD W CZASIE -->
+        <section class="card mb-4">
+            <div class="card-header flex items-center justify-between">
+                <span><i class="ph ph-chart-line-up text-emerald-400 mr-2"></i>Przychody w czasie</span>
+                <div class="flex gap-1">
+                    <button class="btn btn-ghost btn-sm chart-period active" data-range="24">24 mies.</button>
+                    <button class="btn btn-ghost btn-sm chart-period" data-range="12">12 mies.</button>
+                    <button class="btn btn-ghost btn-sm chart-period" data-range="all">Wszystko</button>
+                </div>
+            </div>
+            <div class="p-4"><div class="chart-container" style="height: 320px"><canvas id="chart-revenue-time"></canvas></div></div>
+        </section>
+
+        <!-- SEKCJA 2: YoY PORÓWNANIE + ROCZNY -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <section class="card">
+                <div class="card-header"><i class="ph ph-calendar-heart text-pink-400 mr-2"></i>Porównanie narastające (YTD)</div>
+                <div class="p-4"><div class="chart-container" style="height: 280px"><canvas id="chart-yoy"></canvas></div></div>
+            </section>
+            <section class="card">
+                <div class="card-header"><i class="ph ph-trophy text-amber-400 mr-2"></i>Przychody roczne</div>
+                <div class="p-4"><div class="chart-container" style="height: 280px"><canvas id="chart-yearly"></canvas></div></div>
+            </section>
+        </div>
+
+        <!-- SEKCJA 3: PIPELINE / WOLUMEN SPRAW -->
+        <section class="card mb-4">
+            <div class="card-header"><i class="ph ph-funnel text-cyan-400 mr-2"></i>Wolumen spraw (miesięcznie)</div>
+            <div class="p-4"><div class="chart-container" style="height: 280px"><canvas id="chart-cases-vol"></canvas></div></div>
+            <div class="text-xs text-zinc-600 px-4 pb-3">Nowe = po `date_accepted` | Zakończone = po `date_last_activity` gdy status=zakończona</div>
+        </section>
+
+        <!-- SEKCJA 4: PRAWNICY -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <section class="card">
+                <div class="card-header"><i class="ph ph-users-three text-purple-400 mr-2"></i>Przychód per prawnik (bieżący rok)</div>
+                <div class="p-4"><div class="chart-container" style="height: 300px"><canvas id="chart-staff"></canvas></div></div>
+            </section>
+            <section class="card">
+                <div class="card-header"><i class="ph ph-buildings text-indigo-400 mr-2"></i>Top pracodawcy (bieżący rok)</div>
+                <div class="p-4"><div class="chart-container" style="height: 300px"><canvas id="chart-employers"></canvas></div></div>
+            </section>
+        </div>
+
+        <!-- SEKCJA 5: STRUKTURY -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <section class="card">
+                <div class="card-header">Typ sprawy</div>
+                <div class="p-4"><div class="chart-container" style="height: 260px"><canvas id="chart-casetype"></canvas></div></div>
+            </section>
+            <section class="card">
+                <div class="card-header">Forma płatności</div>
+                <div class="p-4"><div class="chart-container" style="height: 260px"><canvas id="chart-methods"></canvas></div></div>
+            </section>
+            <section class="card">
+                <div class="card-header">Klient vs Pracodawca</div>
+                <div class="p-4"><div class="chart-container" style="height: 260px"><canvas id="chart-payer"></canvas></div></div>
+            </section>
+        </div>
+
+        <!-- SEKCJA 6: HEATMAPA SEZONOWA -->
+        <section class="card mb-4">
+            <div class="card-header"><i class="ph ph-thermometer-hot text-red-400 mr-2"></i>Mapa cieplna przychodów (rok × miesiąc)</div>
+            <div id="heatmap" class="p-4 overflow-x-auto"></div>
+            <div class="text-xs text-zinc-600 px-4 pb-3">Im jaśniejszy odcień tym większy przychód. Kliknij komórkę żeby zobaczyć szczegóły.</div>
+        </section>
+
+        <!-- SEKCJA 7: METRYKI EFEKTYWNOSCI -->
+        <section class="card mb-4">
+            <div class="card-header"><i class="ph ph-target text-emerald-400 mr-2"></i>Metryki efektywności</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-0">
+                <div class="p-4 border-r border-b border-zinc-900">
+                    <div class="text-xs text-zinc-500 mb-1">CONVERSION LEAD → ZLECONA</div>
+                    <div class="text-2xl font-bold text-white" id="m-conversion">—</div>
+                </div>
+                <div class="p-4 border-r border-b border-zinc-900">
+                    <div class="text-xs text-zinc-500 mb-1">AKTYWNE VS ZAKOŃCZONE</div>
+                    <div class="text-2xl font-bold text-white" id="m-active-ratio">—</div>
+                </div>
+                <div class="p-4 border-r border-b border-zinc-900">
+                    <div class="text-xs text-zinc-500 mb-1">WSPÓŁCZYNNIK BEZCZYNNOŚCI</div>
+                    <div class="text-2xl font-bold text-white" id="m-inactivity">—</div>
+                </div>
+                <div class="p-4 border-b border-zinc-900">
+                    <div class="text-xs text-zinc-500 mb-1">ŚREDNI CZAS REAKCJI</div>
+                    <div class="text-2xl font-bold text-white" id="m-reaction">—</div>
+                </div>
+                <div class="p-4 border-r border-zinc-900">
+                    <div class="text-xs text-zinc-500 mb-1">NOWI KLIENCI (ROK)</div>
+                    <div class="text-2xl font-bold text-emerald-400" id="m-new-clients">—</div>
+                </div>
+                <div class="p-4 border-r border-zinc-900">
+                    <div class="text-xs text-zinc-500 mb-1">POWRACAJĄCY KLIENCI</div>
+                    <div class="text-2xl font-bold text-white" id="m-returning">—</div>
+                </div>
+                <div class="p-4 border-r border-zinc-900">
+                    <div class="text-xs text-zinc-500 mb-1">Ø KLIENCI / PRAWNIKA</div>
+                    <div class="text-2xl font-bold text-white" id="m-clients-per-staff">—</div>
+                </div>
+                <div class="p-4">
+                    <div class="text-xs text-zinc-500 mb-1">% SPRAW Z PRACODAWCĄ</div>
+                    <div class="text-2xl font-bold text-white" id="m-with-employer">—</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKCJA 8: PROGNOZA KOŃCA ROKU -->
+        <section class="card mb-4">
+            <div class="card-header"><i class="ph ph-sparkle text-amber-400 mr-2"></i>Prognoza przychodu do końca roku</div>
+            <div class="p-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                    <div>
+                        <div class="text-xs text-zinc-500">ZREALIZOWANY YTD</div>
+                        <div class="text-xl font-bold text-emerald-400" id="f-ytd">—</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-zinc-500">OCZEKIWANY DO KOŃCA ROKU</div>
+                        <div class="text-xl font-bold text-amber-300" id="f-expected">—</div>
+                        <div class="text-xs text-zinc-600" id="f-expected-method">—</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-zinc-500">PROGNOZA CAŁOROCZNA</div>
+                        <div class="text-xl font-bold text-white" id="f-total">—</div>
+                        <div class="text-xs" id="f-total-delta">—</div>
+                    </div>
+                </div>
+                <div class="chart-container" style="height: 200px"><canvas id="chart-forecast"></canvas></div>
+            </div>
+        </section>
+    </main>
+</div>
+<style>
+.chart-container { position: relative; width: 100%; }
+.chart-period.active { background: rgba(255,255,255,0.1); color: white; }
+.heatmap-cell { width: 52px; height: 28px; border-radius: 3px; text-align: center; font-size: 10px; line-height: 28px; color: rgba(255,255,255,0.7); cursor: pointer; transition: transform 0.15s; }
+.heatmap-cell:hover { transform: scale(1.1); color: white; }
+</style>
+<script src="components/sidebar.js" data-active="analytics"></script>
+<script>
+let allPayments = [];
+let allCases = [];
+let allClients = [];
+let allEmployers = [];
+let allStaff = [];
+let currentYear = new Date().getFullYear();
+let timeRangeMonths = 24;
+let charts = {};
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    await loadData();
+    populateYearSelector();
+    document.getElementById('f-year').addEventListener('change', (e) => { currentYear = parseInt(e.target.value); renderAll(); });
+    document.querySelectorAll('.chart-period').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.chart-period').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        timeRangeMonths = b.dataset.range === 'all' ? 999 : parseInt(b.dataset.range);
+        renderRevenueTime();
+    }));
+    renderAll();
+}
+
+async function loadData() {
+    const [
+        { data: payments },
+        { data: cases },
+        { data: clients },
+        { data: employers },
+        { data: staff },
+    ] = await Promise.all([
+        db.from('gmp_payments').select('amount, method, kind, payer_type, payment_date, case_id, client_id, employer_id').not('payment_date', 'is', null).limit(50000),
+        db.from('gmp_cases').select('id, client_id, employer_id, assigned_to, status, stage, case_type, category, date_accepted, date_submitted, date_last_activity, fee_amount, created_at, inactivity_reason').limit(50000),
+        db.from('gmp_clients').select('id, created_at').limit(50000),
+        db.from('gmp_employers').select('id, name').limit(10000),
+        db.from('gmp_staff').select('id, full_name, color'),
+    ]);
+    allPayments = payments || [];
+    allCases = cases || [];
+    allClients = clients || [];
+    allEmployers = employers || [];
+    allStaff = staff || [];
+}
+
+function populateYearSelector() {
+    const years = new Set();
+    allPayments.forEach(p => { if (p.payment_date) years.add(p.payment_date.slice(0, 4)); });
+    const sel = document.getElementById('f-year');
+    [...years].sort((a,b) => b.localeCompare(a)).forEach(y => {
+        const o = document.createElement('option');
+        o.value = y; o.textContent = y;
+        if (y === String(currentYear)) o.selected = true;
+        sel.appendChild(o);
+    });
+}
+
+function renderAll() {
+    document.getElementById('y-label').textContent = currentYear;
+    renderHeroKPIs();
+    renderRevenueTime();
+    renderYoY();
+    renderYearly();
+    renderCasesVolume();
+    renderStaffRevenue();
+    renderTopEmployers();
+    renderStructures();
+    renderHeatmap();
+    renderEfficiency();
+    renderForecast();
+}
+
+function sumPaymentsInYear(year) {
+    return allPayments.filter(p => p.payment_date?.startsWith(String(year))).reduce((s, p) => s + Number(p.amount || 0), 0);
+}
+
+function renderHeroKPIs() {
+    const ytd = sumPaymentsInYear(currentYear);
+    const prev = sumPaymentsInYear(currentYear - 1);
+    document.getElementById('hero-ytd').textContent = fmt.money(ytd);
+    const deltaEl = document.getElementById('hero-ytd-delta');
+    if (prev > 0) {
+        const pct = Math.round((ytd - prev) / prev * 100);
+        deltaEl.innerHTML = `<span class="${pct >= 0 ? 'text-emerald-400' : 'text-red-400'}">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}%</span> <span class="text-zinc-500">vs ${currentYear-1} (${fmt.money(prev)})</span>`;
+    } else {
+        deltaEl.textContent = 'Brak danych z ' + (currentYear-1);
+    }
+
+    // Średnio / miesiąc - ostatnie 12 mies.
+    const now = new Date();
+    const from12 = new Date(now.getFullYear(), now.getMonth()-11, 1).toISOString().slice(0,7);
+    const last12 = allPayments.filter(p => p.payment_date?.slice(0,7) >= from12).reduce((s, p) => s + Number(p.amount || 0), 0);
+    document.getElementById('hero-avg-month').textContent = fmt.money(last12 / 12);
+
+    // Średnio na sprawę (z ostatnich 12 mies.)
+    const recentCases = allCases.filter(c => c.date_accepted && c.date_accepted >= (from12 + '-01'));
+    const avgCase = recentCases.length ? recentCases.reduce((s, c) => s + Number(c.fee_amount || 0), 0) / recentCases.length : 0;
+    document.getElementById('hero-avg-case').textContent = fmt.money(avgCase);
+    document.getElementById('hero-avg-case-sub').textContent = `na ${recentCases.length} spraw z 12 mies.`;
+
+    // Nowe sprawy (ten miesiąc)
+    const thisM = now.toISOString().slice(0, 7);
+    const lastM = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString().slice(0, 7);
+    const newThis = allCases.filter(c => c.date_accepted?.slice(0,7) === thisM).length;
+    const newLast = allCases.filter(c => c.date_accepted?.slice(0,7) === lastM).length;
+    document.getElementById('hero-new-cases').textContent = newThis;
+    const deltaNew = document.getElementById('hero-new-cases-delta');
+    if (newLast > 0) {
+        const pct = Math.round((newThis - newLast) / newLast * 100);
+        deltaNew.innerHTML = `<span class="${pct >= 0 ? 'text-emerald-400' : 'text-red-400'}">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}%</span> <span class="text-zinc-500">vs ${lastM} (${newLast})</span>`;
+    } else {
+        deltaNew.textContent = 'Brak porównania';
+    }
+}
+
+function renderRevenueTime() {
+    const byMonth = {};
+    allPayments.forEach(p => {
+        const m = p.payment_date?.slice(0, 7);
+        if (!m) return;
+        byMonth[m] = (byMonth[m] || 0) + Number(p.amount || 0);
+    });
+    let months = Object.keys(byMonth).sort();
+    if (timeRangeMonths < 999) months = months.slice(-timeRangeMonths);
+    const values = months.map(m => byMonth[m]);
+
+    // Moving average (3 mies.)
+    const mavg = values.map((v, i) => {
+        const start = Math.max(0, i - 2);
+        const slice = values.slice(start, i + 1);
+        return slice.reduce((s, x) => s + x, 0) / slice.length;
+    });
+
+    destroyChart('chart-revenue-time');
+    charts['chart-revenue-time'] = new Chart(document.getElementById('chart-revenue-time'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [
+                { type: 'bar', label: 'Wpływy', data: values, backgroundColor: '#10b98180', borderColor: '#10b981', borderWidth: 1 },
+                { type: 'line', label: 'Średnia kroczą 3 mies.', data: mavg, borderColor: '#f59e0b', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0.4 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { color: '#a1a1aa', font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt.money(ctx.parsed.y)}` } }
+            },
+            scales: {
+                x: { ticks: { color: '#71717a', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: '#71717a', font: { size: 10 }, callback: v => fmt.money(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+}
+
+function renderYoY() {
+    // Kumulatywny YTD wykres: ten rok vs poprzedni, miesiąc po miesiącu
+    const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+    const labels = months.map(m => {
+        const d = new Date(2020, parseInt(m)-1);
+        return d.toLocaleString('pl-PL', { month: 'short' });
+    });
+
+    const cumYear = (year) => {
+        let cum = 0;
+        return months.map(m => {
+            const key = `${year}-${m}`;
+            const mSum = allPayments.filter(p => p.payment_date?.startsWith(key)).reduce((s, p) => s + Number(p.amount || 0), 0);
+            cum += mSum;
+            return cum;
+        });
+    };
+
+    const thisYear = cumYear(currentYear);
+    const prevYear = cumYear(currentYear - 1);
+
+    destroyChart('chart-yoy');
+    charts['chart-yoy'] = new Chart(document.getElementById('chart-yoy'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                { label: `${currentYear} (narastająco)`, data: thisYear, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 2, fill: true, tension: 0.3 },
+                { label: `${currentYear-1}`, data: prevYear, borderColor: '#71717a', borderDash: [5,5], borderWidth: 2, pointRadius: 2, fill: false }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#a1a1aa' } },
+                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt.money(ctx.parsed.y)}` } }
+            },
+            scales: {
+                x: { ticks: { color: '#71717a' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: '#71717a', callback: v => fmt.money(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+}
+
+function renderYearly() {
+    const years = {};
+    allPayments.forEach(p => {
+        const y = p.payment_date?.slice(0, 4);
+        if (y) years[y] = (years[y] || 0) + Number(p.amount || 0);
+    });
+    const sorted = Object.entries(years).sort();
+    const colors = sorted.map(([y]) => y === String(currentYear) ? '#10b981' : '#3b82f680');
+
+    destroyChart('chart-yearly');
+    charts['chart-yearly'] = new Chart(document.getElementById('chart-yearly'), {
+        type: 'bar',
+        data: {
+            labels: sorted.map(e => e[0]),
+            datasets: [{ data: sorted.map(e => e[1]), backgroundColor: colors, borderWidth: 0 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => fmt.money(ctx.parsed.y) } }
+            },
+            scales: {
+                x: { ticks: { color: '#71717a' }, grid: { display: false } },
+                y: { ticks: { color: '#71717a', callback: v => fmt.money(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+}
+
+function renderCasesVolume() {
+    // Nowe sprawy per miesiąc (date_accepted) + zakończone (date_last_activity gdzie status=zakończona)
+    const byMonthNew = {}, byMonthDone = {};
+    allCases.forEach(c => {
+        if (c.date_accepted) {
+            const m = c.date_accepted.slice(0, 7);
+            byMonthNew[m] = (byMonthNew[m] || 0) + 1;
+        }
+        if (c.status === 'zakonczona' && c.date_last_activity) {
+            const m = c.date_last_activity.slice(0, 7);
+            byMonthDone[m] = (byMonthDone[m] || 0) + 1;
+        }
+    });
+    const allMonths = [...new Set([...Object.keys(byMonthNew), ...Object.keys(byMonthDone)])].sort().slice(-24);
+
+    destroyChart('chart-cases-vol');
+    charts['chart-cases-vol'] = new Chart(document.getElementById('chart-cases-vol'), {
+        type: 'bar',
+        data: {
+            labels: allMonths,
+            datasets: [
+                { label: 'Nowe sprawy', data: allMonths.map(m => byMonthNew[m] || 0), backgroundColor: '#3b82f6', borderWidth: 0 },
+                { label: 'Zakończone', data: allMonths.map(m => byMonthDone[m] || 0), backgroundColor: '#10b981', borderWidth: 0 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { color: '#a1a1aa' } } },
+            scales: {
+                x: { ticks: { color: '#71717a', font: { size: 10 } }, grid: { display: false } },
+                y: { ticks: { color: '#71717a' }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+            }
+        }
+    });
+}
+
+function renderStaffRevenue() {
+    // Per prawnik - w currentYear
+    const caseToStaff = {};
+    allCases.forEach(c => { if (c.assigned_to) caseToStaff[c.id] = c.assigned_to; });
+    const byStaff = {};
+    allPayments.forEach(p => {
+        if (!p.payment_date?.startsWith(String(currentYear))) return;
+        const sid = caseToStaff[p.case_id];
+        if (sid) byStaff[sid] = (byStaff[sid] || 0) + Number(p.amount || 0);
+    });
+    const staffMap = Object.fromEntries(allStaff.map(s => [s.id, s]));
+    const rows = Object.entries(byStaff)
+        .map(([sid, v]) => [staffMap[sid]?.full_name || sid.slice(0,8), v, staffMap[sid]?.color || '#3b82f6'])
+        .sort((a, b) => b[1] - a[1]);
+
+    destroyChart('chart-staff');
+    charts['chart-staff'] = new Chart(document.getElementById('chart-staff'), {
+        type: 'bar',
+        data: {
+            labels: rows.map(r => r[0]),
+            datasets: [{ data: rows.map(r => r[1]), backgroundColor: rows.map(r => r[2] + 'c0'), borderWidth: 0 }]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt.money(ctx.parsed.x) } } },
+            scales: {
+                x: { ticks: { color: '#71717a', callback: v => fmt.money(v) }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: '#a1a1aa', font: { size: 11 } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function renderTopEmployers() {
+    const empMap = Object.fromEntries(allEmployers.map(e => [e.id, e.name]));
+    const byEmp = {};
+    allPayments.forEach(p => {
+        if (!p.payment_date?.startsWith(String(currentYear))) return;
+        const eid = p.employer_id || allCases.find(c => c.id === p.case_id)?.employer_id;
+        if (eid && empMap[eid]) byEmp[empMap[eid]] = (byEmp[empMap[eid]] || 0) + Number(p.amount || 0);
+    });
+    const top = Object.entries(byEmp).sort((a,b) => b[1] - a[1]).slice(0, 15);
+
+    destroyChart('chart-employers');
+    charts['chart-employers'] = new Chart(document.getElementById('chart-employers'), {
+        type: 'bar',
+        data: {
+            labels: top.map(r => r[0]),
+            datasets: [{ data: top.map(r => r[1]), backgroundColor: '#6366f1c0', borderWidth: 0 }]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt.money(ctx.parsed.x) } } },
+            scales: {
+                x: { ticks: { color: '#71717a', callback: v => fmt.money(v) }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: '#a1a1aa', font: { size: 10 } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function renderStructures() {
+    // Typ sprawy (cat)
+    const byCat = {};
+    allCases.forEach(c => {
+        if (!c.fee_amount) return;
+        const k = c.category || 'inne';
+        byCat[k] = (byCat[k] || 0) + Number(c.fee_amount);
+    });
+    const catEntries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+    const catColors = ['#10b981', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444', '#06b6d4', '#ec4899', '#71717a'];
+
+    destroyChart('chart-casetype');
+    charts['chart-casetype'] = new Chart(document.getElementById('chart-casetype'), {
+        type: 'doughnut',
+        data: {
+            labels: catEntries.map(e => e[0]),
+            datasets: [{ data: catEntries.map(e => e[1]), backgroundColor: catColors, borderColor: '#050505', borderWidth: 2 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#a1a1aa', font: { size: 10 }, boxWidth: 10 } },
+                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt.money(ctx.parsed)}` } }
+            }
+        }
+    });
+
+    // Methods
+    const byMethod = {};
+    allPayments.forEach(p => {
+        if (!p.payment_date?.startsWith(String(currentYear))) return;
+        const k = p.method || 'inne';
+        byMethod[k] = (byMethod[k] || 0) + Number(p.amount || 0);
+    });
+    destroyChart('chart-methods');
+    charts['chart-methods'] = new Chart(document.getElementById('chart-methods'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(byMethod),
+            datasets: [{ data: Object.values(byMethod), backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#a855f7', '#71717a'], borderColor: '#050505', borderWidth: 2 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#a1a1aa', font: { size: 10 }, boxWidth: 10 } },
+                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt.money(ctx.parsed)}` } }
+            }
+        }
+    });
+
+    // Payer (client vs employer)
+    const byPayer = { client: 0, employer: 0 };
+    allPayments.forEach(p => {
+        if (!p.payment_date?.startsWith(String(currentYear))) return;
+        byPayer[p.payer_type || 'client'] = (byPayer[p.payer_type || 'client'] || 0) + Number(p.amount || 0);
+    });
+    destroyChart('chart-payer');
+    charts['chart-payer'] = new Chart(document.getElementById('chart-payer'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Klient indywidualny', 'Pracodawca'],
+            datasets: [{ data: [byPayer.client, byPayer.employer], backgroundColor: ['#06b6d4', '#ec4899'], borderColor: '#050505', borderWidth: 2 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#a1a1aa', font: { size: 10 }, boxWidth: 10 } },
+                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt.money(ctx.parsed)}` } }
+            }
+        }
+    });
+}
+
+function renderHeatmap() {
+    // rok x miesiąc
+    const byYM = {};
+    allPayments.forEach(p => {
+        const ym = p.payment_date?.slice(0, 7);
+        if (ym) byYM[ym] = (byYM[ym] || 0) + Number(p.amount || 0);
+    });
+    const years = new Set();
+    const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+    const monthLabels = ['Sty','Lut','Mar','Kwi','Maj','Cze','Lip','Sie','Wrz','Paź','Lis','Gru'];
+    Object.keys(byYM).forEach(k => years.add(k.slice(0,4)));
+    const sortedYears = [...years].sort();
+    const max = Math.max(...Object.values(byYM), 1);
+
+    let html = '<table style="border-collapse: separate; border-spacing: 2px"><thead><tr><th></th>';
+    monthLabels.forEach(m => html += `<th class="text-xs text-zinc-500 font-normal px-2">${m}</th>`);
+    html += '<th class="text-xs text-zinc-500 font-normal px-2">Razem</th></tr></thead><tbody>';
+    for (const y of sortedYears) {
+        html += `<tr><td class="text-xs text-zinc-400 pr-3 font-mono">${y}</td>`;
+        let rowSum = 0;
+        for (const m of months) {
+            const v = byYM[`${y}-${m}`] || 0;
+            rowSum += v;
+            const intensity = Math.min(1, v / max);
+            const bg = v ? `rgba(16, 185, 129, ${0.1 + intensity * 0.7})` : 'rgba(255,255,255,0.02)';
+            const label = v ? (v >= 1000 ? (v/1000).toFixed(0) + 'k' : String(Math.round(v))) : '';
+            html += `<td><div class="heatmap-cell" style="background: ${bg}" title="${y}-${m}: ${fmt.money(v)}" onclick="drillMonth('${y}-${m}')">${label}</div></td>`;
+        }
+        html += `<td class="text-xs text-emerald-300 pl-2 font-mono font-bold">${fmt.money(rowSum)}</td>`;
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+    document.getElementById('heatmap').innerHTML = html;
+}
+
+function drillMonth(ym) {
+    window.location.href = `payments.html?from=${ym}-01&to=${ym}-31`;
+}
+
+function renderEfficiency() {
+    // Conversion lead -> zlecona
+    const leads = allCases.filter(c => c.status === 'lead').length;
+    const zlecona = allCases.filter(c => c.status === 'zlecona').length;
+    const aktywna = allCases.filter(c => c.status === 'aktywna').length;
+    const zakonczona = allCases.filter(c => c.status === 'zakonczona').length;
+    const conv = (leads + zlecona + aktywna + zakonczona) ? Math.round((zlecona + aktywna + zakonczona) / (leads + zlecona + aktywna + zakonczona) * 100) : 0;
+    document.getElementById('m-conversion').textContent = conv + '%';
+
+    // Aktywne vs zakończone
+    const ratio = zakonczona ? (aktywna / zakonczona).toFixed(2) : '—';
+    document.getElementById('m-active-ratio').textContent = ratio;
+
+    // Współczynnik bezczynności (sprawy aktywne z inactivity_reason != 'none')
+    const activeCases = allCases.filter(c => c.status === 'aktywna' || c.status === 'zlecona');
+    const withInactivity = activeCases.filter(c => c.inactivity_reason && c.inactivity_reason !== 'none').length;
+    const inactPct = activeCases.length ? Math.round(withInactivity / activeCases.length * 100) : 0;
+    document.getElementById('m-inactivity').textContent = inactPct + '%';
+
+    // Sredni czas reakcji (dni od date_accepted do date_last_activity)
+    const times = allCases.filter(c => c.date_accepted && c.date_last_activity).map(c => {
+        const diff = (new Date(c.date_last_activity) - new Date(c.date_accepted)) / 86400000;
+        return diff >= 0 ? diff : null;
+    }).filter(t => t !== null);
+    const avgReact = times.length ? Math.round(times.reduce((s, t) => s + t, 0) / times.length) : 0;
+    document.getElementById('m-reaction').textContent = avgReact + ' dni';
+
+    // Nowi klienci (rok)
+    const newClients = allClients.filter(c => c.created_at?.startsWith(String(currentYear))).length;
+    document.getElementById('m-new-clients').textContent = newClients;
+
+    // Powracający (więcej niż 1 sprawa)
+    const casesByClient = {};
+    allCases.forEach(c => { if (c.client_id) casesByClient[c.client_id] = (casesByClient[c.client_id] || 0) + 1; });
+    const returning = Object.values(casesByClient).filter(v => v > 1).length;
+    document.getElementById('m-returning').textContent = returning;
+
+    // Ø klienci / prawnika
+    const clientsPerStaff = allStaff.length ? Math.round(allClients.length / allStaff.filter(s => s.is_active !== false).length) : 0;
+    document.getElementById('m-clients-per-staff').textContent = clientsPerStaff;
+
+    // % spraw z pracodawcą
+    const withEmp = allCases.filter(c => c.employer_id).length;
+    const pctEmp = allCases.length ? Math.round(withEmp / allCases.length * 100) : 0;
+    document.getElementById('m-with-employer').textContent = pctEmp + '%';
+}
+
+function renderForecast() {
+    // YTD
+    const now = new Date();
+    const ytd = sumPaymentsInYear(currentYear);
+    document.getElementById('f-ytd').textContent = fmt.money(ytd);
+
+    // Linear extrapolation
+    const monthsPassed = currentYear === now.getFullYear() ? (now.getMonth() + 1) : 12;
+    const avgPerMonth = ytd / monthsPassed;
+    const monthsLeft = 12 - monthsPassed;
+    const expected = avgPerMonth * monthsLeft;
+    const total = ytd + expected;
+
+    document.getElementById('f-expected').textContent = fmt.money(expected);
+    document.getElementById('f-expected-method').textContent = `${monthsLeft} mies. × ${fmt.money(avgPerMonth)}/mies.`;
+    document.getElementById('f-total').textContent = fmt.money(total);
+
+    const prev = sumPaymentsInYear(currentYear - 1);
+    const deltaEl = document.getElementById('f-total-delta');
+    if (prev > 0) {
+        const pct = Math.round((total - prev) / prev * 100);
+        deltaEl.innerHTML = `<span class="${pct >= 0 ? 'text-emerald-400' : 'text-red-400'}">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}%</span> <span class="text-zinc-500">vs ${currentYear-1}</span>`;
+    }
+
+    // Wykres - ytd + forecast
+    const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+    const labels = months.map(m => new Date(2020, parseInt(m)-1).toLocaleString('pl-PL', { month: 'short' }));
+    const actuals = months.map((m, i) => {
+        const key = `${currentYear}-${m}`;
+        const sum = allPayments.filter(p => p.payment_date?.startsWith(key)).reduce((s, p) => s + Number(p.amount || 0), 0);
+        return i < monthsPassed ? sum : null;
+    });
+    const forecasts = months.map((m, i) => i >= monthsPassed ? avgPerMonth : null);
+
+    destroyChart('chart-forecast');
+    charts['chart-forecast'] = new Chart(document.getElementById('chart-forecast'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Zrealizowane', data: actuals, backgroundColor: '#10b981', borderWidth: 0 },
+                { label: 'Prognoza', data: forecasts, backgroundColor: '#f59e0b80', borderColor: '#f59e0b', borderWidth: 1, borderDash: [4,2] }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { color: '#a1a1aa' } }, tooltip: { callbacks: { label: ctx => fmt.money(ctx.parsed.y || 0) } } },
+            scales: {
+                x: { stacked: false, ticks: { color: '#71717a' }, grid: { display: false } },
+                y: { ticks: { color: '#71717a', callback: v => fmt.money(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+}
+
+function destroyChart(id) {
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+</script>
+</body>
+</html>

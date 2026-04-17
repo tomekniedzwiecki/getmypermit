@@ -6,6 +6,7 @@
     <title>Płatności - GetMyPermit CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="components/layout.css">
@@ -20,240 +21,786 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">Płatności</h1>
-                <p class="page-subtitle">Wpływy miesięczne, raty, zaległości</p>
+                <p class="page-subtitle" id="subtitle">Wpływy, zaległości, prognoza cashflow</p>
             </div>
-            <button class="btn btn-secondary" onclick="exportPayments()"><i class="ph ph-download-simple"></i> CSV</button>
-        </div>
-
-        <!-- Karty statystyk -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-            <div class="card p-4">
-                <div class="text-xs text-zinc-500 mb-1">TEN MIESIĄC</div>
-                <div class="text-xl font-bold text-emerald-400" id="s-month">—</div>
-                <div class="text-xs text-zinc-600" id="s-month-count">0 wpłat</div>
-            </div>
-            <div class="card p-4">
-                <div class="text-xs text-zinc-500 mb-1">GOTÓWKA (mies.)</div>
-                <div class="text-xl font-bold text-white" id="s-cash">—</div>
-            </div>
-            <div class="card p-4">
-                <div class="text-xs text-zinc-500 mb-1">PRZELEW (mies.)</div>
-                <div class="text-xl font-bold text-white" id="s-transfer">—</div>
-            </div>
-            <div class="card p-4">
-                <div class="text-xs text-zinc-500 mb-1">FAKTURY (mies.)</div>
-                <div class="text-xl font-bold text-white" id="s-invoice">—</div>
-            </div>
-            <div class="card p-4">
-                <div class="text-xs text-zinc-500 mb-1">ZALEGŁOŚCI</div>
-                <div class="text-xl font-bold text-red-400" id="s-overdue">—</div>
-                <div class="text-xs text-zinc-600" id="s-overdue-count">0 spraw</div>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="exportData()"><i class="ph ph-download-simple"></i> CSV</button>
             </div>
         </div>
 
+        <!-- GLOBALNY FILTR OKRESU -->
+        <div class="card p-3 mb-4">
+            <div class="flex gap-2 items-center flex-wrap">
+                <span class="text-xs text-zinc-500 uppercase tracking-wider">Okres:</span>
+                <button class="btn btn-secondary btn-sm period-btn" data-period="today">Dziś</button>
+                <button class="btn btn-secondary btn-sm period-btn" data-period="month">Ten miesiąc</button>
+                <button class="btn btn-secondary btn-sm period-btn" data-period="last-month">Zeszły mies.</button>
+                <button class="btn btn-secondary btn-sm period-btn active" data-period="ytd">Od początku roku</button>
+                <button class="btn btn-secondary btn-sm period-btn" data-period="365">Ostatnie 12 mies.</button>
+                <button class="btn btn-secondary btn-sm period-btn" data-period="all">Wszystko</button>
+                <span class="text-xs text-zinc-600 mx-1">|</span>
+                <label class="text-xs text-zinc-500">Od</label>
+                <input type="date" id="f-from" class="filter-input text-xs" style="width: 140px">
+                <label class="text-xs text-zinc-500">Do</label>
+                <input type="date" id="f-to" class="filter-input text-xs" style="width: 140px">
+            </div>
+            <div class="flex gap-2 items-center flex-wrap mt-3 pt-3 border-t border-zinc-900">
+                <span class="text-xs text-zinc-500 uppercase tracking-wider">Filtry:</span>
+                <select id="f-staff" class="filter-input text-xs" style="width: 160px"><option value="">Wszyscy prawnicy</option></select>
+                <select id="f-method" class="filter-input text-xs" style="width: 140px">
+                    <option value="">Wszystkie formy</option>
+                    <option value="gotowka">Gotówka</option>
+                    <option value="przelew">Przelew</option>
+                    <option value="faktura">Faktura</option>
+                    <option value="karta">Karta</option>
+                    <option value="inne">Inne</option>
+                </select>
+                <select id="f-payer" class="filter-input text-xs" style="width: 140px">
+                    <option value="">Klient + pracodawca</option>
+                    <option value="client">Tylko klienci</option>
+                    <option value="employer">Tylko pracodawcy</option>
+                </select>
+                <select id="f-kind" class="filter-input text-xs" style="width: 180px">
+                    <option value="">Wynagrodzenie + admin.</option>
+                    <option value="fee">Tylko wynagrodzenie</option>
+                    <option value="admin_fee">Tylko opłaty admin.</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" onclick="resetFilters()"><i class="ph ph-eraser"></i> Reset</button>
+            </div>
+        </div>
+
+        <!-- KPI STRIP -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">WPŁATY (okres)</div>
+                <div class="text-2xl font-bold text-emerald-300" id="k-total">—</div>
+                <div class="text-xs text-zinc-500" id="k-total-count">0 wpłat</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">DZIŚ</div>
+                <div class="text-2xl font-bold text-white" id="k-today">—</div>
+                <div class="text-xs text-zinc-500" id="k-today-count">—</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">TREND MoM</div>
+                <div class="text-2xl font-bold" id="k-mom">—</div>
+                <div class="text-xs" id="k-mom-label">vs. poprzedni mies.</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">ZALEGŁOŚCI</div>
+                <div class="text-2xl font-bold text-red-400" id="k-overdue">—</div>
+                <div class="text-xs text-zinc-500" id="k-overdue-count">0 spraw</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">PROGNOZA 90 DNI</div>
+                <div class="text-2xl font-bold text-amber-300" id="k-forecast">—</div>
+                <div class="text-xs text-zinc-500" id="k-forecast-count">0 rat</div>
+            </div>
+        </div>
+
+        <!-- ZAKŁADKI -->
         <div class="flex gap-1 mb-4 flex-wrap">
-            <button class="btn btn-secondary tab-btn active" data-view="recent">Ostatnie wpłaty</button>
+            <button class="btn btn-secondary tab-btn active" data-view="overview">📊 Przegląd</button>
+            <button class="btn btn-secondary tab-btn" data-view="payments">💰 Wpłaty</button>
             <button class="btn btn-secondary tab-btn" data-view="admin">🏛️ Opłaty administracyjne</button>
-            <button class="btn btn-secondary tab-btn" data-view="overdue">Zaległości</button>
-            <button class="btn btn-secondary tab-btn" data-view="monthly">Podsumowanie miesięczne</button>
+            <button class="btn btn-secondary tab-btn" data-view="overdue">⚠️ Zaległości</button>
+            <button class="btn btn-secondary tab-btn" data-view="forecast">📅 Prognoza</button>
+            <button class="btn btn-secondary tab-btn" data-view="monthly">📆 Miesiące</button>
         </div>
 
-        <div class="card overflow-hidden">
-            <div id="payments-content" class="max-h-[calc(100vh-380px)] overflow-y-auto">
-                <div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>
-            </div>
+        <!-- KONTENT -->
+        <div id="view-content">
+            <div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>
         </div>
     </main>
 </div>
 <style>
 .tab-btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
 .tab-btn.active { background: white; color: black; }
+.period-btn { padding: 0.25rem 0.6rem; font-size: 0.7rem; }
+.period-btn.active { background: white; color: black; }
+.chart-container { position: relative; height: 280px; width: 100%; }
 </style>
 <script src="components/sidebar.js" data-active="payments"></script>
 <script>
+let currentView = 'overview';
+let rangeFrom = null;
+let rangeTo = null;
+let allStaff = [];
+
 document.addEventListener('gmp-auth-ready', init);
 
-let currentView = 'recent';
-
 async function init() {
-    await loadStats();
-    await loadContent();
-    document.querySelectorAll('.tab-btn').forEach(b => {
-        b.addEventListener('click', () => {
-            document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
-            b.classList.add('active');
-            currentView = b.dataset.view;
-            loadContent();
-        });
+    // Domyślny okres: YTD
+    setPeriod('ytd');
+
+    // Load staff
+    const { data: staff } = await db.from('gmp_staff').select('id, full_name').order('full_name');
+    allStaff = staff || [];
+    const sel = document.getElementById('f-staff');
+    allStaff.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.full_name;
+        sel.appendChild(o);
     });
+
+    // Event handlers
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentView = b.dataset.view;
+        renderAll();
+    }));
+    document.querySelectorAll('.period-btn').forEach(b => b.addEventListener('click', () => setPeriod(b.dataset.period)));
+    ['f-from', 'f-to', 'f-staff', 'f-method', 'f-payer', 'f-kind'].forEach(id => {
+        document.getElementById(id).addEventListener('change', renderAll);
+    });
+
+    renderAll();
 }
 
-async function loadStats() {
+function setPeriod(period) {
+    document.querySelectorAll('.period-btn').forEach(x => x.classList.remove('active'));
+    const btn = document.querySelector(`.period-btn[data-period="${period}"]`);
+    if (btn) btn.classList.add('active');
+
     const now = new Date();
-    const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-    const next = new Date(now.getFullYear(), now.getMonth()+1, 1).toISOString().slice(0,10);
-    const { data: pays } = await db.from('gmp_payments')
-        .select('amount, method')
-        .gte('payment_date', first).lt('payment_date', next);
-
-    let cash = 0, transfer = 0, invoice = 0, other = 0, count = 0;
-    (pays || []).forEach(p => {
-        const a = Number(p.amount) || 0;
-        count++;
-        if (p.method === 'gotowka') cash += a;
-        else if (p.method === 'przelew') transfer += a;
-        else if (p.method === 'faktura') invoice += a;
-        else other += a;
-    });
-    const total = cash + transfer + invoice + other;
-
-    document.getElementById('s-month').textContent = fmt.money(total);
-    document.getElementById('s-month-count').textContent = `${count} wpłat`;
-    document.getElementById('s-cash').textContent = fmt.money(cash);
-    document.getElementById('s-transfer').textContent = fmt.money(transfer);
-    document.getElementById('s-invoice').textContent = fmt.money(invoice);
-
-    // Zaleglosci - plany platnosci z due_date < today
-    const today = new Date().toISOString().slice(0,10);
-    const { data: overduePlans } = await db.from('gmp_payment_plans')
-        .select('id, case_id, total_amount')
-        .lt('due_date', today);
-
-    // Dla kazdego planu - sprawdzmy czy faktyczne wplaty pokrywaja total
-    // Uproszczenie: liczymy liczbe planow po terminie
-    document.getElementById('s-overdue-count').textContent = `${overduePlans?.length || 0} planów`;
-
-    // Przyblizone zaleglosci (plan-total - suma wplat)
-    if (overduePlans?.length) {
-        const planIds = overduePlans.map(p => p.case_id);
-        const { data: paidSums } = await db.from('gmp_payments').select('case_id, amount').in('case_id', planIds);
-        const paidByCase = {};
-        (paidSums || []).forEach(p => { paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0); });
-        const totalOverdue = overduePlans.reduce((s, p) => s + Math.max(0, Number(p.total_amount || 0) - (paidByCase[p.case_id] || 0)), 0);
-        document.getElementById('s-overdue').textContent = fmt.money(totalOverdue);
-    } else {
-        document.getElementById('s-overdue').textContent = fmt.money(0);
+    let from = null, to = null;
+    if (period === 'today') {
+        from = to = now.toISOString().slice(0, 10);
+    } else if (period === 'month') {
+        from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+        to = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0, 10);
+    } else if (period === 'last-month') {
+        from = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString().slice(0, 10);
+        to = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10);
+    } else if (period === 'ytd') {
+        from = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
+        to = now.toISOString().slice(0, 10);
+    } else if (period === '365') {
+        from = new Date(Date.now() - 365*86400000).toISOString().slice(0, 10);
+        to = now.toISOString().slice(0, 10);
+    } else if (period === 'all') {
+        from = '2020-01-01';
+        to = '2030-12-31';
     }
+    document.getElementById('f-from').value = from;
+    document.getElementById('f-to').value = to;
+    rangeFrom = from;
+    rangeTo = to;
+    renderAll();
 }
 
-async function exportPayments() {
-    toast.info('Przygotowuję CSV...');
-    const { data, error } = await db.from('gmp_payments')
-        .select('*, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
-        .order('payment_date', { ascending: false, nullsLast: true })
-        .limit(10000);
-    if (error) { toast.error(error.message); return; }
-    exportCsv('platnosci', data, [
-        ['Data', 'payment_date'],
-        ['Klient', r => r.gmp_cases?.gmp_clients ? `${r.gmp_cases.gmp_clients.last_name} ${r.gmp_cases.gmp_clients.first_name}` : ''],
-        ['Pracodawca', r => r.gmp_cases?.gmp_employers?.name || ''],
-        ['Nr sprawy', r => r.gmp_cases?.case_number || ''],
-        ['Forma', 'method'],
-        ['Rata nr', 'installment_number'],
-        ['Z łącznie rat', 'total_installments'],
-        ['Kwota', 'amount'],
-        ['Notatki', 'notes'],
+function resetFilters() {
+    ['f-staff', 'f-method', 'f-payer', 'f-kind'].forEach(id => document.getElementById(id).value = '');
+    setPeriod('ytd');
+}
+
+function getRange() {
+    return {
+        from: document.getElementById('f-from').value || '2020-01-01',
+        to: document.getElementById('f-to').value || '2030-12-31',
+    };
+}
+
+function applyFilters(q) {
+    const staff = document.getElementById('f-staff').value;
+    const method = document.getElementById('f-method').value;
+    const payer = document.getElementById('f-payer').value;
+    const kind = document.getElementById('f-kind').value;
+    if (method) q = q.eq('method', method);
+    if (payer) q = q.eq('payer_type', payer);
+    if (kind) q = q.eq('kind', kind);
+    // staff filter - via case.assigned_to = staff (złożone, robione po stronie klienta)
+    return { query: q, staffFilter: staff };
+}
+
+// Fetch wszystkie payments w zakresie + filtry
+async function fetchPayments() {
+    const { from, to } = getRange();
+    let q = db.from('gmp_payments')
+        .select('id, amount, method, kind, payer_type, payment_date, installment_number, total_installments, case_id, client_id, employer_id, notes, gmp_cases(case_number, assigned_to, category, gmp_clients(last_name, first_name), gmp_employers(name)), gmp_employers(name), gmp_clients(last_name, first_name)')
+        .gte('payment_date', from)
+        .lte('payment_date', to);
+
+    const { query, staffFilter } = applyFilters(q);
+    q = query;
+    const { data, error } = await q.order('payment_date', { ascending: false, nullsLast: true }).limit(10000);
+    if (error) { toast.error(error.message); return []; }
+    let rows = data || [];
+    if (staffFilter) {
+        rows = rows.filter(p => p.gmp_cases?.assigned_to === staffFilter);
+    }
+    return rows;
+}
+
+async function renderAll() {
+    rangeFrom = document.getElementById('f-from').value;
+    rangeTo = document.getElementById('f-to').value;
+
+    // KPIs zawsze te same, niezaleznie od widoku
+    renderKPIs();
+
+    // Widok
+    if (currentView === 'overview') renderOverview();
+    else if (currentView === 'payments') renderPayments();
+    else if (currentView === 'admin') renderAdmin();
+    else if (currentView === 'overdue') renderOverdue();
+    else if (currentView === 'forecast') renderForecast();
+    else if (currentView === 'monthly') renderMonthly();
+}
+
+async function renderKPIs() {
+    const [payments, overduePlans, forecastPlans] = await Promise.all([
+        fetchPayments(),
+        db.from('gmp_payment_plans').select('case_id, total_amount, due_date').lt('due_date', new Date().toISOString().slice(0,10)),
+        db.from('gmp_payment_plans').select('case_id, total_amount, due_date').gte('due_date', new Date().toISOString().slice(0,10)).lte('due_date', new Date(Date.now() + 90*86400000).toISOString().slice(0,10)),
     ]);
-}
 
-async function loadContent() {
-    const el = document.getElementById('payments-content');
-    el.innerHTML = '<div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>';
+    const total = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
+    document.getElementById('k-total').textContent = fmt.money(total);
+    document.getElementById('k-total-count').textContent = `${payments.length} wpłat`;
 
-    if (currentView === 'recent' || currentView === 'admin') {
-        let q = db.from('gmp_payments')
-            .select('id, amount, method, kind, payment_date, installment_number, total_installments, case_id, notes, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))');
-        if (currentView === 'admin') q = q.eq('kind', 'admin_fee');
-        const { data } = await q.order('payment_date', { ascending: false, nullsLast: true }).limit(500);
+    // Dziś
+    const today = new Date().toISOString().slice(0,10);
+    const todayPays = payments.filter(p => p.payment_date === today);
+    const todayTotal = todayPays.reduce((s, p) => s + Number(p.amount || 0), 0);
+    document.getElementById('k-today').textContent = fmt.money(todayTotal);
+    document.getElementById('k-today-count').textContent = `${todayPays.length} wpłat`;
 
-        if (!data?.length) { el.innerHTML = '<div class="empty-state"><i class="ph ph-coins"></i><div>Brak wpłat</div></div>'; return; }
-        el.innerHTML = `
-            <table class="gmp-table">
-                <thead><tr><th>Data</th><th>Klient / Pracodawca</th><th>Nr sprawy</th><th>Forma</th><th>Rata</th><th>Notatka</th><th class="text-right">Kwota</th></tr></thead>
-                <tbody>
-                    ${data.map(p => {
-                        const c = p.gmp_cases;
-                        const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
-                        const employer = c?.gmp_employers ? esc(c.gmp_employers.name) : '';
-                        return `
-                            <tr class="clickable" onclick="location.href='case.html?id=${p.case_id}'">
-                                <td class="text-xs text-zinc-400">${fmt.date(p.payment_date)}</td>
-                                <td><div class="text-sm">${client}</div>${employer ? `<div class="text-xs text-zinc-500">${employer}</div>` : ''}</td>
-                                <td class="font-mono text-xs text-zinc-500">${esc(c?.case_number || '')}</td>
-                                <td class="text-xs">${esc(p.method || '—')}</td>
-                                <td class="text-xs text-zinc-400">${p.installment_number ? `${p.installment_number}/${p.total_installments || '?'}` : '—'}</td>
-                                <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(p.notes || '')}</td>
-                                <td class="text-right font-mono text-emerald-300">${fmt.money(p.amount)}</td>
-                            </tr>`;
-                    }).join('')}
-                </tbody>
-            </table>`;
-    } else if (currentView === 'overdue') {
-        const today = new Date().toISOString().slice(0,10);
-        const { data: plans } = await db.from('gmp_payment_plans')
-            .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
-            .lt('due_date', today)
-            .order('due_date');
+    // MoM - porównanie z analogicznym okresem przed range
+    // Prosty: mies. obecny vs mies. poprzedni
+    const now = new Date();
+    const thisMStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+    const lastMStart = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString().slice(0,10);
+    const lastMEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0,10);
+    const { data: momData } = await db.from('gmp_payments').select('amount, payment_date').gte('payment_date', lastMStart).lte('payment_date', today);
+    const thisM = (momData || []).filter(p => p.payment_date >= thisMStart).reduce((s, p) => s + Number(p.amount || 0), 0);
+    const lastM = (momData || []).filter(p => p.payment_date >= lastMStart && p.payment_date <= lastMEnd).reduce((s, p) => s + Number(p.amount || 0), 0);
+    const momEl = document.getElementById('k-mom');
+    const momLabel = document.getElementById('k-mom-label');
+    if (lastM > 0) {
+        const pct = Math.round((thisM - lastM) / lastM * 100);
+        momEl.textContent = `${pct >= 0 ? '+' : ''}${pct}%`;
+        momEl.className = 'text-2xl font-bold ' + (pct >= 0 ? 'text-emerald-400' : 'text-red-400');
+        momLabel.textContent = `${fmt.money(thisM)} vs ${fmt.money(lastM)}`;
+    } else {
+        momEl.textContent = '—';
+    }
 
-        if (!plans?.length) { el.innerHTML = '<div class="empty-state"><i class="ph ph-check-circle text-emerald-400"></i><div>Brak zaległości</div></div>'; return; }
-
-        const caseIds = plans.map(p => p.case_id);
+    // Zaległości
+    if (overduePlans.data?.length) {
+        const caseIds = overduePlans.data.map(p => p.case_id);
         const { data: paid } = await db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds);
         const paidByCase = {};
-        (paid || []).forEach(p => { paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0); });
+        (paid || []).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+        const outstanding = overduePlans.data.reduce((s, p) => s + Math.max(0, Number(p.total_amount) - (paidByCase[p.case_id] || 0)), 0);
+        document.getElementById('k-overdue').textContent = fmt.money(outstanding);
+        document.getElementById('k-overdue-count').textContent = `${overduePlans.data.length} spraw`;
+    } else {
+        document.getElementById('k-overdue').textContent = fmt.money(0);
+    }
 
-        el.innerHTML = `
-            <table class="gmp-table">
-                <thead><tr><th>Klient / Pracodawca</th><th>Termin</th><th>Plan</th><th>Wpłacono</th><th>Zaległość</th></tr></thead>
-                <tbody>
-                    ${plans.map(p => {
-                        const c = p.gmp_cases;
+    // Prognoza 90 dni
+    const forecast = (forecastPlans.data || []).reduce((s, p) => s + Number(p.total_amount || 0), 0);
+    document.getElementById('k-forecast').textContent = fmt.money(forecast);
+    document.getElementById('k-forecast-count').textContent = `${(forecastPlans.data || []).length} rat`;
+}
+
+async function renderOverview() {
+    const el = document.getElementById('view-content');
+    el.innerHTML = '<div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>';
+
+    const payments = await fetchPayments();
+
+    // 1. Wykres trendu (slowo per tydzien)
+    const byDay = {};
+    payments.forEach(p => {
+        if (!p.payment_date) return;
+        byDay[p.payment_date] = (byDay[p.payment_date] || 0) + Number(p.amount || 0);
+    });
+    // Kumulatywny z rangem
+    const { from, to } = getRange();
+    const fromD = new Date(from), toD = new Date(to);
+    const days = Math.round((toD - fromD) / 86400000);
+    const bucketSize = days > 180 ? 30 : (days > 60 ? 7 : 1); // dzienny/tygodniowy/miesięczny
+    const buckets = {};
+    Object.entries(byDay).forEach(([date, amount]) => {
+        const d = new Date(date);
+        let key;
+        if (bucketSize === 30) key = date.slice(0, 7); // miesiąc
+        else if (bucketSize === 7) {
+            const weekStart = new Date(d);
+            weekStart.setDate(d.getDate() - d.getDay());
+            key = weekStart.toISOString().slice(0, 10);
+        } else key = date;
+        buckets[key] = (buckets[key] || 0) + amount;
+    });
+    const trendLabels = Object.keys(buckets).sort();
+    const trendData = trendLabels.map(k => buckets[k]);
+
+    // 2. Struktura metod
+    const byMethod = { gotowka: 0, przelew: 0, faktura: 0, karta: 0, inne: 0 };
+    payments.forEach(p => { byMethod[p.method || 'inne'] = (byMethod[p.method || 'inne'] || 0) + Number(p.amount || 0); });
+
+    // 3. Top płatnicy (pracodawcy)
+    const byEmployer = {};
+    payments.forEach(p => {
+        const emp = p.gmp_employers?.name || p.gmp_cases?.gmp_employers?.name;
+        if (emp) byEmployer[emp] = (byEmployer[emp] || 0) + Number(p.amount || 0);
+    });
+    const topEmployers = Object.entries(byEmployer).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+    // 4. Top klienci
+    const byClient = {};
+    payments.forEach(p => {
+        const c = p.gmp_clients || p.gmp_cases?.gmp_clients;
+        if (c) {
+            const name = `${c.last_name} ${c.first_name}`;
+            byClient[name] = (byClient[name] || 0) + Number(p.amount || 0);
+        }
+    });
+    const topClients = Object.entries(byClient).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+    // 5. Per prawnik
+    const staffMap = Object.fromEntries(allStaff.map(s => [s.id, s.full_name]));
+    const byStaff = {};
+    payments.forEach(p => {
+        const sid = p.gmp_cases?.assigned_to;
+        if (sid) byStaff[sid] = (byStaff[sid] || 0) + Number(p.amount || 0);
+    });
+    const staffRanking = Object.entries(byStaff).map(([sid, v]) => [staffMap[sid] || sid.slice(0, 8), v]).sort((a, b) => b[1] - a[1]);
+
+    // 6. Per typ sprawy
+    const byCaseType = {};
+    payments.forEach(p => {
+        const cat = p.gmp_cases?.category || '—';
+        byCaseType[cat] = (byCaseType[cat] || 0) + Number(p.amount || 0);
+    });
+    const typeEntries = Object.entries(byCaseType).sort((a, b) => b[1] - a[1]);
+
+    el.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <section class="card lg:col-span-2">
+                <div class="card-header">Trend wpływów</div>
+                <div class="p-4"><div class="chart-container"><canvas id="chart-trend"></canvas></div></div>
+            </section>
+            <section class="card">
+                <div class="card-header">Struktura metod płatności</div>
+                <div class="p-4"><div class="chart-container"><canvas id="chart-methods"></canvas></div></div>
+            </section>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <section class="card">
+                <div class="card-header">Top 10 pracodawców</div>
+                <div class="p-4 space-y-2 max-h-[400px] overflow-y-auto">
+                    ${topEmployers.length === 0 ? '<div class="text-zinc-500 text-sm">Brak</div>' :
+                    renderRanking(topEmployers, 'building')}
+                </div>
+            </section>
+            <section class="card">
+                <div class="card-header">Top 10 klientów</div>
+                <div class="p-4 space-y-2 max-h-[400px] overflow-y-auto">
+                    ${topClients.length === 0 ? '<div class="text-zinc-500 text-sm">Brak</div>' :
+                    renderRanking(topClients, 'user')}
+                </div>
+            </section>
+            <section class="card">
+                <div class="card-header">Ranking prawników (przychód)</div>
+                <div class="p-4 space-y-2 max-h-[400px] overflow-y-auto">
+                    ${staffRanking.length === 0 ? '<div class="text-zinc-500 text-sm">Brak</div>' :
+                    renderRanking(staffRanking, 'scales')}
+                </div>
+            </section>
+        </div>
+
+        <section class="card">
+            <div class="card-header">Przychód wg kategorii sprawy</div>
+            <div class="p-4 space-y-2">
+                ${typeEntries.map(([type, v]) => {
+                    const max = typeEntries[0][1] || 1;
+                    const pct = Math.round(100 * v / max);
+                    return `
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-zinc-300">${esc(type)}</span>
+                                <span class="text-emerald-400 font-mono">${fmt.money(v)}</span>
+                            </div>
+                            <div class="h-2 bg-zinc-900 rounded overflow-hidden">
+                                <div class="h-full bg-emerald-500" style="width: ${pct}%"></div>
+                            </div>
+                        </div>`;
+                }).join('')}
+            </div>
+        </section>`;
+
+    // Chart trend
+    new Chart(document.getElementById('chart-trend'), {
+        type: 'line',
+        data: {
+            labels: trendLabels,
+            datasets: [{
+                label: 'Wpływy',
+                data: trendData,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#71717a', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: '#71717a', font: { size: 10 }, callback: v => fmt.money(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+
+    // Chart methods (doughnut)
+    const methodColors = { gotowka: '#10b981', przelew: '#3b82f6', faktura: '#f59e0b', karta: '#a855f7', inne: '#71717a' };
+    new Chart(document.getElementById('chart-methods'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(byMethod),
+            datasets: [{
+                data: Object.values(byMethod),
+                backgroundColor: Object.keys(byMethod).map(k => methodColors[k]),
+                borderColor: '#050505',
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#a1a1aa', font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt.money(ctx.parsed)}` } }
+            }
+        }
+    });
+}
+
+function renderRanking(entries, icon) {
+    const max = entries[0][1] || 1;
+    return entries.map(([name, v], i) => {
+        const pct = Math.round(100 * v / max);
+        return `
+            <div>
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="text-zinc-300 truncate">${i+1}. ${esc(name)}</span>
+                    <span class="text-emerald-400 font-mono flex-shrink-0 ml-2">${fmt.money(v)}</span>
+                </div>
+                <div class="h-1.5 bg-zinc-900 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-blue-500 to-emerald-500" style="width: ${pct}%"></div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+async function renderPayments() {
+    const el = document.getElementById('view-content');
+    const payments = await fetchPayments();
+    if (!payments.length) {
+        el.innerHTML = '<div class="card empty-state p-8"><i class="ph ph-coins"></i><div>Brak wpłat dla wybranych filtrów</div></div>';
+        return;
+    }
+    el.innerHTML = `
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-500px)]">
+                <table class="gmp-table">
+                    <thead><tr>
+                        <th>Data</th><th>Klient / Pracodawca</th><th>Nr sprawy</th>
+                        <th>Rodzaj</th><th>Forma</th><th>Rata</th><th>Notatka</th>
+                        <th class="text-right">Kwota</th>
+                    </tr></thead>
+                    <tbody>
+                        ${payments.map(p => {
+                            const c = p.gmp_cases;
+                            const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` :
+                                (p.gmp_clients ? `${esc(p.gmp_clients.last_name)} ${esc(p.gmp_clients.first_name)}` : '—');
+                            const emp = c?.gmp_employers?.name || p.gmp_employers?.name || '';
+                            return `
+                                <tr class="clickable" onclick="location.href='case.html?id=${p.case_id}'">
+                                    <td class="text-xs text-zinc-400 whitespace-nowrap">${fmt.date(p.payment_date)}</td>
+                                    <td>
+                                        <div class="text-sm">${client}</div>
+                                        ${emp ? `<div class="text-xs text-zinc-500">${esc(emp)}</div>` : ''}
+                                    </td>
+                                    <td class="font-mono text-xs text-zinc-500">${esc(c?.case_number || '')}</td>
+                                    <td class="text-xs">${p.kind === 'admin_fee' ? '🏛️ Admin.' : '💼 Wynagr.'}</td>
+                                    <td class="text-xs">${esc(p.method || '—')}</td>
+                                    <td class="text-xs text-zinc-400">${p.installment_number ? `${p.installment_number}/${p.total_installments || '?'}` : '—'}</td>
+                                    <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(p.notes || '')}</td>
+                                    <td class="text-right font-mono text-emerald-300 font-semibold">${fmt.money(p.amount)}</td>
+                                </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+}
+
+async function renderAdmin() {
+    const el = document.getElementById('view-content');
+    const { from, to } = getRange();
+    const { data } = await db.from('gmp_payments')
+        .select('*, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
+        .eq('kind', 'admin_fee').gte('payment_date', from).lte('payment_date', to)
+        .order('payment_date', { ascending: false, nullsLast: true }).limit(1000);
+
+    const total = (data || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+    el.innerHTML = `
+        <div class="card p-4 mb-4">
+            <div class="text-sm text-zinc-400 mb-1">Suma opłat administracyjnych (opłaty urzędowe: znaczek, konsularne itp.) w wybranym okresie</div>
+            <div class="text-3xl font-bold text-amber-300">${fmt.money(total)}</div>
+            <div class="text-xs text-zinc-500 mt-1">${(data || []).length} wpłat</div>
+        </div>
+        <div class="card overflow-hidden">
+            ${(data || []).length === 0 ? '<div class="empty-state"><i class="ph ph-bank"></i><div>Brak opłat administracyjnych w tym okresie</div><div class="text-xs text-zinc-600 mt-2">Oznacz płatność jako "Opłata administracyjna" w karcie sprawy</div></div>' : `
+            <div class="overflow-x-auto">
+                <table class="gmp-table">
+                    <thead><tr><th>Data</th><th>Klient</th><th>Sprawa</th><th>Notatka</th><th class="text-right">Kwota</th></tr></thead>
+                    <tbody>${data.map(p => `
+                        <tr class="clickable" onclick="location.href='case.html?id=${p.case_id}'">
+                            <td class="text-xs text-zinc-400">${fmt.date(p.payment_date)}</td>
+                            <td>${p.gmp_cases?.gmp_clients ? esc(p.gmp_cases.gmp_clients.last_name) + ' ' + esc(p.gmp_cases.gmp_clients.first_name) : '—'}</td>
+                            <td class="font-mono text-xs text-zinc-500">${esc(p.gmp_cases?.case_number || '')}</td>
+                            <td class="text-xs text-zinc-400">${esc(p.notes || '')}</td>
+                            <td class="text-right font-mono text-amber-300">${fmt.money(p.amount)}</td>
+                        </tr>`).join('')}</tbody>
+                </table>
+            </div>`}
+        </div>`;
+}
+
+async function renderOverdue() {
+    const el = document.getElementById('view-content');
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: plans } = await db.from('gmp_payment_plans')
+        .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, status, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name))')
+        .lt('due_date', today).order('due_date');
+
+    if (!plans?.length) {
+        el.innerHTML = '<div class="card empty-state p-8"><i class="ph ph-check-circle text-emerald-400"></i><div>Brak zaległości</div></div>';
+        return;
+    }
+
+    const caseIds = plans.map(p => p.case_id);
+    const { data: paid } = await db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds);
+    const paidByCase = {};
+    (paid || []).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+
+    const rows = plans.map(p => ({
+        ...p,
+        paid: paidByCase[p.case_id] || 0,
+        remaining: Math.max(0, Number(p.total_amount) - (paidByCase[p.case_id] || 0)),
+        days_overdue: Math.floor((Date.now() - new Date(p.due_date).getTime()) / 86400000),
+    })).filter(r => r.remaining > 0);
+
+    const totalOverdue = rows.reduce((s, r) => s + r.remaining, 0);
+
+    el.innerHTML = `
+        <div class="card p-4 mb-4 border-red-900/50">
+            <div class="text-sm text-zinc-400 mb-1">Łączne zaległości</div>
+            <div class="text-3xl font-bold text-red-400">${fmt.money(totalOverdue)}</div>
+            <div class="text-xs text-zinc-500 mt-1">${rows.length} spraw po terminie</div>
+        </div>
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="gmp-table">
+                    <thead><tr>
+                        <th>Klient / Pracodawca</th><th>Opiekun</th><th>Status</th>
+                        <th>Termin</th><th>Dni po</th>
+                        <th class="text-right">Plan</th><th class="text-right">Wpłacono</th>
+                        <th class="text-right">Zaległość</th>
+                    </tr></thead>
+                    <tbody>${rows.map(r => {
+                        const c = r.gmp_cases;
                         const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
-                        const employer = c?.gmp_employers ? esc(c.gmp_employers.name) : '';
-                        const paid = paidByCase[p.case_id] || 0;
-                        const remain = Math.max(0, Number(p.total_amount) - paid);
-                        const daysOverdue = Math.floor((Date.now() - new Date(p.due_date).getTime()) / 86400000);
+                        const emp = c?.gmp_employers?.name || '';
                         return `
-                            <tr class="clickable" onclick="location.href='case.html?id=${p.case_id}'">
-                                <td><div class="text-sm">${client}</div>${employer ? `<div class="text-xs text-zinc-500">${employer}</div>` : ''}</td>
-                                <td class="text-xs text-red-400">${fmt.date(p.due_date)} (${daysOverdue} dni po)</td>
-                                <td class="text-right font-mono">${fmt.money(p.total_amount)}</td>
-                                <td class="text-right font-mono text-emerald-400">${fmt.money(paid)}</td>
-                                <td class="text-right font-mono text-red-400 font-bold">${fmt.money(remain)}</td>
+                            <tr class="clickable" onclick="location.href='case.html?id=${r.case_id}'">
+                                <td><div class="text-sm">${client}</div>${emp ? `<div class="text-xs text-zinc-500">${esc(emp)}</div>` : ''}</td>
+                                <td class="text-xs text-zinc-400">${esc(c?.gmp_staff?.full_name || '—')}</td>
+                                <td><span class="badge badge-${c?.status || 'lead'}">${esc(c?.status || '—')}</span></td>
+                                <td class="text-xs text-red-400">${fmt.date(r.due_date)}</td>
+                                <td class="text-xs text-red-400 font-bold">${r.days_overdue}</td>
+                                <td class="text-right font-mono">${fmt.money(r.total_amount)}</td>
+                                <td class="text-right font-mono text-emerald-400">${fmt.money(r.paid)}</td>
+                                <td class="text-right font-mono text-red-400 font-bold">${fmt.money(r.remaining)}</td>
                             </tr>`;
-                    }).join('')}
-                </tbody>
-            </table>`;
-    } else if (currentView === 'monthly') {
-        const { data } = await db.from('gmp_payments').select('amount, method, payment_date').not('payment_date', 'is', null).limit(10000);
-        const byMonth = {};
-        (data || []).forEach(p => {
-            const m = p.payment_date.slice(0, 7);
-            if (!byMonth[m]) byMonth[m] = { gotowka: 0, przelew: 0, faktura: 0, karta: 0, inne: 0, total: 0, count: 0 };
-            const amount = Number(p.amount) || 0;
-            byMonth[m][p.method || 'inne'] = (byMonth[m][p.method || 'inne'] || 0) + amount;
-            byMonth[m].total += amount;
-            byMonth[m].count++;
-        });
-        const sorted = Object.entries(byMonth).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 36);
+                    }).join('')}</tbody>
+                </table>
+            </div>
+        </div>`;
+}
 
-        el.innerHTML = `
-            <table class="gmp-table">
-                <thead><tr><th>Miesiąc</th><th>Wpłat</th><th>Gotówka</th><th>Przelew</th><th>Faktura</th><th>Inne</th><th class="text-right">Razem</th></tr></thead>
-                <tbody>
-                    ${sorted.map(([m, d]) => `
+async function renderForecast() {
+    const el = document.getElementById('view-content');
+    const now = new Date().toISOString().slice(0, 10);
+    const in90 = new Date(Date.now() + 90*86400000).toISOString().slice(0, 10);
+
+    const { data: plans } = await db.from('gmp_payment_plans')
+        .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, status, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name))')
+        .gte('due_date', now).lte('due_date', in90)
+        .order('due_date');
+
+    if (!plans?.length) {
+        el.innerHTML = '<div class="card empty-state p-8"><i class="ph ph-calendar"></i><div>Brak planowanych rat w najbliższych 90 dniach</div></div>';
+        return;
+    }
+
+    const caseIds = plans.map(p => p.case_id);
+    const { data: paid } = await db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds);
+    const paidByCase = {};
+    (paid || []).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+
+    const rows = plans.map(p => ({
+        ...p,
+        paid: paidByCase[p.case_id] || 0,
+        expected: Math.max(0, Number(p.total_amount) - (paidByCase[p.case_id] || 0)),
+        days_to_due: Math.floor((new Date(p.due_date).getTime() - Date.now()) / 86400000),
+    })).filter(r => r.expected > 0);
+
+    // Grupa per tydzień
+    const byWeek = {};
+    rows.forEach(r => {
+        const d = new Date(r.due_date);
+        const weekStart = new Date(d);
+        weekStart.setDate(d.getDate() - d.getDay());
+        const key = weekStart.toISOString().slice(0, 10);
+        byWeek[key] = (byWeek[key] || 0) + r.expected;
+    });
+
+    const totalForecast = rows.reduce((s, r) => s + r.expected, 0);
+
+    el.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="card p-4">
+                <div class="text-sm text-zinc-400 mb-1">Prognoza wpływów (następne 90 dni)</div>
+                <div class="text-3xl font-bold text-amber-300">${fmt.money(totalForecast)}</div>
+                <div class="text-xs text-zinc-500 mt-1">${rows.length} rat</div>
+            </div>
+            <section class="card">
+                <div class="card-header text-sm">Tygodniowy rozkład</div>
+                <div class="p-3"><div class="chart-container" style="height: 150px"><canvas id="chart-forecast"></canvas></div></div>
+            </section>
+        </div>
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="gmp-table">
+                    <thead><tr>
+                        <th>Termin</th><th>Dni</th><th>Klient / Pracodawca</th><th>Opiekun</th>
+                        <th>Płaci</th><th class="text-right">Plan</th><th class="text-right">Zapłacono</th>
+                        <th class="text-right">Oczekiwane</th>
+                    </tr></thead>
+                    <tbody>${rows.map(r => {
+                        const c = r.gmp_cases;
+                        const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+                        const emp = c?.gmp_employers?.name || '';
+                        return `
+                            <tr class="clickable" onclick="location.href='case.html?id=${r.case_id}'">
+                                <td class="text-xs text-amber-300">${fmt.date(r.due_date)}</td>
+                                <td class="text-xs text-zinc-400">${r.days_to_due} dni</td>
+                                <td><div class="text-sm">${client}</div>${emp ? `<div class="text-xs text-zinc-500">${esc(emp)}</div>` : ''}</td>
+                                <td class="text-xs text-zinc-400">${esc(c?.gmp_staff?.full_name || '—')}</td>
+                                <td class="text-xs">${r.payer_type === 'employer' ? '🏢 Pracodawca' : '👤 Klient'}</td>
+                                <td class="text-right font-mono">${fmt.money(r.total_amount)}</td>
+                                <td class="text-right font-mono text-emerald-400">${fmt.money(r.paid)}</td>
+                                <td class="text-right font-mono text-amber-300 font-bold">${fmt.money(r.expected)}</td>
+                            </tr>`;
+                    }).join('')}</tbody>
+                </table>
+            </div>
+        </div>`;
+
+    // Wykres prognozy tygodniowy
+    const labels = Object.keys(byWeek).sort();
+    new Chart(document.getElementById('chart-forecast'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{ data: labels.map(l => byWeek[l]), backgroundColor: '#f59e0b', borderWidth: 0 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#71717a', font: { size: 9 } }, grid: { display: false } },
+                y: { ticks: { color: '#71717a', font: { size: 9 }, callback: v => fmt.money(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+}
+
+async function renderMonthly() {
+    const el = document.getElementById('view-content');
+    const { data } = await db.from('gmp_payments').select('amount, method, kind, payer_type, payment_date').not('payment_date', 'is', null).limit(20000);
+    const byMonth = {};
+    (data || []).forEach(p => {
+        const m = p.payment_date.slice(0, 7);
+        if (!byMonth[m]) byMonth[m] = { gotowka: 0, przelew: 0, faktura: 0, karta: 0, inne: 0, admin: 0, fee: 0, client: 0, employer: 0, total: 0, count: 0 };
+        const amount = Number(p.amount) || 0;
+        byMonth[m][p.method || 'inne'] = (byMonth[m][p.method || 'inne'] || 0) + amount;
+        byMonth[m][p.kind || 'fee'] = (byMonth[m][p.kind || 'fee'] || 0) + amount;
+        byMonth[m][p.payer_type || 'client'] = (byMonth[m][p.payer_type || 'client'] || 0) + amount;
+        byMonth[m].total += amount;
+        byMonth[m].count++;
+    });
+    const sorted = Object.entries(byMonth).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 48);
+
+    el.innerHTML = `
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto max-h-[calc(100vh-400px)]">
+                <table class="gmp-table">
+                    <thead><tr>
+                        <th>Miesiąc</th><th>Wpłat</th>
+                        <th>Gotówka</th><th>Przelew</th><th>Faktura</th>
+                        <th>Admin.</th><th>Wynagr.</th>
+                        <th>Klienci</th><th>Pracodawcy</th>
+                        <th class="text-right">Razem</th>
+                    </tr></thead>
+                    <tbody>${sorted.map(([m, d]) => `
                         <tr>
                             <td class="font-medium text-white">${m}</td>
                             <td class="text-xs text-zinc-400">${d.count}</td>
                             <td class="font-mono text-xs">${fmt.money(d.gotowka)}</td>
                             <td class="font-mono text-xs">${fmt.money(d.przelew)}</td>
                             <td class="font-mono text-xs">${fmt.money(d.faktura)}</td>
-                            <td class="font-mono text-xs">${fmt.money(d.inne + (d.karta||0))}</td>
+                            <td class="font-mono text-xs text-amber-300">${fmt.money(d.admin)}</td>
+                            <td class="font-mono text-xs text-emerald-300">${fmt.money(d.fee)}</td>
+                            <td class="font-mono text-xs">${fmt.money(d.client)}</td>
+                            <td class="font-mono text-xs">${fmt.money(d.employer)}</td>
                             <td class="text-right font-mono text-emerald-300 font-bold">${fmt.money(d.total)}</td>
-                        </tr>`).join('')}
-                </tbody>
-            </table>`;
-    }
+                        </tr>`).join('')}</tbody>
+                </table>
+            </div>
+        </div>`;
+}
+
+async function exportData() {
+    toast.info('Przygotowuję CSV...');
+    const payments = await fetchPayments();
+    exportCsv('platnosci_' + (rangeFrom || 'all') + '_' + (rangeTo || 'all'), payments, [
+        ['Data', 'payment_date'],
+        ['Klient', r => {
+            const c = r.gmp_cases?.gmp_clients || r.gmp_clients;
+            return c ? `${c.last_name} ${c.first_name}` : '';
+        }],
+        ['Pracodawca', r => r.gmp_cases?.gmp_employers?.name || r.gmp_employers?.name || ''],
+        ['Nr sprawy', r => r.gmp_cases?.case_number || ''],
+        ['Rodzaj', r => r.kind === 'admin_fee' ? 'Admin.' : 'Wynagrodzenie'],
+        ['Forma', 'method'],
+        ['Płaci', r => r.payer_type === 'employer' ? 'Pracodawca' : 'Klient'],
+        ['Rata', r => r.installment_number ? `${r.installment_number}/${r.total_installments || '?'}` : ''],
+        ['Kwota', 'amount'],
+        ['Notatki', 'notes'],
+    ]);
 }
 </script>
 </body>
