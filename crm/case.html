@@ -13,13 +13,89 @@
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
     <script src="components/modals.js" defer></script>
+    <style>
+        .case-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(5,5,5,0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin: -1.5rem -2rem 0;
+            padding: 1rem 2rem;
+        }
+        [data-theme="light"] .case-header { background: rgba(250,250,250,0.95); border-color: rgba(0,0,0,0.06); }
+        .case-tabs {
+            display: flex;
+            gap: 2px;
+            padding: 0 2rem;
+            margin: 0 -2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: rgba(10,10,10,0.6);
+            overflow-x: auto;
+        }
+        .case-tab {
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: #71717a;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+        .case-tab:hover { color: #e5e5e5; }
+        .case-tab.active { color: white; border-bottom-color: #3b82f6; }
+        .case-tab-count {
+            background: rgba(255,255,255,0.08);
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-size: 10px;
+            color: #a1a1aa;
+        }
+        .case-tab.active .case-tab-count { background: rgba(59,130,246,0.15); color: #93c5fd; }
+
+        .case-body { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; padding-top: 1rem; }
+        @media (max-width: 900px) { .case-body { grid-template-columns: 1fr; } }
+        .case-aside { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 140px; align-self: start; max-height: calc(100vh - 160px); overflow-y: auto; }
+
+        .quick-action { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; color: #a1a1aa; font-size: 12px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+        .quick-action:hover { background: rgba(255,255,255,0.08); color: white; border-color: rgba(255,255,255,0.15); }
+        .quick-action.call { color: #10b981; }
+        .quick-action.wa { color: #25d366; }
+        .quick-action.email { color: #3b82f6; }
+
+        .timeline-item { position: relative; padding-left: 28px; padding-bottom: 16px; }
+        .timeline-item::before { content: ''; position: absolute; left: 8px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; border: 2px solid #0a0a0a; z-index: 1; }
+        .timeline-item::after { content: ''; position: absolute; left: 13px; top: 18px; bottom: 0; width: 2px; background: rgba(255,255,255,0.08); }
+        .timeline-item:last-child::after { display: none; }
+        .timeline-item[data-type="note"]::before { background: #a1a1aa; }
+        .timeline-item[data-type="status_change"]::before { background: #3b82f6; }
+        .timeline-item[data-type="stage_change"]::before { background: #a855f7; }
+        .timeline-item[data-type="document_added"]::before { background: #10b981; }
+        .timeline-item[data-type="task_assigned"]::before { background: #06b6d4; }
+        .timeline-item[data-type="email_sent"]::before { background: #3b82f6; }
+        .timeline-item[data-type="whatsapp_sent"]::before { background: #25d366; }
+        .timeline-item[data-type="payment_received"]::before { background: #f59e0b; }
+        .timeline-item[data-type="appointment_created"]::before { background: #ec4899; }
+        .timeline-item[data-type="decision_received"]::before { background: #10b981; }
+
+        .module-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; }
+        .module-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 600; font-size: 14px; }
+    </style>
 </head>
 <body>
 <div class="app-layout">
     <div id="sidebar-placeholder"></div>
 
     <main class="app-main" id="main-content">
-        <div class="flex items-center gap-2 mb-4 text-sm flex-wrap">
+        <!-- Breadcrumbs -->
+        <div class="flex items-center gap-2 mb-2 text-xs flex-wrap">
             <a href="dashboard.html" class="text-zinc-500 hover:text-white">Dashboard</a>
             <span class="text-zinc-700">/</span>
             <a href="cases.html" class="text-zinc-500 hover:text-white">Sprawy</a>
@@ -35,304 +111,362 @@
         <div id="case-error" class="hidden card p-6 text-red-300"></div>
 
         <div id="case-content" class="hidden">
-            <!-- Header: klient + akcje -->
-            <div class="card p-5 mb-4">
+            <!-- STICKY HEADER -->
+            <div class="case-header">
                 <div class="flex items-start justify-between gap-4 flex-wrap">
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-3 mb-2">
-                            <h1 class="text-2xl font-bold text-white" id="case-client-name">—</h1>
+                        <div class="flex items-center gap-3 mb-1 flex-wrap">
+                            <h1 class="text-xl font-bold text-white" id="case-client-name">—</h1>
                             <span class="badge badge-lead" id="case-status-badge">—</span>
                             <span class="badge badge-stage hidden" id="case-stage-badge">—</span>
                             <span class="badge badge-category hidden" id="case-category-badge">—</span>
+                            <i id="pin-indicator" class="ph hidden text-amber-400"></i>
                         </div>
-                        <div class="text-zinc-500 text-sm flex items-center gap-3 flex-wrap">
-                            <span id="case-number-display" class="font-mono text-xs bg-zinc-900 px-2 py-0.5 rounded">—</span>
-                            <span id="case-znak-sprawy" class="font-mono text-xs text-zinc-400"></span>
+                        <div class="text-zinc-500 text-xs flex items-center gap-2 flex-wrap">
+                            <span id="case-number-display" class="font-mono bg-zinc-900 px-2 py-0.5 rounded">—</span>
+                            <span id="case-znak-sprawy" class="font-mono text-zinc-400"></span>
                             <span id="case-type-display"></span>
                             <span id="case-employer-display"></span>
                         </div>
-                        <div id="case-last-note" class="mt-2 text-sm text-zinc-300 bg-zinc-900/40 border-l-2 border-zinc-700 px-3 py-2 rounded hidden">
-                            <div class="text-[10px] uppercase tracking-wider text-zinc-500 mb-0.5">Ostatnia notatka</div>
-                            <div id="last-note-content"></div>
-                            <div class="text-xs text-zinc-500 mt-1" id="last-note-meta"></div>
-                        </div>
                     </div>
-                    <div class="flex gap-2 flex-wrap">
-                        <button class="btn btn-secondary btn-sm" onclick="togglePin()" id="pin-btn" title="Przypnij sprawę">
-                            <i class="ph ph-push-pin" id="pin-icon"></i>
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="openNoteModal()">
-                            <i class="ph ph-note-pencil"></i> Notatka
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="openTaskModal()">
-                            <i class="ph ph-plus-square"></i> Zadanie
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="openPaymentModal()">
-                            <i class="ph ph-coins"></i> Płatność
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="openAppointmentModal()">
-                            <i class="ph ph-calendar-plus"></i> Termin
-                        </button>
-                        <button class="btn btn-ghost btn-sm" onclick="deleteCase()"><i class="ph ph-trash"></i></button>
+                    <div class="flex gap-1 flex-wrap items-center">
+                        <!-- Quick contact -->
+                        <div id="quick-contact" class="flex gap-1"></div>
+                        <span class="mx-1 text-zinc-700">|</span>
+                        <!-- Quick add -->
+                        <button class="quick-action" onclick="openNoteModal()" title="Ctrl+N"><i class="ph ph-note-pencil"></i> Notatka</button>
+                        <button class="quick-action" onclick="openTaskModal()" title="Ctrl+T"><i class="ph ph-plus-square"></i> Zadanie</button>
+                        <button class="quick-action" onclick="openPaymentModal()" title="Ctrl+P"><i class="ph ph-coins"></i> Płatność</button>
+                        <button class="quick-action" onclick="openAppointmentModal()" title="Ctrl+M"><i class="ph ph-calendar-plus"></i> Termin</button>
+                        <span class="mx-1 text-zinc-700">|</span>
+                        <button class="quick-action" onclick="togglePin()" id="pin-btn" title="Przypnij"><i class="ph ph-push-pin" id="pin-icon"></i></button>
+                        <button class="quick-action" onclick="deleteCase()" title="Usuń"><i class="ph ph-trash text-red-400"></i></button>
                     </div>
+                </div>
+
+                <!-- TABS -->
+                <div class="case-tabs mt-4 -mx-8 px-8">
+                    <button class="case-tab active" data-tab="overview"><i class="ph ph-house"></i> Przegląd</button>
+                    <button class="case-tab" data-tab="history"><i class="ph ph-clock-counter-clockwise"></i> Historia <span class="case-tab-count" id="cnt-history">0</span></button>
+                    <button class="case-tab" data-tab="tasks"><i class="ph ph-check-square"></i> Zadania <span class="case-tab-count" id="cnt-tasks">0</span></button>
+                    <button class="case-tab" data-tab="finance"><i class="ph ph-coins"></i> Finanse <span class="case-tab-count" id="cnt-finance">0</span></button>
+                    <button class="case-tab" data-tab="documents"><i class="ph ph-file"></i> Dokumenty <span class="case-tab-count" id="cnt-docs">0</span></button>
+                    <button class="case-tab" data-tab="calendar"><i class="ph ph-calendar"></i> Terminy <span class="case-tab-count" id="cnt-appts">0</span></button>
+                    <button class="case-tab" data-tab="data"><i class="ph ph-gear"></i> Dane szczegółowe</button>
                 </div>
             </div>
 
-            <!-- Layout 2-kolumnowy -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <!-- Lewa kolumna: dane sprawy (edytowalne) -->
-                <div class="lg:col-span-2 space-y-4">
-                    <section class="card">
-                        <div class="card-header">Dane podstawowe</div>
-                        <div class="card-body grid grid-cols-2 gap-4">
-                            <div>
-                                <label>Status</label>
-                                <select class="input w-full" data-field="status">
-                                    <option value="lead">Lead</option>
-                                    <option value="zlecona">Zlecona</option>
-                                    <option value="aktywna">Aktywna</option>
-                                    <option value="zakonczona">Zakończona</option>
-                                    <option value="archiwum">Archiwum</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Etap postępowania</label>
-                                <select class="input w-full" data-field="stage">
-                                    <option value="">—</option>
-                                    <option value="weryfikacja_dokumentow">Weryfikacja dok.</option>
-                                    <option value="zlozenie_wniosku">Złożenie wniosku</option>
-                                    <option value="oczekiwanie_na_osobiste">Oczek. na osobiste</option>
-                                    <option value="wyznaczono_termin">Wyznaczony termin</option>
-                                    <option value="po_osobistym">Po osobistym</option>
-                                    <option value="oczekiwanie_na_decyzje">Oczek. decyzji</option>
-                                    <option value="zakonczenie">Zakończenie</option>
-                                    <option value="odwolanie">Odwołanie</option>
-                                    <option value="umorzenie">Umorzenie</option>
-                                    <option value="przystapienie">Przystąpienie</option>
-                                </select>
-                            </div>
-                            <div class="col-span-2">
-                                <label>Uwagi do statusu / notatka o etapie</label>
-                                <textarea class="input w-full" rows="2" data-field="status_notes"></textarea>
-                            </div>
-                            <div>
-                                <label>Rodzaj sprawy</label>
-                                <input type="text" class="input w-full" data-field="case_type" placeholder="np. PRACA, POBYT STAŁY">
-                            </div>
-                            <div>
-                                <label>Uwagi do rodzaju</label>
-                                <input type="text" class="input w-full" data-field="case_type_notes">
-                            </div>
-                            <div>
-                                <label>Typ sprawy</label>
-                                <select class="input w-full" data-field="kind">
-                                    <option value="nowa_sprawa">Nowa sprawa</option>
-                                    <option value="przystapienie_do_sprawy">Przystąpienie</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Metoda złożenia</label>
-                                <select class="input w-full" data-field="submission_method">
-                                    <option value="">—</option>
-                                    <option value="osobiscie">Osobiście</option>
-                                    <option value="elektronicznie">Elektronicznie</option>
-                                    <option value="pocztowo">Pocztowo</option>
-                                    <option value="przeniesienie">Przeniesienie</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Kategoria</label>
-                                <input type="text" class="input w-full" data-field="category">
-                            </div>
-                            <div>
-                                <label>Opiekun</label>
-                                <select class="input w-full" data-field="assigned_to" id="staff-select">
-                                    <option value="">—</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Znak sprawy (urząd)</label>
-                                <input type="text" class="input w-full" data-field="znak_sprawy">
-                            </div>
-                            <div>
-                                <label>Nr sprawy (wewn.)</label>
-                                <input type="text" class="input w-full" data-field="case_number">
-                            </div>
-                            <div>
-                                <label>Oddział</label>
-                                <select class="input w-full" data-field="department_id" id="dept-select">
-                                    <option value="">—</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Inspektor</label>
-                                <select class="input w-full" data-field="inspector_id" id="inspector-select">
-                                    <option value="">—</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Kierownik (organ nadrzędny)</label>
-                                <input type="text" class="input w-full" data-field="kierownik">
-                            </div>
-                            <div>
-                                <label>Status aktywności / powód bezczynności</label>
-                                <select class="input w-full" data-field="inactivity_reason">
-                                    <option value="none">—</option>
-                                    <option value="brak_pracownika">❗ Brak działania pracownika</option>
-                                    <option value="brak_urzedu">⏳ Brak reakcji urzędu</option>
-                                    <option value="brak_klienta">📞 Brak reakcji klienta</option>
-                                    <option value="brak_dokumentow">📄 Brak dokumentów</option>
-                                    <option value="inne">Inne</option>
-                                </select>
-                            </div>
-                            <div class="col-span-2">
-                                <label>Notatka do statusu aktywności</label>
-                                <input type="text" class="input w-full" data-field="inactivity_note" placeholder="Np. Klient obiecał dokumenty do 15.04">
-                            </div>
-                            <div class="col-span-2">
-                                <label>Dodatkowy komentarz</label>
-                                <textarea class="input w-full" rows="3" data-field="extra_notes"></textarea>
-                            </div>
+            <!-- BODY -->
+            <div class="case-body">
+                <!-- ASIDE -->
+                <aside class="case-aside">
+                    <section class="module-card">
+                        <div class="module-card-header">
+                            <span><i class="ph ph-user text-blue-400 mr-1"></i>Klient</span>
                         </div>
-                    </section>
-
-                    <section class="card">
-                        <div class="card-header">Daty i czynności proceduralne</div>
-                        <div class="card-body grid grid-cols-2 gap-4">
-                            <div><label>Data przyjęcia sprawy</label><input type="date" class="input w-full" data-field="date_accepted"></div>
-                            <div><label>Data złożenia wniosku</label><input type="date" class="input w-full" data-field="date_submitted"></div>
-                            <div><label>Data przystąpienia</label><input type="date" class="input w-full" data-field="date_joined"></div>
-                            <div><label>Data wniosku o przekazanie</label><input type="date" class="input w-full" data-field="date_transfer_request"></div>
-                            <div><label>Data przekazania</label><input type="date" class="input w-full" data-field="date_transferred"></div>
-                            <div><label>Wszczęcie postępowania</label>
-                                <select class="input w-full" data-field="wszczecie_postepowania">
-                                    <option value="false">Nie</option>
-                                    <option value="true">Tak</option>
-                                </select>
-                            </div>
-                            <div><label>Ponaglenie (data)</label><input type="date" class="input w-full" data-field="ponaglenie_date"></div>
-                            <div><label>Skarga (data)</label><input type="date" class="input w-full" data-field="skarga_date"></div>
-                        </div>
-                    </section>
-
-                    <section class="card">
-                        <div class="card-header">Finanse</div>
-                        <div class="card-body grid grid-cols-2 gap-4">
-                            <div>
-                                <label>Wynagrodzenie</label>
-                                <input type="number" step="0.01" class="input w-full" data-field="fee_amount">
-                            </div>
-                            <div>
-                                <label>Paragon</label>
-                                <select class="input w-full" data-field="paragon">
-                                    <option value="false">Nie</option>
-                                    <option value="true">Tak</option>
-                                </select>
-                            </div>
-                            <div class="col-span-2">
-                                <label>Uwagi do wynagrodzenia</label>
-                                <textarea class="input w-full" rows="2" data-field="fee_notes"></textarea>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Historia -->
-                    <section class="card">
-                        <div class="card-header flex items-center justify-between">
-                            <span>Historia działań</span>
-                            <button class="btn btn-secondary btn-sm" onclick="openNoteModal()"><i class="ph ph-plus"></i> Dodaj</button>
-                        </div>
-                        <div id="activities-list" class="divide-y divide-zinc-900/50 max-h-[500px] overflow-y-auto">
-                            <div class="p-4 text-zinc-600 text-sm">Ładuję...</div>
-                        </div>
-                    </section>
-                </div>
-
-                <!-- Prawa kolumna: klient + zadania + platnosci + dokumenty -->
-                <div class="space-y-4">
-                    <section class="card">
-                        <div class="card-header">Klient</div>
-                        <div class="card-body space-y-2 text-sm" id="client-panel">
+                        <div class="p-3" id="client-panel">
                             <div class="text-zinc-500">—</div>
                         </div>
                     </section>
 
-                    <section class="card">
-                        <div class="card-header">Pracodawca</div>
-                        <div class="card-body text-sm" id="employer-panel">
+                    <section class="module-card">
+                        <div class="module-card-header">
+                            <span><i class="ph ph-buildings text-indigo-400 mr-1"></i>Pracodawca</span>
+                        </div>
+                        <div class="p-3" id="employer-panel">
                             <div class="text-zinc-500">—</div>
                         </div>
                     </section>
 
-                    <section class="card">
-                        <div class="card-header flex items-center justify-between">
-                            <span>Zadania</span>
-                            <button class="btn btn-ghost btn-sm" onclick="openTaskModal()"><i class="ph ph-plus"></i></button>
+                    <section class="module-card hidden" id="trusted-profile-card">
+                        <div class="module-card-header">
+                            <span class="flex items-center gap-2"><i class="ph ph-shield-warning text-amber-400"></i>Profil zaufany</span>
                         </div>
-                        <div id="tasks-list" class="divide-y divide-zinc-900/50 max-h-[300px] overflow-y-auto">
-                            <div class="p-3 text-zinc-600 text-sm">—</div>
-                        </div>
-                    </section>
-
-                    <section class="card">
-                        <div class="card-header flex items-center justify-between">
-                            <span>Płatności</span>
-                            <button class="btn btn-ghost btn-sm" onclick="openPaymentModal()"><i class="ph ph-plus"></i></button>
-                        </div>
-                        <div id="payments-list" class="divide-y divide-zinc-900/50 max-h-[300px] overflow-y-auto">
-                            <div class="p-3 text-zinc-600 text-sm">—</div>
-                        </div>
-                        <div class="p-3 border-t border-zinc-900/50 text-xs space-y-1" id="payment-summary">
-                            <!-- wypełniane -->
-                        </div>
-                    </section>
-
-                    <section class="card">
-                        <div class="card-header flex items-center justify-between">
-                            <span>Dokumenty</span>
-                            <label class="btn btn-ghost btn-sm cursor-pointer">
-                                <i class="ph ph-plus"></i>
-                                <input type="file" id="doc-upload" class="hidden" multiple>
-                            </label>
-                        </div>
-                        <div id="documents-list" class="divide-y divide-zinc-900/50 max-h-[250px] overflow-y-auto">
-                            <div class="p-3 text-zinc-600 text-sm">—</div>
-                        </div>
-                    </section>
-
-                    <section class="card">
-                        <div class="card-header flex items-center justify-between">
-                            <span>Spotkania / Terminy</span>
-                            <button class="btn btn-ghost btn-sm" onclick="openAppointmentModal()"><i class="ph ph-plus"></i></button>
-                        </div>
-                        <div id="appointments-list" class="divide-y divide-zinc-900/50 max-h-[300px] overflow-y-auto">
-                            <div class="p-3 text-zinc-600 text-sm">—</div>
-                        </div>
-                    </section>
-
-                    <section class="card" id="trusted-profile-card">
-                        <div class="card-header flex items-center gap-2">
-                            <i class="ph ph-shield-warning text-amber-400"></i>
-                            <span>Profil zaufany</span>
-                        </div>
-                        <div class="card-body">
-                            <div class="bg-amber-900/20 border border-amber-800/50 rounded-md p-2.5 mb-3 text-xs text-amber-200">
-                                <i class="ph ph-warning mr-1"></i>
-                                Dane wrażliwe. Dostęp logowany, wymaga potwierdzenia.
+                        <div class="p-3">
+                            <div class="bg-amber-900/20 border border-amber-800/50 rounded p-2 mb-3 text-xs text-amber-200">
+                                <i class="ph ph-warning mr-1"></i>Dostęp logowany
                             </div>
-                            <button class="btn btn-secondary w-full text-xs" onclick="requestTrustedProfileAccess()">
-                                <i class="ph ph-lock-key"></i> Pokaż login/hasło
-                            </button>
+                            <button class="btn btn-secondary btn-sm w-full" onclick="requestTrustedProfileAccess()"><i class="ph ph-lock-key"></i> Pokaż dane</button>
                         </div>
                     </section>
+                </aside>
+
+                <!-- MAIN CONTENT (tabs) -->
+                <div class="case-main">
+                    <!-- OVERVIEW TAB -->
+                    <div class="tab-panel" data-panel="overview">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <section class="module-card">
+                                <div class="module-card-header">
+                                    <span><i class="ph ph-note text-zinc-400 mr-1"></i>Ostatnia notatka</span>
+                                    <button class="btn btn-ghost btn-sm" onclick="openNoteModal()"><i class="ph ph-plus"></i></button>
+                                </div>
+                                <div id="overview-last-note" class="p-4">
+                                    <div class="text-zinc-500 text-sm">Brak notatek — dodaj pierwszą!</div>
+                                </div>
+                            </section>
+
+                            <section class="module-card">
+                                <div class="module-card-header">
+                                    <span><i class="ph ph-trend-up text-emerald-400 mr-1"></i>Status finansowy</span>
+                                </div>
+                                <div id="overview-finance" class="p-4">
+                                    <div class="text-zinc-500 text-sm">Ładuję...</div>
+                                </div>
+                            </section>
+
+                            <section class="module-card md:col-span-2">
+                                <div class="module-card-header">
+                                    <span><i class="ph ph-list-checks text-cyan-400 mr-1"></i>Nadchodzące: zadania + terminy</span>
+                                </div>
+                                <div id="overview-upcoming" class="divide-y divide-zinc-900/50">
+                                    <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                                </div>
+                            </section>
+
+                            <section class="module-card md:col-span-2">
+                                <div class="module-card-header">
+                                    <span><i class="ph ph-clock text-zinc-400 mr-1"></i>Ostatnia aktywność (5)</span>
+                                    <button class="btn btn-ghost btn-sm" onclick="switchTab('history')">Cała historia →</button>
+                                </div>
+                                <div id="overview-activity" class="p-4">
+                                    <div class="text-zinc-500 text-sm">Ładuję...</div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    <!-- HISTORY TAB -->
+                    <div class="tab-panel hidden" data-panel="history">
+                        <section class="module-card">
+                            <div class="module-card-header">
+                                <span>Historia działań</span>
+                                <div class="flex gap-1">
+                                    <select id="history-filter" class="filter-input text-xs" style="width: 160px">
+                                        <option value="">Wszystkie zdarzenia</option>
+                                        <option value="note">Tylko notatki</option>
+                                        <option value="status_change">Zmiany statusu</option>
+                                        <option value="stage_change">Zmiany etapu</option>
+                                        <option value="task_assigned">Zadania</option>
+                                        <option value="document_added">Dokumenty</option>
+                                        <option value="payment_received">Płatności</option>
+                                        <option value="email_sent,whatsapp_sent">Komunikacja</option>
+                                        <option value="decision_received">Decyzje</option>
+                                    </select>
+                                    <button class="btn btn-primary btn-sm" onclick="openNoteModal()"><i class="ph ph-plus"></i> Dodaj notatkę</button>
+                                </div>
+                            </div>
+                            <div id="activities-list" class="p-4">
+                                <div class="text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- TASKS TAB -->
+                    <div class="tab-panel hidden" data-panel="tasks">
+                        <section class="module-card">
+                            <div class="module-card-header">
+                                <span>Zadania</span>
+                                <div class="flex gap-1">
+                                    <select id="tasks-filter" class="filter-input text-xs" style="width: 160px">
+                                        <option value="open">Otwarte</option>
+                                        <option value="done">Ukończone</option>
+                                        <option value="all">Wszystkie</option>
+                                    </select>
+                                    <button class="btn btn-primary btn-sm" onclick="openTaskModal()"><i class="ph ph-plus"></i> Nowe zadanie</button>
+                                </div>
+                            </div>
+                            <div id="tasks-list" class="divide-y divide-zinc-900/50">
+                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- FINANCE TAB -->
+                    <div class="tab-panel hidden" data-panel="finance">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4" id="finance-kpis"></div>
+
+                        <section class="module-card mb-4">
+                            <div class="module-card-header">
+                                <span>Plan płatności</span>
+                            </div>
+                            <div id="finance-plan" class="p-4">
+                                <div class="text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+
+                        <section class="module-card">
+                            <div class="module-card-header">
+                                <span>Historia wpłat</span>
+                                <button class="btn btn-primary btn-sm" onclick="openPaymentModal()"><i class="ph ph-plus"></i> Nowa wpłata</button>
+                            </div>
+                            <div id="payments-list">
+                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- DOCUMENTS TAB -->
+                    <div class="tab-panel hidden" data-panel="documents">
+                        <section class="module-card">
+                            <div class="module-card-header">
+                                <span>Dokumenty</span>
+                                <label class="btn btn-primary btn-sm cursor-pointer">
+                                    <i class="ph ph-upload-simple"></i> Dodaj plik
+                                    <input type="file" id="doc-upload" class="hidden" multiple>
+                                </label>
+                            </div>
+                            <div id="documents-list">
+                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- CALENDAR TAB -->
+                    <div class="tab-panel hidden" data-panel="calendar">
+                        <section class="module-card">
+                            <div class="module-card-header">
+                                <span>Spotkania i terminy</span>
+                                <button class="btn btn-primary btn-sm" onclick="openAppointmentModal()"><i class="ph ph-plus"></i> Nowy termin</button>
+                            </div>
+                            <div id="appointments-list">
+                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- DANE TAB -->
+                    <div class="tab-panel hidden" data-panel="data">
+                        <section class="module-card mb-4">
+                            <div class="module-card-header"><span>Dane podstawowe</span></div>
+                            <div class="p-4 grid grid-cols-2 gap-3">
+                                <div>
+                                    <label>Status</label>
+                                    <select class="input w-full" data-field="status">
+                                        <option value="lead">Lead</option>
+                                        <option value="zlecona">Zlecona</option>
+                                        <option value="aktywna">Aktywna</option>
+                                        <option value="zakonczona">Zakończona</option>
+                                        <option value="archiwum">Archiwum</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Etap postępowania</label>
+                                    <select class="input w-full" data-field="stage">
+                                        <option value="">—</option>
+                                        <option value="weryfikacja_dokumentow">Weryfikacja dok.</option>
+                                        <option value="zlozenie_wniosku">Złożenie wniosku</option>
+                                        <option value="oczekiwanie_na_osobiste">Oczek. na osobiste</option>
+                                        <option value="wyznaczono_termin">Wyznaczony termin</option>
+                                        <option value="po_osobistym">Po osobistym</option>
+                                        <option value="oczekiwanie_na_decyzje">Oczek. decyzji</option>
+                                        <option value="zakonczenie">Zakończenie</option>
+                                        <option value="odwolanie">Odwołanie</option>
+                                        <option value="umorzenie">Umorzenie</option>
+                                        <option value="przystapienie">Przystąpienie</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <label>Uwagi do statusu</label>
+                                    <textarea class="input w-full" rows="2" data-field="status_notes"></textarea>
+                                </div>
+                                <div><label>Rodzaj sprawy</label><input type="text" class="input w-full" data-field="case_type" placeholder="np. PRACA"></div>
+                                <div><label>Uwagi do rodzaju</label><input type="text" class="input w-full" data-field="case_type_notes"></div>
+                                <div>
+                                    <label>Typ sprawy</label>
+                                    <select class="input w-full" data-field="kind">
+                                        <option value="nowa_sprawa">Nowa sprawa</option>
+                                        <option value="przystapienie_do_sprawy">Przystąpienie</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Metoda złożenia</label>
+                                    <select class="input w-full" data-field="submission_method">
+                                        <option value="">—</option>
+                                        <option value="osobiscie">Osobiście</option>
+                                        <option value="elektronicznie">Elektronicznie</option>
+                                        <option value="pocztowo">Pocztowo</option>
+                                        <option value="przeniesienie">Przeniesienie</option>
+                                    </select>
+                                </div>
+                                <div><label>Kategoria</label><input type="text" class="input w-full" data-field="category"></div>
+                                <div>
+                                    <label>Opiekun</label>
+                                    <select class="input w-full" data-field="assigned_to" id="staff-select"><option value="">—</option></select>
+                                </div>
+                                <div><label>Znak sprawy</label><input type="text" class="input w-full" data-field="znak_sprawy"></div>
+                                <div><label>Nr sprawy (wewn.)</label><input type="text" class="input w-full" data-field="case_number"></div>
+                                <div>
+                                    <label>Oddział</label>
+                                    <select class="input w-full" data-field="department_id" id="dept-select"><option value="">—</option></select>
+                                </div>
+                                <div>
+                                    <label>Inspektor</label>
+                                    <select class="input w-full" data-field="inspector_id" id="inspector-select"><option value="">—</option></select>
+                                </div>
+                                <div><label>Kierownik</label><input type="text" class="input w-full" data-field="kierownik"></div>
+                                <div>
+                                    <label>Status aktywności</label>
+                                    <select class="input w-full" data-field="inactivity_reason">
+                                        <option value="none">—</option>
+                                        <option value="brak_pracownika">❗ Brak działania pracownika</option>
+                                        <option value="brak_urzedu">⏳ Brak reakcji urzędu</option>
+                                        <option value="brak_klienta">📞 Brak reakcji klienta</option>
+                                        <option value="brak_dokumentow">📄 Brak dokumentów</option>
+                                        <option value="inne">Inne</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2"><label>Notatka do statusu aktywności</label><input type="text" class="input w-full" data-field="inactivity_note"></div>
+                                <div class="col-span-2">
+                                    <label>Dodatkowy komentarz</label>
+                                    <textarea class="input w-full" rows="3" data-field="extra_notes"></textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="module-card mb-4">
+                            <div class="module-card-header"><span>Daty i czynności proceduralne</span></div>
+                            <div class="p-4 grid grid-cols-2 gap-3">
+                                <div><label>Data przyjęcia</label><input type="date" class="input w-full" data-field="date_accepted"></div>
+                                <div><label>Data złożenia wniosku</label><input type="date" class="input w-full" data-field="date_submitted"></div>
+                                <div><label>Data przystąpienia</label><input type="date" class="input w-full" data-field="date_joined"></div>
+                                <div><label>Data wniosku o przekazanie</label><input type="date" class="input w-full" data-field="date_transfer_request"></div>
+                                <div><label>Data przekazania</label><input type="date" class="input w-full" data-field="date_transferred"></div>
+                                <div>
+                                    <label>Wszczęcie postępowania</label>
+                                    <select class="input w-full" data-field="wszczecie_postepowania">
+                                        <option value="false">Nie</option>
+                                        <option value="true">Tak</option>
+                                    </select>
+                                </div>
+                                <div><label>Ponaglenie (data)</label><input type="date" class="input w-full" data-field="ponaglenie_date"></div>
+                                <div><label>Skarga (data)</label><input type="date" class="input w-full" data-field="skarga_date"></div>
+                            </div>
+                        </section>
+
+                        <section class="module-card">
+                            <div class="module-card-header"><span>Finanse</span></div>
+                            <div class="p-4 grid grid-cols-2 gap-3">
+                                <div><label>Wynagrodzenie</label><input type="number" step="0.01" class="input w-full" data-field="fee_amount"></div>
+                                <div>
+                                    <label>Paragon</label>
+                                    <select class="input w-full" data-field="paragon">
+                                        <option value="false">Nie</option>
+                                        <option value="true">Tak</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2"><label>Uwagi do wynagrodzenia</label><textarea class="input w-full" rows="2" data-field="fee_notes"></textarea></div>
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </div>
 
             <!-- Save floater -->
-            <div id="save-floater" class="fixed bottom-6 right-6 hidden z-30">
+            <div id="save-floater" class="fixed bottom-6 left-1/2 -translate-x-1/2 hidden z-30">
                 <button class="btn btn-primary shadow-2xl" onclick="saveCase()">
                     <i class="ph ph-check"></i>
-                    <span id="save-text">Zapisz zmiany</span>
+                    <span id="save-text">Zapisz zmiany (Ctrl+S)</span>
                     <span class="spinner hidden" id="save-spinner"></span>
                 </button>
             </div>
@@ -340,7 +474,6 @@
     </main>
 </div>
 
-<!-- Modale -->
 <div id="modals-container"></div>
 
 <script src="components/sidebar.js" data-active="cases"></script>
@@ -349,6 +482,40 @@ let caseData = null;
 let originalData = {};
 let caseId = null;
 let isDirty = false;
+let activeTab = 'overview';
+let tabsLoaded = {};
+let allActivities = [];
+let allTasks = [];
+let allPayments = [];
+let allAppointments = [];
+let allDocuments = [];
+let paymentPlan = null;
+
+const TYPE_ICONS = {
+    status_change: { icon: 'ph-arrows-left-right', color: 'text-blue-400' },
+    stage_change: { icon: 'ph-flag', color: 'text-purple-400' },
+    note: { icon: 'ph-note', color: 'text-zinc-400' },
+    document_added: { icon: 'ph-file-plus', color: 'text-emerald-400' },
+    task_assigned: { icon: 'ph-check-square', color: 'text-cyan-400' },
+    email_sent: { icon: 'ph-envelope', color: 'text-blue-300' },
+    whatsapp_sent: { icon: 'ph-whatsapp-logo', color: 'text-green-400' },
+    payment_received: { icon: 'ph-coins', color: 'text-yellow-400' },
+    appointment_created: { icon: 'ph-calendar-plus', color: 'text-pink-400' },
+    decision_received: { icon: 'ph-file-text', color: 'text-emerald-400' },
+};
+
+const TYPE_LABELS = {
+    status_change: 'Zmiana statusu',
+    stage_change: 'Zmiana etapu',
+    note: 'Notatka',
+    document_added: 'Dodano dokument',
+    task_assigned: 'Zadanie',
+    email_sent: 'Email',
+    whatsapp_sent: 'WhatsApp',
+    payment_received: 'Płatność',
+    appointment_created: 'Termin',
+    decision_received: 'Decyzja',
+};
 
 document.addEventListener('gmp-auth-ready', init);
 
@@ -359,30 +526,63 @@ async function init() {
 
     await loadStaffAndDepts();
 
-    if (isNew) {
-        await createNewCase();
-    } else if (caseId) {
-        await loadCase();
+    if (isNew) await createNewCase();
+    else if (caseId) await loadCase();
+    else { showError('Brak ID sprawy'); return; }
+
+    // Tabs navigation
+    document.querySelectorAll('.case-tab').forEach(t => {
+        t.addEventListener('click', () => switchTab(t.dataset.tab));
+    });
+
+    // Initial tab from URL hash
+    const hash = window.location.hash.replace('#', '');
+    if (hash && document.querySelector(`.case-tab[data-tab="${hash}"]`)) {
+        switchTab(hash);
     } else {
-        showError('Brak ID sprawy');
+        switchTab('overview');
     }
 
-    // Dirty tracking
+    // Dirty tracking (tylko data tab)
     document.querySelectorAll('[data-field]').forEach(el => {
         el.addEventListener('input', markDirty);
         el.addEventListener('change', markDirty);
     });
 
-    // Ctrl+S
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            e.preventDefault();
-            if (isDirty) saveCase();
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable) {
+            // Ctrl+S only in inputs
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (isDirty) saveCase(); }
+            return;
         }
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (isDirty) saveCase(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); openNoteModal(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 't') { e.preventDefault(); openTaskModal(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); openPaymentModal(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'm') { e.preventDefault(); openAppointmentModal(); }
     });
 
     // File upload
     document.getElementById('doc-upload').addEventListener('change', uploadDocuments);
+
+    // Filter handlers
+    document.getElementById('history-filter').addEventListener('change', renderHistory);
+    document.getElementById('tasks-filter').addEventListener('change', renderTasksTab);
+}
+
+function switchTab(name) {
+    activeTab = name;
+    document.querySelectorAll('.case-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== name));
+    history.replaceState(null, '', `#${name}`);
+
+    // Lazy load
+    if (name === 'history' && !tabsLoaded.history) { renderHistory(); tabsLoaded.history = true; }
+    if (name === 'tasks' && !tabsLoaded.tasks) { renderTasksTab(); tabsLoaded.tasks = true; }
+    if (name === 'finance' && !tabsLoaded.finance) { renderFinanceTab(); tabsLoaded.finance = true; }
+    if (name === 'documents' && !tabsLoaded.documents) { renderDocumentsTab(); tabsLoaded.documents = true; }
+    if (name === 'calendar' && !tabsLoaded.calendar) { renderCalendarTab(); tabsLoaded.calendar = true; }
 }
 
 async function loadStaffAndDepts() {
@@ -392,73 +592,49 @@ async function loadStaffAndDepts() {
         db.from('gmp_inspectors').select('id, full_name').order('full_name').limit(500),
     ]);
     const staffSel = document.getElementById('staff-select');
-    (staff || []).forEach(s => {
-        const o = document.createElement('option');
-        o.value = s.id; o.textContent = s.full_name;
-        staffSel.appendChild(o);
-    });
+    (staff || []).forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.full_name; staffSel.appendChild(o); });
     const deptSel = document.getElementById('dept-select');
-    (depts || []).forEach(d => {
-        const o = document.createElement('option');
-        o.value = d.id; o.textContent = d.code + (d.name ? ` — ${d.name}` : '');
-        deptSel.appendChild(o);
-    });
+    (depts || []).forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.code + (d.name ? ` — ${d.name}` : ''); deptSel.appendChild(o); });
     const inspSel = document.getElementById('inspector-select');
-    (inspectors || []).forEach(i => {
-        const o = document.createElement('option');
-        o.value = i.id; o.textContent = i.full_name;
-        inspSel.appendChild(o);
-    });
+    (inspectors || []).forEach(i => { const o = document.createElement('option'); o.value = i.id; o.textContent = i.full_name; inspSel.appendChild(o); });
 }
 
 async function loadCase() {
-    const { data, error } = await db
-        .from('gmp_cases')
+    const { data, error } = await db.from('gmp_cases')
         .select('*, gmp_clients(*), gmp_employers(*), gmp_staff(full_name), gmp_office_departments(code, name), gmp_inspectors(full_name), gmp_offices(name, city)')
-        .eq('id', caseId)
-        .maybeSingle();
-
-    if (error || !data) {
-        showError(error?.message || 'Nie znaleziono sprawy');
-        return;
-    }
-
+        .eq('id', caseId).maybeSingle();
+    if (error || !data) { showError(error?.message || 'Nie znaleziono sprawy'); return; }
     caseData = data;
     fillForm();
+
     document.getElementById('case-loading').classList.add('hidden');
     document.getElementById('case-content').classList.remove('hidden');
 
-    // Rownoleg: historia, zadania, platnosci, dokumenty, spotkania, ostatnia notatka
-    Promise.all([
-        loadActivities(),
-        loadTasks(),
-        loadPayments(),
-        loadDocuments(),
-        loadAppointments(),
-        loadLastNote(),
-    ]);
+    // Load data
+    await Promise.all([loadActivitiesData(), loadTasksData(), loadPaymentsData(), loadAppointmentsData(), loadDocumentsData(), loadTrustedProfileData()]);
+
+    // Render overview (default)
+    renderOverview();
+    updateCounts();
 }
 
 async function createNewCase() {
-    // Tworzymy szkielet sprawy
-    const { data, error } = await db
-        .from('gmp_cases')
-        .insert({
-            status: 'lead',
-            kind: 'nowa_sprawa',
-            import_source: 'manual',
-        })
-        .select()
-        .single();
+    const { data, error } = await db.from('gmp_cases').insert({
+        status: 'lead', kind: 'nowa_sprawa', import_source: 'manual',
+        assigned_to: window.currentStaff?.id,
+        date_accepted: new Date().toISOString().slice(0, 10),
+    }).select().single();
     if (error) { showError(error.message); return; }
     caseId = data.id;
-    // Redirect do URL z id
     window.history.replaceState({}, '', `case.html?id=${caseId}`);
     caseData = data;
     fillForm();
     document.getElementById('case-loading').classList.add('hidden');
     document.getElementById('case-content').classList.remove('hidden');
     toast.success('Utworzono nową sprawę');
+    await Promise.all([loadActivitiesData(), loadTasksData(), loadPaymentsData(), loadAppointmentsData(), loadDocumentsData()]);
+    renderOverview();
+    updateCounts();
 }
 
 function showError(msg) {
@@ -470,15 +646,14 @@ function showError(msg) {
 
 function fillForm() {
     const d = caseData;
-    // Header
     const client = d.gmp_clients ? `${d.gmp_clients.last_name} ${d.gmp_clients.first_name}` : '(bez klienta)';
     document.getElementById('case-client-name').textContent = client;
     document.getElementById('breadcrumb-case').textContent = client + (d.case_number ? ` / #${d.case_number}` : '');
-    document.title = `${client} - GetMyPermit CRM`;
+    document.title = `${client} - CRM`;
 
-    const statusBadge = document.getElementById('case-status-badge');
-    statusBadge.className = `badge badge-${d.status || 'lead'}`;
-    statusBadge.textContent = d.status || 'lead';
+    const sb = document.getElementById('case-status-badge');
+    sb.className = `badge badge-${d.status || 'lead'}`;
+    sb.textContent = d.status || 'lead';
 
     if (d.stage) {
         document.getElementById('case-stage-badge').textContent = d.stage;
@@ -488,86 +663,92 @@ function fillForm() {
         document.getElementById('case-category-badge').textContent = d.category;
         document.getElementById('case-category-badge').classList.remove('hidden');
     }
-
     document.getElementById('case-number-display').textContent = d.case_number || d.id.slice(0, 8);
     if (d.znak_sprawy) document.getElementById('case-znak-sprawy').textContent = d.znak_sprawy;
     if (d.case_type) document.getElementById('case-type-display').textContent = '• ' + d.case_type;
     if (d.gmp_employers) document.getElementById('case-employer-display').textContent = '• ' + d.gmp_employers.name;
 
-    // Pin state
+    // Pin
     const pinIcon = document.getElementById('pin-icon');
-    const pinBtn = document.getElementById('pin-btn');
+    const pinInd = document.getElementById('pin-indicator');
     if (d.is_pinned) {
         pinIcon.className = 'ph-fill ph-push-pin text-amber-400';
-        pinBtn.title = 'Odepnij sprawę';
+        pinInd.className = 'ph-fill ph-push-pin text-amber-400';
+        pinInd.classList.remove('hidden');
     } else {
         pinIcon.className = 'ph ph-push-pin';
-        pinBtn.title = 'Przypnij sprawę';
+        pinInd.classList.add('hidden');
     }
 
     // Form fields
-    const fields = document.querySelectorAll('[data-field]');
-    fields.forEach(el => {
+    document.querySelectorAll('[data-field]').forEach(el => {
         const f = el.dataset.field;
         const val = d[f];
-        if (val == null) {
-            el.value = '';
-        } else if (el.type === 'checkbox') {
-            el.checked = !!val;
-        } else if (typeof val === 'boolean') {
-            el.value = val ? 'true' : 'false';
-        } else {
-            el.value = val;
-        }
+        if (val == null) el.value = '';
+        else if (typeof val === 'boolean') el.value = val ? 'true' : 'false';
+        else el.value = val;
         originalData[f] = el.value;
     });
 
-    // Klient panel
+    // Client panel
     const cp = document.getElementById('client-panel');
+    const qc = document.getElementById('quick-contact');
     if (d.gmp_clients) {
         const c = d.gmp_clients;
         const phoneDigits = (c.phone || '').replace(/\D/g, '');
         const phoneIntl = phoneDigits && !phoneDigits.startsWith('48') ? '48' + phoneDigits : phoneDigits;
         const waUrl = phoneIntl ? `https://wa.me/${phoneIntl}` : null;
-        const mailUrl = c.email ? `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent('Sprawa ' + (d.case_number || d.id.slice(0,8)))}` : null;
-        const callUrl = c.phone ? `tel:${phoneIntl || phoneDigits}` : null;
+        const mailUrl = c.email ? `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent('Sprawa ' + (d.case_number || d.id.slice(0, 8)))}` : null;
+        const callUrl = phoneDigits ? `tel:${phoneIntl || phoneDigits}` : null;
 
+        // Panel
         cp.innerHTML = `
-            <div class="font-medium text-white">${esc(c.last_name)} ${esc(c.first_name)}</div>
-            ${c.birth_date ? `<div class="text-zinc-400"><i class="ph ph-cake text-xs"></i> ${fmt.date(c.birth_date)}</div>` : ''}
-            ${c.nationality ? `<div class="text-zinc-400"><i class="ph ph-flag text-xs"></i> ${esc(c.nationality)}</div>` : ''}
-            ${c.phone ? `<div class="text-zinc-300 font-mono text-xs"><i class="ph ph-phone"></i> ${esc(c.phone)}</div>` : ''}
-            ${c.email ? `<div class="text-zinc-300 text-xs break-all"><i class="ph ph-envelope"></i> ${esc(c.email)}</div>` : ''}
-
-            <div class="flex gap-1 mt-3 pb-1">
-                ${callUrl ? `<a href="${callUrl}" class="btn btn-secondary btn-sm flex-1" title="Zadzwoń" onclick="logContactActivity('call')"><i class="ph ph-phone-call"></i></a>` : ''}
-                ${waUrl ? `<a href="${waUrl}" target="_blank" class="btn btn-secondary btn-sm flex-1" title="WhatsApp" onclick="logContactActivity('whatsapp_sent')"><i class="ph ph-whatsapp-logo text-green-400"></i></a>` : ''}
-                ${mailUrl ? `<a href="${mailUrl}" class="btn btn-secondary btn-sm flex-1" title="Email" onclick="logContactActivity('email_sent')"><i class="ph ph-envelope"></i></a>` : ''}
+            <div class="flex items-center gap-2 mb-3">
+                ${window.avatar(`${c.last_name} ${c.first_name}`, 'lg')}
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-white truncate">${esc(c.last_name)} ${esc(c.first_name)}</div>
+                    ${c.nationality ? `<div class="text-xs text-zinc-500">${esc(c.nationality)}</div>` : ''}
+                </div>
             </div>
-
-            <div class="pt-2 flex items-center gap-2">
+            <div class="space-y-1 text-xs">
+                ${c.birth_date ? `<div class="text-zinc-400"><i class="ph ph-cake text-[10px]"></i> ${fmt.date(c.birth_date)}</div>` : ''}
+                ${c.phone ? `<div class="text-zinc-300 font-mono"><i class="ph ph-phone"></i> ${esc(c.phone)}</div>` : ''}
+                ${c.email ? `<div class="text-zinc-300 break-all"><i class="ph ph-envelope"></i> ${esc(c.email)}</div>` : ''}
+            </div>
+            <div class="flex gap-2 mt-3 pt-3 border-t border-zinc-900/50">
                 <a href="clients.html?id=${c.id}" class="text-blue-400 text-xs hover:underline">Kartoteka →</a>
-                <button class="btn btn-ghost btn-sm" onclick="openClientPicker()" title="Zmień klienta"><i class="ph ph-swap text-xs"></i></button>
+                <span class="flex-1"></span>
+                <button class="btn btn-ghost btn-sm" onclick="openClientPicker()" title="Zmień"><i class="ph ph-swap text-xs"></i></button>
             </div>`;
+
+        // Quick contact buttons (w headerze)
+        qc.innerHTML = `
+            ${callUrl ? `<a href="${callUrl}" class="quick-action call" onclick="logContactActivity('call')" title="Zadzwoń"><i class="ph ph-phone-call"></i></a>` : ''}
+            ${waUrl ? `<a href="${waUrl}" target="_blank" class="quick-action wa" onclick="logContactActivity('whatsapp_sent')" title="WhatsApp"><i class="ph ph-whatsapp-logo"></i></a>` : ''}
+            ${mailUrl ? `<a href="${mailUrl}" class="quick-action email" onclick="logContactActivity('email_sent')" title="Email"><i class="ph ph-envelope"></i></a>` : ''}
+        `;
     } else {
         cp.innerHTML = `
-            <div class="text-zinc-500 text-sm mb-2">Brak przypisanego klienta</div>
+            <div class="text-zinc-500 text-sm mb-2">Brak klienta</div>
             <div class="flex gap-2">
                 <button class="btn btn-secondary btn-sm flex-1" onclick="openClientPicker()"><i class="ph ph-magnifying-glass"></i> Wybierz</button>
                 <button class="btn btn-secondary btn-sm flex-1" onclick="openNewClientInline()"><i class="ph ph-user-plus"></i> Nowy</button>
             </div>`;
+        qc.innerHTML = '';
     }
 
-    // Pracodawca panel
     const ep = document.getElementById('employer-panel');
     if (d.gmp_employers) {
         ep.innerHTML = `
-            <div class="font-medium text-white">${esc(d.gmp_employers.name)}</div>
-            ${d.gmp_employers.nip ? `<div class="text-zinc-400 text-xs mt-1">NIP: ${esc(d.gmp_employers.nip)}</div>` : ''}
-            <div class="pt-2 flex items-center gap-2">
+            <div class="font-medium text-white text-sm mb-1">${esc(d.gmp_employers.name)}</div>
+            ${d.gmp_employers.nip ? `<div class="text-zinc-400 text-xs">NIP: ${esc(d.gmp_employers.nip)}</div>` : ''}
+            ${d.gmp_employers.contact_person ? `<div class="text-zinc-400 text-xs mt-1">${esc(d.gmp_employers.contact_person)}</div>` : ''}
+            ${d.gmp_employers.contact_phone ? `<div class="text-zinc-300 text-xs font-mono mt-1"><i class="ph ph-phone"></i> ${esc(d.gmp_employers.contact_phone)}</div>` : ''}
+            <div class="flex gap-2 mt-3 pt-3 border-t border-zinc-900/50">
                 <a href="employers.html?id=${d.gmp_employers.id}" class="text-blue-400 text-xs hover:underline">Kartoteka →</a>
-                <button class="btn btn-ghost btn-sm" onclick="openEmployerPicker()" title="Zmień pracodawcę"><i class="ph ph-swap text-xs"></i></button>
-                <button class="btn btn-ghost btn-sm" onclick="db.from('gmp_cases').update({employer_id: null}).eq('id', caseId).then(() => { toast.success('Odłączono'); loadCase(); })" title="Odłącz"><i class="ph ph-x text-xs"></i></button>
+                <span class="flex-1"></span>
+                <button class="btn btn-ghost btn-sm" onclick="openEmployerPicker()" title="Zmień"><i class="ph ph-swap text-xs"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="unlinkEmployer()" title="Odłącz"><i class="ph ph-x text-xs"></i></button>
             </div>`;
     } else {
         ep.innerHTML = `
@@ -579,7 +760,13 @@ function fillForm() {
     }
 }
 
-function markDirty() {
+async function unlinkEmployer() {
+    await db.from('gmp_cases').update({ employer_id: null }).eq('id', caseId);
+    toast.success('Odłączono');
+    loadCase();
+}
+
+async function markDirty() {
     isDirty = true;
     document.getElementById('save-floater').classList.remove('hidden');
 }
@@ -602,25 +789,21 @@ async function saveCase() {
         updates[f] = v;
     });
 
-    // Wykryj zmianę statusu/etapu by dopisać do historii
     const oldStatus = caseData.status;
     const oldStage = caseData.stage;
 
     const { data, error } = await db.from('gmp_cases').update(updates).eq('id', caseId).select().maybeSingle();
     if (error) {
-        toast.error('Błąd zapisu: ' + error.message);
+        toast.error('Błąd: ' + error.message);
         spinner.classList.add('hidden');
-        txt.textContent = 'Zapisz zmiany';
+        txt.textContent = 'Zapisz zmiany (Ctrl+S)';
         return;
     }
-
     caseData = { ...caseData, ...data };
 
-    // Jesli status/etap zmienione - dopisz activity
     if (updates.status !== oldStatus) {
         await db.from('gmp_case_activities').insert({
-            case_id: caseId,
-            activity_type: 'status_change',
+            case_id: caseId, activity_type: 'status_change',
             content: `Status: ${oldStatus || '—'} → ${updates.status}`,
             metadata: { from: oldStatus, to: updates.status },
             created_by: window.currentStaff?.id,
@@ -628,8 +811,7 @@ async function saveCase() {
     }
     if (updates.stage !== oldStage) {
         await db.from('gmp_case_activities').insert({
-            case_id: caseId,
-            activity_type: 'stage_change',
+            case_id: caseId, activity_type: 'stage_change',
             content: `Etap: ${oldStage || '—'} → ${updates.stage || '—'}`,
             metadata: { from: oldStage, to: updates.stage },
             created_by: window.currentStaff?.id,
@@ -639,272 +821,495 @@ async function saveCase() {
     isDirty = false;
     document.getElementById('save-floater').classList.add('hidden');
     spinner.classList.add('hidden');
-    txt.textContent = 'Zapisz zmiany';
+    txt.textContent = 'Zapisz zmiany (Ctrl+S)';
     toast.success('Zapisano');
-    loadActivities();
+    loadActivitiesData().then(renderOverview);
 }
 
-async function loadLastNote() {
+// ============ DATA LOADERS ============
+async function loadActivitiesData() {
     const { data } = await db.from('gmp_case_activities')
-        .select('content, created_at, activity_type, gmp_staff!created_by(full_name)')
-        .eq('case_id', caseId)
-        .eq('activity_type', 'note')
-        .order('created_at', { ascending: false })
-        .limit(1);
-    if (!data?.length) return;
-    const n = data[0];
-    document.getElementById('last-note-content').textContent = n.content || '';
-    document.getElementById('last-note-meta').textContent = `${n.gmp_staff?.full_name || '—'} • ${fmt.daysAgo(n.created_at)}`;
-    document.getElementById('case-last-note').classList.remove('hidden');
-}
-
-async function logContactActivity(type) {
-    // Loguje kontakt z klientem do historii
-    const labels = {
-        call: 'Zadzwoniono do klienta',
-        whatsapp_sent: 'Otwarto WhatsApp do klienta',
-        email_sent: 'Wysłano/otwarto email do klienta',
-    };
-    const activityType = type === 'call' ? 'note' : type;
-    await db.from('gmp_case_activities').insert({
-        case_id: caseId,
-        activity_type: activityType,
-        content: labels[type] || type,
-        created_by: window.currentStaff?.id,
-    });
-    // Refresh after 500ms
-    setTimeout(() => loadActivities(), 500);
-}
-
-async function loadActivities() {
-    const { data, error } = await db
-        .from('gmp_case_activities')
         .select('*, gmp_staff!created_by(full_name)')
-        .eq('case_id', caseId)
-        .order('created_at', { ascending: false });
-
-    const el = document.getElementById('activities-list');
-    if (error) { el.innerHTML = `<div class="p-4 text-red-400 text-sm">${esc(error.message)}</div>`; return; }
-    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-clock-counter-clockwise"></i><div>Brak historii</div></div>'; return; }
-
-    const typeIcons = {
-        status_change: 'ph-arrows-left-right text-blue-400',
-        stage_change: 'ph-flag text-purple-400',
-        note: 'ph-note text-zinc-400',
-        document_added: 'ph-file-plus text-emerald-400',
-        task_assigned: 'ph-check-square text-cyan-400',
-        email_sent: 'ph-envelope text-blue-300',
-        whatsapp_sent: 'ph-whatsapp-logo text-green-400',
-        payment_received: 'ph-coins text-yellow-400',
-        appointment_created: 'ph-calendar-plus text-cyan-400',
-        decision_received: 'ph-file-text text-emerald-400',
-    };
-
-    el.innerHTML = data.map(a => {
-        const icon = typeIcons[a.activity_type] || 'ph-circle text-zinc-500';
-        const author = a.gmp_staff?.full_name || 'system';
-        return `
-            <div class="p-3 hover:bg-zinc-900/30">
-                <div class="flex items-start gap-3">
-                    <i class="ph ${icon} text-lg mt-0.5 flex-shrink-0"></i>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-sm text-zinc-200">${esc(a.content || '—')}</div>
-                        <div class="text-xs text-zinc-500 mt-0.5">${esc(author)} • ${fmt.datetime(a.created_at)} • ${fmt.daysAgo(a.created_at)}</div>
-                    </div>
-                </div>
-            </div>`;
-    }).join('');
+        .eq('case_id', caseId).order('created_at', { ascending: false });
+    allActivities = data || [];
 }
 
-async function loadTasks() {
-    const { data, error } = await db
-        .from('gmp_tasks')
+async function loadTasksData() {
+    const { data } = await db.from('gmp_tasks')
         .select('*, gmp_staff!assigned_to(full_name)')
         .eq('case_id', caseId)
         .order('due_date', { ascending: true, nullsLast: true })
         .order('created_at', { ascending: false });
+    allTasks = data || [];
+}
+
+async function loadPaymentsData() {
+    const [{ data: pays }, { data: plan }] = await Promise.all([
+        db.from('gmp_payments').select('*').eq('case_id', caseId).order('payment_date', { ascending: false, nullsLast: true }),
+        db.from('gmp_payment_plans').select('*').eq('case_id', caseId).maybeSingle(),
+    ]);
+    allPayments = pays || [];
+    paymentPlan = plan;
+}
+
+async function loadAppointmentsData() {
+    const { data } = await db.from('gmp_crm_appointments')
+        .select('*, gmp_staff!staff_id(full_name), gmp_offices(name, city)')
+        .eq('case_id', caseId).order('scheduled_date', { ascending: false, nullsLast: true });
+    allAppointments = data || [];
+}
+
+async function loadDocumentsData() {
+    const { data } = await db.from('gmp_documents').select('*').eq('case_id', caseId).order('created_at', { ascending: false });
+    allDocuments = data || [];
+}
+
+async function loadTrustedProfileData() {
+    if (!caseData?.client_id) return;
+    const { data } = await db.from('gmp_trusted_profile_credentials').select('id').eq('client_id', caseData.client_id).maybeSingle();
+    if (data) document.getElementById('trusted-profile-card').classList.remove('hidden');
+}
+
+function updateCounts() {
+    document.getElementById('cnt-history').textContent = allActivities.length;
+    document.getElementById('cnt-tasks').textContent = allTasks.filter(t => t.status !== 'done').length;
+    document.getElementById('cnt-finance').textContent = allPayments.length;
+    document.getElementById('cnt-docs').textContent = allDocuments.length;
+    document.getElementById('cnt-appts').textContent = allAppointments.filter(a => !a.scheduled_date || a.scheduled_date >= new Date().toISOString().slice(0,10)).length;
+}
+
+// ============ TAB RENDERERS ============
+
+function renderOverview() {
+    // Last note
+    const lastNote = allActivities.find(a => a.activity_type === 'note');
+    const el = document.getElementById('overview-last-note');
+    if (lastNote) {
+        el.innerHTML = `
+            <div class="text-sm text-zinc-200 mb-2 whitespace-pre-wrap">${esc(lastNote.content || '')}</div>
+            <div class="text-xs text-zinc-500">${esc(lastNote.gmp_staff?.full_name || 'system')} • ${fmt.daysAgo(lastNote.created_at)}</div>
+        `;
+    } else {
+        el.innerHTML = '<div class="text-zinc-500 text-sm">Brak notatek — <button class="text-blue-400 hover:underline" onclick="openNoteModal()">dodaj pierwszą</button></div>';
+    }
+
+    // Finance summary
+    const totalPaid = allPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+    const planTotal = paymentPlan?.total_amount ? Number(paymentPlan.total_amount) : null;
+    const fee = caseData.fee_amount ? Number(caseData.fee_amount) : null;
+    const expected = planTotal || fee;
+    const remaining = expected != null ? expected - totalPaid : null;
+
+    const fEl = document.getElementById('overview-finance');
+    fEl.innerHTML = `
+        <div class="space-y-2 text-sm">
+            ${expected != null ? `<div class="flex justify-between"><span class="text-zinc-500">Wynagrodzenie</span><span class="font-mono">${fmt.money(expected)}</span></div>` : ''}
+            <div class="flex justify-between"><span class="text-zinc-500">Wpłacono</span><span class="text-emerald-400 font-mono font-semibold">${fmt.money(totalPaid)}</span></div>
+            ${remaining != null ? `<div class="flex justify-between"><span class="text-zinc-500">Pozostało</span><span class="${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'} font-mono font-semibold">${fmt.money(remaining)}</span></div>` : ''}
+            ${expected ? `<div class="mt-2 h-1.5 bg-zinc-900 rounded overflow-hidden"><div class="h-full bg-emerald-500" style="width: ${Math.min(100, totalPaid / expected * 100)}%"></div></div>` : ''}
+            <div class="text-xs text-zinc-500 text-right">${allPayments.length} wpłat</div>
+        </div>`;
+
+    // Upcoming (zadania + terminy)
+    const today = new Date().toISOString().slice(0, 10);
+    const upcomingTasks = allTasks.filter(t => t.status !== 'done' && (!t.due_date || t.due_date >= today)).slice(0, 5);
+    const upcomingAppts = allAppointments.filter(a => !a.scheduled_date || a.scheduled_date >= today).slice(0, 5);
+
+    const uEl = document.getElementById('overview-upcoming');
+    const items = [];
+    upcomingTasks.forEach(t => items.push({
+        type: 'task', sortKey: t.due_date || '9999',
+        html: `<div class="p-3 flex items-center gap-3">
+            <input type="checkbox" ${t.status === 'done' ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)">
+            <i class="ph ph-check-square text-cyan-400"></i>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm text-white truncate">${esc(t.title)}</div>
+                <div class="text-xs text-zinc-500">${t.due_date ? fmt.date(t.due_date) + ' • ' : ''}${esc(t.gmp_staff?.full_name || '—')}</div>
+            </div>
+            ${t.due_date && t.due_date < today ? '<span class="badge badge-inactive-30">po terminie</span>' : ''}
+        </div>`
+    }));
+    upcomingAppts.forEach(a => items.push({
+        type: 'appt', sortKey: a.scheduled_date || '9999',
+        html: `<div class="p-3 flex items-center gap-3">
+            <i class="ph ph-calendar text-pink-400"></i>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm text-white truncate">${esc(a.title || a.appointment_type || 'Termin')}</div>
+                <div class="text-xs text-zinc-500">${fmt.date(a.scheduled_date)}${a.scheduled_time ? ' ' + a.scheduled_time.slice(0, 5) : ''} • ${esc(a.gmp_staff?.full_name || '—')}</div>
+            </div>
+        </div>`
+    }));
+    items.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+    if (!items.length) {
+        uEl.innerHTML = '<div class="p-4 text-zinc-500 text-sm">Nic zaplanowane — <button class="text-blue-400 hover:underline" onclick="openTaskModal()">dodaj zadanie</button> lub <button class="text-blue-400 hover:underline" onclick="openAppointmentModal()">termin</button></div>';
+    } else {
+        uEl.innerHTML = items.slice(0, 8).map(i => i.html).join('');
+    }
+
+    // Recent activity (5)
+    const aEl = document.getElementById('overview-activity');
+    const recent = allActivities.slice(0, 5);
+    if (!recent.length) {
+        aEl.innerHTML = '<div class="text-zinc-500 text-sm">Brak aktywności — zacznij od dodania notatki.</div>';
+    } else {
+        aEl.innerHTML = '<div>' + recent.map(a => {
+            const conf = TYPE_ICONS[a.activity_type] || { icon: 'ph-circle', color: 'text-zinc-500' };
+            return `<div class="timeline-item" data-type="${a.activity_type}">
+                <div class="text-sm text-zinc-200">${esc(a.content || TYPE_LABELS[a.activity_type] || a.activity_type)}</div>
+                <div class="text-xs text-zinc-500 mt-0.5">${esc(a.gmp_staff?.full_name || 'system')} • ${fmt.daysAgo(a.created_at)}</div>
+            </div>`;
+        }).join('') + '</div>';
+    }
+}
+
+function renderHistory() {
+    const filter = document.getElementById('history-filter').value;
+    let filtered = allActivities;
+    if (filter) {
+        const types = filter.split(',');
+        filtered = allActivities.filter(a => types.includes(a.activity_type));
+    }
+
+    const el = document.getElementById('activities-list');
+    if (!filtered.length) {
+        el.innerHTML = '<div class="text-zinc-500 text-sm p-4">Brak wpisów dla tego filtra.</div>';
+        return;
+    }
+
+    // Group by day
+    const byDay = {};
+    filtered.forEach(a => {
+        const day = a.created_at.slice(0, 10);
+        if (!byDay[day]) byDay[day] = [];
+        byDay[day].push(a);
+    });
+
+    el.innerHTML = Object.entries(byDay).map(([day, items]) => `
+        <div class="mb-6">
+            <div class="text-xs text-zinc-600 uppercase tracking-wider mb-3 font-mono">${day} (${fmt.daysAgo(day)})</div>
+            <div>${items.map(a => {
+                const label = TYPE_LABELS[a.activity_type] || a.activity_type;
+                return `<div class="timeline-item" data-type="${a.activity_type}">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[10px] text-zinc-600 uppercase tracking-wider">${label}</span>
+                        <span class="text-zinc-700">•</span>
+                        <span class="text-xs text-zinc-500">${new Date(a.created_at).toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'})}</span>
+                        <span class="text-xs text-zinc-500">• ${esc(a.gmp_staff?.full_name || 'system')}</span>
+                    </div>
+                    <div class="text-sm text-zinc-200 whitespace-pre-wrap">${esc(a.content || '—')}</div>
+                </div>`;
+            }).join('')}</div>
+        </div>
+    `).join('');
+}
+
+function renderTasksTab() {
+    const filter = document.getElementById('tasks-filter').value;
+    let filtered = allTasks;
+    if (filter === 'open') filtered = allTasks.filter(t => t.status !== 'done' && t.status !== 'cancelled');
+    else if (filter === 'done') filtered = allTasks.filter(t => t.status === 'done');
 
     const el = document.getElementById('tasks-list');
-    if (error) { el.innerHTML = `<div class="p-3 text-red-400 text-sm">${esc(error.message)}</div>`; return; }
-    if (!data?.length) { el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak zadań</div>'; return; }
-
-    el.innerHTML = data.map(t => {
-        const overdue = t.due_date && t.status !== 'done' && new Date(t.due_date) < new Date();
+    if (!filtered.length) {
+        el.innerHTML = '<div class="p-4 text-zinc-500 text-sm">Brak zadań</div>';
+        return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    el.innerHTML = filtered.map(t => {
+        const overdue = t.due_date && t.status !== 'done' && t.due_date < today;
         const done = t.status === 'done';
-        return `
-            <div class="p-2.5 flex items-start gap-2">
-                <input type="checkbox" ${done ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)" class="mt-1 flex-shrink-0">
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm ${done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${esc(t.title)}</div>
-                    <div class="text-xs text-zinc-500 mt-0.5 ${overdue ? 'text-red-400' : ''}">
-                        ${t.gmp_staff?.full_name || '—'}${t.due_date ? ' • ' + fmt.date(t.due_date) : ''}
-                    </div>
+        return `<div class="p-4 flex items-start gap-3">
+            <input type="checkbox" ${done ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)" class="mt-1">
+            <div class="flex-1 min-w-0">
+                <div class="text-sm ${done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${esc(t.title)}</div>
+                ${t.description ? `<div class="text-xs text-zinc-500 mt-1 whitespace-pre-wrap">${esc(t.description)}</div>` : ''}
+                <div class="text-xs ${overdue ? 'text-red-400' : 'text-zinc-600'} mt-1 flex items-center gap-2">
+                    ${t.gmp_staff?.full_name ? window.avatar(t.gmp_staff.full_name, 'sm') : ''}
+                    <span>${esc(t.gmp_staff?.full_name || '—')}</span>
+                    ${t.due_date ? `<span>• ${fmt.date(t.due_date)}</span>` : ''}
+                    ${overdue ? '<span class="badge badge-inactive-30">po terminie</span>' : ''}
                 </div>
-            </div>`;
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="deleteTask('${t.id}')"><i class="ph ph-trash text-red-400"></i></button>
+        </div>`;
     }).join('');
 }
 
+async function deleteTask(id) {
+    if (!confirm('Usunąć zadanie?')) return;
+    const { error } = await db.from('gmp_tasks').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto');
+    await loadTasksData();
+    renderTasksTab();
+    renderOverview();
+    updateCounts();
+}
+
+function renderFinanceTab() {
+    const totalPaid = allPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+    const planTotal = paymentPlan?.total_amount ? Number(paymentPlan.total_amount) : null;
+    const fee = caseData.fee_amount ? Number(caseData.fee_amount) : null;
+    const expected = planTotal || fee || 0;
+    const remaining = Math.max(0, expected - totalPaid);
+
+    // KPIs
+    document.getElementById('finance-kpis').innerHTML = `
+        <div class="card p-4">
+            <div class="text-xs text-zinc-500 mb-1">WYNAGRODZENIE</div>
+            <div class="text-2xl font-bold text-white">${expected ? fmt.money(expected) : '—'}</div>
+        </div>
+        <div class="card p-4">
+            <div class="text-xs text-zinc-500 mb-1">WPŁACONO</div>
+            <div class="text-2xl font-bold text-emerald-400">${fmt.money(totalPaid)}</div>
+            <div class="text-xs text-zinc-600 mt-1">${allPayments.length} wpłat</div>
+        </div>
+        <div class="card p-4">
+            <div class="text-xs text-zinc-500 mb-1">POZOSTAŁO</div>
+            <div class="text-2xl font-bold ${remaining > 0 ? 'text-amber-300' : 'text-emerald-400'}">${fmt.money(remaining)}</div>
+            ${expected ? `<div class="mt-2 h-1 bg-zinc-900 rounded overflow-hidden"><div class="h-full bg-emerald-500" style="width: ${Math.min(100, totalPaid / expected * 100)}%"></div></div>` : ''}
+        </div>`;
+
+    // Plan
+    const pEl = document.getElementById('finance-plan');
+    if (paymentPlan) {
+        pEl.innerHTML = `
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div><div class="text-zinc-500 text-xs mb-1">Kwota planowana</div><div class="font-mono">${fmt.money(paymentPlan.total_amount)}</div></div>
+                <div><div class="text-zinc-500 text-xs mb-1">Płatnik</div><div>${paymentPlan.payer_type === 'employer' ? '🏢 Pracodawca' : '👤 Klient'}</div></div>
+                <div><div class="text-zinc-500 text-xs mb-1">Rat zaplanowanych</div><div>${paymentPlan.installments_planned || 1}</div></div>
+                <div><div class="text-zinc-500 text-xs mb-1">Termin</div><div>${fmt.date(paymentPlan.due_date)}</div></div>
+            </div>`;
+    } else {
+        pEl.innerHTML = `<div class="text-zinc-500 text-sm">Brak planu płatności dla tej sprawy.</div>`;
+    }
+
+    // Lista
+    const el = document.getElementById('payments-list');
+    if (!allPayments.length) {
+        el.innerHTML = '<div class="p-4 text-zinc-500 text-sm">Brak wpłat — <button class="text-blue-400 hover:underline" onclick="openPaymentModal()">dodaj pierwszą</button></div>';
+        return;
+    }
+    el.innerHTML = `<div class="overflow-x-auto"><table class="gmp-table"><thead><tr>
+        <th>Data</th><th>Kwota</th><th>Forma</th><th>Rodzaj</th><th>Rata</th><th>Notatki</th><th></th>
+    </tr></thead><tbody>
+        ${allPayments.map(p => `<tr>
+            <td class="text-xs">${fmt.date(p.payment_date)}</td>
+            <td class="font-mono text-emerald-300 font-semibold">${fmt.money(p.amount)}</td>
+            <td class="text-xs">${esc(p.method || '—')}</td>
+            <td class="text-xs">${p.kind === 'admin_fee' ? '🏛️ Admin.' : '💼 Wynagr.'}</td>
+            <td class="text-xs">${p.installment_number ? p.installment_number + '/' + (p.total_installments || '?') : '—'}</td>
+            <td class="text-xs text-zinc-400 max-w-xs truncate">${esc(p.notes || '')}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="deletePayment('${p.id}')"><i class="ph ph-trash text-red-400"></i></button></td>
+        </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+async function deletePayment(id) {
+    if (!confirm('Usunąć płatność?')) return;
+    const { error } = await db.from('gmp_payments').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    await loadPaymentsData();
+    renderFinanceTab();
+    renderOverview();
+    updateCounts();
+    toast.success('Usunięto');
+}
+
+function renderDocumentsTab() {
+    const el = document.getElementById('documents-list');
+    if (!allDocuments.length) {
+        el.innerHTML = '<div class="p-6 empty-state"><i class="ph ph-file-plus"></i><div>Brak dokumentów</div><div class="text-xs text-zinc-600 mt-2">Kliknij "Dodaj plik" powyżej lub przeciągnij pliki</div></div>';
+        return;
+    }
+    el.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-4">
+        ${allDocuments.map(d => `
+            <div class="flex items-center gap-3 p-3 rounded-lg border border-zinc-900 hover:border-zinc-700 transition-colors">
+                <i class="ph ph-file text-2xl text-zinc-500"></i>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm text-zinc-200 truncate">${esc(d.name)}</div>
+                    <div class="text-xs text-zinc-500">${d.file_size ? Math.round(d.file_size / 1024) + ' KB • ' : ''}${fmt.daysAgo(d.created_at)}</div>
+                </div>
+                <div class="flex gap-1">
+                    <button class="btn btn-ghost btn-sm" onclick="downloadDoc('${d.id}')"><i class="ph ph-download-simple"></i></button>
+                    <button class="btn btn-ghost btn-sm" onclick="deleteDoc('${d.id}')"><i class="ph ph-trash text-red-400"></i></button>
+                </div>
+            </div>
+        `).join('')}
+    </div>`;
+}
+
+async function deleteDoc(docId) {
+    if (!confirm('Usunąć dokument?')) return;
+    const doc = allDocuments.find(d => d.id === docId);
+    if (doc?.storage_path) {
+        await window.supabaseClient.storage.from('documents').remove([doc.storage_path]);
+    }
+    await db.from('gmp_documents').delete().eq('id', docId);
+    await loadDocumentsData();
+    renderDocumentsTab();
+    updateCounts();
+    toast.success('Usunięto');
+}
+
+function renderCalendarTab() {
+    const el = document.getElementById('appointments-list');
+    if (!allAppointments.length) {
+        el.innerHTML = '<div class="p-6 empty-state"><i class="ph ph-calendar-x"></i><div>Brak terminów</div></div>';
+        return;
+    }
+    const typeLabels = { konsultacja: '💬 Konsultacja', follow_up: '🔁 Follow-up', osobiste_odciski: '🖐️ Odciski', osobiste_inne: '🏛️ Osobiste', hearing: '⚖️ Rozprawa' };
+    const today = new Date().toISOString().slice(0, 10);
+
+    const upcoming = allAppointments.filter(a => !a.scheduled_date || a.scheduled_date >= today);
+    const past = allAppointments.filter(a => a.scheduled_date && a.scheduled_date < today);
+
+    let html = '';
+    if (upcoming.length) {
+        html += `<div class="p-4 border-b border-zinc-900/50">
+            <div class="text-xs text-zinc-500 uppercase tracking-wider mb-3">Nadchodzące (${upcoming.length})</div>
+            <div class="space-y-2">
+                ${upcoming.map(a => `
+                    <div class="flex items-start gap-3 p-3 rounded-lg border border-zinc-900 hover:border-zinc-700">
+                        <div class="text-center">
+                            <div class="text-xs text-zinc-600">${fmt.date(a.scheduled_date).split(' ')[0] || '—'}</div>
+                            <div class="text-amber-300 font-mono text-sm">${a.scheduled_time?.slice(0, 5) || ''}</div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm">${typeLabels[a.appointment_type] || a.appointment_type} ${a.title ? '— ' + esc(a.title) : ''}</div>
+                            ${a.location ? `<div class="text-xs text-zinc-500">${esc(a.location)}</div>` : ''}
+                            ${a.gmp_staff?.full_name ? `<div class="text-xs text-zinc-500 flex items-center gap-1 mt-1">${window.avatar(a.gmp_staff.full_name, 'sm')}${esc(a.gmp_staff.full_name)}</div>` : ''}
+                            ${a.notes ? `<div class="text-xs text-zinc-400 mt-1">${esc(a.notes.slice(0, 120))}</div>` : ''}
+                        </div>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteAppointment('${a.id}')"><i class="ph ph-trash text-red-400"></i></button>
+                    </div>`).join('')}
+            </div>
+        </div>`;
+    }
+    if (past.length) {
+        html += `<div class="p-4">
+            <div class="text-xs text-zinc-500 uppercase tracking-wider mb-3">Historyczne (${past.length})</div>
+            <div class="space-y-2 opacity-60">
+                ${past.slice(0, 20).map(a => `
+                    <div class="flex items-start gap-3 p-3 rounded-lg border border-zinc-900">
+                        <div class="text-xs text-zinc-600 min-w-[80px]">${fmt.date(a.scheduled_date)}</div>
+                        <div class="flex-1">
+                            <div class="text-sm">${typeLabels[a.appointment_type] || a.appointment_type} ${a.title ? '— ' + esc(a.title) : ''}</div>
+                            ${a.notes ? `<div class="text-xs text-zinc-400">${esc(a.notes.slice(0, 80))}</div>` : ''}
+                        </div>
+                    </div>`).join('')}
+            </div>
+        </div>`;
+    }
+    el.innerHTML = html;
+}
+
+async function deleteAppointment(id) {
+    if (!confirm('Usunąć termin?')) return;
+    await db.from('gmp_crm_appointments').delete().eq('id', id);
+    await loadAppointmentsData();
+    renderCalendarTab();
+    updateCounts();
+    toast.success('Usunięto');
+}
+
+// ============ ACTIONS ============
+async function togglePin() {
+    const newVal = !caseData.is_pinned;
+    const { error } = await db.from('gmp_cases').update({ is_pinned: newVal }).eq('id', caseId);
+    if (error) { toast.error(error.message); return; }
+    caseData.is_pinned = newVal;
+    toast.success(newVal ? 'Przypięto' : 'Odpięto');
+    const icon = document.getElementById('pin-icon');
+    const ind = document.getElementById('pin-indicator');
+    if (newVal) { icon.className = 'ph-fill ph-push-pin text-amber-400'; ind.className = 'ph-fill ph-push-pin text-amber-400'; ind.classList.remove('hidden'); }
+    else { icon.className = 'ph ph-push-pin'; ind.classList.add('hidden'); }
+}
+
+async function deleteCase() {
+    if (!confirm('Na pewno usunąć sprawę? Tego nie da się cofnąć.')) return;
+    const { error } = await db.from('gmp_cases').delete().eq('id', caseId);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto');
+    setTimeout(() => window.location.href = 'cases.html', 600);
+}
+
+async function logContactActivity(type) {
+    const labels = { call: 'Zadzwoniono do klienta', whatsapp_sent: 'Otwarto WhatsApp do klienta', email_sent: 'Wysłano email do klienta' };
+    const activityType = type === 'call' ? 'note' : type;
+    await db.from('gmp_case_activities').insert({
+        case_id: caseId, activity_type: activityType,
+        content: labels[type] || type, created_by: window.currentStaff?.id,
+    });
+    setTimeout(async () => {
+        await loadActivitiesData();
+        renderOverview();
+        if (activeTab === 'history') renderHistory();
+        updateCounts();
+    }, 500);
+}
+
 async function toggleTask(taskId, done) {
-    const status = done ? 'done' : 'pending';
-    const updates = { status };
+    const updates = { status: done ? 'done' : 'pending' };
     if (done) updates.completed_at = new Date().toISOString();
     const { error } = await db.from('gmp_tasks').update(updates).eq('id', taskId);
     if (error) { toast.error(error.message); return; }
     toast.success(done ? 'Zadanie ukończone' : 'Zadanie otwarte');
-    loadTasks();
-    // dopisz activity
     await db.from('gmp_case_activities').insert({
-        case_id: caseId,
-        activity_type: 'task_assigned',
+        case_id: caseId, activity_type: 'task_assigned',
         content: `Zadanie oznaczone jako ${done ? 'ukończone' : 'otwarte'}`,
         created_by: window.currentStaff?.id,
     });
+    await Promise.all([loadTasksData(), loadActivitiesData()]);
+    renderOverview();
+    if (activeTab === 'tasks') renderTasksTab();
+    updateCounts();
 }
 
-async function loadPayments() {
-    const [{ data: payments }, { data: plan }] = await Promise.all([
-        db.from('gmp_payments').select('*').eq('case_id', caseId).order('payment_date', { ascending: true, nullsLast: true }),
-        db.from('gmp_payment_plans').select('*').eq('case_id', caseId).maybeSingle(),
-    ]);
-
-    const el = document.getElementById('payments-list');
-    if (!payments?.length && !plan) {
-        el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak płatności</div>';
-        document.getElementById('payment-summary').innerHTML = '';
-        return;
-    }
-
-    if (payments?.length) {
-        el.innerHTML = payments.map(p => `
-            <div class="p-2.5 flex items-center justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm text-emerald-300 font-mono">${fmt.money(p.amount)}</div>
-                    <div class="text-xs text-zinc-500">
-                        ${p.method || '—'}${p.installment_number ? ' • rata ' + p.installment_number + (p.total_installments ? '/' + p.total_installments : '') : ''}
-                    </div>
-                </div>
-                <div class="text-xs text-zinc-500">${fmt.date(p.payment_date)}</div>
-            </div>`).join('');
-    } else {
-        el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak płatności (jest plan)</div>';
-    }
-
-    // Summary
-    const totalPaid = (payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
-    const planTotal = plan?.total_amount ? Number(plan.total_amount) : null;
-    const remaining = planTotal != null ? planTotal - totalPaid : null;
-    document.getElementById('payment-summary').innerHTML = `
-        <div class="flex justify-between"><span class="text-zinc-500">Zapłacone</span><span class="text-emerald-400 font-mono">${fmt.money(totalPaid)}</span></div>
-        ${planTotal != null ? `
-            <div class="flex justify-between"><span class="text-zinc-500">Plan (total)</span><span class="font-mono">${fmt.money(planTotal)}</span></div>
-            <div class="flex justify-between"><span class="text-zinc-500">Pozostało</span><span class="${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'} font-mono">${fmt.money(remaining || 0)}</span></div>
-        ` : ''}
-    `;
-}
-
-async function loadDocuments() {
-    const { data } = await db.from('gmp_documents').select('*').eq('case_id', caseId).order('created_at', { ascending: false });
-    const el = document.getElementById('documents-list');
-    if (!data?.length) { el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak dokumentów</div>'; return; }
-    el.innerHTML = data.map(d => `
-        <div class="p-2.5 flex items-center gap-2">
-            <i class="ph ph-file text-zinc-400"></i>
-            <div class="flex-1 min-w-0">
-                <div class="text-sm text-zinc-200 truncate">${esc(d.name)}</div>
-                <div class="text-xs text-zinc-500">${fmt.daysAgo(d.created_at)}</div>
-            </div>
-            <button class="btn btn-ghost btn-sm" onclick="downloadDoc('${d.id}')"><i class="ph ph-download-simple"></i></button>
-        </div>`).join('');
-}
-
-async function uploadDocuments(e) {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-
-    for (const file of files) {
-        const path = `cases/${caseId}/${Date.now()}_${file.name}`;
-        const { error: upErr } = await window.supabaseClient.storage
-            .from('documents')
-            .upload(path, file);
-        if (upErr) {
-            toast.error('Upload: ' + upErr.message);
-            continue;
-        }
-        await db.from('gmp_documents').insert({
-            case_id: caseId,
-            name: file.name,
-            storage_path: path,
-            mime_type: file.type,
-            file_size: file.size,
-            uploaded_by: window.currentStaff?.id,
-        });
-        await db.from('gmp_case_activities').insert({
-            case_id: caseId,
-            activity_type: 'document_added',
-            content: `Dodano dokument: ${file.name}`,
-            created_by: window.currentStaff?.id,
-        });
-    }
-    toast.success(`Uploaded ${files.length}`);
-    loadDocuments();
-    loadActivities();
-    e.target.value = '';
-}
-
-async function downloadDoc(docId) {
-    const { data: doc } = await db.from('gmp_documents').select('*').eq('id', docId).single();
-    if (!doc?.storage_path) { toast.error('Brak ścieżki'); return; }
-    const { data, error } = await window.supabaseClient.storage.from('documents').createSignedUrl(doc.storage_path, 60);
-    if (error) { toast.error(error.message); return; }
-    window.open(data.signedUrl, '_blank');
-}
-
-// ============ MODALE ============
+// ============ MODALS ============
 function openModal(html) {
-    document.getElementById('modals-container').innerHTML = `
-        <div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
-            <div class="modal-content">${html}</div>
-        </div>`;
+    document.getElementById('modals-container').innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()"><div class="modal-content">${html}</div></div>`;
 }
-function closeModal() {
-    document.getElementById('modals-container').innerHTML = '';
-}
+function closeModal() { document.getElementById('modals-container').innerHTML = ''; }
 
 function openNoteModal() {
     openModal(`
-        <div class="modal-header">Nowa notatka<button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-header">Nowa notatka <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body">
-            <label>Treść</label>
-            <textarea id="note-text" class="input w-full" rows="4" autofocus placeholder="Opis działania, rozmowy, decyzji..."></textarea>
+            <label>Treść (Ctrl+Enter = zapisz)</label>
+            <textarea id="note-text" class="input w-full" rows="5" autofocus placeholder="Opis działania, rozmowy, decyzji..."></textarea>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
             <button class="btn btn-primary" onclick="saveNote()">Zapisz</button>
         </div>`);
+    document.getElementById('note-text').addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') saveNote();
+    });
 }
 
 async function saveNote() {
     const content = document.getElementById('note-text').value.trim();
     if (!content) return;
     const { error } = await db.from('gmp_case_activities').insert({
-        case_id: caseId,
-        activity_type: 'note',
-        content,
-        created_by: window.currentStaff?.id,
+        case_id: caseId, activity_type: 'note', content, created_by: window.currentStaff?.id,
     });
     if (error) { toast.error(error.message); return; }
     closeModal();
     toast.success('Notatka dodana');
-    loadActivities();
+    await loadActivitiesData();
+    renderOverview();
+    if (activeTab === 'history') renderHistory();
+    updateCounts();
 }
 
 function openTaskModal() {
-    const staffOpts = Array.from(document.getElementById('staff-select').options)
-        .map(o => `<option value="${o.value}">${esc(o.textContent)}</option>`).join('');
+    const staffOpts = Array.from(document.getElementById('staff-select').options).map(o => `<option value="${o.value}">${esc(o.textContent)}</option>`).join('');
     openModal(`
-        <div class="modal-header">Nowe zadanie<button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-header">Nowe zadanie <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body space-y-3">
-            <div><label>Tytuł</label><input id="task-title" class="input w-full" autofocus placeholder="np. Wysłać wezwanie do klienta"></div>
+            <div><label>Tytuł</label><input id="task-title" class="input w-full" autofocus placeholder="np. Wysłać wezwanie"></div>
             <div><label>Opis</label><textarea id="task-desc" class="input w-full" rows="2"></textarea></div>
             <div class="grid grid-cols-2 gap-3">
                 <div><label>Przypisz do</label><select id="task-assign" class="input w-full">${staffOpts}</select></div>
@@ -915,7 +1320,6 @@ function openTaskModal() {
             <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
             <button class="btn btn-primary" onclick="saveTask()">Zapisz</button>
         </div>`);
-    // Pre-select obecnego staffa
     if (window.currentStaff) document.getElementById('task-assign').value = window.currentStaff.id;
 }
 
@@ -923,8 +1327,7 @@ async function saveTask() {
     const title = document.getElementById('task-title').value.trim();
     if (!title) return;
     const { error } = await db.from('gmp_tasks').insert({
-        case_id: caseId,
-        title,
+        case_id: caseId, title,
         description: document.getElementById('task-desc').value.trim() || null,
         assigned_to: document.getElementById('task-assign').value || null,
         due_date: document.getElementById('task-due').value || null,
@@ -934,25 +1337,25 @@ async function saveTask() {
     if (error) { toast.error(error.message); return; }
     closeModal();
     toast.success('Zadanie dodane');
-    loadTasks();
     await db.from('gmp_case_activities').insert({
-        case_id: caseId,
-        activity_type: 'task_assigned',
-        content: 'Dodano zadanie: ' + title,
-        created_by: window.currentStaff?.id,
+        case_id: caseId, activity_type: 'task_assigned',
+        content: 'Dodano zadanie: ' + title, created_by: window.currentStaff?.id,
     });
-    loadActivities();
+    await Promise.all([loadTasksData(), loadActivitiesData()]);
+    renderOverview();
+    if (activeTab === 'tasks') renderTasksTab();
+    updateCounts();
 }
 
 function openPaymentModal() {
     openModal(`
-        <div class="modal-header">Nowa płatność<button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-header">Nowa płatność <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body grid grid-cols-2 gap-3">
             <div class="col-span-2">
-                <label>Rodzaj opłaty</label>
+                <label>Rodzaj</label>
                 <select id="pay-kind" class="input w-full">
                     <option value="fee">💼 Wynagrodzenie kancelarii</option>
-                    <option value="admin_fee">🏛️ Opłata administracyjna (urzędowa)</option>
+                    <option value="admin_fee">🏛️ Opłata administracyjna</option>
                 </select>
             </div>
             <div><label>Kwota</label><input type="number" step="0.01" id="pay-amount" class="input w-full" autofocus></div>
@@ -974,8 +1377,8 @@ function openPaymentModal() {
                     <option value="employer">Pracodawca</option>
                 </select>
             </div>
-            <div><label>Rata nr</label><input type="number" id="pay-inst" class="input w-full" min="1"></div>
-            <div><label>Z X rat</label><input type="number" id="pay-inst-total" class="input w-full" min="1"></div>
+            <div><label>Rata</label><input type="number" id="pay-inst" class="input w-full" min="1"></div>
+            <div><label>Z łącznie</label><input type="number" id="pay-inst-total" class="input w-full" min="1"></div>
             <div class="col-span-2"><label>Notatka</label><input id="pay-notes" class="input w-full"></div>
         </div>
         <div class="modal-footer">
@@ -990,13 +1393,11 @@ async function savePayment() {
     if (!amount) { toast.error('Podaj kwotę'); return; }
     const payer = document.getElementById('pay-payer').value;
     const { error } = await db.from('gmp_payments').insert({
-        case_id: caseId,
-        payer_type: payer,
+        case_id: caseId, payer_type: payer,
         client_id: payer === 'client' ? caseData.client_id : null,
         employer_id: payer === 'employer' ? caseData.employer_id : null,
         kind: document.getElementById('pay-kind').value,
-        amount,
-        method: document.getElementById('pay-method').value,
+        amount, method: document.getElementById('pay-method').value,
         payment_date: document.getElementById('pay-date').value || null,
         installment_number: document.getElementById('pay-inst').value || null,
         total_installments: document.getElementById('pay-inst-total').value || null,
@@ -1005,77 +1406,39 @@ async function savePayment() {
     if (error) { toast.error(error.message); return; }
     closeModal();
     toast.success('Płatność dodana');
-    loadPayments();
     await db.from('gmp_case_activities').insert({
-        case_id: caseId,
-        activity_type: 'payment_received',
+        case_id: caseId, activity_type: 'payment_received',
         content: `Płatność: ${fmt.money(amount)}`,
         metadata: { amount, method: document.getElementById('pay-method').value },
         created_by: window.currentStaff?.id,
     });
-    loadActivities();
-}
-
-async function loadAppointments() {
-    const { data } = await db.from('gmp_crm_appointments')
-        .select('*, gmp_staff!staff_id(full_name), gmp_offices(name, city)')
-        .eq('case_id', caseId)
-        .order('scheduled_date', { ascending: true, nullsLast: true });
-    const el = document.getElementById('appointments-list');
-    if (!data?.length) { el.innerHTML = '<div class="p-3 text-zinc-600 text-sm">Brak spotkań</div>'; return; }
-
-    const typeLabels = {
-        konsultacja: 'Konsultacja',
-        follow_up: 'Follow-up',
-        osobiste_odciski: 'Odciski',
-        osobiste_inne: 'Osobiste',
-        hearing: 'Rozprawa',
-    };
-    el.innerHTML = data.map(a => {
-        const past = a.scheduled_date && new Date(a.scheduled_date) < new Date();
-        const label = typeLabels[a.appointment_type] || a.appointment_type;
-        return `
-            <div class="p-2.5 flex items-start gap-2">
-                <i class="ph ph-calendar text-cyan-400 mt-0.5 flex-shrink-0"></i>
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm text-zinc-200">${esc(label)}${a.title ? ' — ' + esc(a.title) : ''}</div>
-                    <div class="text-xs ${past ? 'text-zinc-500' : 'text-emerald-400'} mt-0.5">
-                        ${fmt.date(a.scheduled_date)}${a.scheduled_time ? ' ' + a.scheduled_time.slice(0,5) : ''}
-                        ${a.gmp_staff?.full_name ? ' • ' + esc(a.gmp_staff.full_name) : ''}
-                    </div>
-                    ${a.location ? `<div class="text-xs text-zinc-500">${esc(a.location)}</div>` : ''}
-                    ${a.notes ? `<div class="text-xs text-zinc-500 mt-1">${esc(a.notes.slice(0, 100))}</div>` : ''}
-                </div>
-                <button class="btn btn-ghost btn-sm" onclick="deleteAppointment('${a.id}')"><i class="ph ph-x"></i></button>
-            </div>`;
-    }).join('');
+    await Promise.all([loadPaymentsData(), loadActivitiesData()]);
+    renderOverview();
+    if (activeTab === 'finance') renderFinanceTab();
+    updateCounts();
 }
 
 function openAppointmentModal() {
-    const staffOpts = Array.from(document.getElementById('staff-select').options)
-        .map(o => `<option value="${o.value}">${esc(o.textContent)}</option>`).join('');
+    const staffOpts = Array.from(document.getElementById('staff-select').options).map(o => `<option value="${o.value}">${esc(o.textContent)}</option>`).join('');
     openModal(`
-        <div class="modal-header">Nowe spotkanie / termin<button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
-        <div class="modal-body space-y-3">
-            <div class="grid grid-cols-2 gap-3">
-                <div><label>Typ</label>
-                    <select id="ap-type" class="input w-full">
-                        <option value="konsultacja">Konsultacja</option>
-                        <option value="follow_up">Follow-up</option>
-                        <option value="osobiste_odciski">Osobiste stawiennictwo - odciski</option>
-                        <option value="osobiste_inne">Inne stawiennictwo</option>
-                        <option value="hearing">Rozprawa</option>
-                    </select>
-                </div>
-                <div><label>Prowadzi</label>
-                    <select id="ap-staff" class="input w-full">${staffOpts}</select>
-                </div>
-                <div><label>Data</label><input type="date" id="ap-date" class="input w-full" autofocus></div>
-                <div><label>Godzina</label><input type="time" id="ap-time" class="input w-full"></div>
-                <div class="col-span-2"><label>Tytuł / Opis</label><input id="ap-title" class="input w-full" placeholder="np. Konsultacja wstępna, odciski w Wałbrzychu..."></div>
-                <div class="col-span-2"><label>Miejsce</label><input id="ap-location" class="input w-full"></div>
-                <div class="col-span-2"><label>Notatki</label><textarea id="ap-notes" class="input w-full" rows="2"></textarea></div>
+        <div class="modal-header">Nowy termin <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body grid grid-cols-2 gap-3">
+            <div>
+                <label>Typ</label>
+                <select id="ap-type" class="input w-full">
+                    <option value="konsultacja">Konsultacja</option>
+                    <option value="follow_up">Follow-up</option>
+                    <option value="osobiste_odciski">Osobiste - odciski</option>
+                    <option value="osobiste_inne">Inne osobiste</option>
+                    <option value="hearing">Rozprawa</option>
+                </select>
             </div>
+            <div><label>Prowadzi</label><select id="ap-staff" class="input w-full">${staffOpts}</select></div>
+            <div><label>Data</label><input type="date" id="ap-date" class="input w-full" autofocus></div>
+            <div><label>Godzina</label><input type="time" id="ap-time" class="input w-full"></div>
+            <div class="col-span-2"><label>Tytuł</label><input id="ap-title" class="input w-full"></div>
+            <div class="col-span-2"><label>Miejsce</label><input id="ap-location" class="input w-full"></div>
+            <div class="col-span-2"><label>Notatki</label><textarea id="ap-notes" class="input w-full" rows="2"></textarea></div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
@@ -1087,131 +1450,89 @@ function openAppointmentModal() {
 async function saveAppointment() {
     const date = document.getElementById('ap-date').value;
     if (!date) { toast.error('Podaj datę'); return; }
-    const type = document.getElementById('ap-type').value;
     const time = document.getElementById('ap-time').value;
     const title = document.getElementById('ap-title').value.trim();
-    const loc = document.getElementById('ap-location').value.trim();
-    const notes = document.getElementById('ap-notes').value.trim();
-    const staffId = document.getElementById('ap-staff').value;
-
     const { error } = await db.from('gmp_crm_appointments').insert({
-        case_id: caseId,
-        client_id: caseData.client_id,
-        staff_id: staffId || null,
-        appointment_type: type,
-        scheduled_date: date,
-        scheduled_time: time || null,
+        case_id: caseId, client_id: caseData.client_id,
+        staff_id: document.getElementById('ap-staff').value || null,
+        appointment_type: document.getElementById('ap-type').value,
+        scheduled_date: date, scheduled_time: time || null,
         title: title || null,
-        location: loc || null,
-        notes: notes || null,
-        status: 'scheduled',
-        created_by: window.currentStaff?.id,
+        location: document.getElementById('ap-location').value.trim() || null,
+        notes: document.getElementById('ap-notes').value.trim() || null,
+        status: 'scheduled', created_by: window.currentStaff?.id,
     });
     if (error) { toast.error(error.message); return; }
     closeModal();
-    toast.success('Dodano termin');
-    loadAppointments();
+    toast.success('Termin dodany');
     await db.from('gmp_case_activities').insert({
-        case_id: caseId,
-        activity_type: 'appointment_created',
-        content: `Spotkanie: ${date}${time ? ' ' + time : ''} - ${title || type}`,
-        metadata: { date, time, type, title },
+        case_id: caseId, activity_type: 'appointment_created',
+        content: `Termin: ${date}${time ? ' ' + time : ''} - ${title || 'Nowy termin'}`,
+        metadata: { date, time, title },
         created_by: window.currentStaff?.id,
     });
-    loadActivities();
+    await Promise.all([loadAppointmentsData(), loadActivitiesData()]);
+    renderOverview();
+    if (activeTab === 'calendar') renderCalendarTab();
+    updateCounts();
 }
 
-async function deleteAppointment(id) {
-    if (!confirm('Usunąć termin?')) return;
-    const { error } = await db.from('gmp_crm_appointments').delete().eq('id', id);
+async function uploadDocuments(e) {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    for (const file of files) {
+        const path = `cases/${caseId}/${Date.now()}_${file.name}`;
+        const { error: upErr } = await window.supabaseClient.storage.from('documents').upload(path, file);
+        if (upErr) { toast.error('Upload: ' + upErr.message); continue; }
+        await db.from('gmp_documents').insert({
+            case_id: caseId, name: file.name, storage_path: path,
+            mime_type: file.type, file_size: file.size,
+            uploaded_by: window.currentStaff?.id,
+        });
+        await db.from('gmp_case_activities').insert({
+            case_id: caseId, activity_type: 'document_added',
+            content: `Dodano dokument: ${file.name}`,
+            created_by: window.currentStaff?.id,
+        });
+    }
+    toast.success(`Uploaded ${files.length}`);
+    await Promise.all([loadDocumentsData(), loadActivitiesData()]);
+    renderDocumentsTab();
+    renderOverview();
+    updateCounts();
+    e.target.value = '';
+}
+
+async function downloadDoc(docId) {
+    const doc = allDocuments.find(d => d.id === docId);
+    if (!doc?.storage_path) { toast.error('Brak pliku'); return; }
+    const { data, error } = await window.supabaseClient.storage.from('documents').createSignedUrl(doc.storage_path, 60);
     if (error) { toast.error(error.message); return; }
-    toast.success('Usunięto');
-    loadAppointments();
+    window.open(data.signedUrl, '_blank');
 }
 
-function openClientPicker() {
-    gmpModal.pickClient(async (c) => {
-        const { error } = await db.from('gmp_cases').update({ client_id: c.id }).eq('id', caseId);
-        if (error) { toast.error(error.message); return; }
-        toast.success('Klient przypisany: ' + c.last_name + ' ' + c.first_name);
-        loadCase();
-    });
-}
-function openNewClientInline() {
-    gmpModal.editClient(null, async (c) => {
-        if (!c) return;
-        const { error } = await db.from('gmp_cases').update({ client_id: c.id }).eq('id', caseId);
-        if (!error) { toast.success('Utworzono i przypisano'); loadCase(); }
-    });
-}
-function openEmployerPicker() {
-    gmpModal.pickEmployer(async (e) => {
-        const { error } = await db.from('gmp_cases').update({ employer_id: e.id }).eq('id', caseId);
-        if (error) { toast.error(error.message); return; }
-        toast.success('Pracodawca przypisany: ' + e.name);
-        loadCase();
-    });
-}
-function openNewEmployerInline() {
-    gmpModal.editEmployer(null, async (e) => {
-        if (!e) return;
-        const { error } = await db.from('gmp_cases').update({ employer_id: e.id }).eq('id', caseId);
-        if (!error) { toast.success('Utworzono i przypisano'); loadCase(); }
-    });
-}
-
-async function togglePin() {
-    const newVal = !caseData.is_pinned;
-    const { error } = await db.from('gmp_cases').update({ is_pinned: newVal }).eq('id', caseId);
-    if (error) { toast.error(error.message); return; }
-    caseData.is_pinned = newVal;
-    toast.success(newVal ? 'Przypięto' : 'Odpięto');
-    const icon = document.getElementById('pin-icon');
-    if (newVal) { icon.className = 'ph-fill ph-push-pin text-amber-400'; }
-    else { icon.className = 'ph ph-push-pin'; }
-}
-
-async function deleteCase() {
-    if (!confirm('Na pewno usunąć sprawę? Tej akcji nie da się cofnąć.')) return;
-    const { error } = await db.from('gmp_cases').delete().eq('id', caseId);
-    if (error) { toast.error(error.message); return; }
-    toast.success('Usunięto');
-    setTimeout(() => window.location.href = 'cases.html', 600);
-}
+function openClientPicker() { gmpModal.pickClient(async (c) => { await db.from('gmp_cases').update({ client_id: c.id }).eq('id', caseId); toast.success('Klient przypisany'); loadCase(); }); }
+function openNewClientInline() { gmpModal.editClient(null, async (c) => { if (c) { await db.from('gmp_cases').update({ client_id: c.id }).eq('id', caseId); toast.success('Utworzono i przypisano'); loadCase(); } }); }
+function openEmployerPicker() { gmpModal.pickEmployer(async (e) => { await db.from('gmp_cases').update({ employer_id: e.id }).eq('id', caseId); toast.success('Pracodawca przypisany'); loadCase(); }); }
+function openNewEmployerInline() { gmpModal.editEmployer(null, async (e) => { if (e) { await db.from('gmp_cases').update({ employer_id: e.id }).eq('id', caseId); toast.success('Utworzono i przypisano'); loadCase(); } }); }
 
 async function requestTrustedProfileAccess() {
     if (!confirm('⚠️ Chcesz uzyskać dostęp do danych profilu zaufanego. Ta akcja zostanie zalogowana. Kontynuować?')) return;
-    const { data } = await db.from('gmp_trusted_profile_credentials')
-        .select('*')
-        .eq('client_id', caseData.client_id)
-        .maybeSingle();
-    if (!data) {
-        toast.warning('Brak zapisanych danych profilu zaufanego. Możesz dodać w karcie klienta.');
-        return;
-    }
-    // Log dostep
+    const { data } = await db.from('gmp_trusted_profile_credentials').select('*').eq('client_id', caseData.client_id).maybeSingle();
+    if (!data) { toast.warning('Brak zapisanych danych'); return; }
     await db.from('gmp_credentials_access_log').insert({
-        credential_id: data.id,
-        accessed_by: window.currentStaff?.id,
-        action: 'view',
-        user_agent: navigator.userAgent,
+        credential_id: data.id, accessed_by: window.currentStaff?.id,
+        action: 'view', user_agent: navigator.userAgent,
     });
     openModal(`
-        <div class="modal-header">
-            <span><i class="ph ph-shield-warning text-amber-400"></i> Profil zaufany</span>
-            <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button>
-        </div>
+        <div class="modal-header"><span><i class="ph ph-shield-warning text-amber-400"></i> Profil zaufany</span><button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body space-y-3">
-            <div class="bg-amber-900/20 border border-amber-800/50 rounded p-3 text-xs text-amber-200">
-                Dostęp zalogowany. Nie udostępniaj tych danych niepowołanym osobom.
-            </div>
+            <div class="bg-amber-900/20 border border-amber-800/50 rounded p-3 text-xs text-amber-200">Dostęp zalogowany.</div>
             <div><label>Login</label><input class="input w-full font-mono" value="${esc(data.trusted_profile_login || '')}" readonly></div>
             <div><label>Hasło</label><input class="input w-full font-mono" value="${esc(data.trusted_profile_password || '')}" readonly></div>
             ${data.notes ? `<div><label>Uwagi</label><div class="text-sm text-zinc-400">${esc(data.notes)}</div></div>` : ''}
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeModal()">Zamknij</button>
-        </div>`);
+        <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Zamknij</button></div>`);
 }
 </script>
 </body>
