@@ -414,7 +414,157 @@
         margin: 8px 0 14px;
     }
     .status-legend .badge { font-size: 11px; padding: 3px 10px; }
+
+    /* === SCROLL PROGRESS BAR === */
+    .scroll-progress {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent) 0%, #a855f7 100%);
+        transform-origin: left center;
+        transform: scaleX(0);
+        z-index: 100;
+        transition: transform 60ms linear;
+        pointer-events: none;
+    }
+
+    /* === HERO QUICK PILLS === */
+    .hero-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+    }
+    .hero-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 150ms;
+    }
+    .hero-pill:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-subtle);
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+    .hero-pill i { font-size: 13px; color: var(--accent); }
+
+    .hero-meta {
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px;
+        margin-top: 14px;
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+    .hero-meta .meta-item { display: inline-flex; align-items: center; gap: 6px; }
+    .hero-meta .meta-item i { font-size: 13px; color: var(--text-muted); }
+
+    /* === COLORED MODULE ICONS (matches sidebar palette) === */
+    #mod-dashboard h2 i    { background: rgba(59, 130, 246, 0.10);  border-color: rgba(59, 130, 246, 0.25);  color: #60a5fa; }
+    #mod-leady h2 i        { background: rgba(236, 72, 153, 0.10);  border-color: rgba(236, 72, 153, 0.25);  color: #f9a8d4; }
+    #mod-sprawy h2 i       { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.15); color: #f4f4f5; }
+    #mod-kanban h2 i       { background: rgba(168, 85, 247, 0.10);  border-color: rgba(168, 85, 247, 0.25);  color: #c084fc; }
+    #mod-zadania h2 i      { background: rgba(16, 185, 129, 0.10);  border-color: rgba(16, 185, 129, 0.25);  color: #6ee7b7; }
+    #mod-alerty h2 i       { background: rgba(239, 68, 68, 0.10);   border-color: rgba(239, 68, 68, 0.25);   color: #fca5a5; }
+    #mod-kalendarz h2 i    { background: rgba(6, 182, 212, 0.10);   border-color: rgba(6, 182, 212, 0.25);   color: #67e8f9; }
+    #mod-wnioski h2 i      { background: rgba(245, 158, 11, 0.10);  border-color: rgba(245, 158, 11, 0.25);  color: #fcd34d; }
+    #mod-klienci h2 i      { background: rgba(168, 85, 247, 0.10);  border-color: rgba(168, 85, 247, 0.25);  color: #c084fc; }
+    #mod-pracodawcy h2 i   { background: rgba(99, 102, 241, 0.10);  border-color: rgba(99, 102, 241, 0.25);  color: #a5b4fc; }
+    #mod-prawnicy h2 i     { background: rgba(236, 72, 153, 0.10);  border-color: rgba(236, 72, 153, 0.25);  color: #f9a8d4; }
+    #mod-platnosci h2 i    { background: rgba(234, 179, 8, 0.12);   border-color: rgba(234, 179, 8, 0.25);   color: #fcd34d; }
+    #mod-windykacja h2 i   { background: rgba(239, 68, 68, 0.10);   border-color: rgba(239, 68, 68, 0.25);   color: #fca5a5; }
+    #mod-faktury h2 i      { background: rgba(249, 115, 22, 0.10);  border-color: rgba(249, 115, 22, 0.25);  color: #fdba74; }
+    #mod-analiza h2 i      { background: rgba(16, 185, 129, 0.10);  border-color: rgba(16, 185, 129, 0.25);  color: #6ee7b7; }
+    #mod-biblioteka h2 i   { background: rgba(161, 161, 170, 0.10); border-color: rgba(161, 161, 170, 0.20); color: #d4d4d8; }
+    #mod-admin h2 i        { background: rgba(99, 102, 241, 0.10);  border-color: rgba(99, 102, 241, 0.25);  color: #a5b4fc; }
+
+    /* === FAQ Q-MARKER === */
+    .faq-item {
+        padding: 14px 18px 14px 46px;
+        position: relative;
+    }
+    .faq-item::before {
+        content: 'Q';
+        position: absolute;
+        left: 14px; top: 15px;
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        background: var(--accent-subtle);
+        color: var(--accent);
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 11px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 0;
+    }
+
+    /* === ENHANCED FLOW DIAGRAM === */
+    .flow {
+        gap: 6px;
+        padding: 20px 18px;
+    }
+    .flow-node {
+        padding: 7px 13px 7px 11px;
+        transition: all 150ms;
+    }
+    .flow-node:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-subtle);
+    }
+    .flow-arrow {
+        font-size: 13px;
+        color: var(--text-muted);
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* === GROUP OVERVIEW GRID === */
+    .group-divider {
+        margin: 56px 0 24px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .group-divider .label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        white-space: nowrap;
+    }
+    .group-divider .line {
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+    }
+
+    /* Callout variants */
+    .callout.tip {
+        background: rgba(16, 185, 129, 0.08);
+        border-color: rgba(16, 185, 129, 0.22);
+    }
+    .callout.tip > i { color: #6ee7b7; }
+
+    /* Reduce h2 spacing when close to section-top */
+    .help-section:first-of-type h2 { margin-top: 0; }
 </style>
+
+<div class="scroll-progress" id="scroll-progress"></div>
 
 <div class="app-layout">
     <div id="sidebar-placeholder"></div>
@@ -475,6 +625,20 @@
                     </div>
                     <h1>Panel kancelarii GetMyPermit</h1>
                     <p>Krótki przewodnik po wszystkich modułach CRM — co gdzie znajdziesz, jak wygląda typowy przepływ sprawy od leada do zakończenia, i jak wykonać najczęstsze operacje. Otwieraj tę stronę kiedy coś jest niejasne; każdy tytuł modułu jest klikalny.</p>
+
+                    <div class="hero-pills">
+                        <a href="#szybki-start" class="hero-pill"><i class="ph ph-rocket-launch"></i>Szybki start</a>
+                        <a href="#workflow" class="hero-pill"><i class="ph ph-flow-arrow"></i>Workflow lead → sprawa</a>
+                        <a href="#operacje" class="hero-pill"><i class="ph ph-magic-wand"></i>Częste operacje</a>
+                        <a href="#skroty" class="hero-pill"><i class="ph ph-keyboard"></i>Skróty klawiszowe</a>
+                        <a href="#problemy" class="hero-pill"><i class="ph ph-wrench"></i>Rozwiązywanie problemów</a>
+                    </div>
+
+                    <div class="hero-meta">
+                        <span class="meta-item"><i class="ph ph-clock"></i> ~15 min czytania</span>
+                        <span class="meta-item"><i class="ph ph-stack"></i> 17 modułów</span>
+                        <span class="meta-item"><i class="ph ph-arrow-clockwise"></i> Ostatnia aktualizacja: <span id="last-update">2026-04-18</span></span>
+                    </div>
                 </header>
 
                 <!-- ============ START ============ -->
@@ -536,17 +700,17 @@
 
                     <div class="flow">
                         <span class="flow-node"><i class="ph ph-magnet"></i>Lead</span>
-                        <span class="flow-arrow">→</span>
+                        <span class="flow-arrow"><i class="ph ph-caret-right"></i></span>
                         <span class="flow-node"><i class="ph ph-user-plus"></i>Klient</span>
-                        <span class="flow-arrow">→</span>
+                        <span class="flow-arrow"><i class="ph ph-caret-right"></i></span>
                         <span class="flow-node"><i class="ph ph-folders"></i>Sprawa</span>
-                        <span class="flow-arrow">→</span>
+                        <span class="flow-arrow"><i class="ph ph-caret-right"></i></span>
                         <span class="flow-node"><i class="ph ph-paper-plane-tilt"></i>Złożenie wniosku</span>
-                        <span class="flow-arrow">→</span>
+                        <span class="flow-arrow"><i class="ph ph-caret-right"></i></span>
                         <span class="flow-node"><i class="ph ph-buildings"></i>Urząd</span>
-                        <span class="flow-arrow">→</span>
+                        <span class="flow-arrow"><i class="ph ph-caret-right"></i></span>
                         <span class="flow-node"><i class="ph ph-check-circle"></i>Decyzja</span>
-                        <span class="flow-arrow">→</span>
+                        <span class="flow-arrow"><i class="ph ph-caret-right"></i></span>
                         <span class="flow-node"><i class="ph ph-coins"></i>Rozliczenie</span>
                     </div>
 
@@ -582,7 +746,12 @@
                     </ol>
                 </section>
 
-                <!-- ============ MODUŁY: PRACA ============ -->
+                <!-- ============ GRUPA: PRACA ============ -->
+                <div class="group-divider">
+                    <span class="label">Moduły pracy</span>
+                    <span class="line"></span>
+                </div>
+
                 <section class="help-section" id="mod-dashboard">
                     <h2><i class="ph ph-house"></i>Dashboard</h2>
                     <p class="lede">Strona startowa po zalogowaniu — syntetyczny obraz tego, co się dzieje w kancelarii dziś i w tym miesiącu.</p>
@@ -715,7 +884,12 @@
                     </ul>
                 </section>
 
-                <!-- ============ KALENDARZ ============ -->
+                <!-- ============ GRUPA: KALENDARZ ============ -->
+                <div class="group-divider">
+                    <span class="label">Kalendarz</span>
+                    <span class="line"></span>
+                </div>
+
                 <section class="help-section" id="mod-kalendarz">
                     <h2><i class="ph ph-calendar-check"></i>Kalendarz spotkań</h2>
                     <p class="lede">Widok tygodniowy z wizytami — konsultacje, odciski biometryczne, osobiste stawiennictwa.</p>
@@ -738,7 +912,12 @@
                     </ul>
                 </section>
 
-                <!-- ============ KARTOTEKI ============ -->
+                <!-- ============ GRUPA: KARTOTEKI ============ -->
+                <div class="group-divider">
+                    <span class="label">Kartoteki</span>
+                    <span class="line"></span>
+                </div>
+
                 <section class="help-section" id="mod-klienci">
                     <h2><i class="ph ph-users"></i>Klienci</h2>
                     <p class="lede">Kartoteka cudzoziemców — wszystko co wiemy o naszych klientach.</p>
@@ -774,7 +953,12 @@
                     </div>
                 </section>
 
-                <!-- ============ FINANSE ============ -->
+                <!-- ============ GRUPA: FINANSE ============ -->
+                <div class="group-divider">
+                    <span class="label">Finanse</span>
+                    <span class="line"></span>
+                </div>
+
                 <section class="help-section" id="mod-platnosci">
                     <h2><i class="ph ph-coins"></i>Płatności</h2>
                     <p class="lede">Rejestr wpłat od klientów i pracodawców — gotówka, przelew, karta, faktura, inne.</p>
@@ -828,7 +1012,12 @@
                     </ul>
                 </section>
 
-                <!-- ============ BIBLIOTEKA ============ -->
+                <!-- ============ GRUPA: POZOSTAŁE ============ -->
+                <div class="group-divider">
+                    <span class="label">Biblioteka & admin</span>
+                    <span class="line"></span>
+                </div>
+
                 <section class="help-section" id="mod-biblioteka">
                     <h2><i class="ph ph-file-text"></i>Biblioteka wzorów</h2>
                     <p class="lede">Centralne repozytorium dokumentów i szablonów tekstów.</p>
@@ -853,7 +1042,12 @@
                     </ul>
                 </section>
 
-                <!-- ============ OPERACJE ============ -->
+                <!-- ============ GRUPA: PRAKTYKA ============ -->
+                <div class="group-divider">
+                    <span class="label">Praktyka — jak to zrobić</span>
+                    <span class="line"></span>
+                </div>
+
                 <section class="help-section" id="operacje">
                     <h2><i class="ph ph-magic-wand"></i>Częste operacje — krok po kroku</h2>
 
@@ -1072,13 +1266,14 @@
 </div>
 
 <script>
-// Active TOC highlight on scroll
+// Active TOC highlight + scroll progress bar
 (function() {
     const links = document.querySelectorAll('.help-toc a[href^="#"]');
     const sections = Array.from(links).map(a => ({
         link: a,
         section: document.querySelector(a.getAttribute('href')),
     })).filter(x => x.section);
+    const progressBar = document.getElementById('scroll-progress');
 
     function onScroll() {
         const scrollPos = window.scrollY + 80;
@@ -1088,6 +1283,15 @@
         }
         links.forEach(l => l.classList.remove('active'));
         if (active) active.link.classList.add('active');
+
+        // Scroll progress
+        if (progressBar) {
+            const h = document.documentElement;
+            const scrolled = window.scrollY;
+            const max = (h.scrollHeight - h.clientHeight) || 1;
+            const pct = Math.min(1, Math.max(0, scrolled / max));
+            progressBar.style.transform = `scaleX(${pct})`;
+        }
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
