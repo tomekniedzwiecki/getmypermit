@@ -1218,11 +1218,13 @@ async function renderIntakeTab() {
             </div>` : ''}
 
             <!-- STOPKA: destrukcyjne akcje -->
-            ${intake.status !== 'approved' ? `
             <div style="padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap">
-                <button class="btn btn-ghost btn-sm" onclick="regenerateIntake()" style="color: #a1a1aa"><i class="ph ph-arrow-clockwise"></i> Nowy link (unieważnia obecny)</button>
-                <button class="btn btn-ghost btn-sm" onclick="expireIntake()" style="color: #f87171"><i class="ph ph-x-circle"></i> Unieważnij link</button>
-            </div>` : ''}
+                ${intake.status !== 'approved' ? `
+                    <button class="btn btn-ghost btn-sm" onclick="regenerateIntake()" style="color: #a1a1aa"><i class="ph ph-arrow-clockwise"></i> Nowy link (unieważnia obecny)</button>
+                    <button class="btn btn-ghost btn-sm" onclick="expireIntake()" style="color: #f87171"><i class="ph ph-x-circle"></i> Unieważnij link</button>
+                ` : ''}
+                <button class="btn btn-ghost btn-sm" onclick="deleteIntake()" style="color: #f87171"><i class="ph ph-trash"></i> Usuń ankietę</button>
+            </div>
         </div>
     `;
 }
@@ -1380,6 +1382,49 @@ window.expireIntake = async function() {
     if (!confirm('Unieważnić link? Klient straci dostęp do ankiety.')) return;
     await db.from('gmp_intake_tokens').update({ expires_at: new Date().toISOString(), status: 'rejected' }).eq('id', currentIntake.id);
     toast.success('Link unieważniony');
+    renderIntakeTab();
+};
+
+window.deleteIntake = async function() {
+    if (!currentIntake) return;
+    const docsCount = currentIntakeDocs.length;
+    const dataCount = Object.keys(currentIntake.data || {}).filter(k => {
+        const v = currentIntake.data[k];
+        return v !== null && v !== undefined && v !== '' && v !== false;
+    }).length;
+    const statusLabel = { invited: 'wysłanej', in_progress: 'w trakcie', submitted: 'wysłanej przez klienta', approved: 'ZATWIERDZONEJ', rejected: 'odrzuconej' }[currentIntake.status] || currentIntake.status;
+
+    const warning =
+        `⚠️ USUNĄĆ ANKIETĘ NA STAŁE?\n\n` +
+        `Status: ${statusLabel}\n` +
+        `Wypełnionych pól: ${dataCount}\n` +
+        `Wgranych dokumentów: ${docsCount}\n\n` +
+        `Zostanie usunięte BEZ MOŻLIWOŚCI PRZYWRÓCENIA:\n` +
+        `• wszystkie odpowiedzi klienta\n` +
+        `• wszystkie dokumenty (paszport, umowy, zdjęcia)\n` +
+        `• link do ankiety przestanie działać\n\n` +
+        `Dane już zsynchronizowane z kartoteką klienta (imię, email, telefon) POZOSTANĄ.\n\n` +
+        `Kontynuować?`;
+
+    if (!confirm(warning)) return;
+    // Drugie potwierdzenie dla approved (najwięcej do stracenia)
+    if (currentIntake.status === 'approved') {
+        const secondCheck = prompt('Wpisz "USUŃ" aby potwierdzić trwałe usunięcie zatwierdzonej ankiety:');
+        if (secondCheck !== 'USUŃ') return;
+    }
+
+    // Usuń pliki ze Storage
+    if (currentIntakeDocs.length > 0) {
+        const paths = currentIntakeDocs.map(d => d.storage_path);
+        await db.storage.from('intake-docs').remove(paths);
+    }
+    // Usuń rekord (CASCADE usunie gmp_intake_documents)
+    const { error } = await db.from('gmp_intake_tokens').delete().eq('id', currentIntake.id);
+    if (error) { toast.error(error.message); return; }
+
+    toast.success('Ankieta usunięta');
+    currentIntake = null;
+    currentIntakeDocs = [];
     renderIntakeTab();
 };
 
