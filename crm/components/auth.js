@@ -34,17 +34,25 @@
     return data;
   }
 
+  // Buduje absolutny URL względem obecnego katalogu (działa lokalnie i w produkcji,
+  // niezależnie czy /crm/ jest w ścieżce czy nie)
+  function relativeUrl(filename) {
+    const path = window.location.pathname;
+    const base = path.endsWith('/') ? path : path.substring(0, path.lastIndexOf('/') + 1);
+    return window.location.origin + base + filename;
+  }
+
   async function sendMagicLink(email) {
     const { error } = await window.supabaseClient.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.origin + '/crm/dashboard.html' },
+      options: { emailRedirectTo: relativeUrl('dashboard.html') },
     });
     if (error) throw error;
   }
 
   async function sendPasswordReset(email) {
     const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/crm/reset-password.html',
+      redirectTo: relativeUrl('reset-password.html'),
     });
     if (error) throw error;
   }

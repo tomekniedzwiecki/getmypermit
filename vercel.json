@@ -1,4 +1,16 @@
 {
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "crm.getmypermit.pl" }],
+      "destination": "/crm/index.html"
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "crm.getmypermit.pl" }],
+      "destination": "/crm/:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
