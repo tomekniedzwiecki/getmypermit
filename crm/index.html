@@ -8,6 +8,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="img/favicon-192.png">
+    <link rel="apple-touch-icon" href="img/favicon-192.png">
+    <link rel="shortcut icon" href="img/favicon.ico">
     <link rel="stylesheet" href="components/layout.css">
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } }
@@ -43,11 +47,13 @@
         .auth-brand-sm .logo-mark {
             width: 36px; height: 36px;
             border-radius: 10px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            background: white;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 24px -4px rgba(139, 92, 246, 0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+            box-shadow: 0 6px 20px -6px rgba(37, 99, 235, 0.45), inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+            padding: 5px;
+            overflow: hidden;
         }
-        .auth-brand-sm .logo-mark i { color: white; font-size: 18px; }
+        .auth-brand-sm .logo-mark img { width: 100%; height: 100%; object-fit: contain; }
         .auth-brand-sm .brand-text {
             font-weight: 700; font-size: 14px; color: var(--text);
             letter-spacing: -0.01em;
@@ -303,11 +309,13 @@
         .brand-logo-lg .mark {
             width: 52px; height: 52px;
             border-radius: 14px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            background: white;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 16px 40px -8px rgba(168, 85, 247, 0.6), inset 0 1px 0 rgba(255,255,255,0.25);
+            box-shadow: 0 16px 40px -8px rgba(37, 99, 235, 0.55), inset 0 0 0 1px rgba(255,255,255,0.2);
+            padding: 7px;
+            overflow: hidden;
         }
-        .brand-logo-lg .mark i { color: white; font-size: 26px; }
+        .brand-logo-lg .mark img { width: 100%; height: 100%; object-fit: contain; }
         .brand-logo-lg .name { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
         .brand-logo-lg .tag { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
 
@@ -440,7 +448,7 @@
         <section class="auth-form-panel">
             <!-- Top: small brand (only visible on mobile where right panel is hidden, + subtle on desktop top) -->
             <div class="auth-brand-sm lg:hidden">
-                <div class="logo-mark"><i class="ph ph-scales"></i></div>
+                <div class="logo-mark"><img src="img/favicon-192.png" alt="GetMyPermit" width="36" height="36"></div>
                 <div>
                     <div class="brand-text">GetMyPermit</div>
                     <div class="brand-sub">Panel kancelarii</div>
@@ -535,7 +543,7 @@
             <div class="auth-brand-content">
                 <!-- Top: big brand -->
                 <div class="brand-logo-lg">
-                    <div class="mark"><i class="ph ph-scales"></i></div>
+                    <div class="mark"><img src="img/favicon-192.png" alt="GetMyPermit" width="52" height="52"></div>
                     <div>
                         <div class="name">GetMyPermit</div>
                         <div class="tag">Panel operacyjny kancelarii</div>
