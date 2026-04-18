@@ -228,6 +228,78 @@ async function saveData() {
     }
 }
 
+// === KRS / NIP LOOKUP (Ministry of Finance free API) ===
+// https://wl-api.mf.gov.pl/api/search/nip/{nip}?date=YYYY-MM-DD
+async function lookupNIP(nip) {
+    const digits = nip.replace(/\D/g, '');
+    if (digits.length !== 10) return null;
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+        const res = await fetch(`https://wl-api.mf.gov.pl/api/search/nip/${digits}?date=${today}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.result?.subject || null;
+    } catch (e) { console.warn('NIP lookup failed', e); return null; }
+}
+
+// === GUS postal code lookup (zipcodebase / public db) ===
+// Uses api.zippopotam.us - free, no key
+async function lookupZip(zip) {
+    const normalized = zip.replace(/\s/g, '');
+    if (!/^[0-9]{2}-?[0-9]{3}$/.test(normalized)) return null;
+    try {
+        const res = await fetch(`https://api.zippopotam.us/pl/${normalized.replace('-','')}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.places?.[0] ? {
+            city: data.places[0]['place name'],
+            state: data.places[0].state,
+        } : null;
+    } catch (e) { return null; }
+}
+
+// === OCR via Edge Function ===
+async function ocrDocument(docType, storagePath, docId) {
+    try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/intake-ocr`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ intake_token: intake.token, doc_type: docType, storage_path: storagePath, doc_id: docId }),
+        });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (e) { console.warn('OCR failed', e); return null; }
+}
+
+// Auto-fill fields from OCR result
+function applyOcrExtracted(extracted) {
+    if (!extracted || typeof extracted !== 'object') return;
+    const fieldMap = ['first_name', 'last_name', 'birth_date', 'gender', 'nationality',
+                      'passport_number', 'passport_expiry', 'passport_issuing',
+                      'employer_name', 'employer_nip', 'position', 'contract_type',
+                      'salary_gross', 'contract_start', 'contract_end', 'working_hours'];
+    fieldMap.forEach(key => {
+        if (extracted[key] !== undefined && extracted[key] !== null && extracted[key] !== '') {
+            formData[key] = extracted[key];
+            const el = document.querySelector(`[data-field="${key}"]`);
+            if (el) {
+                if (el.type === 'radio') {
+                    const match = document.querySelector(`[data-field="${key}"][value="${extracted[key]}"]`);
+                    if (match) match.checked = true;
+                } else {
+                    el.value = extracted[key];
+                }
+            } else {
+                // Radio groups
+                document.querySelectorAll(`[name="${key}"]`).forEach(r => {
+                    r.checked = r.value === String(extracted[key]);
+                });
+            }
+        }
+    });
+    saveData();
+}
+
 // === CONDITIONAL FIELDS ===
 function setupConditionalFields() {
     // Previous cards → details textarea
@@ -331,7 +403,82 @@ window.handleDocUpload = async function(docType, event) {
     uploadedDocs.push(doc);
     renderDocs();
     saveData();
+
+    // OCR w tle dla paszportu + umowy
+    if (docType === 'passport' || docType === 'contract') {
+        const statusEl = document.getElementById(`${docType}-status`);
+        if (statusEl) statusEl.innerHTML = `<div style="padding: 10px; background: var(--bg-subtle); border-radius: 6px; font-size: 12px"><i class="ph ph-sparkle"></i> ${intakeI18n.t('documents.validating')}</div>`;
+        const result = await ocrDocument(docType, path, doc.id);
+        if (result?.extracted) {
+            applyOcrExtracted(result.extracted);
+            if (statusEl) {
+                const issues = result.validation?.issues || [];
+                statusEl.innerHTML = `<div style="padding: 10px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 6px; font-size: 12px; color: #6ee7b7">
+                    <i class="ph ph-check-circle"></i> ${intakeI18n.t('documents.valid')}
+                    ${issues.length ? '<div style="color: #fcd34d; margin-top: 4px">⚠ ' + issues.join(', ') + '</div>' : ''}
+                </div>`;
+            }
+        } else if (statusEl) {
+            statusEl.innerHTML = '';
+        }
+    }
 };
+
+// === NIP LOOKUP HOOK ===
+async function attachNipLookup() {
+    const el = document.querySelector('[data-field="employer_nip"]');
+    if (!el) return;
+    let debounce;
+    el.addEventListener('input', () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(async () => {
+            const nip = el.value.replace(/\D/g, '');
+            if (nip.length === 10) {
+                const result = await lookupNIP(nip);
+                if (result?.name) {
+                    const nameEl = document.querySelector('[data-field="employer_name"]');
+                    if (nameEl && !nameEl.value) {
+                        nameEl.value = result.name;
+                        formData.employer_name = result.name;
+                        saveData();
+                        // Small visual feedback
+                        nameEl.style.borderColor = 'var(--success)';
+                        setTimeout(() => { nameEl.style.borderColor = ''; }, 1500);
+                    }
+                }
+            }
+        }, 500);
+    });
+}
+
+// === ZIP LOOKUP HOOK ===
+async function attachZipLookup() {
+    const el = document.querySelector('[data-field="zip"]');
+    if (!el) return;
+    let debounce;
+    el.addEventListener('input', () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(async () => {
+            const zip = el.value;
+            if (/^[0-9]{2}-?[0-9]{3}$/.test(zip)) {
+                const result = await lookupZip(zip);
+                if (result?.city) {
+                    const cityEl = document.querySelector('[data-field="city"]');
+                    if (cityEl && !cityEl.value) {
+                        cityEl.value = result.city;
+                        formData.city = result.city;
+                        saveData();
+                        cityEl.style.borderColor = 'var(--success)';
+                        setTimeout(() => { cityEl.style.borderColor = ''; }, 1500);
+                    }
+                }
+            }
+        }, 500);
+    });
+}
+
+// Init lookups after fields setup
+setTimeout(() => { attachNipLookup(); attachZipLookup(); }, 100);
 
 function renderDocs() {
     const el = document.getElementById('docs-list');
