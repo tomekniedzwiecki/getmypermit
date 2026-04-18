@@ -95,6 +95,288 @@
         .module-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; }
         .module-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 600; font-size: 14px; }
 
+        /* === INTAKE (Ankieta klienta) === */
+        .intake-wrap { display: grid; gap: 16px; }
+
+        /* Hero status */
+        .intake-hero {
+            position: relative;
+            padding: 20px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(99,102,241,0.02));
+            border: 1px solid rgba(99,102,241,0.2);
+            overflow: hidden;
+        }
+        .intake-hero.s-invited { background: linear-gradient(135deg, rgba(148,163,184,0.08), rgba(148,163,184,0.02)); border-color: rgba(148,163,184,0.18); }
+        .intake-hero.s-in_progress { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.02)); border-color: rgba(245,158,11,0.25); }
+        .intake-hero.s-submitted { background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.03)); border-color: rgba(16,185,129,0.28); }
+        .intake-hero.s-submitted::after {
+            content: ''; position: absolute; top: 16px; right: 16px; width: 8px; height: 8px;
+            background: #10b981; border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(16,185,129,0.6);
+            animation: pulse 2s infinite;
+        }
+        .intake-hero.s-approved { background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02)); border-color: rgba(16,185,129,0.2); }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+            100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+        }
+        .intake-hero-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+        .intake-hero-ico {
+            width: 46px; height: 46px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+        .s-invited .intake-hero-ico { background: rgba(148,163,184,0.12); color: #cbd5e1; }
+        .s-in_progress .intake-hero-ico { background: rgba(245,158,11,0.15); color: #fcd34d; }
+        .s-submitted .intake-hero-ico { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+        .s-approved .intake-hero-ico { background: rgba(16,185,129,0.1); color: #6ee7b7; }
+        .intake-hero-title { font-size: 15px; font-weight: 600; color: #f4f4f5; margin: 0 0 3px; }
+        .intake-hero-sub { font-size: 12px; color: #a1a1aa; }
+        .intake-hero-meta {
+            display: flex; gap: 14px; flex-wrap: wrap;
+            font-size: 11px; color: #71717a;
+            padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .intake-hero-meta b { color: #d4d4d8; font-weight: 500; }
+
+        /* Progress bar */
+        .intake-progress-bar {
+            height: 6px; background: rgba(255,255,255,0.04);
+            border-radius: 999px; overflow: hidden; margin: 12px 0 4px;
+        }
+        .intake-progress-fill {
+            height: 100%; border-radius: 999px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            transition: width 300ms;
+        }
+        .s-in_progress .intake-progress-fill { background: linear-gradient(90deg, #f59e0b, #fcd34d); }
+        .s-submitted .intake-progress-fill, .s-approved .intake-progress-fill { background: linear-gradient(90deg, #10b981, #06b6d4); }
+
+        /* Share panel */
+        .intake-share {
+            display: grid; grid-template-columns: 160px 1fr; gap: 16px;
+            padding: 16px; background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+        }
+        @media (max-width: 640px) { .intake-share { grid-template-columns: 1fr; } }
+        .intake-qr {
+            background: white; border-radius: 10px; padding: 8px;
+            display: flex; align-items: center; justify-content: center;
+            aspect-ratio: 1; min-height: 140px;
+        }
+        .intake-qr img { width: 100%; height: auto; display: block; }
+        .intake-share-right { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .intake-share-label {
+            font-size: 10px; color: #71717a; text-transform: uppercase;
+            letter-spacing: 0.08em; font-weight: 600; margin-bottom: 2px;
+        }
+        .intake-link-box {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #d4d4d8;
+            overflow: hidden;
+        }
+        .intake-link-box input {
+            flex: 1; background: transparent; border: none; outline: none;
+            color: #d4d4d8; font-family: inherit; font-size: 11px;
+            min-width: 0;
+        }
+        .intake-share-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+        .intake-share-btn {
+            flex: 1; min-width: 90px;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px; color: #e5e5e5; font-size: 12px; font-weight: 500;
+            cursor: pointer; transition: all 120ms; text-decoration: none;
+            white-space: nowrap;
+        }
+        .intake-share-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
+        .intake-share-btn.wa { background: rgba(37,211,102,0.1); border-color: rgba(37,211,102,0.3); color: #4ade80; }
+        .intake-share-btn.wa:hover { background: #25d366; color: white; border-color: #25d366; }
+        .intake-share-btn.copy.copied { background: #10b981; color: white; border-color: #10b981; }
+
+        /* Section progress rail */
+        .intake-sections {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px;
+            padding: 10px; background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;
+        }
+        .intake-sec {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px; border-radius: 7px;
+            font-size: 12px;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+        .intake-sec.done { background: rgba(16,185,129,0.06); color: #6ee7b7; border-color: rgba(16,185,129,0.15); }
+        .intake-sec.partial { background: rgba(245,158,11,0.06); color: #fcd34d; border-color: rgba(245,158,11,0.2); }
+        .intake-sec.empty { color: #52525b; }
+        .intake-sec-ico {
+            width: 18px; height: 18px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            font-size: 11px;
+        }
+        .intake-sec.done .intake-sec-ico { background: #10b981; color: white; }
+        .intake-sec.partial .intake-sec-ico { background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
+        .intake-sec.empty .intake-sec-ico { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+
+        /* Data sections card */
+        .intake-data-section {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .intake-data-section + .intake-data-section { margin-top: 8px; }
+        .intake-data-head {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px;
+            font-size: 12px; font-weight: 600; color: #d4d4d8;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .intake-data-head i { color: #818cf8; font-size: 16px; }
+        .intake-data-head .badge-count {
+            margin-left: auto;
+            font-size: 10px; color: #71717a;
+            background: rgba(255,255,255,0.04);
+            padding: 2px 8px; border-radius: 999px;
+        }
+        .intake-data-body { padding: 6px 14px 10px; }
+        .intake-kv {
+            display: grid; grid-template-columns: 140px 1fr;
+            padding: 6px 0; gap: 10px;
+            font-size: 12px;
+            border-bottom: 1px dashed rgba(255,255,255,0.04);
+        }
+        .intake-kv:last-child { border-bottom: none; }
+        .intake-kv-label { color: #71717a; }
+        .intake-kv-val { color: #e5e5e5; word-break: break-word; }
+        .intake-kv.flag .intake-kv-val {
+            color: #fcd34d; display: flex; align-items: center; gap: 6px;
+        }
+        .intake-kv.flag .intake-kv-val::before {
+            content: '\26A0'; font-size: 13px;
+        }
+
+        /* Document cards */
+        .intake-docs-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+        }
+        .intake-doc-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            transition: all 120ms;
+        }
+        .intake-doc-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12); }
+        .intake-doc-thumb {
+            width: 40px; height: 40px; flex-shrink: 0;
+            border-radius: 8px;
+            background: rgba(99,102,241,0.1); color: #818cf8;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .intake-doc-body { flex: 1; min-width: 0; }
+        .intake-doc-title { font-size: 12px; font-weight: 500; color: #e5e5e5; }
+        .intake-doc-sub { font-size: 10px; color: #71717a; margin-top: 1px; }
+        .intake-doc-ocr-ok {
+            display: inline-flex; align-items: center; gap: 3px;
+            color: #6ee7b7; font-size: 10px; margin-top: 2px;
+        }
+        .intake-doc-ocr-warn {
+            display: inline-flex; align-items: center; gap: 3px;
+            color: #fcd34d; font-size: 10px; margin-top: 2px;
+        }
+        .intake-doc-actions { display: flex; gap: 2px; }
+        .intake-doc-btn {
+            padding: 6px; background: transparent; border: none; cursor: pointer;
+            color: #a1a1aa; border-radius: 6px; font-size: 14px;
+            transition: all 120ms;
+        }
+        .intake-doc-btn:hover { background: rgba(255,255,255,0.06); color: white; }
+
+        /* Review action bar */
+        .intake-review-bar {
+            display: flex; gap: 10px; flex-wrap: wrap;
+            padding: 14px;
+            background: linear-gradient(135deg, rgba(16,185,129,0.06), rgba(16,185,129,0.01));
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 10px;
+        }
+        .intake-review-bar .btn { min-width: 180px; }
+        .intake-review-bar .hint { flex: 1; font-size: 12px; color: #a1a1aa; padding: 6px 0; min-width: 200px; }
+
+        /* Flags card */
+        .intake-flags {
+            padding: 12px 14px;
+            background: rgba(245,158,11,0.05);
+            border: 1px solid rgba(245,158,11,0.2);
+            border-radius: 10px;
+        }
+        .intake-flags-head {
+            font-size: 12px; font-weight: 600; color: #fcd34d;
+            display: flex; align-items: center; gap: 6px;
+            margin-bottom: 6px;
+        }
+        .intake-flags ul { margin: 0; padding-left: 22px; }
+        .intake-flags li { font-size: 12px; color: #fde68a; padding: 2px 0; }
+
+        /* Timeline mini */
+        .intake-timeline {
+            display: flex; gap: 20px; flex-wrap: wrap;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+        }
+        .intake-tl-item { font-size: 11px; color: #71717a; display: flex; align-items: center; gap: 6px; }
+        .intake-tl-item i { font-size: 13px; color: #818cf8; }
+        .intake-tl-item b { color: #d4d4d8; font-weight: 500; }
+
+        /* Empty state */
+        .intake-empty {
+            text-align: center; padding: 40px 20px;
+            background: rgba(255,255,255,0.02);
+            border: 1px dashed rgba(255,255,255,0.08);
+            border-radius: 14px;
+        }
+        .intake-empty-ico {
+            width: 72px; height: 72px; border-radius: 50%;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1));
+            display: flex; align-items: center; justify-content: center;
+            color: #818cf8; font-size: 32px;
+        }
+        .intake-empty h3 { font-size: 16px; font-weight: 600; margin: 0 0 6px; color: #f4f4f5; }
+        .intake-empty p { font-size: 13px; color: #a1a1aa; margin: 0 auto 16px; max-width: 380px; line-height: 1.6; }
+        .intake-empty-features {
+            display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+            margin-bottom: 20px; font-size: 11px; color: #71717a;
+        }
+        .intake-empty-features span { display: flex; align-items: center; gap: 4px; }
+        .intake-empty-features i { color: #6ee7b7; }
+
+        /* Header actions */
+        .intake-head-actions { display: flex; gap: 4px; align-items: center; }
+        .intake-head-actions .btn-ghost {
+            padding: 6px 10px; font-size: 12px;
+            color: #a1a1aa; border: 1px solid transparent;
+        }
+        .intake-head-actions .btn-ghost:hover {
+            color: white; background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.08);
+        }
+
         /* === MOBILE case.html === */
         @media (max-width: 600px) {
             .case-header { margin: -16px -16px 0 !important; padding: 10px 14px !important; }
@@ -654,6 +936,106 @@ function switchTab(name) {
 let currentIntake = null;
 let currentIntakeDocs = [];
 
+// Struktura sekcji formularza klienta (spójna z intake.js)
+const INTAKE_SECTIONS = [
+    { key: 'personal', icon: 'ph-user', label: 'Dane osobowe', fields: ['first_name', 'last_name', 'birth_date', 'gender', 'nationality', 'passport_number', 'passport_expiry'] },
+    { key: 'contact', icon: 'ph-phone', label: 'Kontakt', fields: ['phone', 'email', 'whatsapp_number', 'preferred_contact'] },
+    { key: 'address', icon: 'ph-house-line', label: 'Adres w PL', fields: ['zip', 'city', 'street', 'building', 'flat', 'voivodeship', 'registration_type'] },
+    { key: 'employment', icon: 'ph-briefcase', label: 'Zatrudnienie', fields: ['has_job', 'employer_name', 'employer_nip', 'position', 'contract_type', 'salary_gross', 'working_hours'] },
+    { key: 'history', icon: 'ph-globe', label: 'Historia', fields: ['arrival_date', 'current_visa', 'had_previous', 'had_refusal'] },
+    { key: 'purpose', icon: 'ph-target', label: 'Cel wniosku', fields: ['purpose', 'ground', 'situation'] },
+];
+const FIELD_LABELS = {
+    first_name: 'Imię', last_name: 'Nazwisko', birth_date: 'Data ur.', nationality: 'Obywatelstwo',
+    gender: 'Płeć', passport_number: 'Nr paszportu', passport_expiry: 'Paszport ważny do',
+    phone: 'Telefon', email: 'Email', whatsapp_number: 'WhatsApp', preferred_contact: 'Preferowany kontakt',
+    zip: 'Kod pocztowy', city: 'Miasto', street: 'Ulica', building: 'Nr domu', flat: 'Mieszkanie',
+    voivodeship: 'Województwo', registration_type: 'Zameldowanie',
+    has_job: 'Pracuje', employer_name: 'Pracodawca', employer_nip: 'NIP', position: 'Stanowisko',
+    contract_type: 'Umowa', salary_gross: 'Wynagrodzenie', working_hours: 'Wymiar',
+    arrival_date: 'Przyjazd', current_visa: 'Obecny dokument', had_previous: 'Poprzednie karty', had_refusal: 'Odmowy',
+    purpose: 'Cel wniosku', ground: 'Podstawa', situation: 'Sytuacja',
+};
+
+function filledVal(v) {
+    return v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0);
+}
+
+function intakeStatusMeta(status) {
+    return {
+        invited: { ico: 'ph-paper-plane-tilt', title: 'Link wysłany — czekamy', sub: 'Klient nie otworzył jeszcze ankiety' },
+        in_progress: { ico: 'ph-pencil-simple-line', title: 'Klient wypełnia', sub: 'Dane są zapisywane automatycznie na bieżąco' },
+        submitted: { ico: 'ph-check-circle', title: 'Klient wysłał — do przeglądu', sub: 'Sprawdź odpowiedzi i zatwierdź, aby wygenerować Playbook' },
+        approved: { ico: 'ph-seal-check', title: 'Zatwierdzone', sub: 'Dane zsynchronizowane, Playbook MOS 2.0 dostępny' },
+        rejected: { ico: 'ph-arrow-u-up-left', title: 'Odrzucone — klient poprawia', sub: 'Klient otrzymał prośbę o korektę' },
+    }[status] || { ico: 'ph-clipboard', title: status, sub: '' };
+}
+
+function computeIntakeFlags(intake, docs) {
+    const d = intake.data || {};
+    const flags = [];
+    // Paszport
+    if (d.passport_expiry) {
+        const exp = new Date(d.passport_expiry);
+        const now = new Date();
+        const monthsLeft = (exp - now) / (1000 * 60 * 60 * 24 * 30);
+        if (exp < now) flags.push('Paszport WYGASŁ (' + d.passport_expiry + ') — klient musi odnowić przed złożeniem');
+        else if (monthsLeft < 6) flags.push('Paszport wygasa za <6 miesięcy (' + d.passport_expiry + ') — MOS 2.0 wymaga min. 6 msc');
+    }
+    // Wynagrodzenie
+    if (filledVal(d.salary_gross)) {
+        const s = parseFloat(d.salary_gross);
+        if (s > 0 && s < 4666) flags.push('Wynagrodzenie ' + s + ' PLN < minimalne krajowe (4666 brutto) — ryzyko odmowy');
+    }
+    // NIP
+    if (filledVal(d.employer_nip) && !validateNIPclient(d.employer_nip)) {
+        flags.push('NIP pracodawcy (' + d.employer_nip + ') — nieprawidłowy checksum');
+    }
+    // Odmowa w historii
+    if (d.had_refusal === true || d.had_refusal === 'yes') {
+        flags.push('Klient miał wcześniej odmowę — trzeba dołączyć uzasadnienie zmiany okoliczności');
+    }
+    // Dokumenty
+    const docTypes = (docs || []).map(x => x.doc_type);
+    const must = ['passport', 'photo_bio'];
+    must.forEach(t => {
+        if (!docTypes.includes(t)) {
+            flags.push('Brakuje dokumentu: ' + ({ passport: 'paszport', photo_bio: 'zdjęcie biometryczne' }[t]));
+        }
+    });
+    // OCR validation issues
+    (docs || []).forEach(doc => {
+        if (doc.validation?.issues?.length) {
+            doc.validation.issues.forEach(iss => {
+                const issueLabel = { PASSPORT_EXPIRED: 'Paszport wygasł (OCR)', PASSPORT_EXPIRES_SOON: 'Paszport wygasa <6 msc (OCR)', MRZ_UNREADABLE: 'MRZ paszportu nieczytelne', NIP_INVALID: 'NIP niepoprawny (OCR)', SALARY_BELOW_MINIMUM: 'Wynagrodzenie < min. krajowe (OCR)' }[iss] || iss;
+                flags.push(issueLabel);
+            });
+        }
+    });
+    return flags;
+}
+
+function validateNIPclient(nip) {
+    const d = String(nip).replace(/\D/g, '');
+    if (d.length !== 10) return false;
+    const w = [6,5,7,2,3,4,5,6,7];
+    let s = 0;
+    for (let i = 0; i < 9; i++) s += parseInt(d[i]) * w[i];
+    return s % 11 === parseInt(d[9]);
+}
+
+function timeAgo(ts) {
+    if (!ts) return '—';
+    const diff = Date.now() - new Date(ts).getTime();
+    const m = Math.round(diff / 60000);
+    if (m < 1) return 'przed chwilą';
+    if (m < 60) return m + ' min temu';
+    const h = Math.round(m / 60);
+    if (h < 24) return h + ' godz. temu';
+    const days = Math.round(h / 24);
+    return days + ' dni temu';
+}
+
 async function renderIntakeTab() {
     const body = document.getElementById('intake-body');
     const actions = document.getElementById('intake-actions');
@@ -668,126 +1050,265 @@ async function renderIntakeTab() {
         actions.innerHTML = '';
         countEl.textContent = '';
         body.innerHTML = `
-            <div class="empty-state" style="padding: 32px 16px">
-                <i class="ph ph-clipboard-text" style="font-size: 36px; color: var(--text-disabled); margin-bottom: 12px"></i>
-                <div style="color: var(--text-secondary); margin-bottom: 4px">Brak wysłanej ankiety</div>
-                <div class="text-xs text-zinc-600 mb-4">Wygeneruj link i wyślij klientowi, aby wypełnił swoje dane i dokumenty</div>
-                <button class="btn btn-primary" onclick="createIntake()"><i class="ph ph-paper-plane-tilt"></i> Wygeneruj link do ankiety</button>
+            <div class="intake-empty">
+                <div class="intake-empty-ico"><i class="ph ph-paper-plane-tilt"></i></div>
+                <h3>Wyślij klientowi ankietę MOS 2.0</h3>
+                <p>Klient otrzyma spersonalizowany link, wypełni dane w swoim języku i załączy dokumenty. Ty zatwierdzasz i generujesz Playbook.</p>
+                <div class="intake-empty-features">
+                    <span><i class="ph ph-check-circle"></i> 5 języków (PL/EN/UK/RU/HI)</span>
+                    <span><i class="ph ph-check-circle"></i> OCR paszportu i umowy</span>
+                    <span><i class="ph ph-check-circle"></i> Auto-zapis co pole</span>
+                    <span><i class="ph ph-check-circle"></i> Link ważny 30 dni</span>
+                </div>
+                <button class="btn btn-primary" onclick="createIntake()" style="padding: 12px 24px; font-weight: 600"><i class="ph ph-paper-plane-tilt"></i> Wygeneruj link do ankiety</button>
             </div>`;
         return;
     }
-
-    const statusLabel = {
-        invited: '<span style="color: #a1a1aa">Link wysłany, czeka</span>',
-        in_progress: '<span style="color: #fcd34d">W trakcie wypełniania</span>',
-        submitted: '<span style="color: #6ee7b7">✓ Klient wysłał — do przeglądu</span>',
-        approved: '<span style="color: #10b981">✓ Zatwierdzone</span>',
-        rejected: '<span style="color: #fca5a5">Odrzucone</span>',
-    }[intake.status] || intake.status;
-
-    countEl.textContent = intake.status === 'submitted' ? '!' : '';
-    countEl.style.background = intake.status === 'submitted' ? 'rgba(16,185,129,0.2)' : '';
-    countEl.style.color = intake.status === 'submitted' ? '#6ee7b7' : '';
 
     // Fetch documents
     const { data: docs } = await db.from('gmp_intake_documents').select('*').eq('intake_id', intake.id);
     currentIntakeDocs = docs || [];
 
-    // Build URL
-    const intakeUrl = `${location.origin}/intake/?t=${intake.token}`;
     const data = intake.data || {};
-    const filledCount = Object.keys(data).filter(k => data[k] !== null && data[k] !== '' && data[k] !== false).length;
+    const intakeUrl = `${location.origin}/intake/?t=${intake.token}`;
+    const meta = intakeStatusMeta(intake.status);
+    const langName = { pl: '🇵🇱 Polski', en: '🇬🇧 English', uk: '🇺🇦 Українська', ru: '🇷🇺 Русский', hi: '🇮🇳 हिन्दी' }[intake.language] || intake.language;
+    const expiresIn = Math.ceil((new Date(intake.expires_at) - new Date()) / 86400000);
+    const flags = computeIntakeFlags(intake, currentIntakeDocs);
 
+    // Oblicz procent wypełnienia
+    const totalFields = INTAKE_SECTIONS.reduce((acc, s) => acc + s.fields.length, 0);
+    const filledFields = INTAKE_SECTIONS.reduce((acc, s) => acc + s.fields.filter(f => filledVal(data[f])).length, 0);
+    const pct = Math.round((filledFields / totalFields) * 100);
+
+    // Zakładka: badge
+    countEl.textContent = intake.status === 'submitted' ? '!' : (intake.status === 'in_progress' ? pct + '%' : '');
+    if (intake.status === 'submitted') {
+        countEl.style.background = 'rgba(16,185,129,0.2)';
+        countEl.style.color = '#6ee7b7';
+    } else if (intake.status === 'in_progress') {
+        countEl.style.background = 'rgba(245,158,11,0.18)';
+        countEl.style.color = '#fcd34d';
+    } else {
+        countEl.style.background = '';
+        countEl.style.color = '';
+    }
+
+    // Action buttons w nagłówku card
+    const canResend = intake.status === 'invited' || intake.status === 'in_progress';
     actions.innerHTML = `
-        <button class="btn btn-ghost btn-sm" onclick="copyIntakeLink()" title="Kopiuj link"><i class="ph ph-link"></i></button>
-        <button class="btn btn-ghost btn-sm" onclick="sendIntakeWhatsApp()" title="WhatsApp"><i class="ph ph-whatsapp-logo"></i></button>
-        ${intake.status === 'submitted' ? `<button class="btn btn-primary btn-sm" onclick="approveIntake()"><i class="ph ph-check"></i> Zatwierdź</button>` : ''}
+        <div class="intake-head-actions">
+            <button class="btn btn-ghost btn-sm" onclick="previewIntakeAsClient()" title="Podgląd jak widzi klient"><i class="ph ph-eye"></i></button>
+            <button class="btn btn-ghost btn-sm" onclick="regenerateIntake()" title="Wygeneruj nowy link (unieważnia stary)"><i class="ph ph-arrow-clockwise"></i></button>
+        </div>
     `;
 
-    const langName = { pl: 'Polski', en: 'English', uk: 'Українська', ru: 'Русский', hi: 'हिन्दी' }[intake.language] || intake.language;
-    const expiresIn = Math.ceil((new Date(intake.expires_at) - new Date()) / 86400000);
+    // Timeline events
+    const tlParts = [
+        `<div class="intake-tl-item"><i class="ph ph-paper-plane-tilt"></i> Link utworzony <b>${timeAgo(intake.created_at)}</b></div>`,
+        intake.updated_at && intake.updated_at !== intake.created_at ? `<div class="intake-tl-item"><i class="ph ph-pencil-simple-line"></i> Ostatnia edycja <b>${timeAgo(intake.updated_at)}</b></div>` : '',
+        intake.submitted_at ? `<div class="intake-tl-item"><i class="ph ph-check-circle"></i> Wysłano <b>${timeAgo(intake.submitted_at)}</b></div>` : '',
+        intake.reviewed_at ? `<div class="intake-tl-item"><i class="ph ph-seal-check"></i> Zatwierdzono <b>${timeAgo(intake.reviewed_at)}</b></div>` : '',
+    ].filter(Boolean).join('');
+
+    // QR URL
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=4&data=${encodeURIComponent(intakeUrl)}`;
 
     body.innerHTML = `
-        <div style="display: grid; gap: 16px">
-            <!-- Status card -->
-            <div style="padding: 14px; background: var(--bg-subtle); border-radius: 10px; border-left: 3px solid ${intake.status === 'submitted' ? 'var(--success)' : 'var(--accent)'}">
-                <div style="font-weight: 600; margin-bottom: 6px">${statusLabel}</div>
-                <div class="text-xs text-zinc-500">
-                    Język: ${langName} · Wysłano: ${fmt.daysAgo(intake.created_at)} · Link wygasa za ${expiresIn} dni
-                    ${intake.status === 'submitted' ? ` · <span style="color: #6ee7b7">Klient wysłał ${fmt.daysAgo(intake.submitted_at)}</span>` : ''}
+        <div class="intake-wrap">
+            <!-- HERO -->
+            <div class="intake-hero s-${intake.status}">
+                <div class="intake-hero-head">
+                    <div class="intake-hero-ico"><i class="ph ${meta.ico}"></i></div>
+                    <div style="flex: 1; min-width: 0">
+                        <div class="intake-hero-title">${meta.title}</div>
+                        <div class="intake-hero-sub">${meta.sub}</div>
+                    </div>
+                </div>
+                ${intake.status !== 'invited' ? `
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #a1a1aa">
+                        <span>Postęp wypełniania</span>
+                        <b style="color: #e5e5e5">${filledFields}/${totalFields} pól · ${pct}%</b>
+                    </div>
+                    <div class="intake-progress-bar">
+                        <div class="intake-progress-fill" style="width: ${pct}%"></div>
+                    </div>
+                </div>` : ''}
+                <div class="intake-hero-meta">
+                    <span><i class="ph ph-translate" style="color: #818cf8"></i> <b>${langName}</b></span>
+                    <span><i class="ph ph-timer" style="color: #818cf8"></i> Wygasa za <b>${expiresIn} dni</b></span>
+                    <span><i class="ph ph-file" style="color: #818cf8"></i> <b>${currentIntakeDocs.length}</b> dokumentów</span>
                 </div>
             </div>
 
-            <!-- Link preview -->
-            <div style="background: var(--bg-subtle); padding: 10px 12px; border-radius: 8px; font-family: 'JetBrains Mono', mono; font-size: 11px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap" id="intake-url-display">${intakeUrl}</div>
+            <!-- TIMELINE -->
+            ${tlParts ? `<div class="intake-timeline">${tlParts}</div>` : ''}
 
-            <!-- Dane klienta -->
-            ${filledCount > 0 ? `
-            <div>
-                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary)">Odpowiedzi klienta (${filledCount} pól wypełnionych)</div>
-                <div id="intake-data-display" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 14px">${renderIntakeDataTable(data)}</div>
-            </div>` : '<div class="text-zinc-500 text-sm italic">Klient jeszcze nie zaczął wypełniać</div>'}
-
-            <!-- Dokumenty -->
-            ${currentIntakeDocs.length > 0 ? `
-            <div>
-                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary)">Dokumenty klienta (${currentIntakeDocs.length})</div>
-                <div style="display: grid; gap: 6px">${renderIntakeDocs()}</div>
+            <!-- FLAGI (ostrzeżenia dla opiekuna) -->
+            ${flags.length > 0 && intake.status !== 'approved' ? `
+            <div class="intake-flags">
+                <div class="intake-flags-head"><i class="ph ph-warning-circle"></i> Uwagi do przeglądu (${flags.length})</div>
+                <ul>${flags.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
             </div>` : ''}
 
-            <!-- Akcje -->
+            <!-- AKCJE REVIEW -->
             ${intake.status === 'submitted' ? `
-            <div style="border-top: 1px solid var(--border); padding-top: 14px; display: flex; gap: 8px; flex-wrap: wrap">
-                <button class="btn btn-primary" onclick="approveIntake()"><i class="ph ph-check"></i> Zatwierdź i generuj Playbook</button>
-                <button class="btn btn-secondary" onclick="rejectIntake()"><i class="ph ph-x"></i> Poproś o korektę</button>
+            <div class="intake-review-bar">
+                <button class="btn btn-primary" onclick="approveIntake()"><i class="ph ph-seal-check"></i> Zatwierdź i generuj Playbook</button>
+                <button class="btn btn-secondary" onclick="rejectIntake()"><i class="ph ph-arrow-u-up-left"></i> Poproś o korektę</button>
+                <div class="hint">Zatwierdzenie zsynchronizuje dane z kartoteką klienta i otworzy Playbook MOS 2.0.</div>
+            </div>` : ''}
+
+            <!-- SHARE PANEL (niedostępny po zatwierdzeniu) -->
+            ${intake.status !== 'approved' ? `
+            <div class="intake-share">
+                <div class="intake-qr"><img src="${qrUrl}" alt="QR"></div>
+                <div class="intake-share-right">
+                    <div>
+                        <div class="intake-share-label">Link do ankiety</div>
+                        <div class="intake-link-box">
+                            <input readonly value="${intakeUrl}" onclick="this.select()">
+                        </div>
+                    </div>
+                    ${canResend ? `
+                    <div class="intake-share-actions">
+                        <button class="intake-share-btn copy" onclick="copyIntakeLink(this)"><i class="ph ph-copy"></i> Kopiuj</button>
+                        <button class="intake-share-btn wa" onclick="sendIntakeWhatsApp()"><i class="ph ph-whatsapp-logo"></i> WhatsApp</button>
+                        <button class="intake-share-btn" onclick="sendIntakeEmail()"><i class="ph ph-envelope-simple"></i> Email</button>
+                        <button class="intake-share-btn" onclick="previewIntakeAsClient()"><i class="ph ph-eye"></i> Podgląd</button>
+                    </div>` : `
+                    <div class="intake-share-actions">
+                        <button class="intake-share-btn" onclick="previewIntakeAsClient()"><i class="ph ph-eye"></i> Otwórz ankietę</button>
+                        <button class="intake-share-btn copy" onclick="copyIntakeLink(this)"><i class="ph ph-copy"></i> Kopiuj link</button>
+                    </div>`}
+                </div>
+            </div>` : ''}
+
+            <!-- SEKCJE: progress visual -->
+            ${intake.status !== 'invited' ? `
+            <div>
+                <div style="font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px">Postęp wg sekcji</div>
+                <div class="intake-sections">
+                    ${INTAKE_SECTIONS.map(sec => {
+                        const filled = sec.fields.filter(f => filledVal(data[f])).length;
+                        const total = sec.fields.length;
+                        const state = filled === 0 ? 'empty' : (filled === total ? 'done' : 'partial');
+                        const ico = state === 'done' ? '<i class="ph ph-check"></i>' : (state === 'partial' ? filled : '');
+                        return `<div class="intake-sec ${state}">
+                            <div class="intake-sec-ico">${ico}</div>
+                            <span>${sec.label}</span>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>` : ''}
+
+            <!-- DANE KLIENTA po sekcjach -->
+            ${filledFields > 0 ? `
+            <div>
+                <div style="font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px">Odpowiedzi klienta</div>
+                ${renderIntakeDataSections(data, flags)}
+            </div>` : ''}
+
+            <!-- DOKUMENTY -->
+            ${currentIntakeDocs.length > 0 ? `
+            <div>
+                <div style="font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px">Dokumenty (${currentIntakeDocs.length})</div>
+                <div class="intake-docs-grid">${renderIntakeDocs()}</div>
+            </div>` : ''}
+
+            <!-- STOPKA: destrukcyjne akcje -->
+            ${intake.status !== 'approved' ? `
+            <div style="padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap">
+                <button class="btn btn-ghost btn-sm" onclick="regenerateIntake()" style="color: #a1a1aa"><i class="ph ph-arrow-clockwise"></i> Nowy link (unieważnia obecny)</button>
+                <button class="btn btn-ghost btn-sm" onclick="expireIntake()" style="color: #f87171"><i class="ph ph-x-circle"></i> Unieważnij link</button>
             </div>` : ''}
         </div>
     `;
 }
 
-function renderIntakeDataTable(data) {
-    const FIELD_LABELS = {
-        first_name: 'Imię', last_name: 'Nazwisko', birth_date: 'Data ur.', nationality: 'Obywatelstwo',
-        gender: 'Płeć', passport_number: 'Nr paszportu', passport_expiry: 'Ważny do',
-        phone: 'Telefon', email: 'Email', whatsapp_number: 'WhatsApp', preferred_contact: 'Preferowany kontakt',
-        zip: 'Kod pocztowy', city: 'Miasto', street: 'Ulica', building: 'Nr domu', flat: 'Mieszkanie',
-        voivodeship: 'Województwo', registration_type: 'Zameldowanie',
-        has_job: 'Pracuje', employer_name: 'Pracodawca', employer_nip: 'NIP', position: 'Stanowisko',
-        contract_type: 'Umowa', salary_gross: 'Wynagrodzenie', working_hours: 'Wymiar',
-        arrival_date: 'Przyjazd', current_visa: 'Obecny dokument', had_previous: 'Poprzednie karty', had_refusal: 'Odmowy',
-        purpose: 'Cel wniosku', ground: 'Podstawa', situation: 'Sytuacja',
-    };
-    let rows = '';
-    Object.entries(FIELD_LABELS).forEach(([k, label]) => {
-        const v = data[k];
-        if (v === undefined || v === null || v === '') return;
-        rows += `<div style="display: flex; justify-content: space-between; padding: 5px 0; font-size: 12px; border-bottom: 1px solid var(--border)"><span style="color: var(--text-tertiary)">${label}</span><span style="color: var(--text); text-align: right">${esc(String(v))}</span></div>`;
-    });
-    return rows || '<div class="text-zinc-500">Brak danych</div>';
+function renderIntakeDataSections(data, flags) {
+    const flaggedFields = new Set();
+    const flagText = flags.join('|').toLowerCase();
+    if (flagText.includes('paszport')) flaggedFields.add('passport_expiry');
+    if (flagText.includes('wynagrodzenie')) flaggedFields.add('salary_gross');
+    if (flagText.includes('nip')) flaggedFields.add('employer_nip');
+    if (flagText.includes('odmow')) flaggedFields.add('had_refusal');
+
+    return INTAKE_SECTIONS.map(sec => {
+        const rows = sec.fields
+            .filter(f => filledVal(data[f]))
+            .map(f => {
+                const flagged = flaggedFields.has(f) ? ' flag' : '';
+                let val = data[f];
+                if (typeof val === 'boolean') val = val ? 'Tak' : 'Nie';
+                if (f === 'salary_gross' && val) val = Number(val).toLocaleString('pl-PL') + ' PLN';
+                return `<div class="intake-kv${flagged}">
+                    <div class="intake-kv-label">${FIELD_LABELS[f] || f}</div>
+                    <div class="intake-kv-val">${esc(String(val))}</div>
+                </div>`;
+            }).join('');
+        if (!rows) return '';
+        const filled = sec.fields.filter(f => filledVal(data[f])).length;
+        return `<div class="intake-data-section">
+            <div class="intake-data-head">
+                <i class="ph ${sec.icon}"></i>
+                <span>${sec.label}</span>
+                <span class="badge-count">${filled}/${sec.fields.length}</span>
+            </div>
+            <div class="intake-data-body">${rows}</div>
+        </div>`;
+    }).join('');
 }
 
 function renderIntakeDocs() {
+    const docLabels = { passport: 'Paszport', contract: 'Umowa o pracę', payslips: 'Paski wypłat', zus: 'ZUS', photo_bio: 'Zdjęcie biometryczne', registration: 'Zameldowanie', birth_cert: 'Akt urodzenia', other: 'Inne' };
+    const docIcons = { passport: 'ph-identification-card', contract: 'ph-file-text', payslips: 'ph-receipt', zus: 'ph-bank', photo_bio: 'ph-user-circle', registration: 'ph-house-line', birth_cert: 'ph-baby', other: 'ph-file' };
     return currentIntakeDocs.map(d => {
-        const docLabels = { passport: 'Paszport', contract: 'Umowa', payslips: 'Paski wypłat', zus: 'ZUS', photo_bio: 'Zdjęcie biometryczne', registration: 'Zameldowanie', birth_cert: 'Akt urodzenia', other: 'Inne' };
-        const size = d.file_size ? Math.round(d.file_size / 1024) + ' KB' : '';
-        return `<div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--bg-subtle); border-radius: 6px">
-            <i class="ph ph-file" style="font-size: 18px; color: var(--text-tertiary)"></i>
-            <div style="flex: 1; min-width: 0">
-                <div style="font-size: 12px">${docLabels[d.doc_type] || d.doc_type}</div>
-                <div style="font-size: 10px; color: var(--text-tertiary)">${esc(d.file_name || '—')} · ${size}</div>
+        const size = d.file_size ? (d.file_size > 1024*1024 ? (d.file_size / 1024 / 1024).toFixed(1) + ' MB' : Math.round(d.file_size / 1024) + ' KB') : '';
+        const ocrStatus = d.validation?.status;
+        let ocrLine = '';
+        if (ocrStatus === 'ok') ocrLine = '<div class="intake-doc-ocr-ok"><i class="ph ph-check-circle"></i> OCR OK</div>';
+        else if (ocrStatus === 'warning') ocrLine = '<div class="intake-doc-ocr-warn"><i class="ph ph-warning-circle"></i> OCR: ' + (d.validation?.issues?.length || 0) + ' uwag</div>';
+        const safePath = esc(d.storage_path);
+        const safeName = esc(d.file_name || 'doc');
+        return `<div class="intake-doc-card">
+            <div class="intake-doc-thumb"><i class="ph ${docIcons[d.doc_type] || 'ph-file'}"></i></div>
+            <div class="intake-doc-body">
+                <div class="intake-doc-title">${docLabels[d.doc_type] || d.doc_type}</div>
+                <div class="intake-doc-sub">${esc(d.file_name || '—')}${size ? ' · ' + size : ''}</div>
+                ${ocrLine}
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="downloadIntakeDoc('${d.storage_path}', '${esc(d.file_name || 'doc')}')"><i class="ph ph-download"></i></button>
+            <div class="intake-doc-actions">
+                <button class="intake-doc-btn" onclick="previewIntakeDoc('${safePath}')" title="Podgląd"><i class="ph ph-eye"></i></button>
+                <button class="intake-doc-btn" onclick="downloadIntakeDoc('${safePath}', '${safeName}')" title="Pobierz"><i class="ph ph-download-simple"></i></button>
+            </div>
         </div>`;
     }).join('');
 }
 
 window.createIntake = async function() {
-    // Generuje token i rekord
+    // Spróbuj wydedukować język z obywatelstwa klienta
+    const nat = (caseData?.gmp_clients?.nationality || '').toLowerCase();
+    let guessedLang = 'en';
+    if (/ukrain|україн/.test(nat)) guessedLang = 'uk';
+    else if (/russ|росси|белар|беларус|kazakh|казах/.test(nat)) guessedLang = 'ru';
+    else if (/india|hindi|भारत|hindu|nepal|bangla/.test(nat)) guessedLang = 'hi';
+    else if (/pol|polsk/.test(nat)) guessedLang = 'pl';
+
+    const lang = prompt(
+        'W jakim języku klient będzie wypełniał formularz?\n\n' +
+        'pl = Polski\nen = English\nuk = Українська\nru = Русский\nhi = हिन्दी',
+        guessedLang
+    );
+    if (!lang) return;
+    const validLang = ['pl', 'en', 'uk', 'ru', 'hi'].includes(lang) ? lang : 'en';
+
     const token = Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(36).padStart(2, '0')).join('').slice(0, 32);
     const { data, error } = await db.from('gmp_intake_tokens').insert({
         token, case_id: caseId,
         client_id: caseData?.client_id || null,
-        language: 'en',
+        language: validLang,
         created_by: window.currentStaff?.id,
     }).select().single();
     if (error) { toast.error(error.message); return; }
@@ -795,11 +1316,71 @@ window.createIntake = async function() {
     renderIntakeTab();
 };
 
-window.copyIntakeLink = function() {
+window.copyIntakeLink = function(btn) {
     if (!currentIntake) return;
     const url = `${location.origin}/intake/?t=${currentIntake.token}`;
     navigator.clipboard.writeText(url);
     toast.success('Link skopiowany');
+    if (btn && btn.classList) {
+        const orig = btn.innerHTML;
+        btn.classList.add('copied');
+        btn.innerHTML = '<i class="ph ph-check"></i> Skopiowano';
+        setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 1500);
+    }
+};
+
+window.previewIntakeAsClient = function() {
+    if (!currentIntake) return;
+    window.open(`/intake/?t=${currentIntake.token}`, '_blank');
+};
+
+window.previewIntakeDoc = async function(path) {
+    const { data, error } = await db.storage.from('intake-docs').createSignedUrl(path, 3600);
+    if (error) { toast.error(error.message); return; }
+    window.open(data.signedUrl, '_blank');
+};
+
+window.sendIntakeEmail = function() {
+    if (!currentIntake) return;
+    const url = `${location.origin}/intake/?t=${currentIntake.token}`;
+    const email = caseData?.gmp_clients?.email || '';
+    const clientName = caseData?.gmp_clients?.first_name || '';
+    const subject = encodeURIComponent('Formularz do Twojego wniosku o kartę pobytu / Application form');
+    const body = encodeURIComponent(
+        `Dzień dobry ${clientName},\n\n` +
+        `prosimy o wypełnienie poniższego formularza (zajmie ok. 15 min). Dane są zapisywane automatycznie — możesz wrócić w dowolnym momencie.\n\n` +
+        `Link: ${url}\n\n` +
+        `Hello ${clientName},\n\n` +
+        `please fill in the form below (~15 min). Data is saved automatically — you can return any time.\n\n` +
+        `Link: ${url}\n\n` +
+        `Link ważny 30 dni / Link valid for 30 days.`
+    );
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+};
+
+window.regenerateIntake = async function() {
+    if (!currentIntake) return;
+    if (!confirm('Wygenerować NOWY link? Obecny przestanie działać, a klient będzie musiał zacząć od nowa.')) return;
+    // expire old
+    await db.from('gmp_intake_tokens').update({ expires_at: new Date().toISOString() }).eq('id', currentIntake.id);
+    // create new
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(36).padStart(2, '0')).join('').slice(0, 32);
+    await db.from('gmp_intake_tokens').insert({
+        token, case_id: caseId,
+        client_id: caseData?.client_id || null,
+        language: currentIntake.language || 'en',
+        created_by: window.currentStaff?.id,
+    });
+    toast.success('Nowy link wygenerowany');
+    renderIntakeTab();
+};
+
+window.expireIntake = async function() {
+    if (!currentIntake) return;
+    if (!confirm('Unieważnić link? Klient straci dostęp do ankiety.')) return;
+    await db.from('gmp_intake_tokens').update({ expires_at: new Date().toISOString(), status: 'rejected' }).eq('id', currentIntake.id);
+    toast.success('Link unieważniony');
+    renderIntakeTab();
 };
 
 window.sendIntakeWhatsApp = function() {
@@ -808,7 +1389,15 @@ window.sendIntakeWhatsApp = function() {
     const phone = (caseData?.gmp_clients?.phone || '').replace(/\D/g, '');
     const intl = phone && !phone.startsWith('48') ? '48' + phone : phone;
     const clientName = caseData?.gmp_clients?.first_name || '';
-    const msg = encodeURIComponent(`Hi ${clientName}! 👋\nPlease fill in this 15-min form for your residence permit:\n${url}\n(Valid for 30 days)`);
+    const lang = currentIntake.language || 'en';
+    const templates = {
+        pl: `Dzień dobry ${clientName}! 👋\n\nProsimy o wypełnienie formularza (~15 min) — dane są zapisywane automatycznie:\n${url}\n\nLink ważny 30 dni.`,
+        en: `Hi ${clientName}! 👋\n\nPlease fill in this short form (~15 min) for your Polish residence permit — data saves automatically:\n${url}\n\nValid 30 days.`,
+        uk: `Вітаємо, ${clientName}! 👋\n\nБудь ласка, заповніть коротку форму (~15 хв) для вашої картки побиту — дані зберігаються автоматично:\n${url}\n\nДійсно 30 днів.`,
+        ru: `Здравствуйте, ${clientName}! 👋\n\nПожалуйста, заполните короткую форму (~15 мин) для вашей карты побыта — данные сохраняются автоматически:\n${url}\n\nДействительно 30 дней.`,
+        hi: `नमस्ते ${clientName}! 👋\n\nकृपया अपने पोलिश निवास परमिट के लिए यह छोटा फॉर्म (~15 मिनट) भरें — डेटा स्वतः सहेजा जाता है:\n${url}\n\n30 दिनों के लिए मान्य।`,
+    };
+    const msg = encodeURIComponent(templates[lang] || templates.en);
     window.open(intl ? `https://wa.me/${intl}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank');
 };
 
