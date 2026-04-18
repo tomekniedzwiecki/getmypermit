@@ -278,6 +278,29 @@
 
 /* Sort indicators */
 .sort-caret { display: inline-flex; flex-direction: column; gap: 0; margin-left: 4px; opacity: 0.3; }
+
+/* === MOBILE receivables === */
+@media (max-width: 600px) {
+    .work-row {
+        grid-template-columns: 36px 1fr !important;
+        grid-template-rows: auto auto auto;
+        gap: 8px 10px !important;
+        padding: 12px !important;
+        min-height: auto !important;
+    }
+    .work-row > .avatar { grid-row: 1 / 4; }
+    .work-row .work-main { grid-column: 2; grid-row: 1; }
+    .work-row .work-amount-col { grid-column: 2; grid-row: 2; flex-direction: row; justify-content: flex-start; gap: 8px; }
+    .work-row .work-actions-col { grid-column: 1 / 3; grid-row: 3; justify-content: space-between; opacity: 1 !important; padding-top: 6px; border-top: 1px solid var(--border); margin-top: 4px; }
+    .work-title-line { flex-wrap: wrap; gap: 4px !important; }
+    .work-amount { font-size: 15px !important; }
+    .hero-card { padding: 16px !important; }
+    .hero-value { font-size: 26px !important; }
+    .metric-card { padding: 12px 14px !important; }
+    .metric-value { font-size: 18px !important; }
+    .chart-container { height: 220px !important; }
+    .toolbar { padding: 8px 10px !important; gap: 6px !important; }
+}
 </style>
 
 <div class="app-layout">

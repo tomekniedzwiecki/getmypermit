@@ -90,6 +90,25 @@
 
         .module-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; }
         .module-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 600; font-size: 14px; }
+
+        /* === MOBILE case.html === */
+        @media (max-width: 600px) {
+            .case-header { margin: -16px -16px 0 !important; padding: 10px 14px !important; }
+            .case-tabs { margin: 10px -16px 0 !important; padding: 0 14px !important; }
+            .case-tab { padding: 10px 12px; font-size: 12px; }
+            .case-aside { position: static !important; max-height: none !important; overflow-y: visible !important; }
+            .case-body { padding-top: 12px !important; gap: 12px !important; }
+            /* Grid-cols-2 w "Dane szczegółowe" i w modalach → 1-col */
+            .tab-panel .grid.grid-cols-2 { grid-template-columns: 1fr !important; }
+            /* Kwartet Quick actions (Call/WA/Email + Dodaj wpis + Pin + Usuń) */
+            #quick-contact { flex-wrap: wrap; width: 100%; }
+            .quick-action { padding: 8px 10px !important; font-size: 11px; }
+            /* Nazwa klienta, badges wrap bez nachodzenia */
+            #case-client-name { font-size: 18px !important; }
+            #case-number-display, #case-znak-sprawy, #case-type-display, #case-employer-display {
+                font-size: 10px !important;
+            }
+        }
     </style>
 </head>
 <body>

@@ -68,6 +68,15 @@
 .cal-event:hover { background: rgba(59, 130, 246, 0.2); }
 .cal-event.odciski { background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.3); }
 .cal-event.konsultacja { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
+
+/* === MOBILE calendar === */
+@media (max-width: 600px) {
+    #calendar-grid { display: flex !important; flex-direction: column !important; }
+    .cal-day { min-height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 10px 12px; }
+    .cal-day-header { text-align: left; font-size: 11px; margin-bottom: 6px; padding-bottom: 4px; }
+    .cal-day-header.today { padding: 4px 10px; border-radius: 4px; background: rgba(59,130,246,0.1); display: inline-block; }
+    .cal-event { font-size: 12px; padding: 8px 10px; }
+}
 </style>
 
 <script src="components/sidebar.js" data-active="appointments"></script>

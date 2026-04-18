@@ -83,6 +83,14 @@
 
   function generateSidebar() {
     return `
+      <div class="mobile-topbar" id="mobile-topbar">
+        <button class="mobile-hamburger" id="mobile-hamburger" aria-label="Menu"><i class="ph ph-list"></i></button>
+        <a href="dashboard.html" class="mobile-topbar-brand">
+          <div class="ico"><i class="ph ph-scales"></i></div>
+          <span>GetMyPermit CRM</span>
+        </a>
+      </div>
+      <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
       <aside id="main-sidebar" class="w-60 bg-zinc-950 border-r border-zinc-900 flex flex-col flex-shrink-0 h-screen sticky top-0">
         <!-- Logo -->
         <div class="h-14 flex items-center px-5 border-b border-zinc-900">
@@ -156,6 +164,25 @@
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => window.gmpAuth?.logout() || (window.location.href = 'index.html'));
     }
+
+    // Mobile hamburger drawer
+    const hamburger = document.getElementById('mobile-hamburger');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const sidebar = document.getElementById('main-sidebar');
+    function openSidebar() { sidebar?.classList.add('open'); backdrop?.classList.add('open'); }
+    function closeSidebar() { sidebar?.classList.remove('open'); backdrop?.classList.remove('open'); }
+    if (hamburger) hamburger.addEventListener('click', openSidebar);
+    if (backdrop) backdrop.addEventListener('click', closeSidebar);
+    // Close drawer when clicking a link inside sidebar (mobile UX)
+    sidebar?.addEventListener('click', (e) => {
+      if (e.target.closest('a') && window.innerWidth <= 900) {
+        setTimeout(closeSidebar, 100);
+      }
+    });
+    // Close on resize to desktop
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 900) closeSidebar();
+    });
   });
 
   // Gdy auth ready - wypelnij info o userze

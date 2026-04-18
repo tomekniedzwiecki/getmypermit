@@ -77,7 +77,12 @@
         </div>
     </main>
 </div>
-<style>.tab-btn.active{background:white;color:black}</style>
+<style>
+.tab-btn.active{background:white;color:black}
+@media (max-width: 600px) {
+    #alerts-list, #tasks-list, #overdue-payments { max-height: 400px !important; }
+}
+</style>
 <script src="components/sidebar.js" data-active="alerts"></script>
 <script>
 let alertLevel = 'inactive_30';

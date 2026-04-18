@@ -288,6 +288,15 @@
     height: 14px;
     border-radius: 3px;
 }
+
+/* === MOBILE analytics === */
+@media (max-width: 600px) {
+    .heatmap-table { min-width: 560px; font-size: 10px; }
+    .heatmap-hdr, .heatmap-year { padding: 4px 6px !important; font-size: 10px !important; }
+    .heatmap-cell { font-size: 9px !important; padding: 4px 2px !important; }
+    .chart-container, [class*="chart"] { height: 220px !important; }
+    .heatmap-legend { font-size: 10px; flex-wrap: wrap; }
+}
 </style>
 <script src="components/sidebar.js" data-active="analytics"></script>
 <script>

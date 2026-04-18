@@ -417,6 +417,24 @@
     gap: 6px;
 }
 .section-header i { font-size: 12px; }
+
+/* === MOBILE lead.html === */
+@media (max-width: 600px) {
+    .lead-hero { flex-direction: column; align-items: flex-start !important; gap: 12px !important; padding: 16px !important; }
+    .lead-hero .avatar { width: 44px !important; height: 44px !important; font-size: 15px !important; }
+    .lead-hero h1 { font-size: 18px !important; }
+    .hero-actions { width: 100%; flex-wrap: wrap; }
+    .hero-actions .hero-action { flex: 1; justify-content: center; min-width: 0; padding: 10px 8px !important; }
+    .metrics-row { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+    .m-card { padding: 10px 12px !important; }
+    .m-card .m-val { font-size: 16px !important; }
+    .check-item { padding: 10px !important; }
+    .check-item .action-btn { width: 30px !important; height: 30px !important; font-size: 13px !important; }
+    .tl-event { grid-template-columns: 24px 1fr !important; }
+    .score-box { padding: 12px !important; }
+    .msg-tabs { overflow-x: auto; flex-wrap: nowrap; }
+    .msg-tab { flex-shrink: 0; padding: 8px 12px !important; }
+}
 </style>
 
 <div class="app-layout">

@@ -153,18 +153,19 @@
 
         <!-- Bulk actions bar -->
         <div id="bulk-bar" class="hidden card p-3 mb-3" style="background: var(--accent-subtle); border-color: var(--accent-border)">
-            <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-sm text-white flex items-center gap-2 mr-2"><i class="ph ph-check-square-offset text-accent"></i> Zaznaczono <span id="bulk-count" class="font-bold">0</span></span>
-                <button class="btn btn-secondary btn-sm" onclick="bulkAssignStaff()"><i class="ph ph-user"></i> Opiekun</button>
-                <button class="btn btn-secondary btn-sm" onclick="bulkChangeStatus()"><i class="ph ph-flag"></i> Status</button>
-                <button class="btn btn-secondary btn-sm" onclick="bulkChangeStage()"><i class="ph ph-stack"></i> Etap</button>
-                <button class="btn btn-secondary btn-sm" onclick="bulkChangeCategory()"><i class="ph ph-tag"></i> Kategoria</button>
-                <button class="btn btn-secondary btn-sm" onclick="bulkAddTag()"><i class="ph ph-plus-circle"></i> Dodaj tag</button>
-                <button class="btn btn-secondary btn-sm" onclick="bulkPin()"><i class="ph ph-push-pin"></i> Przypnij</button>
-                <button class="btn btn-secondary btn-sm text-red-400" onclick="bulkDelete()"><i class="ph ph-trash"></i> Usuń</button>
+            <div class="flex items-center gap-2 flex-wrap bulk-bar-content">
+                <span class="text-sm text-white flex items-center gap-2 mr-2 bulk-count-label"><i class="ph ph-check-square-offset text-accent"></i> Zaznaczono <span id="bulk-count" class="font-bold">0</span></span>
+                <button class="btn btn-secondary btn-sm" onclick="bulkAssignStaff()"><i class="ph ph-user"></i> <span class="hide-sm">Opiekun</span></button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkChangeStatus()"><i class="ph ph-flag"></i> <span class="hide-sm">Status</span></button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkChangeStage()"><i class="ph ph-stack"></i> <span class="hide-sm">Etap</span></button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkChangeCategory()"><i class="ph ph-tag"></i> <span class="hide-sm">Kategoria</span></button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkAddTag()"><i class="ph ph-plus-circle"></i> <span class="hide-sm">Tag</span></button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkPin()"><i class="ph ph-push-pin"></i> <span class="hide-sm">Przypnij</span></button>
+                <button class="btn btn-secondary btn-sm text-red-400" onclick="bulkDelete()"><i class="ph ph-trash"></i> <span class="hide-sm">Usuń</span></button>
                 <button class="btn btn-ghost btn-sm ml-auto" onclick="clearSelection()">Wyczyść</button>
             </div>
         </div>
+        <style>@media (max-width: 600px) { .hide-sm { display: none; } .bulk-count-label { width: 100%; margin-right: 0 !important; margin-bottom: 4px; } }</style>
 
         <!-- Tabela -->
         <div class="card overflow-hidden">

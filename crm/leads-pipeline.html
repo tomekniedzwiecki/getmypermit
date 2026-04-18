@@ -177,6 +177,17 @@
 }
 .filter-chip:hover { border-color: var(--border-hover); color: var(--text); }
 .filter-chip.active { background: var(--accent-subtle); border-color: var(--accent-border); color: var(--accent); }
+
+/* === MOBILE leads-pipeline === */
+@media (max-width: 600px) {
+    .pipe-wrap { grid-template-columns: repeat(6, 85vw) !important; height: calc(100vh - 260px) !important; scroll-snap-type: x mandatory; }
+    .pipe-col { scroll-snap-align: start; }
+    .pipe-kpi { grid-template-columns: repeat(2, 1fr) !important; }
+    .pipe-kpi > div { border-right: 1px solid var(--border); }
+    .pipe-kpi > div:nth-child(2n) { border-right: none; }
+    .pipe-kpi > div:nth-child(n+3) { border-top: 1px solid var(--border); }
+    .filter-chip { min-height: 32px; }
+}
 </style>
 
 <div class="app-layout">

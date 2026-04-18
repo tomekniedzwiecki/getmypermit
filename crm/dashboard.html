@@ -247,6 +247,18 @@
 .muted { color: var(--text-tertiary); }
 .mono { font-family: 'JetBrains Mono', mono; font-variant-numeric: tabular-nums; }
 .divider-h { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* === MOBILE dashboard === */
+@media (max-width: 600px) {
+    .chart-wrap { height: 220px !important; }
+    .stage { min-height: 72px; padding: 10px 12px; }
+    .stage-count { font-size: 20px !important; }
+    .alert-tile { padding: 12px !important; }
+    .alert-tile .at-num { font-size: 20px !important; }
+    .alert-tile .at-icon { width: 36px !important; height: 36px !important; font-size: 16px !important; }
+    .team-table td { padding: 8px 10px !important; font-size: 11px; }
+    .load-bar { width: 50px !important; }
+}
 </style>
 
 <div class="app-layout">
