@@ -53,6 +53,13 @@
         { href: 'templates.html', icon: 'ph-file-text', color: 'text-zinc-400', label: 'Wzory dokumentów', id: 'templates' },
       ]
     },
+    {
+      label: 'SUPER ADMIN',
+      ownerOnly: true,
+      items: [
+        { href: 'admin.html', icon: 'ph-shield-star', color: 'text-indigo-400', label: 'Super admin', id: 'admin' },
+      ]
+    },
   ];
 
   function renderItem(item) {
@@ -185,7 +192,7 @@
     });
   });
 
-  // Gdy auth ready - wypelnij info o userze
+  // Gdy auth ready - wypelnij info o userze + ukryj SUPER ADMIN jeśli nie-owner
   document.addEventListener('gmp-auth-ready', (e) => {
     const { user, staff } = e.detail;
     const name = staff?.full_name || user?.email || '—';
@@ -195,6 +202,14 @@
     if (nameEl) nameEl.textContent = name;
     if (roleEl) roleEl.textContent = staff?.role || 'user';
     if (avatarEl && window.avatar) avatarEl.outerHTML = window.avatar(name, 'sm').replace('class="avatar avatar-sm"', 'class="avatar avatar-sm" id="sidebar-user-avatar"');
+
+    // Owner-only sekcje — pokaż tylko dla roli 'owner'
+    if (staff?.role !== 'owner') {
+      document.querySelectorAll('[data-page="admin"]').forEach(el => {
+        const section = el.closest('.mb-3');
+        if (section) section.style.display = 'none';
+      });
+    }
   });
 
   window.GMP_CRM_SIDEBAR = { sections, generate: generateSidebar };

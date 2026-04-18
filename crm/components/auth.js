@@ -79,11 +79,57 @@
     return true;
   }
 
+  // Role helpers
+  function hasRole(staff, minRole) {
+    if (!staff?.role) return false;
+    const hierarchy = { owner: 5, admin: 4, lawyer: 3, assistant: 2, staff: 1 };
+    return (hierarchy[staff.role] || 0) >= (hierarchy[minRole] || 0);
+  }
+  function isOwner(staff) { return staff?.role === 'owner'; }
+  function isAdminOrOwner(staff) { return staff?.role === 'owner' || staff?.role === 'admin'; }
+
+  // Redirect jeśli brak roli (używane w /admin.html)
+  async function requireRole(minRole) {
+    const staff = await getCurrentStaff();
+    if (!staff || !hasRole(staff, minRole)) {
+      alert('Brak uprawnień do tej sekcji.');
+      window.location.href = 'dashboard.html';
+      return null;
+    }
+    return staff;
+  }
+
+  // Audit log helper — wywołuje RPC gmp_audit_log_add
+  async function auditLog(action, opts = {}) {
+    try {
+      await window.db.rpc('gmp_audit_log_add', {
+        p_action: action,
+        p_entity_type: opts.entityType || null,
+        p_entity_id: opts.entityId || null,
+        p_entity_label: opts.entityLabel || null,
+        p_severity: opts.severity || 'info',
+        p_before: opts.before || null,
+        p_after: opts.after || null,
+        p_metadata: opts.metadata || {},
+      });
+    } catch (e) { console.warn('audit log failed:', e.message); }
+  }
+
+  // Touch login — wywołane raz po zalogowaniu (debounce na sessionStorage, 1h TTL)
+  async function touchLoginIfNeeded() {
+    try {
+      const last = sessionStorage.getItem('gmp_login_touched');
+      if (last && Date.now() - parseInt(last) < 3600_000) return;
+      await window.db.rpc('gmp_staff_touch_login');
+      sessionStorage.setItem('gmp_login_touched', String(Date.now()));
+    } catch (e) { /* silent */ }
+  }
+
   // Export
   window.gmpAuth = {
     getSession, getCurrentUser, getCurrentStaff,
     login, sendMagicLink, sendPasswordReset, updatePassword, logout,
-    enforceAuth,
+    enforceAuth, requireRole, hasRole, isOwner, isAdminOrOwner, auditLog,
   };
 
   // Auto-enforce jesli data-require-auth="true" (default)
@@ -94,6 +140,8 @@
         // Info o uzytkowniku do window.currentUser
         window.currentUser = await getCurrentUser();
         window.currentStaff = await getCurrentStaff();
+        // Touch login (1h debounce)
+        touchLoginIfNeeded();
         document.dispatchEvent(new CustomEvent('gmp-auth-ready', {
           detail: { user: window.currentUser, staff: window.currentStaff }
         }));

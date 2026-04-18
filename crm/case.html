@@ -1413,6 +1413,23 @@ window.deleteIntake = async function() {
         if (secondCheck !== 'USUŃ') return;
     }
 
+    // Audit log PRZED destrukcją (żeby mieć before_data)
+    const clientName = caseData?.gmp_clients?.first_name || '';
+    await window.gmpAuth.auditLog('intake_delete', {
+        entityType: 'intake',
+        entityId: currentIntake.id,
+        entityLabel: `Ankieta sprawy ${caseData?.case_number || caseId} — ${clientName}`,
+        severity: currentIntake.status === 'approved' ? 'critical' : 'warning',
+        before: {
+            status: currentIntake.status,
+            data_fields: dataCount,
+            documents_count: docsCount,
+            submitted_at: currentIntake.submitted_at,
+            reviewed_at: currentIntake.reviewed_at,
+        },
+        metadata: { case_id: caseId },
+    });
+
     // Usuń pliki ze Storage
     if (currentIntakeDocs.length > 0) {
         const paths = currentIntakeDocs.map(d => d.storage_path);
@@ -2303,6 +2320,20 @@ async function togglePin() {
 
 async function deleteCase() {
     if (!confirm('Na pewno usunąć sprawę? Tego nie da się cofnąć.')) return;
+    // Audit przed destrukcją
+    const clientName = caseData?.gmp_clients ? `${caseData.gmp_clients.first_name || ''} ${caseData.gmp_clients.last_name || ''}`.trim() : '';
+    await window.gmpAuth.auditLog('case_delete', {
+        entityType: 'case',
+        entityId: caseId,
+        entityLabel: `Sprawa ${caseData?.case_number || caseId.slice(0, 8)} — ${clientName}`,
+        severity: 'critical',
+        before: {
+            status: caseData?.status,
+            stage: caseData?.stage,
+            fee_amount: caseData?.fee_amount,
+            assigned_to: caseData?.assigned_to,
+        },
+    });
     const { error } = await db.from('gmp_cases').delete().eq('id', caseId);
     if (error) { toast.error(error.message); return; }
     toast.success('Usunięto');
@@ -2597,6 +2628,15 @@ async function requestTrustedProfileAccess() {
     await db.from('gmp_credentials_access_log').insert({
         credential_id: data.id, accessed_by: window.currentStaff?.id,
         action: 'view', user_agent: navigator.userAgent,
+    });
+    // Audit log (unified stream)
+    const clientName = caseData?.gmp_clients ? `${caseData.gmp_clients.first_name || ''} ${caseData.gmp_clients.last_name || ''}`.trim() : '';
+    await window.gmpAuth.auditLog('credential_view', {
+        entityType: 'credential',
+        entityId: data.id,
+        entityLabel: `Hasła gov.pl — ${clientName}`,
+        severity: 'warning',
+        metadata: { case_id: caseId, client_id: caseData?.client_id },
     });
     openModal(`
         <div class="modal-header"><span><i class="ph ph-shield-warning text-amber-400"></i> Profil zaufany</span><button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>

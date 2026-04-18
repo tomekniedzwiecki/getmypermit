@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super admin - GetMyPermit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+    <style>
+        /* === ADMIN specific === */
+        .admin-header {
+            background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08) 40%, rgba(99,102,241,0.04));
+            border: 1px solid var(--accent-border);
+            border-radius: var(--r-2xl);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            display: flex; align-items: center; gap: 18px;
+        }
+        .admin-header .ico {
+            width: 54px; height: 54px; border-radius: 14px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 26px;
+            box-shadow: 0 8px 20px -4px rgba(99,102,241,0.4);
+        }
+        .admin-header h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.02em; }
+        .admin-header p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+        .admin-header .badge {
+            margin-left: auto;
+            padding: 5px 10px;
+            background: rgba(99,102,241,0.15);
+            border: 1px solid var(--accent-border);
+            border-radius: 999px;
+            font-size: 11px; font-weight: 600; color: #c4b5fd;
+            text-transform: uppercase; letter-spacing: 0.08em;
+        }
+
+        .admin-tabs {
+            display: flex; gap: 4px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        .admin-tab {
+            padding: 12px 18px;
+            background: transparent;
+            border: none; border-bottom: 2px solid transparent;
+            color: var(--text-tertiary); font-size: 13px; font-weight: 500;
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+            white-space: nowrap;
+            transition: color 120ms, border-color 120ms;
+        }
+        .admin-tab:hover { color: var(--text-secondary); }
+        .admin-tab.active { color: white; border-bottom-color: var(--accent); }
+        .admin-tab .count {
+            font-size: 10px; font-weight: 600;
+            background: rgba(255,255,255,0.06);
+            padding: 2px 8px; border-radius: 999px;
+            color: var(--text-tertiary);
+        }
+        .admin-tab.active .count { background: var(--accent-subtle); color: #a5b4fc; }
+
+        .admin-panel { display: none; }
+        .admin-panel.active { display: block; animation: fadeIn 180ms; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* KPI cards grid */
+        .kpi-grid-5 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        @media (max-width: 1100px) { .kpi-grid-5 { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { .kpi-grid-5 { grid-template-columns: 1fr; } }
+        .kpi-mini {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            padding: 14px 16px;
+            transition: border-color 120ms;
+        }
+        .kpi-mini:hover { border-color: var(--border-hover); }
+        .kpi-mini .k-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .kpi-mini .k-label i { font-size: 13px; color: var(--accent); }
+        .kpi-mini .k-value { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); line-height: 1.1; font-variant-numeric: tabular-nums; }
+        .kpi-mini .k-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; display: flex; align-items: center; gap: 3px; }
+        .kpi-mini .k-sub.up { color: #6ee7b7; }
+        .kpi-mini .k-sub.down { color: #fca5a5; }
+
+        /* Activity stream */
+        .stream {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            overflow: hidden;
+        }
+        .stream-head {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; font-weight: 600;
+        }
+        .stream-head .live-dot {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 11px; font-weight: 500;
+            color: #6ee7b7;
+        }
+        .stream-head .live-dot::before {
+            content: ''; width: 7px; height: 7px; border-radius: 50%;
+            background: #10b981;
+            animation: livePulse 1.6s infinite;
+        }
+        @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .stream-body { max-height: 480px; overflow-y: auto; }
+        .stream-item {
+            display: grid; grid-template-columns: 32px 1fr auto; gap: 10px;
+            padding: 10px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 13px;
+            align-items: start;
+        }
+        .stream-item:last-child { border-bottom: none; }
+        .stream-item:hover { background: rgba(255,255,255,0.02); }
+        .stream-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--bg-subtle);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .stream-avatar.color-0 { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+        .stream-avatar.color-1 { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+        .stream-avatar.color-2 { background: rgba(245,158,11,0.15); color: #fcd34d; }
+        .stream-avatar.color-3 { background: rgba(236,72,153,0.15); color: #f9a8d4; }
+        .stream-avatar.color-4 { background: rgba(6,182,212,0.15); color: #67e8f9; }
+        .stream-main { min-width: 0; line-height: 1.4; }
+        .stream-actor { font-weight: 600; color: var(--text); }
+        .stream-action { color: var(--text-secondary); }
+        .stream-entity { color: #a5b4fc; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        .stream-time { color: var(--text-tertiary); font-size: 11px; white-space: nowrap; }
+
+        /* Staff table */
+        .staff-perf-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            overflow: hidden;
+        }
+        .staff-perf-table th {
+            padding: 12px 14px;
+            text-align: left;
+            font-size: 11px; font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase; letter-spacing: 0.06em;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border);
+        }
+        .staff-perf-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 13px;
+            vertical-align: middle;
+        }
+        .staff-perf-table tr:last-child td { border-bottom: none; }
+        .staff-perf-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .staff-name-cell { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+        .staff-avatar-sm {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--bg-subtle);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 600;
+            color: var(--text-secondary);
+            position: relative;
+            flex-shrink: 0;
+        }
+        .staff-avatar-sm.online::after {
+            content: ''; position: absolute; bottom: -2px; right: -2px;
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #10b981; border: 2px solid var(--bg-elevated);
+        }
+        .staff-name-cell .n { font-weight: 500; }
+        .staff-name-cell .role { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+        .activity-score {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        .activity-score.good { color: #6ee7b7; }
+        .activity-score.mid { color: #fcd34d; }
+        .activity-score.bad { color: #fca5a5; }
+        .score-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .activity-score.good .score-dot { background: #10b981; }
+        .activity-score.mid .score-dot { background: #f59e0b; }
+        .activity-score.bad .score-dot { background: #ef4444; }
+        .mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+        /* Risk board */
+        .risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        @media (max-width: 1000px) { .risk-grid { grid-template-columns: 1fr; } }
+        .risk-col {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            overflow: hidden;
+        }
+        .risk-col-head {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+            font-size: 13px; font-weight: 600;
+        }
+        .risk-col.critical .risk-col-head { background: rgba(239,68,68,0.06); color: #fca5a5; }
+        .risk-col.warning .risk-col-head { background: rgba(245,158,11,0.06); color: #fcd34d; }
+        .risk-col.attention .risk-col-head { background: rgba(6,182,212,0.06); color: #67e8f9; }
+        .risk-col-count {
+            margin-left: auto;
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 999px; font-size: 11px; font-weight: 600;
+        }
+        .risk-items { padding: 8px; max-height: 520px; overflow-y: auto; }
+        .risk-item {
+            padding: 10px 12px;
+            background: var(--bg-subtle);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: var(--r-md);
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: border-color 120ms;
+            font-size: 12px;
+        }
+        .risk-item:hover { border-color: var(--border-hover); }
+        .risk-item .ri-title { font-weight: 500; color: var(--text); margin-bottom: 3px; line-height: 1.3; }
+        .risk-item .ri-meta { font-size: 11px; color: var(--text-tertiary); display: flex; gap: 8px; flex-wrap: wrap; }
+        .risk-item .ri-meta b { color: var(--text-secondary); font-weight: 500; }
+
+        /* Finance */
+        .fin-chart-wrap {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            padding: 18px;
+            margin-bottom: 20px;
+            height: 340px;
+        }
+
+        /* Audit log */
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            overflow: hidden;
+        }
+        .audit-table th, .audit-table td {
+            padding: 10px 12px;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            text-align: left;
+        }
+        .audit-table th { background: var(--bg-subtle); color: var(--text-tertiary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+        .audit-severity {
+            padding: 2px 8px; border-radius: 4px;
+            font-size: 10px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            display: inline-block;
+        }
+        .audit-severity.info { background: rgba(255,255,255,0.04); color: var(--text-tertiary); }
+        .audit-severity.warning { background: rgba(245,158,11,0.12); color: #fcd34d; }
+        .audit-severity.critical { background: rgba(239,68,68,0.12); color: #fca5a5; }
+
+        .access-denied {
+            max-width: 480px;
+            margin: 80px auto;
+            text-align: center;
+            padding: 40px 24px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--r-2xl);
+        }
+        .access-denied i { font-size: 48px; color: var(--danger); margin-bottom: 16px; display: block; }
+
+        .skel { background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.08), rgba(255,255,255,0.03)); background-size: 200% 100%; animation: skel 1.2s ease-in-out infinite; border-radius: 4px; }
+        @keyframes skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .refresh-btn {
+            padding: 5px 10px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            color: var(--text-tertiary);
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .refresh-btn:hover { color: var(--text); border-color: var(--border-hover); }
+        .refresh-btn.refreshing i { animation: spin 800ms linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main" id="main">
+
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 mb-3 text-xs flex-wrap">
+            <a href="dashboard.html" class="text-zinc-500 hover:text-white">Dashboard</a>
+            <span class="text-zinc-700">/</span>
+            <div class="text-zinc-300">Super admin</div>
+        </div>
+
+        <!-- Access denied state (default hidden until check) -->
+        <div id="access-denied" class="access-denied hidden">
+            <i class="ph ph-lock-key"></i>
+            <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 8px">Brak uprawnień</h1>
+            <p style="color: var(--text-secondary); margin: 0 0 16px">Ta sekcja jest dostępna tylko dla właścicieli firmy.</p>
+            <a href="dashboard.html" class="btn btn-secondary">Wróć do dashboardu</a>
+        </div>
+
+        <!-- Main content -->
+        <div id="admin-content" class="hidden">
+
+            <div class="admin-header">
+                <div class="ico"><i class="ph ph-shield-star"></i></div>
+                <div>
+                    <h1>Super admin</h1>
+                    <p>Realne dane o tym jak pracuje firma. Dostęp: <b id="ah-owner-name">—</b></p>
+                </div>
+                <span class="badge">OWNER</span>
+            </div>
+
+            <!-- Tabs -->
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-tab="pulse"><i class="ph ph-waveform"></i> Live pulse</button>
+                <button class="admin-tab" data-tab="staff"><i class="ph ph-users-three"></i> Zespół</button>
+                <button class="admin-tab" data-tab="risk"><i class="ph ph-fire"></i> Ryzyko <span class="count" id="cnt-risk">—</span></button>
+                <button class="admin-tab" data-tab="finance"><i class="ph ph-coins"></i> Finanse</button>
+                <button class="admin-tab" data-tab="audit"><i class="ph ph-shield-check"></i> Audit</button>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- PANEL 1: LIVE PULSE -->
+            <!-- ========================================================== -->
+            <div class="admin-panel active" data-panel="pulse">
+
+                <!-- Today KPIs -->
+                <div class="kpi-grid-5">
+                    <div class="kpi-mini">
+                        <div class="k-label"><i class="ph ph-folder-notch-plus"></i> Nowe sprawy dzisiaj</div>
+                        <div class="k-value" id="k-new-cases-today">—</div>
+                        <div class="k-sub" id="k-new-cases-sub">—</div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div class="k-label"><i class="ph ph-lightning"></i> Aktywności dzisiaj</div>
+                        <div class="k-value" id="k-activities-today">—</div>
+                        <div class="k-sub" id="k-activities-sub">—</div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div class="k-label"><i class="ph ph-check-square"></i> Zadania ukończone</div>
+                        <div class="k-value" id="k-tasks-done-today">—</div>
+                        <div class="k-sub" id="k-tasks-done-sub">—</div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div class="k-label"><i class="ph ph-users"></i> Online teraz</div>
+                        <div class="k-value" id="k-online-now">—</div>
+                        <div class="k-sub" id="k-online-sub">Zalogowani &lt; 10 min temu</div>
+                    </div>
+                </div>
+
+                <!-- Activity stream -->
+                <div class="stream">
+                    <div class="stream-head">
+                        <span>Strumień aktywności</span>
+                        <span class="live-dot">LIVE · odświeżane co 30s</span>
+                    </div>
+                    <div class="stream-body" id="stream-body">
+                        <div style="padding: 40px; text-align: center; color: var(--text-tertiary)">Ładuję…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- PANEL 2: STAFF -->
+            <!-- ========================================================== -->
+            <div class="admin-panel" data-panel="staff">
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px">
+                    <div>
+                        <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 2px">Wydajność zespołu</h2>
+                        <p style="font-size: 12px; color: var(--text-tertiary); margin: 0">Ostatnie 30 dni · Score = (ukończone × 3) + (aktywności × 0.1) − (overdue × 5), znormalizowane 0-100</p>
+                    </div>
+                    <button class="refresh-btn" onclick="refreshStaff()" id="staff-refresh-btn"><i class="ph ph-arrow-clockwise"></i> Odśwież</button>
+                </div>
+
+                <table class="staff-perf-table">
+                    <thead>
+                        <tr>
+                            <th>Prawnik</th>
+                            <th style="text-align: right">Aktywne sprawy</th>
+                            <th style="text-align: right">Ukończone (30d)</th>
+                            <th style="text-align: right">Przychód (30d)</th>
+                            <th style="text-align: right">Aktywności (7d)</th>
+                            <th style="text-align: right">Zadania overdue</th>
+                            <th style="text-align: right">Ostatnio online</th>
+                            <th style="text-align: right">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staff-perf-body">
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-tertiary); padding: 30px">Ładuję…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- PANEL 3: RISK -->
+            <!-- ========================================================== -->
+            <div class="admin-panel" data-panel="risk">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px">
+                    <div>
+                        <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 2px">Sprawy i rzeczy na ryzyku</h2>
+                        <p style="font-size: 12px; color: var(--text-tertiary); margin: 0">Automatycznie wykrywane · aktualizowane co 30s</p>
+                    </div>
+                    <button class="refresh-btn" onclick="refreshRisk()" id="risk-refresh-btn"><i class="ph ph-arrow-clockwise"></i> Odśwież</button>
+                </div>
+
+                <div class="risk-grid">
+                    <div class="risk-col critical">
+                        <div class="risk-col-head">
+                            <i class="ph ph-warning-octagon"></i>
+                            <span>Krytyczne</span>
+                            <span class="risk-col-count" id="risk-critical-count">—</span>
+                        </div>
+                        <div class="risk-items" id="risk-critical">
+                            <div style="padding: 20px; text-align: center; color: var(--text-tertiary); font-size: 12px">Ładuję…</div>
+                        </div>
+                    </div>
+                    <div class="risk-col warning">
+                        <div class="risk-col-head">
+                            <i class="ph ph-warning"></i>
+                            <span>Uwaga</span>
+                            <span class="risk-col-count" id="risk-warning-count">—</span>
+                        </div>
+                        <div class="risk-items" id="risk-warning"></div>
+                    </div>
+                    <div class="risk-col attention">
+                        <div class="risk-col-head">
+                            <i class="ph ph-info"></i>
+                            <span>Do obserwacji</span>
+                            <span class="risk-col-count" id="risk-attention-count">—</span>
+                        </div>
+                        <div class="risk-items" id="risk-attention"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- PANEL 4: FINANCE -->
+            <!-- ========================================================== -->
+            <div class="admin-panel" data-panel="finance">
+
+                <div class="kpi-grid-5">
+                    <div class="kpi-mini">
+                        <div class="k-label"><i class="ph ph-cube"></i> Pipeline</div>
+                        <div class="k-value mono-num" id="k-pipeline">—</div>
+                        <div class="k-sub" id="k-pipeline-sub">Aktywne sprawy</div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div class="k-label"><i class="ph ph-coin"></i> Przychód ten miesiąc</div>
+                        <div class="k-value mono-num" id="k-mrr">—</div>
+                        <div class="k-sub" id="k-mrr-sub">vs poprzedni miesiąc</div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div class="k-label"><i class="ph ph-chart-line-up"></i> Collection rate</div>
+                        <div class="k-value" id="k-collection-rate">—</div>
+                        <div class="k-sub" id="k-collection-sub">Windykacja</div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div class="k-label"><i class="ph ph-hourglass"></i> Overdue &gt; 14 dni</div>
+                        <div class="k-value mono-num" id="k-overdue">—</div>
+                        <div class="k-sub" id="k-overdue-sub">Przeterminowane</div>
+                    </div>
+                </div>
+
+                <div class="fin-chart-wrap">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
+                        <h3 style="font-size: 14px; font-weight: 600; margin: 0">Przychód per prawnik · 12 miesięcy</h3>
+                        <span style="font-size: 11px; color: var(--text-tertiary)">Z gmp_payments → case → assigned_to</span>
+                    </div>
+                    <canvas id="fin-chart" style="max-height: 280px"></canvas>
+                </div>
+
+                <div>
+                    <h3 style="font-size: 14px; font-weight: 600; margin: 20px 0 10px">Top przeterminowane faktury</h3>
+                    <table class="staff-perf-table">
+                        <thead>
+                            <tr>
+                                <th>Faktura</th>
+                                <th>Klient</th>
+                                <th style="text-align: right">Kwota</th>
+                                <th style="text-align: right">Dni</th>
+                                <th>Prawnik</th>
+                                <th>Ostatnia akcja</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overdue-invoices-body">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-tertiary); padding: 20px">Ładuję…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- PANEL 5: AUDIT -->
+            <!-- ========================================================== -->
+            <div class="admin-panel" data-panel="audit">
+                <div style="display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap">
+                    <button class="admin-tab active" data-subtab="actions" onclick="switchAuditSub('actions')" style="border-radius: 8px; border: 1px solid var(--border)">Akcje destrukcyjne</button>
+                    <button class="admin-tab" data-subtab="credentials" onclick="switchAuditSub('credentials')" style="border-radius: 8px; border: 1px solid var(--border)">Dostęp do haseł</button>
+                    <button class="admin-tab" data-subtab="logins" onclick="switchAuditSub('logins')" style="border-radius: 8px; border: 1px solid var(--border)">Historia logowań</button>
+                </div>
+
+                <!-- Sub-panel: actions -->
+                <div id="audit-actions-sub">
+                    <p style="font-size: 12px; color: var(--text-tertiary); margin: 0 0 12px">Usunięcia, zmiany roli, eksporty. Retencja: 2 lata (RODO).</p>
+                    <table class="audit-table">
+                        <thead>
+                            <tr>
+                                <th>Czas</th>
+                                <th>Kto</th>
+                                <th>Akcja</th>
+                                <th>Obiekt</th>
+                                <th>Poziom</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-actions-body">
+                            <tr><td colspan="5" style="text-align: center; color: var(--text-tertiary); padding: 20px">Ładuję…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Sub-panel: credentials -->
+                <div id="audit-credentials-sub" style="display: none">
+                    <p style="font-size: 12px; color: var(--text-tertiary); margin: 0 0 12px">Każde otwarcie haseł logowania do gov.pl/MOS 2.0 jest logowane.</p>
+                    <table class="audit-table">
+                        <thead>
+                            <tr>
+                                <th>Czas</th>
+                                <th>Kto</th>
+                                <th>Akcja</th>
+                                <th>Klient</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-credentials-body">
+                            <tr><td colspan="5" style="text-align: center; color: var(--text-tertiary); padding: 20px">Ładuję…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Sub-panel: logins -->
+                <div id="audit-logins-sub" style="display: none">
+                    <p style="font-size: 12px; color: var(--text-tertiary); margin: 0 0 12px">Kiedy kto się ostatnio logował. Użyteczne do dezaktywacji nieaktywnych kont.</p>
+                    <table class="audit-table">
+                        <thead>
+                            <tr>
+                                <th>Pracownik</th>
+                                <th>Rola</th>
+                                <th>Email</th>
+                                <th style="text-align: right">Logowań</th>
+                                <th style="text-align: right">Ostatnio</th>
+                                <th style="text-align: right">Dni temu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-logins-body">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-tertiary); padding: 20px">Ładuję…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="components/sidebar.js" data-active="admin"></script>
+<script src="admin.js"></script>
+</body>
+</html>
