@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wzory dokumentów - GetMyPermit CRM</title>
+    <title>Wzory i szablony - GetMyPermit CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -19,15 +19,26 @@
     <main class="app-main">
         <div class="page-header">
             <div>
-                <h1 class="page-title">Wzory dokumentów</h1>
+                <h1 class="page-title">Wzory i szablony</h1>
                 <p class="page-subtitle" id="count">Ładuję...</p>
             </div>
-            <label class="btn btn-primary cursor-pointer">
-                <i class="ph ph-upload-simple"></i> Dodaj wzór
-                <input type="file" id="upload-input" class="hidden" multiple>
-            </label>
+            <div class="flex gap-2" id="header-actions">
+                <label class="btn btn-primary cursor-pointer" id="btn-upload">
+                    <i class="ph ph-upload-simple"></i> Dodaj wzór
+                    <input type="file" id="upload-input" class="hidden" multiple>
+                </label>
+                <button class="btn btn-primary hidden" id="btn-new-note-tpl" onclick="openNoteTplModal()">
+                    <i class="ph ph-plus"></i> Nowy szablon
+                </button>
+            </div>
         </div>
 
+        <div class="tabs mb-4">
+            <button class="tab active" data-view="files"><i class="ph ph-file"></i> Pliki (dokumenty)</button>
+            <button class="tab" data-view="notes"><i class="ph ph-note"></i> Notatki i maile</button>
+        </div>
+
+        <div id="view-files">
         <div class="card p-4 mb-4">
             <div class="flex gap-2 items-end">
                 <div class="flex-1">
@@ -69,13 +80,68 @@
                 </table>
             </div>
         </div>
+        </div><!-- /view-files -->
+
+        <div id="view-notes" class="hidden">
+            <div class="card p-4 mb-4">
+                <div class="flex gap-2 items-end">
+                    <div class="flex-1">
+                        <label>Szukaj</label>
+                        <input id="nf-search" class="filter-input w-full" placeholder="Nazwa, treść...">
+                    </div>
+                    <div>
+                        <label>Typ</label>
+                        <select id="nf-cat" class="filter-input" style="width: 180px">
+                            <option value="">Wszystkie</option>
+                            <option value="note">Notatki</option>
+                            <option value="email">Emaile</option>
+                            <option value="sms">SMS</option>
+                            <option value="whatsapp">WhatsApp</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="overflow-x-auto">
+                    <table class="gmp-table">
+                        <thead>
+                            <tr>
+                                <th>Nazwa</th>
+                                <th>Typ</th>
+                                <th>Opis</th>
+                                <th>Podgląd treści</th>
+                                <th class="w-32">Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="note-tbody">
+                            <tr><td colspan="5" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </main>
 </div>
 <div id="modals-container"></div>
+
+<style>
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); }
+.tabs .tab {
+    padding: 8px 16px; font-size: var(--fs-sm); background: transparent;
+    border: none; color: var(--text-tertiary); cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    display: inline-flex; align-items: center; gap: 6px; font-weight: 500;
+    transition: all 100ms;
+}
+.tabs .tab:hover { color: var(--text); }
+.tabs .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+</style>
 <script src="components/sidebar.js" data-active="templates"></script>
 <script>
 document.addEventListener('gmp-auth-ready', init);
 let templates = [];
+let noteTemplates = [];
+let currentView = 'files';
 
 async function init() {
     await loadList();
@@ -83,6 +149,134 @@ async function init() {
     let t;
     document.getElementById('f-search').addEventListener('input', () => { clearTimeout(t); t = setTimeout(loadList, 300); });
     document.getElementById('upload-input').addEventListener('change', uploadFiles);
+
+    // Tabs
+    document.querySelectorAll('.tabs .tab').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.tabs .tab').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentView = b.dataset.view;
+        document.getElementById('view-files').classList.toggle('hidden', currentView !== 'files');
+        document.getElementById('view-notes').classList.toggle('hidden', currentView !== 'notes');
+        document.getElementById('btn-upload').classList.toggle('hidden', currentView !== 'files');
+        document.getElementById('btn-new-note-tpl').classList.toggle('hidden', currentView !== 'notes');
+        if (currentView === 'notes' && !noteTemplates.length) loadNoteTemplates();
+    }));
+
+    ['nf-search', 'nf-cat'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => renderNoteTemplates());
+        document.getElementById(id).addEventListener('change', () => renderNoteTemplates());
+    });
+}
+
+// ======== NOTE TEMPLATES ========
+async function loadNoteTemplates() {
+    const { data } = await db.from('gmp_note_templates')
+        .select('*').order('category').order('sort_order').order('name');
+    noteTemplates = data || [];
+    renderNoteTemplates();
+}
+
+function renderNoteTemplates() {
+    const search = document.getElementById('nf-search').value.toLowerCase().trim();
+    const cat = document.getElementById('nf-cat').value;
+    const filtered = noteTemplates.filter(t => {
+        if (cat && t.category !== cat) return false;
+        if (search) {
+            const blob = `${t.name} ${t.description || ''} ${t.body_template}`.toLowerCase();
+            if (!blob.includes(search)) return false;
+        }
+        return true;
+    });
+
+    const tbody = document.getElementById('note-tbody');
+    if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="ph ph-note"></i><div>Brak szablonów</div></td></tr>';
+        return;
+    }
+    const iconByCat = { note: 'ph-note', email: 'ph-envelope', sms: 'ph-chat', whatsapp: 'ph-whatsapp-logo' };
+    tbody.innerHTML = filtered.map(t => `
+        <tr>
+            <td><strong>${esc(t.name)}</strong></td>
+            <td><span class="badge badge-neutral"><i class="ph ${iconByCat[t.category] || 'ph-note'}"></i> ${esc(t.category)}</span></td>
+            <td class="text-xs text-zinc-400">${esc(t.description || '')}</td>
+            <td class="text-xs text-zinc-500 max-w-md truncate" title="${esc(t.body_template)}">${esc(t.body_template.slice(0, 80))}${t.body_template.length > 80 ? '…' : ''}</td>
+            <td>
+                <button class="btn btn-ghost btn-sm" onclick="openNoteTplModal('${t.id}')" title="Edytuj"><i class="ph ph-pencil"></i></button>
+                <button class="btn btn-ghost btn-sm text-red-400" onclick="deleteNoteTpl('${t.id}')" title="Usuń"><i class="ph ph-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function openNoteTplModal(id) {
+    const t = id ? noteTemplates.find(x => x.id === id) : { name: '', category: 'note', body_template: '', description: '', sort_order: 100 };
+    if (!t) return;
+    const html = `
+        <div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+            <div class="modal-content" style="max-width: 640px">
+                <div class="modal-header">
+                    <span>${id ? 'Edytuj szablon' : 'Nowy szablon'}</span>
+                    <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button>
+                </div>
+                <div class="modal-body space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs muted block mb-1">Nazwa</label>
+                            <input id="tpl-name" class="filter-input w-full" value="${esc(t.name)}" placeholder="np. Prośba o dokumenty">
+                        </div>
+                        <div>
+                            <label class="text-xs muted block mb-1">Kategoria</label>
+                            <select id="tpl-cat" class="filter-input w-full">
+                                <option value="note" ${t.category === 'note' ? 'selected' : ''}>Notatka</option>
+                                <option value="email" ${t.category === 'email' ? 'selected' : ''}>Email</option>
+                                <option value="sms" ${t.category === 'sms' ? 'selected' : ''}>SMS</option>
+                                <option value="whatsapp" ${t.category === 'whatsapp' ? 'selected' : ''}>WhatsApp</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs muted block mb-1">Opis (opcj.)</label>
+                        <input id="tpl-desc" class="filter-input w-full" value="${esc(t.description || '')}" placeholder="Kiedy używać tego szablonu">
+                    </div>
+                    <div>
+                        <label class="text-xs muted block mb-1">Treść</label>
+                        <textarea id="tpl-body" class="input w-full" rows="10" placeholder="Treść. Użyj {klient}, {nr_sprawy}, {typ_sprawy}, {urzad}, {godzina} jako placeholdery">${esc(t.body_template)}</textarea>
+                        <div class="text-[10px] muted mt-1">Dostępne placeholdery: <code>{klient}</code> <code>{nr_sprawy}</code> <code>{typ_sprawy}</code> <code>{urzad}</code> <code>{godzina}</code></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" onclick="closeModal()">Anuluj</button>
+                    <button class="btn btn-primary" onclick="saveNoteTpl(${id ? `'${id}'` : 'null'})">Zapisz</button>
+                </div>
+            </div>
+        </div>`;
+    document.getElementById('modals-container').innerHTML = html;
+}
+window.closeModal = () => document.getElementById('modals-container').innerHTML = '';
+
+async function saveNoteTpl(id) {
+    const payload = {
+        name: document.getElementById('tpl-name').value.trim(),
+        category: document.getElementById('tpl-cat').value,
+        description: document.getElementById('tpl-desc').value.trim() || null,
+        body_template: document.getElementById('tpl-body').value,
+    };
+    if (!payload.name || !payload.body_template) { toast.warning('Nazwa i treść są wymagane'); return; }
+    const { error } = id
+        ? await db.from('gmp_note_templates').update(payload).eq('id', id)
+        : await db.from('gmp_note_templates').insert({ ...payload, created_by: window.currentStaff?.id });
+    if (error) { toast.error(error.message); return; }
+    toast.success(id ? 'Zaktualizowano' : 'Utworzono');
+    closeModal();
+    await loadNoteTemplates();
+}
+
+async function deleteNoteTpl(id) {
+    if (!confirm('Usunąć szablon na zawsze?')) return;
+    const { error } = await db.from('gmp_note_templates').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto');
+    await loadNoteTemplates();
 }
 
 async function loadList() {

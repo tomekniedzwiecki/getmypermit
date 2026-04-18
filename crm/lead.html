@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+    <script src="components/tags.js" defer></script>
+    <script src="components/template-picker.js"></script>
+</head>
+<body>
+
+<style>
+/* ==== HERO ==== */
+.lead-hero {
+    display: flex; align-items: center; gap: 20px;
+    padding: 20px 24px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    margin-bottom: 12px;
+}
+.lead-hero .avatar { width: 56px; height: 56px; font-size: 18px; border-radius: var(--r-lg); flex-shrink: 0; }
+.lead-hero h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); line-height: 1.2; margin-bottom: 4px; }
+.lead-hero .contact-line { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: var(--fs-sm); color: var(--text-secondary); align-items: center; }
+.lead-hero .contact-line .mono { font-family: 'JetBrains Mono', mono; }
+.lead-hero .badges-line { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+
+.lt-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.lt-HOT  { background: rgba(239,68,68,0.15);  color: #fca5a5; }
+.lt-WARM { background: rgba(245,158,11,0.15); color: #fcd34d; }
+.lt-COLD { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+
+.converted-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 999px;
+    background: var(--success-subtle); color: #6ee7b7;
+    font-size: 11px; font-weight: 500;
+    border: 1px solid rgba(16,185,129,0.25);
+    text-decoration: none;
+}
+.converted-link:hover { background: rgba(16,185,129,0.15); }
+
+.hero-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.hero-action {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    color: var(--text-secondary);
+    font-size: var(--fs-sm);
+    text-decoration: none;
+    transition: all 100ms;
+}
+.hero-action:hover { background: var(--bg); border-color: var(--border-hover); color: var(--text); }
+.hero-action.is-call:hover { color: var(--success); border-color: var(--success); }
+.hero-action.is-wa:hover { color: #25d366; border-color: #25d366; }
+.hero-action.is-email:hover { color: var(--accent); border-color: var(--accent); }
+.hero-action.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ==== STEPPER ==== */
+.stepper {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) 70px;
+    gap: 4px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    padding: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+.step {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 10px 6px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    transition: all 120ms;
+    text-align: center;
+    border: 1px solid transparent;
+}
+.step:hover { background: var(--bg-hover); }
+.step .step-ic {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--bg-subtle);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--text-tertiary);
+    border: 1.5px solid var(--border);
+    transition: all 120ms;
+}
+.step .step-name { font-size: 10px; font-weight: 500; color: var(--text-tertiary); }
+.step.done .step-ic { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent-border); }
+.step.done .step-name { color: var(--text-secondary); }
+.step.current { background: var(--accent-subtle); border-color: var(--accent-border); }
+.step.current .step-ic { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+.step.current .step-name { color: var(--text); font-weight: 600; }
+.stepper.done-won .step.current { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.08); }
+.stepper.done-won .step.current .step-ic { background: var(--success); border-color: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+.stepper.done-dq { opacity: 0.55; }
+.step-arrow-col { font-size: 11px; color: var(--text-disabled); text-align: center; }
+.step-dq {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 6px; border-left: 1px dashed var(--border);
+}
+.step-dq button {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: transparent; color: var(--text-tertiary);
+    border: 1.5px solid var(--border); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 120ms;
+}
+.step-dq button:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-subtle); }
+.step-dq.active button { border-color: var(--danger); color: var(--danger); background: var(--danger-subtle); }
+.step-dq .step-name { font-size: 9px; color: var(--text-tertiary); }
+
+/* ==== METRIC CARDS ==== */
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+@media (max-width: 860px) { .metrics-row { grid-template-columns: repeat(2, 1fr); } }
+
+.m-card {
+    padding: 14px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.m-card .m-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); font-weight: 600; }
+.m-card .m-val { font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.m-card .m-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.m-card.alert { border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.04); }
+.m-card.alert .m-val { color: #fca5a5; }
+.m-card.warn { border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.04); }
+
+/* ==== RELATIONSHIPS ==== */
+.rel-section { margin-bottom: 12px; }
+.rel-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    margin-bottom: 6px;
+    transition: all 120ms;
+    text-decoration: none; color: inherit;
+}
+.rel-card:hover { border-color: var(--border-hover); background: var(--bg); transform: translateX(2px); }
+.rel-card.highlight { border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.04); }
+.rel-card.success { border-color: rgba(16,185,129,0.35); background: rgba(16,185,129,0.04); }
+.rel-card .rel-ic {
+    width: 36px; height: 36px; border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: var(--bg-subtle); color: var(--text-secondary);
+    flex-shrink: 0;
+}
+.rel-card.highlight .rel-ic { background: rgba(245,158,11,0.15); color: #fcd34d; }
+.rel-card.success .rel-ic { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+.rel-card .rel-body { flex: 1; min-width: 0; }
+.rel-card .rel-title { font-size: var(--fs-sm); color: var(--text); font-weight: 500; }
+.rel-card .rel-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.rel-card .rel-arrow { color: var(--text-disabled); flex-shrink: 0; }
+
+/* ==== CHECKLIST ==== */
+.check-grid { display: grid; gap: 6px; }
+.check-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    transition: all 100ms;
+}
+.check-item.yes { background: var(--success-subtle); border-color: rgba(16,185,129,0.25); }
+.check-item.no { background: var(--danger-subtle); border-color: rgba(239,68,68,0.25); }
+.check-item .cb {
+    width: 18px; height: 18px; border-radius: 4px;
+    background: var(--bg); border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+    font-size: 10px; color: transparent;
+    transition: all 100ms;
+}
+.check-item.yes .cb { background: var(--success); border-color: var(--success); color: white; }
+.check-item.no .cb { background: var(--danger); border-color: var(--danger); color: white; }
+.check-item .body { flex: 1; min-width: 0; }
+.check-item .title { font-size: var(--fs-sm); font-weight: 500; color: var(--text); line-height: 1.35; display: flex; align-items: center; gap: 4px; }
+.check-item .desc { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; line-height: 1.4; }
+.check-item .actions { display: flex; gap: 3px; flex-shrink: 0; }
+.check-item .action-btn {
+    width: 22px; height: 22px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-tertiary); cursor: pointer;
+    transition: all 100ms; font-size: 11px;
+}
+.check-item .action-btn:hover { border-color: var(--border-hover); color: var(--text); }
+.check-item .action-btn.act-yes.on { background: var(--success); border-color: var(--success); color: white; }
+.check-item .action-btn.act-no.on { background: var(--danger); border-color: var(--danger); color: white; }
+
+.qual-verdict {
+    margin-top: 10px; padding: 10px 14px;
+    border-radius: var(--r-md);
+    display: flex; align-items: center; gap: 10px;
+    font-size: var(--fs-sm);
+    background: var(--bg-subtle);
+}
+.qual-verdict.pass { background: var(--success-subtle); color: #6ee7b7; }
+.qual-verdict.fail { background: var(--danger-subtle); color: #fca5a5; }
+
+/* ==== TIMELINE ==== */
+.tl {
+    display: flex; flex-direction: column; gap: 0;
+    position: relative;
+}
+.tl::before {
+    content: ''; position: absolute;
+    top: 8px; bottom: 8px;
+    left: 11px; width: 2px;
+    background: var(--border);
+}
+.tl-event {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 10px;
+    padding: 6px 0 10px;
+    position: relative;
+}
+.tl-event .tl-dot {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--text-tertiary);
+    flex-shrink: 0;
+    z-index: 1;
+}
+.tl-event.form   .tl-dot { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+.tl-event.status .tl-dot { border-color: var(--info); color: var(--info); background: var(--info-subtle); }
+.tl-event.note   .tl-dot { border-color: var(--warn); color: var(--warn); background: var(--warn-subtle); }
+.tl-event.convert .tl-dot { border-color: var(--success); color: var(--success); background: var(--success-subtle); }
+.tl-event.dq     .tl-dot { border-color: var(--danger); color: var(--danger); background: var(--danger-subtle); }
+
+.tl-event .tl-body { padding: 2px 0; min-width: 0; }
+.tl-event .tl-title { font-size: var(--fs-sm); color: var(--text); line-height: 1.4; }
+.tl-event .tl-content {
+    margin-top: 4px; padding: 8px 10px;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    font-size: 12px; color: var(--text-secondary);
+    white-space: pre-wrap; word-break: break-word;
+}
+.tl-event .tl-meta { font-size: 10px; color: var(--text-tertiary); margin-top: 3px; }
+
+/* ==== CONVERSION CTA ==== */
+.convert-cta {
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(6,182,212,0.08));
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: var(--r-lg);
+    text-align: center;
+}
+.convert-cta .c-title { font-size: var(--fs-md); font-weight: 600; color: #6ee7b7; margin-bottom: 4px; }
+.convert-cta .c-sub { font-size: 11px; color: var(--text-tertiary); margin-bottom: 12px; line-height: 1.4; }
+.convert-cta button {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: var(--r-md);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all 120ms;
+}
+.convert-cta button:hover { background: #0d9668; transform: translateY(-1px); }
+.convert-cta.converted { background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.06)); border-color: var(--accent-border); }
+.convert-cta.converted .c-title { color: #a5b4fc; }
+
+/* ==== SCORE BOX ==== */
+.score-box {
+    padding: 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    text-align: center;
+}
+.score-vis {
+    position: relative;
+    width: 80px; height: 80px;
+    margin: 0 auto 6px;
+}
+.score-vis svg { transform: rotate(-90deg); }
+.score-vis .score-num {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+.score-breakdown {
+    margin-top: 10px;
+    font-size: 10px;
+    text-align: left;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+}
+.score-row { display: flex; justify-content: space-between; padding: 2px 0; }
+
+/* ==== KV GRID ==== */
+.kv-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+}
+.kv-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text);
+    display: flex; align-items: center; gap: 6px;
+}
+.kv-body { padding: 10px 14px; }
+.kv { display: grid; grid-template-columns: 110px 1fr; gap: 6px 10px; font-size: 12px; }
+.kv dt { color: var(--text-tertiary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
+.kv dd { color: var(--text); word-break: break-word; }
+.kv dd.mono { font-family: 'JetBrains Mono', mono; font-size: 11px; }
+
+/* ==== QUICK MESSAGE ==== */
+.msg-box {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 12px;
+    margin-top: 12px;
+}
+.msg-tabs {
+    display: flex; gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+}
+.msg-tab {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: var(--r-sm);
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 100ms;
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.msg-tab:hover { background: var(--bg-hover); color: var(--text); }
+.msg-tab.active { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent-border); }
+.msg-textarea {
+    width: 100%;
+    min-height: 70px;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    resize: vertical;
+    outline: none;
+}
+.msg-textarea:focus { border-color: var(--accent-border); }
+.msg-actions { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+.msg-tpl-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 10px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+}
+.msg-tpl-btn:hover { color: var(--accent); }
+
+/* ==== MAIN GRID ==== */
+.lead-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+@media (max-width: 1000px) { .lead-grid { grid-template-columns: 1fr; } }
+.lead-left, .lead-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+.section-header {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.section-header i { font-size: 12px; }
+</style>
+
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="app-main">
+        <!-- Breadcrumb header -->
+        <div class="page-header">
+            <div>
+                <a href="leads.html" class="text-xs muted hover:text-white flex items-center gap-1 mb-1"><i class="ph ph-arrow-left"></i> Wszystkie leady</a>
+                <h1 class="page-title">Lead</h1>
+            </div>
+            <div class="flex gap-2 items-center">
+                <div id="lead-tags-container" class="mr-2"></div>
+                <button class="btn btn-ghost btn-sm" onclick="deleteLead()"><i class="ph ph-trash text-red-400"></i></button>
+            </div>
+        </div>
+
+        <div id="loading" class="empty-state"><div class="spinner-lg mx-auto"></div></div>
+        <div id="content" class="hidden">
+
+            <!-- HERO -->
+            <div class="lead-hero">
+                <div id="hero-avatar"></div>
+                <div class="flex-1 min-w-0">
+                    <h1 id="h-name">—</h1>
+                    <div class="contact-line">
+                        <span id="h-phone" class="mono"></span>
+                        <span id="h-email"></span>
+                    </div>
+                    <div class="badges-line" id="h-badges"></div>
+                </div>
+                <div class="hero-actions">
+                    <a id="btn-call" class="hero-action is-call" href="#"><i class="ph ph-phone-call"></i> Zadzwoń</a>
+                    <a id="btn-wa" class="hero-action is-wa" href="#" target="_blank"><i class="ph ph-whatsapp-logo"></i> WhatsApp</a>
+                    <a id="btn-email" class="hero-action is-email" href="#"><i class="ph ph-envelope"></i> Email</a>
+                </div>
+            </div>
+
+            <!-- PIPELINE STEPPER -->
+            <div id="stepper" class="stepper">
+                <div class="step" data-status="new"><div class="step-ic"><i class="ph ph-sparkle"></i></div><span class="step-name">Nowy</span></div>
+                <div class="step" data-status="contacted"><div class="step-ic"><i class="ph ph-phone-outgoing"></i></div><span class="step-name">Kontakt</span></div>
+                <div class="step" data-status="qualified"><div class="step-ic"><i class="ph ph-check-circle"></i></div><span class="step-name">Zakwalifik.</span></div>
+                <div class="step" data-status="proposal"><div class="step-ic"><i class="ph ph-file-text"></i></div><span class="step-name">Oferta</span></div>
+                <div class="step" data-status="won"><div class="step-ic"><i class="ph ph-trophy"></i></div><span class="step-name">Wygrany</span></div>
+                <div class="step-dq" id="step-dq">
+                    <button onclick="openDisqualifyModal()" title="Niekwalifik. / stracony"><i class="ph ph-x"></i></button>
+                    <span class="step-name">Odrzuć</span>
+                </div>
+            </div>
+
+            <!-- 4 METRICS -->
+            <div class="metrics-row">
+                <div class="m-card" id="m-age">
+                    <span class="m-label">Wiek leada</span>
+                    <span class="m-val">—</span>
+                    <span class="m-sub">od wpłynięcia</span>
+                </div>
+                <div class="m-card" id="m-contact">
+                    <span class="m-label">Od kontaktu</span>
+                    <span class="m-val">—</span>
+                    <span class="m-sub">—</span>
+                </div>
+                <div class="m-card" id="m-score">
+                    <span class="m-label">Lead score</span>
+                    <span class="m-val">—</span>
+                    <span class="m-sub">—</span>
+                </div>
+                <div class="m-card" id="m-sla">
+                    <span class="m-label">Status SLA</span>
+                    <span class="m-val">—</span>
+                    <span class="m-sub">—</span>
+                </div>
+            </div>
+
+            <!-- MAIN GRID -->
+            <div class="lead-grid">
+                <!-- LEFT 2/3 -->
+                <div class="lead-left">
+                    <!-- POWIĄZANIA CRM -->
+                    <section id="relationships" class="rel-section hidden">
+                        <div class="section-header"><i class="ph ph-link"></i> Powiązania w CRM</div>
+                        <div id="rel-list"></div>
+                    </section>
+
+                    <!-- CHECKLIST -->
+                    <section>
+                        <div class="section-header"><i class="ph ph-clipboard-text"></i> Checklist kwalifikacji <span class="ml-1 text-zinc-600 normal-case tracking-normal" style="font-size: 10px; font-weight: 400">wg wytycznych kancelarii</span></div>
+                        <div id="checklist" class="check-grid"></div>
+                        <div id="qual-verdict" class="qual-verdict"><i class="ph ph-info"></i> Zaznacz kryteria aby ocenić leada</div>
+                    </section>
+
+                    <!-- TIMELINE -->
+                    <section>
+                        <div class="section-header"><i class="ph ph-clock-counter-clockwise"></i> Historia kontaktu</div>
+                        <div id="timeline" class="tl"></div>
+                    </section>
+
+                    <!-- QUICK MESSAGE / NOTE -->
+                    <section class="msg-box">
+                        <div class="section-header mb-2"><i class="ph ph-pencil-simple"></i> Zapisz kontakt lub notatkę</div>
+                        <div class="msg-tabs">
+                            <button class="msg-tab active" data-msgtype="note"><i class="ph ph-note"></i> Notatka</button>
+                            <button class="msg-tab" data-msgtype="email"><i class="ph ph-envelope"></i> Email</button>
+                            <button class="msg-tab" data-msgtype="sms"><i class="ph ph-chat"></i> SMS</button>
+                            <button class="msg-tab" data-msgtype="whatsapp"><i class="ph ph-whatsapp-logo"></i> WA</button>
+                        </div>
+                        <textarea id="msg-input" class="msg-textarea" placeholder="Wpisz treść lub wybierz szablon…"></textarea>
+                        <div class="msg-actions">
+                            <button class="msg-tpl-btn" id="msg-tpl-btn"><i class="ph ph-file-text"></i> Szablon</button>
+                            <span class="flex-1"></span>
+                            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('msg-input').value = ''">Wyczyść</button>
+                            <button class="btn btn-primary btn-sm" id="msg-save-btn">Zapisz</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- RIGHT 1/3 -->
+                <div class="lead-right">
+                    <!-- KONWERSJA CTA -->
+                    <div id="convert-cta-slot"></div>
+
+                    <!-- SCORE -->
+                    <div class="score-box">
+                        <div class="score-vis">
+                            <svg width="80" height="80">
+                                <circle cx="40" cy="40" r="34" fill="none" stroke="var(--bg-subtle)" stroke-width="6"/>
+                                <circle id="score-circle" cx="40" cy="40" r="34" fill="none" stroke="#6366f1" stroke-width="6" stroke-linecap="round"
+                                        stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+                            </svg>
+                            <div class="score-num" id="score-num">—</div>
+                        </div>
+                        <div id="score-type-label" class="text-xs mb-1">—</div>
+                        <div class="text-xs muted">Score z formularza (max 150)</div>
+                        <div id="score-breakdown" class="score-breakdown"></div>
+                    </div>
+
+                    <!-- Z FORMULARZA -->
+                    <div class="kv-card">
+                        <div class="kv-header"><i class="ph ph-question"></i> Z formularza</div>
+                        <div class="kv-body">
+                            <dl class="kv" id="form-answers"></dl>
+                            <div id="form-details" class="mt-3 p-2.5 rounded text-xs text-zinc-300" style="background: var(--bg-subtle); white-space: pre-wrap; display: none"></div>
+                        </div>
+                    </div>
+
+                    <!-- OPIEKUN + NASTĘPNA AKCJA -->
+                    <div class="kv-card">
+                        <div class="kv-header"><i class="ph ph-user-focus"></i> Opiekun i kontakt</div>
+                        <div class="kv-body space-y-2.5">
+                            <div>
+                                <label class="text-[10px] text-tertiary uppercase tracking-wider block mb-1">Przypisany opiekun</label>
+                                <select id="assigned-select" class="filter-input w-full" onchange="updateAssigned()">
+                                    <option value="">— nieprzypisany —</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-tertiary uppercase tracking-wider block mb-1">Następny kontakt</label>
+                                <input type="datetime-local" id="next-followup" class="filter-input w-full" onchange="updateFollowup()">
+                            </div>
+                            <button class="btn btn-secondary btn-sm w-full" onclick="markContactNow()"><i class="ph ph-phone-outgoing"></i> Skontaktowano teraz</button>
+                        </div>
+                    </div>
+
+                    <!-- META -->
+                    <div class="kv-card">
+                        <div class="kv-header"><i class="ph ph-info"></i> Metadane</div>
+                        <div class="kv-body">
+                            <dl class="kv" id="meta-grid"></dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- Modal: disqualify / lost -->
+<div id="dq-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeDisqualifyModal()">
+    <div class="modal-content" style="max-width: 500px">
+        <div class="modal-header">
+            <span>Odrzuć leada</span>
+            <button class="btn btn-ghost btn-sm" onclick="closeDisqualifyModal()"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body space-y-3">
+            <div>
+                <label class="text-xs muted block mb-1">Status</label>
+                <select id="dq-status" class="filter-input w-full">
+                    <option value="disqualified">Niekwalifikowany (nie spełnia kryteriów)</option>
+                    <option value="lost">Stracony (brak kontaktu / rezygnacja)</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs muted block mb-1">Powód</label>
+                <select id="dq-reason" class="filter-input w-full">
+                    <option value="">— wybierz —</option>
+                    <option value="poza_zakresem">Sprawa poza zakresem (nie pobyt/obywatelstwo)</option>
+                    <option value="poza_regionem">Poza województwem dolnośląskim</option>
+                    <option value="tylko_info">Tylko „pytacz" — brak realnej potrzeby</option>
+                    <option value="nie_placi">Szuka bezpłatnej porady</option>
+                    <option value="brak_kontaktu">Brak kontaktu — nie odpowiada</option>
+                    <option value="zle_dane">Nieprawidłowe dane kontaktowe</option>
+                    <option value="rezygnacja">Rezygnacja po kwalifikacji</option>
+                    <option value="firma_rozeznanie">Firma szuka orientacyjnego rozeznania</option>
+                    <option value="duplikat">Duplikat już istniejącego leada / klienta</option>
+                    <option value="inne">Inne</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs muted block mb-1">Notatka (opcjonalnie)</label>
+                <textarea id="dq-note" class="input w-full" rows="2" placeholder="Dodatkowe info"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeDisqualifyModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="confirmDisqualify()">Odrzuć</button>
+        </div>
+    </div>
+</div>
+
+<script src="components/sidebar.js" data-active="leads"></script>
+<script>
+let currentLead = null;
+let staffList = [];
+let relationships = { existingClient: null, duplicateLeads: [], relatedCases: [] };
+let currentMsgType = 'note';
+
+const CHECKLIST = [
+    { key: 'scope',      title: 'Sprawa w zakresie kancelarii',     desc: 'Pobyt czasowy / stały / rezydent UE / obywatelstwo' },
+    { key: 'region',     title: 'Związek z woj. dolnośląskim',       desc: 'Zamieszkanie / praca / postępowanie we Wrocławiu lub regionie' },
+    { key: 'contact',    title: 'Prawidłowy kontakt',                desc: 'Telefon + email, klient odpowiada na kontakt' },
+    { key: 'real_need',  title: 'Realna potrzeba działania',         desc: 'Nie „tylko zapytać" — konkretny problem lub chęć rozpoczęcia' },
+    { key: 'ready_pay',  title: 'Gotowość na płatną obsługę',        desc: 'Klient chce skorzystać z profesjonalnej pomocy' },
+    { key: 'specific',   title: 'Konkretny etap / sytuacja',         desc: 'Np. nowa sprawa lub sprawa w toku z trudnością' },
+];
+
+const STATUS_ORDER = ['new', 'contacted', 'qualified', 'proposal', 'won'];
+const STATUS_LABELS = {
+    new: 'Nowy', contacted: 'Kontaktowany', qualified: 'Zakwalifikowany',
+    proposal: 'Oferta', won: 'Wygrany', disqualified: 'Niekwalifik.', lost: 'Stracony', converted: 'Wygrany',
+};
+const PERMIT_LABELS = {
+    temporary: 'Pobyt czasowy', permanent: 'Pobyt stały', 'eu-resident': 'Rezydent UE',
+    citizenship: 'Obywatelstwo', work: 'Pobyt + praca', residence: 'Residence',
+};
+const SITUATION_LABELS = {
+    'no-fingerprints': 'Brak odcisków palców', rejected: 'Sprawa odrzucona', stuck: 'Sprawa stoi',
+    letter: 'Wezwanie z urzędu', new: 'Nowa sprawa', waiting: 'Oczekuje na decyzję',
+    'new-application': 'Nowa sprawa',
+};
+const LOCATION_LABELS = { wroclaw: 'Wrocław', dolnoslaskie: 'Dolnośląskie', other: 'Inne' };
+const INTENT_LABELS = { 'hire-lawyer': 'Wynajmę prawnika', ready: 'Gotowy', 'just-info': 'Tylko info', diy: 'Samodzielnie' };
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    const id = new URLSearchParams(location.search).get('id');
+    if (!id) { location.href = 'leads.html'; return; }
+
+    const { data: staff } = await db.from('gmp_staff').select('id, full_name, color').order('full_name');
+    staffList = staff || [];
+    const sel = document.getElementById('assigned-select');
+    staffList.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.full_name;
+        sel.appendChild(o);
+    });
+
+    await loadLead(id);
+    setupMessageBox();
+}
+
+async function loadLead(id) {
+    const { data, error } = await db.from('gmp_leads_overview').select('*').eq('id', id).maybeSingle();
+    if (error || !data) {
+        document.getElementById('loading').innerHTML = `<div class="empty-state"><i class="ph ph-warning-circle text-red-400"></i><div>Nie znaleziono leada</div></div>`;
+        return;
+    }
+    currentLead = data;
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('content').classList.remove('hidden');
+
+    document.title = `${currentLead.first_name || currentLead.name || 'Lead'} - CRM`;
+
+    renderHero();
+    renderStepper();
+    renderMetrics();
+    await Promise.all([
+        findRelationships(),
+        renderChecklist(),
+        renderTimeline(),
+    ]);
+    renderFormAnswers();
+    renderScore();
+    renderMeta();
+    renderAssigned();
+    renderConvertCTA();
+    renderTags();
+}
+
+// ============ HERO ============
+function renderHero() {
+    const l = currentLead;
+    const name = (l.first_name || l.last_name) ? `${l.last_name || ''} ${l.first_name || ''}`.trim() : (l.name || '—');
+    document.getElementById('hero-avatar').outerHTML = `<div id="hero-avatar">${window.avatar(name)}</div>`;
+    document.getElementById('h-name').textContent = name;
+    document.getElementById('h-phone').textContent = l.phone || '';
+    document.getElementById('h-email').textContent = l.email || '';
+
+    const badges = [];
+    if (l.lead_type) badges.push(`<span class="lt-badge lt-${l.lead_type}">${l.lead_type}</span>`);
+    badges.push(`<span class="lt-badge" style="background: rgba(161,161,170,0.12); color: #d4d4d8">${STATUS_LABELS[l.status] || l.status}</span>`);
+    if (l.converted_case_id) {
+        badges.push(`<a href="case.html?id=${l.converted_case_id}" class="converted-link"><i class="ph ph-briefcase"></i> Sprawa ${esc(l.converted_case_number || '')}</a>`);
+    }
+    if (l.utm_source) badges.push(`<span class="text-xs muted">źródło: <span class="mono">${esc(l.utm_source)}${l.utm_medium ? '/' + esc(l.utm_medium) : ''}</span></span>`);
+    if (l.language && l.language !== 'pl') badges.push(`<span class="text-xs muted"><i class="ph ph-globe"></i> ${esc(l.language)}</span>`);
+    document.getElementById('h-badges').innerHTML = badges.join('');
+
+    const phone = (l.phone || '').replace(/\D/g, '');
+    const phoneIntl = phone && !phone.startsWith('48') ? '48' + phone : phone;
+    const callBtn = document.getElementById('btn-call');
+    const waBtn = document.getElementById('btn-wa');
+    const emailBtn = document.getElementById('btn-email');
+
+    if (phone) {
+        callBtn.href = `tel:+${phoneIntl}`;
+        callBtn.classList.remove('disabled');
+        waBtn.href = `https://wa.me/${phoneIntl}`;
+        waBtn.classList.remove('disabled');
+    } else {
+        callBtn.classList.add('disabled');
+        waBtn.classList.add('disabled');
+    }
+    if (l.email) {
+        emailBtn.href = `mailto:${l.email}`;
+        emailBtn.classList.remove('disabled');
+    } else {
+        emailBtn.classList.add('disabled');
+    }
+}
+
+// ============ STEPPER ============
+function renderStepper() {
+    const status = currentLead.status;
+    const stepper = document.getElementById('stepper');
+    stepper.className = 'stepper';
+
+    if (status === 'won' || status === 'converted') stepper.classList.add('done-won');
+    if (status === 'disqualified' || status === 'lost') stepper.classList.add('done-dq');
+
+    const curIdx = STATUS_ORDER.indexOf(status === 'converted' ? 'won' : status);
+    document.querySelectorAll('.step').forEach(step => {
+        const stepStatus = step.dataset.status;
+        const stepIdx = STATUS_ORDER.indexOf(stepStatus);
+        step.classList.remove('done', 'current');
+        if (stepIdx < curIdx && curIdx >= 0) step.classList.add('done');
+        if (stepIdx === curIdx) step.classList.add('current');
+        step.onclick = () => changeStatus(stepStatus);
+    });
+
+    const dqBox = document.getElementById('step-dq');
+    dqBox.classList.toggle('active', status === 'disqualified' || status === 'lost');
+}
+
+async function changeStatus(newStatus) {
+    if (newStatus === currentLead.status) return;
+
+    if (newStatus === 'won' && !currentLead.converted_case_id) {
+        if (!confirm('Konwertować leada do sprawy CRM? Utworzy się klient i sprawa (status: zlecona).')) return;
+        const { error } = await db.rpc('gmp_convert_lead_to_case', { lead_id: currentLead.id });
+        if (error) { toast.error(error.message); return; }
+        toast.success('Lead skonwertowany → nowa sprawa CRM');
+        await loadLead(currentLead.id);
+        return;
+    }
+
+    const updates = { status: newStatus };
+    if (newStatus === 'contacted' && !currentLead.last_contact_at) {
+        updates.last_contact_at = new Date().toISOString();
+    }
+    const { error } = await db.from('permit_leads').update(updates).eq('id', currentLead.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Status: ${STATUS_LABELS[newStatus]}`);
+    await loadLead(currentLead.id);
+}
+
+// ============ METRICS ============
+function renderMetrics() {
+    const l = currentLead;
+    // Age
+    const days = l.days_since_created || 0;
+    const ageCard = document.getElementById('m-age');
+    ageCard.querySelector('.m-val').textContent = days === 0 ? 'dzisiaj' : `${days} ${days === 1 ? 'dzień' : 'dni'}`;
+    if (days >= 7) ageCard.classList.add('warn');
+
+    // Contact
+    const contactCard = document.getElementById('m-contact');
+    if (l.last_contact_at) {
+        const daysC = l.days_since_contact || 0;
+        contactCard.querySelector('.m-val').textContent = daysC === 0 ? 'dzisiaj' : `${daysC}d temu`;
+        contactCard.querySelector('.m-sub').textContent = fmt.datetime(l.last_contact_at);
+    } else {
+        contactCard.querySelector('.m-val').textContent = 'brak';
+        contactCard.querySelector('.m-sub').textContent = 'nie skontaktowano';
+        contactCard.classList.add('alert');
+    }
+
+    // Score
+    const score = l.lead_score || 0;
+    const type = l.lead_type || 'COLD';
+    const scoreCard = document.getElementById('m-score');
+    scoreCard.querySelector('.m-val').textContent = score;
+    scoreCard.querySelector('.m-sub').innerHTML = `<span class="lt-badge lt-${type}">${type}</span>`;
+
+    // SLA
+    const slaCard = document.getElementById('m-sla');
+    const inactive = !['won', 'converted', 'lost', 'disqualified'].includes(l.status);
+    if (!inactive) {
+        slaCard.querySelector('.m-val').textContent = 'zamknięty';
+        slaCard.querySelector('.m-sub').textContent = '—';
+    } else if (l.days_since_contact === null && days >= 1) {
+        slaCard.classList.add('alert');
+        slaCard.querySelector('.m-val').textContent = 'pilne';
+        slaCard.querySelector('.m-sub').textContent = 'brak kontaktu';
+    } else if (l.days_since_contact >= 3) {
+        slaCard.classList.add('alert');
+        slaCard.querySelector('.m-val').textContent = 'przekroczone';
+        slaCard.querySelector('.m-sub').textContent = `${l.days_since_contact}d bez kontaktu`;
+    } else if (l.days_since_contact >= 1) {
+        slaCard.classList.add('warn');
+        slaCard.querySelector('.m-val').textContent = 'uwaga';
+        slaCard.querySelector('.m-sub').textContent = `${l.days_since_contact}d bez kontaktu`;
+    } else {
+        slaCard.querySelector('.m-val').textContent = 'OK';
+        slaCard.querySelector('.m-sub').textContent = 'kontakt aktualny';
+    }
+}
+
+// ============ POWIAZANIA CRM ============
+async function findRelationships() {
+    const l = currentLead;
+    const queries = [];
+
+    // 1. Existing client match (phone or email)
+    if (l.phone || l.email) {
+        let q = db.from('gmp_clients').select('id, first_name, last_name, phone, email').limit(5);
+        const ors = [];
+        if (l.phone) ors.push(`phone.eq.${l.phone}`);
+        if (l.email) ors.push(`email.eq.${l.email}`);
+        q = q.or(ors.join(','));
+        queries.push(q);
+    } else queries.push(Promise.resolve({ data: [] }));
+
+    // 2. Duplicate leads (same phone or email, different lead id)
+    const dupOrs = [];
+    if (l.phone) dupOrs.push(`phone.eq.${l.phone}`);
+    if (l.email) dupOrs.push(`email.eq.${l.email}`);
+    if (dupOrs.length) {
+        queries.push(db.from('permit_leads').select('id, name, first_name, last_name, created_at, status, lead_type')
+            .or(dupOrs.join(','))
+            .neq('id', l.id)
+            .order('created_at', { ascending: false }).limit(5));
+    } else queries.push(Promise.resolve({ data: [] }));
+
+    const [clientsRes, dupsRes] = await Promise.all(queries);
+    const clients = clientsRes.data || [];
+    const duplicates = dupsRes.data || [];
+
+    // 3. Related cases (through matched clients)
+    let relatedCases = [];
+    if (clients.length) {
+        const { data } = await db.from('gmp_cases')
+            .select('id, case_number, status, case_type, date_accepted, client_id')
+            .in('client_id', clients.map(c => c.id))
+            .order('date_accepted', { ascending: false }).limit(10);
+        relatedCases = data || [];
+    }
+
+    relationships = { existingClient: clients[0] || null, otherClients: clients.slice(1), duplicateLeads: duplicates, relatedCases };
+    renderRelationships();
+}
+
+function renderRelationships() {
+    const { existingClient, otherClients, duplicateLeads, relatedCases } = relationships;
+    const section = document.getElementById('relationships');
+    const list = document.getElementById('rel-list');
+
+    const items = [];
+
+    if (currentLead.converted_case_id) {
+        items.push(`<a href="case.html?id=${currentLead.converted_case_id}" class="rel-card success">
+            <div class="rel-ic"><i class="ph ph-check-circle"></i></div>
+            <div class="rel-body">
+                <div class="rel-title">Sprawa CRM utworzona z tego leada</div>
+                <div class="rel-sub">#${esc(currentLead.converted_case_number || '?')} · kliknij aby otworzyć</div>
+            </div>
+            <i class="ph ph-arrow-right rel-arrow"></i>
+        </a>`);
+    }
+
+    if (existingClient) {
+        items.push(`<a href="clients.html?id=${existingClient.id}" class="rel-card highlight">
+            <div class="rel-ic"><i class="ph ph-user-check"></i></div>
+            <div class="rel-body">
+                <div class="rel-title">Istniejący klient w bazie: ${esc(existingClient.last_name)} ${esc(existingClient.first_name)}</div>
+                <div class="rel-sub">Ten lead prawdopodobnie dotyczy istniejącego klienta · ${esc(existingClient.phone || existingClient.email || '')}</div>
+            </div>
+            <i class="ph ph-arrow-right rel-arrow"></i>
+        </a>`);
+    }
+
+    if (duplicateLeads.length) {
+        duplicateLeads.forEach(d => {
+            const dname = (d.first_name || d.last_name) ? `${d.last_name || ''} ${d.first_name || ''}`.trim() : (d.name || '—');
+            items.push(`<a href="lead.html?id=${d.id}" class="rel-card highlight">
+                <div class="rel-ic"><i class="ph ph-copy"></i></div>
+                <div class="rel-body">
+                    <div class="rel-title">Duplikat: ${esc(dname)}</div>
+                    <div class="rel-sub">${STATUS_LABELS[d.status]} · ${d.lead_type || ''} · ${fmt.daysAgo(d.created_at)}</div>
+                </div>
+                <i class="ph ph-arrow-right rel-arrow"></i>
+            </a>`);
+        });
+    }
+
+    if (relatedCases.length) {
+        relatedCases.slice(0, 3).forEach(c => {
+            items.push(`<a href="case.html?id=${c.id}" class="rel-card">
+                <div class="rel-ic"><i class="ph ph-briefcase"></i></div>
+                <div class="rel-body">
+                    <div class="rel-title">Powiązana sprawa: ${esc(c.case_type || 'brak typu')}</div>
+                    <div class="rel-sub">#${esc(c.case_number || c.id.slice(0,8))} · ${esc(c.status)} · przyjęta ${fmt.date(c.date_accepted)}</div>
+                </div>
+                <i class="ph ph-arrow-right rel-arrow"></i>
+            </a>`);
+        });
+        if (relatedCases.length > 3) {
+            items.push(`<div class="text-xs text-zinc-500 text-center py-1">+ ${relatedCases.length - 3} więcej spraw tego klienta</div>`);
+        }
+    }
+
+    if (items.length === 0) {
+        section.classList.add('hidden');
+    } else {
+        section.classList.remove('hidden');
+        list.innerHTML = items.join('');
+    }
+}
+
+// ============ CHECKLIST ============
+function renderChecklist() {
+    const state = currentLead.qualification_checklist || {};
+    const autoHints = autoQualification();
+
+    const grid = document.getElementById('checklist');
+    grid.innerHTML = CHECKLIST.map(c => {
+        const stored = state[c.key];
+        const auto = autoHints[c.key];
+        const current = stored || auto;
+        const cls = current === 'yes' ? 'yes' : current === 'no' ? 'no' : '';
+        const autoTag = !stored && auto ? `<span class="text-[9px] muted ml-1" title="Wykryte automatycznie z formularza">auto</span>` : '';
+        return `<div class="check-item ${cls}" data-key="${c.key}">
+            <div class="cb"><i class="ph ph-check"></i></div>
+            <div class="body">
+                <div class="title">${c.title} ${autoTag}</div>
+                <div class="desc">${c.desc}</div>
+            </div>
+            <div class="actions">
+                <button class="action-btn act-yes ${current === 'yes' ? 'on' : ''}" title="Spełnione" data-key="${c.key}" data-val="yes"><i class="ph ph-check"></i></button>
+                <button class="action-btn act-no ${current === 'no' ? 'on' : ''}" title="Nie spełnione" data-key="${c.key}" data-val="no"><i class="ph ph-x"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.action-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleChecklistItem(btn.dataset.key, btn.dataset.val);
+        });
+    });
+
+    renderVerdict();
+}
+
+function autoQualification() {
+    const l = currentLead;
+    const hints = {};
+    if (l.permit_type) hints.scope = 'yes';
+    if (l.location === 'wroclaw' || l.location === 'dolnoslaskie') hints.region = 'yes';
+    else if (l.location === 'other') hints.region = 'no';
+    if (l.phone && l.email) hints.contact = 'yes';
+    if (['no-fingerprints', 'letter', 'stuck', 'rejected'].includes(l.situation)) hints.real_need = 'yes';
+    if (l.intent === 'hire-lawyer' || l.intent === 'ready') hints.ready_pay = 'yes';
+    else if (l.intent === 'just-info' || l.intent === 'diy') hints.ready_pay = 'no';
+    if (l.situation && l.situation !== 'new' && l.situation !== 'waiting') hints.specific = 'yes';
+    return hints;
+}
+
+async function toggleChecklistItem(key, val) {
+    const state = Object.assign({}, currentLead.qualification_checklist || {});
+    state[key] = state[key] === val ? null : val;
+    if (state[key] === null) delete state[key];
+
+    const { error } = await db.from('permit_leads').update({ qualification_checklist: state }).eq('id', currentLead.id);
+    if (error) { toast.error(error.message); return; }
+    currentLead.qualification_checklist = state;
+    renderChecklist();
+}
+
+function renderVerdict() {
+    const state = currentLead.qualification_checklist || {};
+    const auto = autoQualification();
+    const getVal = k => state[k] || auto[k];
+    const total = CHECKLIST.length;
+    const yesCnt = CHECKLIST.filter(c => getVal(c.key) === 'yes').length;
+    const noCnt = CHECKLIST.filter(c => getVal(c.key) === 'no').length;
+    const remaining = total - yesCnt - noCnt;
+
+    const el = document.getElementById('qual-verdict');
+    el.className = 'qual-verdict';
+    if (noCnt > 0) {
+        el.classList.add('fail');
+        el.innerHTML = `<i class="ph ph-warning-circle"></i> <strong>Nie spełnia ${noCnt} kryteriów</strong> — rozważ odrzucenie. Spełnia ${yesCnt}/${total}.`;
+    } else if (yesCnt === total) {
+        el.classList.add('pass');
+        el.innerHTML = `<i class="ph ph-check-circle"></i> <strong>Spełnia wszystkie kryteria</strong> — lead kwalifikowany, przejdź do oferty.`;
+    } else if (yesCnt >= 4) {
+        el.classList.add('pass');
+        el.innerHTML = `<i class="ph ph-check-circle"></i> Spełnia ${yesCnt}/${total} (${remaining} do uzupełnienia) — prawdopodobnie kwalifikowany.`;
+    } else {
+        el.innerHTML = `<i class="ph ph-info"></i> Oceniono ${yesCnt}/${total}. Do sprawdzenia: ${remaining}.`;
+    }
+}
+
+// ============ TIMELINE ============
+async function renderTimeline() {
+    const events = buildTimelineEvents();
+    const el = document.getElementById('timeline');
+    if (!events.length) { el.innerHTML = '<div class="text-sm text-zinc-500 py-4 text-center">Brak zdarzeń</div>'; return; }
+    el.innerHTML = events.map(e => `
+        <div class="tl-event ${e.type}">
+            <div class="tl-dot"><i class="ph ${e.icon}"></i></div>
+            <div class="tl-body">
+                <div class="tl-title">${e.title}</div>
+                ${e.content ? `<div class="tl-content">${esc(e.content)}</div>` : ''}
+                <div class="tl-meta">${fmt.datetime(e.at)} · ${e.author || 'system'}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function buildTimelineEvents() {
+    const events = [];
+    const l = currentLead;
+
+    // 1. Form submission (pierwsze zdarzenie)
+    events.push({
+        type: 'form',
+        icon: 'ph-sparkle',
+        title: `<span class="text-white">Lead wpłynął</span> z formularza getmypermit.pl`,
+        content: l.details || null,
+        at: l.created_at,
+        author: l.utm_source ? `źródło: ${l.utm_source}` : 'strona',
+    });
+
+    // 2. Notes history (każda notatka + status change)
+    const history = l.notes_history || [];
+    history.forEach(n => {
+        events.push({
+            type: n.status === 'disqualified' || n.status === 'lost' ? 'dq' : (n.text?.startsWith('[') ? 'status' : 'note'),
+            icon: n.status === 'disqualified' ? 'ph-x' : n.status === 'lost' ? 'ph-x' : 'ph-note',
+            title: n.status ? `<span class="text-white">${STATUS_LABELS[n.status] || n.status}</span> · notatka` : `<span class="text-white">Notatka</span>`,
+            content: n.text,
+            at: n.created_at,
+            author: n.author || 'user',
+        });
+    });
+
+    // 3. Last contact (jeśli był)
+    if (l.last_contact_at) {
+        const contactHandled = history.some(n => Math.abs(new Date(n.created_at) - new Date(l.last_contact_at)) < 60000);
+        if (!contactHandled) {
+            events.push({
+                type: 'status',
+                icon: 'ph-phone-outgoing',
+                title: `<span class="text-white">Zapisano kontakt</span>`,
+                content: null,
+                at: l.last_contact_at,
+                author: 'user',
+            });
+        }
+    }
+
+    // 4. Conversion event
+    if (l.converted_at) {
+        events.push({
+            type: 'convert',
+            icon: 'ph-check-circle',
+            title: `<span class="text-white">Konwersja do sprawy CRM</span> · #${esc(l.converted_case_number || '')}`,
+            content: null,
+            at: l.converted_at,
+            author: l.assigned_name || 'user',
+        });
+    }
+
+    // Sort chronological - newest first
+    events.sort((a, b) => new Date(b.at) - new Date(a.at));
+    return events;
+}
+
+// ============ FORM ANSWERS ============
+function renderFormAnswers() {
+    const l = currentLead;
+    const rows = [];
+    if (l.permit_type) rows.push(['Typ sprawy', esc(PERMIT_LABELS[l.permit_type] || l.permit_type)]);
+    if (l.situation) rows.push(['Sytuacja', esc(SITUATION_LABELS[l.situation] || l.situation)]);
+    if (l.location) rows.push(['Lokalizacja', esc(LOCATION_LABELS[l.location] || l.location)]);
+    if (l.intent) rows.push(['Intencja', esc(INTENT_LABELS[l.intent] || l.intent)]);
+    if (l.waiting_time) rows.push(['Czas oczekiwania', esc(l.waiting_time)]);
+    if (l.rejection_timing) rows.push(['Po odrzuceniu', esc(l.rejection_timing)]);
+
+    document.getElementById('form-answers').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('') || '<dd class="text-zinc-500" style="grid-column: span 2">Brak odpowiedzi</dd>';
+
+    const detailsEl = document.getElementById('form-details');
+    if (l.details) {
+        detailsEl.style.display = 'block';
+        detailsEl.textContent = l.details;
+    } else detailsEl.style.display = 'none';
+}
+
+// ============ SCORE ============
+function renderScore() {
+    const s = currentLead.lead_score || 0;
+    const type = currentLead.lead_type || 'COLD';
+    document.getElementById('score-num').textContent = s;
+
+    // Circle progress (0-150 max)
+    const circumference = 2 * Math.PI * 34;
+    const pct = Math.min(1, s / 150);
+    document.getElementById('score-circle').setAttribute('stroke-dashoffset', (1 - pct) * circumference);
+    const color = type === 'HOT' ? '#ef4444' : type === 'WARM' ? '#f59e0b' : '#6366f1';
+    document.getElementById('score-circle').setAttribute('stroke', color);
+
+    document.getElementById('score-type-label').innerHTML = `<span class="lt-badge lt-${type}">${type}</span>`;
+
+    const breakdown = [];
+    const l = currentLead;
+    if (l.situation === 'no-fingerprints') breakdown.push(['+40', 'brak odcisków']);
+    else if (l.situation === 'rejected') breakdown.push(['+30', 'sprawa odrzucona']);
+    else if (l.situation === 'stuck') breakdown.push(['+25', 'sprawa stoi']);
+    else if (l.situation === 'letter') breakdown.push(['+20', 'wezwanie urzędu']);
+    if (l.waiting_time === '18+') breakdown.push(['+25', 'czeka 18+ m-cy']);
+    else if (l.waiting_time === '12-18') breakdown.push(['+15', 'czeka 12-18 m-cy']);
+    if (l.location === 'wroclaw') breakdown.push(['+10', 'Wrocław']);
+    else if (l.location === 'dolnoslaskie') breakdown.push(['+5', 'Dolnośląskie']);
+    if (l.intent === 'ready') breakdown.push(['+15', 'gotowy']);
+    if (l.permit_type === 'citizenship') breakdown.push(['+10', 'obywatelstwo']);
+
+    document.getElementById('score-breakdown').innerHTML = breakdown.length
+        ? breakdown.map(([pts, lbl]) => `<div class="score-row"><span class="mono" style="color: ${color}">${pts}</span><span class="muted">${lbl}</span></div>`).join('')
+        : '<div class="muted text-center">brak</div>';
+}
+
+// ============ META ============
+function renderMeta() {
+    const l = currentLead;
+    const rows = [];
+    rows.push(['Wpłynął', fmt.datetime(l.created_at)]);
+    if (l.utm_source) {
+        const utm = [l.utm_source, l.utm_medium, l.utm_campaign].filter(Boolean).join(' / ');
+        rows.push(['Źródło', `<span class="mono">${esc(utm)}</span>`]);
+    }
+    rows.push(['Język', l.language || '—']);
+    if (l.referrer) rows.push(['Referrer', `<span class="mono text-[10px] break-all">${esc(l.referrer.slice(0, 60))}${l.referrer.length > 60 ? '…' : ''}</span>`]);
+    if (l.disqualification_reason) rows.push(['Powód odrzucenia', esc(l.disqualification_reason)]);
+    document.getElementById('meta-grid').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+}
+
+function renderAssigned() {
+    document.getElementById('assigned-select').value = currentLead.assigned_to || '';
+    if (currentLead.next_followup_at) {
+        document.getElementById('next-followup').value = currentLead.next_followup_at.slice(0, 16);
+    }
+}
+
+// ============ CONVERSION CTA ============
+function renderConvertCTA() {
+    const slot = document.getElementById('convert-cta-slot');
+    const l = currentLead;
+
+    if (l.converted_case_id) {
+        slot.innerHTML = `<div class="convert-cta converted">
+            <div class="c-title"><i class="ph ph-check-circle"></i> Skonwertowano</div>
+            <div class="c-sub">Lead został już przeniesiony do sprawy CRM</div>
+            <a href="case.html?id=${l.converted_case_id}" class="btn btn-primary w-full"><i class="ph ph-arrow-square-out"></i> Otwórz sprawę #${esc(l.converted_case_number || '')}</a>
+        </div>`;
+        return;
+    }
+
+    if (['disqualified', 'lost'].includes(l.status)) {
+        slot.innerHTML = '';
+        return;
+    }
+
+    const qualified = ['qualified', 'proposal'].includes(l.status);
+    const readyToConvert = qualified;
+
+    slot.innerHTML = `<div class="convert-cta">
+        <div class="c-title"><i class="ph ph-rocket-launch"></i> Konwertuj do sprawy CRM</div>
+        <div class="c-sub">${readyToConvert ? 'Lead gotowy — utwórz klienta i sprawę, przejdzie do „zlecona"' : 'Zalecane dopiero po zakwalifikowaniu leada. Upewnij się, że spełnia kryteria.'}</div>
+        <button onclick="changeStatus('won')"><i class="ph ph-arrow-right"></i> Utwórz sprawę</button>
+    </div>`;
+}
+
+// ============ TAGS ============
+function renderTags() {
+    if (!window.gmpTags) return;
+    gmpTags.render(document.getElementById('lead-tags-container'), {
+        entityType: 'lead',
+        entityId: currentLead.id,
+        editable: true,
+    });
+}
+
+// ============ QUICK MESSAGE / NOTE ============
+function setupMessageBox() {
+    document.querySelectorAll('.msg-tab').forEach(tab => tab.addEventListener('click', () => {
+        document.querySelectorAll('.msg-tab').forEach(x => x.classList.remove('active'));
+        tab.classList.add('active');
+        currentMsgType = tab.dataset.msgtype;
+    }));
+
+    document.getElementById('msg-tpl-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!window.gmpTemplatePicker) return;
+        const name = currentLead.first_name || currentLead.last_name || currentLead.name || '';
+        gmpTemplatePicker.open(e.currentTarget, {
+            category: currentMsgType,
+            context: {
+                klient: name,
+                nr_sprawy: currentLead.converted_case_number || '',
+                typ_sprawy: currentLead.permit_type ? (PERMIT_LABELS[currentLead.permit_type] || currentLead.permit_type) : '',
+                urzad: '',
+                godzina: '',
+            },
+            onPick: (body) => { document.getElementById('msg-input').value = body; },
+        });
+    });
+
+    document.getElementById('msg-save-btn').addEventListener('click', saveMessage);
+}
+
+async function saveMessage() {
+    const text = document.getElementById('msg-input').value.trim();
+    if (!text) return;
+    const prefix = currentMsgType !== 'note' ? `[${currentMsgType.toUpperCase()}] ` : '';
+    const history = currentLead.notes_history || [];
+    history.push({
+        text: prefix + text,
+        created_at: new Date().toISOString(),
+        author: window.currentStaff?.full_name || 'user',
+        status: currentLead.status,
+        msg_type: currentMsgType,
+    });
+    const updates = { notes_history: history };
+    // Jeśli to faktyczny kontakt (nie notatka) - update last_contact_at
+    if (currentMsgType !== 'note') {
+        updates.last_contact_at = new Date().toISOString();
+        if (currentLead.status === 'new') updates.status = 'contacted';
+    }
+
+    const { error } = await db.from('permit_leads').update(updates).eq('id', currentLead.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Zapisano');
+    document.getElementById('msg-input').value = '';
+    await loadLead(currentLead.id);
+}
+
+// ============ MISC ACTIONS ============
+async function updateAssigned() {
+    const value = document.getElementById('assigned-select').value || null;
+    const { error } = await db.from('permit_leads').update({ assigned_to: value }).eq('id', currentLead.id);
+    if (error) { toast.error(error.message); return; }
+    currentLead.assigned_to = value;
+    toast.success(value ? 'Przypisano opiekuna' : 'Usunięto przypisanie');
+}
+
+async function updateFollowup() {
+    const value = document.getElementById('next-followup').value;
+    const { error } = await db.from('permit_leads').update({ next_followup_at: value || null }).eq('id', currentLead.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(value ? 'Zaplanowano kontakt' : 'Usunięto plan');
+}
+
+async function markContactNow() {
+    const now = new Date().toISOString();
+    const updates = { last_contact_at: now };
+    if (currentLead.status === 'new') updates.status = 'contacted';
+    const { error } = await db.from('permit_leads').update(updates).eq('id', currentLead.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Zapisano kontakt');
+    await loadLead(currentLead.id);
+}
+
+function openDisqualifyModal() {
+    document.getElementById('dq-modal').classList.remove('hidden');
+    if (currentLead.status === 'lost') document.getElementById('dq-status').value = 'lost';
+    if (currentLead.disqualification_reason) document.getElementById('dq-reason').value = currentLead.disqualification_reason;
+}
+function closeDisqualifyModal() { document.getElementById('dq-modal').classList.add('hidden'); }
+
+async function confirmDisqualify() {
+    const status = document.getElementById('dq-status').value;
+    const reason = document.getElementById('dq-reason').value;
+    const note = document.getElementById('dq-note').value.trim();
+
+    const updates = { status, disqualification_reason: reason || null };
+    if (note || reason) {
+        const history = currentLead.notes_history || [];
+        history.push({
+            text: `[${status === 'lost' ? 'Stracony' : 'Odrzucony'}] ${reason || ''}${note ? ': ' + note : ''}`.trim(),
+            created_at: new Date().toISOString(),
+            author: window.currentStaff?.full_name,
+            status,
+        });
+        updates.notes_history = history;
+    }
+
+    const { error } = await db.from('permit_leads').update(updates).eq('id', currentLead.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(status === 'lost' ? 'Oznaczono jako stracony' : 'Odrzucono leada');
+    closeDisqualifyModal();
+    await loadLead(currentLead.id);
+}
+
+async function deleteLead() {
+    if (!confirm('Trwale usunąć tego leada z bazy?')) return;
+    const { error } = await db.from('permit_leads').delete().eq('id', currentLead.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto');
+    setTimeout(() => location.href = 'leads.html', 500);
+}
+</script>
+
+</body>
+</html>

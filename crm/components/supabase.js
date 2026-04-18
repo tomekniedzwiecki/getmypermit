@@ -223,6 +223,11 @@ window.exportCsv = function(filename, rows, columns) {
   toast.success(`Pobrano ${rows.length} wierszy`);
 };
 
+// Renderuj "Otwórz" button (widoczny w clickable row-hover) - wstaw jako <td class="row-open">${window.rowOpen()}</td>
+window.rowOpen = function(label = 'Otwórz') {
+  return `<span class="row-open-btn"><span class="label">${label}</span><i class="ph ph-caret-right"></i></span>`;
+};
+
 // Escape HTML dla bezpiecznego renderowania user-content
 window.esc = function(s) {
   if (s == null) return '';

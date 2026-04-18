@@ -67,10 +67,11 @@
                                 <th class="text-right">Przychód</th>
                                 <th class="text-right">Zadań otw.</th>
                                 <th class="text-right">Zaległych</th>
+                                <th class="row-open"></th>
                             </tr>
                         </thead>
                         <tbody id="tbody">
-                            <tr><td colspan="10" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Analizuję dane...</td></tr>
+                            <tr><td colspan="11" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Analizuję dane...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -196,6 +197,7 @@ async function loadList() {
             <td class="text-right font-mono text-emerald-300 font-bold">${r.revenue_fee ? fmt.money(r.revenue_fee) : '—'}</td>
             <td class="text-right font-mono">${r.tasks_open || '—'}</td>
             <td class="text-right font-mono ${r.tasks_overdue ? 'text-red-400 font-bold' : 'text-zinc-500'}">${r.tasks_overdue || '—'}</td>
+            <td class="row-open">${window.rowOpen()}</td>
         </tr>`).join('');
 }
 

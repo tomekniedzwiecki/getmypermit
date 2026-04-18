@@ -4,6 +4,7 @@
 .env.*.local
 *.env
 node_modules/
+supabase/.temp/
 
 # Wrazliwe dane - NIGDY na git ani na Vercel
 dane_od_pawla/

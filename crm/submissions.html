@@ -73,10 +73,11 @@
                             <th>Transport</th>
                             <th>Status</th>
                             <th>Uwagi</th>
+                            <th class="row-open"></th>
                         </tr>
                     </thead>
                     <tbody id="tbody">
-                        <tr><td colspan="9" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        <tr><td colspan="10" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -155,12 +156,12 @@ async function loadList() {
 
     const { data, error, count } = await q;
     const tbody = document.getElementById('tbody');
-    if (error) { tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
     totalRows = count || 0;
     document.getElementById('count').textContent = `${fmt.num(totalRows)} wpisów`;
 
     if (!data?.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><i class="ph ph-paper-plane-tilt"></i><div>Brak wpisów</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><i class="ph ph-paper-plane-tilt"></i><div>Brak wpisów</div></td></tr>';
         renderPagination(); return;
     }
 
@@ -180,6 +181,7 @@ async function loadList() {
                 <td class="text-xs text-zinc-400">${esc(r.transport_type || '')}</td>
                 <td><span class="badge badge-${r.status === 'done' ? 'zakonczona' : 'zlecona'}">${esc(r.status)}</span></td>
                 <td class="text-xs text-zinc-400 truncate max-w-md">${esc(r.notes || '')}</td>
+                <td class="row-open">${r.client_id ? window.rowOpen() : ''}</td>
             </tr>`;
     }).join('');
     renderPagination();

@@ -39,6 +39,8 @@
         .composer-footer { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.04); }
         .composer-hint { font-size: 10px; color: #52525b; }
         .composer-hint kbd { display: inline-block; padding: 1px 5px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 3px; font-family: monospace; font-size: 10px; color: #a1a1aa; }
+        .composer-tpl-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: #a1a1aa; font-size: 11px; cursor: pointer; transition: all 0.15s; }
+        .composer-tpl-btn:hover { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: #a5b4fc; }
         .composer-submit { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
         .composer-submit:hover:not(:disabled) { background: #2563eb; }
         .composer-submit:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -143,7 +145,10 @@
                             <div class="composer-fields" id="comp-fields">${renderFields(activeType)}</div>
                         </div>
                         <div class="composer-footer">
-                            <div class="composer-hint">${getHint(activeType)}</div>
+                            <div class="composer-hint flex items-center gap-2">
+                                ${['note', 'email'].includes(activeType) ? `<button class="composer-tpl-btn" id="comp-tpl-btn" type="button" title="Użyj szablonu"><i class="ph ph-file-text"></i> Szablon</button>` : ''}
+                                <span>${getHint(activeType)}</span>
+                            </div>
                             <button class="composer-submit" id="comp-submit" disabled>
                                 ${tab.label === 'Notatka' ? 'Zapisz' : 'Dodaj ' + tab.label.toLowerCase()}
                             </button>
@@ -152,6 +157,33 @@
 
                 const input = container.querySelector('#comp-input');
                 const submit = container.querySelector('#comp-submit');
+
+                // Template picker
+                const tplBtn = container.querySelector('#comp-tpl-btn');
+                if (tplBtn && window.gmpTemplatePicker) {
+                    tplBtn.addEventListener('click', (e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        const ctx = {
+                            klient: window.caseData?.gmp_clients
+                                ? `${window.caseData.gmp_clients.first_name} ${window.caseData.gmp_clients.last_name}`
+                                : '',
+                            nr_sprawy: window.caseData?.case_number || '',
+                            typ_sprawy: window.caseData?.case_type || '',
+                            urzad: window.caseData?.gmp_office_departments?.code || '',
+                            godzina: '',
+                        };
+                        gmpTemplatePicker.open(tplBtn, {
+                            category: activeType,
+                            context: ctx,
+                            onPick: (filledBody) => {
+                                input.value = filledBody;
+                                updateSubmit();
+                                autoResize(input);
+                                input.focus();
+                            },
+                        });
+                    });
+                }
 
                 // Tab switching
                 container.querySelectorAll('.composer-tab').forEach(t => {

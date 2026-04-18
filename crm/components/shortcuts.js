@@ -42,6 +42,61 @@
     `;
     document.head.appendChild(style);
 
+    // ========== COMMAND REGISTRY ==========
+    // Akcje i nawigacja - fuzzy matched razem z danymi
+    const COMMANDS = [
+        // Nawigacja
+        { type: 'nav', icon: 'ph-house', title: 'Dashboard', keywords: 'dashboard panel start home', action: () => location.href = 'dashboard.html' },
+        { type: 'nav', icon: 'ph-magnet', title: 'Leady', keywords: 'leads leady lista', action: () => location.href = 'leads.html' },
+        { type: 'nav', icon: 'ph-kanban', title: 'Pipeline leadów', keywords: 'pipeline lead kanban leadow', action: () => location.href = 'leads-pipeline.html' },
+        { type: 'nav', icon: 'ph-folders', title: 'Sprawy', keywords: 'sprawy cases lista', action: () => location.href = 'cases.html' },
+        { type: 'nav', icon: 'ph-kanban', title: 'Kanban spraw', keywords: 'kanban sprawy board tablica', action: () => location.href = 'kanban.html' },
+        { type: 'nav', icon: 'ph-check-square', title: 'Zadania', keywords: 'zadania tasks todo', action: () => location.href = 'tasks.html' },
+        { type: 'nav', icon: 'ph-bell-ringing', title: 'Alerty', keywords: 'alerty alerts bezczynnosc', action: () => location.href = 'alerts.html' },
+        { type: 'nav', icon: 'ph-calendar-check', title: 'Kalendarz', keywords: 'kalendarz calendar spotkania appointments', action: () => location.href = 'appointments.html' },
+        { type: 'nav', icon: 'ph-paper-plane-tilt', title: 'Kolejka wniosków', keywords: 'kolejka wnioski submissions stawiennictwo odciski', action: () => location.href = 'submissions.html' },
+        { type: 'nav', icon: 'ph-users', title: 'Klienci', keywords: 'klienci clients', action: () => location.href = 'clients.html' },
+        { type: 'nav', icon: 'ph-buildings', title: 'Pracodawcy', keywords: 'pracodawcy employers firmy', action: () => location.href = 'employers.html' },
+        { type: 'nav', icon: 'ph-scales', title: 'Prawnicy / Zespół', keywords: 'prawnicy staff zespol team pracownicy', action: () => location.href = 'staff.html' },
+        { type: 'nav', icon: 'ph-coins', title: 'Płatności', keywords: 'platnosci payments wplyw', action: () => location.href = 'payments.html' },
+        { type: 'nav', icon: 'ph-warning-circle', title: 'Windykacja', keywords: 'windykacja receivables debt zaleglosci collection', action: () => location.href = 'receivables.html' },
+        { type: 'nav', icon: 'ph-receipt', title: 'Faktury', keywords: 'faktury invoices vat', action: () => location.href = 'invoices.html' },
+        { type: 'nav', icon: 'ph-chart-line-up', title: 'Analiza', keywords: 'analiza analytics statystyki wykresy', action: () => location.href = 'analytics.html' },
+        { type: 'nav', icon: 'ph-file-text', title: 'Wzory i szablony', keywords: 'wzory szablony templates dokumenty', action: () => location.href = 'templates.html' },
+
+        // Tworzenie
+        { type: 'action', icon: 'ph-folder-plus', title: 'Nowa sprawa', keywords: 'new case nowa sprawa stworz utworz dodaj', action: () => location.href = 'cases.html?new=1' },
+        { type: 'action', icon: 'ph-user-plus', title: 'Nowy klient', keywords: 'new client nowy klient dodaj', action: () => { if (typeof gmpModal !== 'undefined') gmpModal.editClient(null, (c) => { if (c) location.href = 'clients.html?id=' + c.id; }); else location.href = 'clients.html'; } },
+        { type: 'action', icon: 'ph-buildings', title: 'Nowy pracodawca', keywords: 'new employer nowy pracodawca firma dodaj', action: () => { if (typeof gmpModal !== 'undefined') gmpModal.editEmployer(null, (e) => { if (e) location.href = 'employers.html?id=' + e.id; }); else location.href = 'employers.html'; } },
+        { type: 'action', icon: 'ph-receipt', title: 'Nowa faktura', keywords: 'new invoice nowa faktura', action: () => location.href = 'invoices.html' },
+        { type: 'action', icon: 'ph-check-square', title: 'Nowe zadanie', keywords: 'new task nowe zadanie todo', action: () => location.href = 'tasks.html?new=1' },
+
+        // System
+        { type: 'action', icon: 'ph-moon', title: 'Przełącz motyw (jasny/ciemny)', keywords: 'theme motyw dark light ciemny jasny', action: () => window.gmpTheme?.toggle() },
+        { type: 'action', icon: 'ph-keyboard', title: 'Skróty klawiszowe', keywords: 'help pomoc skroty keyboard shortcuts', action: () => { closeSearch(); openHelp(); } },
+        { type: 'action', icon: 'ph-sign-out', title: 'Wyloguj', keywords: 'logout wyloguj wyjdz exit', action: () => window.gmpAuth?.logout() || (location.href = 'index.html') },
+    ];
+
+    function fuzzyMatchCommand(cmd, query) {
+        const q = query.toLowerCase().trim();
+        if (!q) return 0;
+        const haystack = (cmd.title + ' ' + cmd.keywords).toLowerCase();
+        // Exact phrase
+        if (haystack.includes(q)) return 100 - haystack.indexOf(q);
+        // All words in any order
+        const words = q.split(/\s+/);
+        if (words.every(w => haystack.includes(w))) return 50;
+        // Fuzzy subsequence (each char of q in haystack)
+        let hi = 0, matched = 0;
+        for (const ch of q) {
+            const idx = haystack.indexOf(ch, hi);
+            if (idx === -1) return 0;
+            hi = idx + 1;
+            matched++;
+        }
+        return matched === q.length ? 10 : 0;
+    }
+
     // ========== GLOBAL SEARCH ==========
     let searchModal = null;
     let searchResults = [];
@@ -55,21 +110,21 @@
             <div class="gs-modal">
                 <div class="gs-input-wrap">
                     <i class="ph ph-magnifying-glass"></i>
-                    <input type="text" class="gs-input" id="gs-q" placeholder="Szukaj: klient, sprawa, pracodawca, nr sprawy..." autocomplete="off">
+                    <input type="text" class="gs-input" id="gs-q" placeholder="Szukaj lub wykonaj akcję (np. „nowa sprawa", „kanban", „Kowalski")..." autocomplete="off">
                     <span class="gs-kbd">ESC</span>
                 </div>
-                <div class="gs-results" id="gs-results">
-                    <div class="gs-empty">
-                        Zacznij wpisywać aby szukać.<br>
-                        <span class="text-xs text-zinc-600 mt-2 block">Nazwisko, imię, numer sprawy, znak sprawy, nazwa firmy, NIP, telefon, email</span>
-                    </div>
-                </div>
+                <div class="gs-results" id="gs-results"></div>
             </div>
         `;
         document.body.appendChild(searchModal);
 
         const input = document.getElementById('gs-q');
         input.focus();
+
+        // Pokaż komendy od razu przy otwarciu
+        searchResults = COMMANDS.map(c => ({ ...c, _cmd: true }));
+        activeIdx = 0;
+        renderResults();
 
         searchModal.addEventListener('click', e => { if (e.target === searchModal) closeSearch(); });
         input.addEventListener('input', (e) => { doSearch(e.target.value); });
@@ -83,16 +138,31 @@
     let searchTimer;
     function doSearch(q) {
         clearTimeout(searchTimer);
-        if (q.length < 2) {
-            document.getElementById('gs-results').innerHTML = '<div class="gs-empty">Wpisz min. 2 znaki</div>';
+        const trimmed = q.trim();
+
+        // Komendy — matchujemy lokalnie zawsze
+        const cmdMatches = trimmed.length
+            ? COMMANDS.map(c => ({ c, score: fuzzyMatchCommand(c, trimmed) }))
+                .filter(m => m.score > 0)
+                .sort((a, b) => b.score - a.score)
+                .map(m => ({ ...m.c, _cmd: true }))
+            : COMMANDS.map(c => ({ ...c, _cmd: true }));
+
+        if (trimmed.length < 2) {
+            // Pokazujemy same komendy przy <2 znakach
+            searchResults = cmdMatches;
+            activeIdx = 0;
+            renderResults();
             return;
         }
-        searchTimer = setTimeout(() => executeSearch(q), 200);
+        // Z DB tylko przy >=2 znakach, komendy pokazujemy od razu
+        searchResults = cmdMatches;
+        activeIdx = 0;
+        renderResults();
+        searchTimer = setTimeout(() => executeSearch(trimmed, cmdMatches), 180);
     }
 
-    async function executeSearch(q) {
-        const el = document.getElementById('gs-results');
-        el.innerHTML = '<div class="gs-empty"><div class="spinner" style="margin: 0 auto"></div></div>';
+    async function executeSearch(q, cmdMatches = []) {
         const s = `%${q}%`;
 
         const [clientsRes, casesRes, employersRes] = await Promise.all([
@@ -101,7 +171,8 @@
             db.from('gmp_employers').select('id, name, nip, contact_person').or(`name.ilike.${s},nip.ilike.${s}`).limit(10),
         ]);
 
-        const results = [];
+        // Zacznij od komend (już posortowanych)
+        const results = [...cmdMatches];
         (clientsRes.data || []).forEach(c => {
             results.push({
                 type: 'client',
@@ -156,28 +227,46 @@
 
     function renderResults() {
         const el = document.getElementById('gs-results');
-        if (!searchResults.length) { el.innerHTML = '<div class="gs-empty">Brak wyników</div>'; return; }
+        if (!searchResults.length) { el.innerHTML = '<div class="gs-empty">Brak wyników · naciśnij ESC</div>'; return; }
 
-        const grouped = { client: [], case: [], employer: [] };
-        searchResults.forEach((r, i) => { r._i = i; grouped[r.type].push(r); });
-        const labels = { client: 'Klienci', case: 'Sprawy', employer: 'Pracodawcy' };
+        const grouped = { action: [], nav: [], client: [], case: [], employer: [] };
+        searchResults.forEach((r, i) => { r._i = i; (grouped[r.type] || (grouped[r.type] = [])).push(r); });
+        const labels = { action: 'Akcje', nav: 'Nawigacja', client: 'Klienci', case: 'Sprawy', employer: 'Pracodawcy' };
 
         let html = '';
-        ['client', 'case', 'employer'].forEach(type => {
-            if (grouped[type].length) {
+        ['action', 'nav', 'client', 'case', 'employer'].forEach(type => {
+            if (grouped[type] && grouped[type].length) {
                 html += `<div class="gs-section">${labels[type]}</div>`;
                 grouped[type].forEach(r => {
-                    html += `<div class="gs-item ${r._i === activeIdx ? 'active' : ''}" data-idx="${r._i}" onclick="window.location.href='${r.href}'">
+                    const kbd = r._cmd ? '' : '';
+                    html += `<div class="gs-item ${r._i === activeIdx ? 'active' : ''}" data-idx="${r._i}">
                         <i class="ph ${r.icon}"></i>
                         <div class="gs-item-main">
                             <div class="gs-item-title">${esc(r.title)}</div>
-                            <div class="gs-item-sub">${esc(r.sub || '')}</div>
+                            ${r.sub ? `<div class="gs-item-sub">${esc(r.sub)}</div>` : ''}
                         </div>
+                        ${r._cmd ? '<span class="gs-kbd" style="opacity: 0.5">⏎</span>' : ''}
                     </div>`;
                 });
             }
         });
         el.innerHTML = html;
+
+        // Click handlers (safer than inline onclick with apostrofes)
+        el.querySelectorAll('.gs-item').forEach(it => it.addEventListener('click', () => {
+            const idx = Number(it.dataset.idx);
+            triggerResult(searchResults[idx]);
+        }));
+    }
+
+    function triggerResult(r) {
+        if (!r) return;
+        if (r._cmd) {
+            closeSearch();
+            try { r.action(); } catch(e) { console.error(e); }
+        } else if (r.href) {
+            location.href = r.href;
+        }
     }
 
     function handleKeyNav(e) {
@@ -192,7 +281,7 @@
             renderResults();
         } else if (e.key === 'Enter') {
             e.preventDefault();
-            if (searchResults[activeIdx]) window.location.href = searchResults[activeIdx].href;
+            triggerResult(searchResults[activeIdx]);
         }
     }
 

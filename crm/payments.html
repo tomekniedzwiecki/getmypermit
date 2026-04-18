@@ -528,6 +528,7 @@ async function renderPayments() {
                         <th>Data</th><th>Klient / Pracodawca</th><th>Nr sprawy</th>
                         <th>Rodzaj</th><th>Forma</th><th>Rata</th><th>Notatka</th>
                         <th class="text-right">Kwota</th>
+                        <th class="row-open"></th>
                     </tr></thead>
                     <tbody>
                         ${payments.map(p => {
@@ -548,6 +549,7 @@ async function renderPayments() {
                                     <td class="text-xs text-zinc-400">${p.installment_number ? `${p.installment_number}/${p.total_installments || '?'}` : '—'}</td>
                                     <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(p.notes || '')}</td>
                                     <td class="text-right font-mono text-emerald-300 font-semibold">${fmt.money(p.amount)}</td>
+                                    <td class="row-open">${window.rowOpen()}</td>
                                 </tr>`;
                         }).join('')}
                     </tbody>
@@ -575,7 +577,7 @@ async function renderAdmin() {
             ${(data || []).length === 0 ? '<div class="empty-state"><i class="ph ph-bank"></i><div>Brak opłat administracyjnych w tym okresie</div><div class="text-xs text-zinc-600 mt-2">Oznacz płatność jako "Opłata administracyjna" w karcie sprawy</div></div>' : `
             <div class="overflow-x-auto">
                 <table class="gmp-table">
-                    <thead><tr><th>Data</th><th>Klient</th><th>Sprawa</th><th>Notatka</th><th class="text-right">Kwota</th></tr></thead>
+                    <thead><tr><th>Data</th><th>Klient</th><th>Sprawa</th><th>Notatka</th><th class="text-right">Kwota</th><th class="row-open"></th></tr></thead>
                     <tbody>${data.map(p => `
                         <tr class="clickable" onclick="location.href='case.html?id=${p.case_id}'">
                             <td class="text-xs text-zinc-400">${fmt.date(p.payment_date)}</td>
@@ -583,6 +585,7 @@ async function renderAdmin() {
                             <td class="font-mono text-xs text-zinc-500">${esc(p.gmp_cases?.case_number || '')}</td>
                             <td class="text-xs text-zinc-400">${esc(p.notes || '')}</td>
                             <td class="text-right font-mono text-amber-300">${fmt.money(p.amount)}</td>
+                            <td class="row-open">${window.rowOpen()}</td>
                         </tr>`).join('')}</tbody>
                 </table>
             </div>`}
@@ -629,6 +632,7 @@ async function renderOverdue() {
                         <th>Termin</th><th>Dni po</th>
                         <th class="text-right">Plan</th><th class="text-right">Wpłacono</th>
                         <th class="text-right">Zaległość</th>
+                        <th class="row-open"></th>
                     </tr></thead>
                     <tbody>${rows.map(r => {
                         const c = r.gmp_cases;
@@ -644,6 +648,7 @@ async function renderOverdue() {
                                 <td class="text-right font-mono">${fmt.money(r.total_amount)}</td>
                                 <td class="text-right font-mono text-emerald-400">${fmt.money(r.paid)}</td>
                                 <td class="text-right font-mono text-red-400 font-bold">${fmt.money(r.remaining)}</td>
+                                <td class="row-open">${window.rowOpen()}</td>
                             </tr>`;
                     }).join('')}</tbody>
                 </table>
@@ -709,6 +714,7 @@ async function renderForecast() {
                         <th>Termin</th><th>Dni</th><th>Klient / Pracodawca</th><th>Opiekun</th>
                         <th>Płaci</th><th class="text-right">Plan</th><th class="text-right">Zapłacono</th>
                         <th class="text-right">Oczekiwane</th>
+                        <th class="row-open"></th>
                     </tr></thead>
                     <tbody>${rows.map(r => {
                         const c = r.gmp_cases;
@@ -724,6 +730,7 @@ async function renderForecast() {
                                 <td class="text-right font-mono">${fmt.money(r.total_amount)}</td>
                                 <td class="text-right font-mono text-emerald-400">${fmt.money(r.paid)}</td>
                                 <td class="text-right font-mono text-amber-300 font-bold">${fmt.money(r.expected)}</td>
+                                <td class="row-open">${window.rowOpen()}</td>
                             </tr>`;
                     }).join('')}</tbody>
                 </table>

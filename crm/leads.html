@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leady - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+    <script src="components/saved-views.js" defer></script>
+</head>
+<body>
+
+<style>
+/* === LEADS KPI === */
+.leads-kpi {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+@media (max-width: 1100px) { .leads-kpi { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px)  { .leads-kpi { grid-template-columns: repeat(2, 1fr); } }
+
+.lkpi {
+    padding: 14px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 120ms, background 120ms;
+}
+.lkpi:hover { border-color: var(--border-hover); background: var(--bg); }
+.lkpi .lkpi-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--text-tertiary); text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+.lkpi .lkpi-value { font-size: 24px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; margin-top: 8px; line-height: 1.1; }
+.lkpi .lkpi-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+/* Lead type badges */
+.lt-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 1px 7px; border-radius: 999px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.lt-HOT  { background: rgba(239,68,68,0.15);  color: #fca5a5; }
+.lt-WARM { background: rgba(245,158,11,0.15); color: #fcd34d; }
+.lt-COLD { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+
+/* Status pills */
+.st {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    white-space: nowrap;
+}
+.st-new          { background: rgba(99,102,241,0.12);  color: #a5b4fc; }
+.st-contacted    { background: rgba(245,158,11,0.12);  color: #fcd34d; }
+.st-qualified    { background: rgba(16,185,129,0.12);  color: #6ee7b7; }
+.st-proposal     { background: rgba(168,85,247,0.12);  color: #d8b4fe; }
+.st-won          { background: rgba(16,185,129,0.2);   color: #10b981; }
+.st-disqualified { background: rgba(113,113,122,0.15); color: var(--text-muted); }
+.st-lost         { background: rgba(113,113,122,0.15); color: var(--text-muted); text-decoration: line-through; }
+
+/* Lead row w table */
+.lead-name-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.lead-contact { font-size: 10px; color: var(--text-tertiary); font-family: 'JetBrains Mono', mono; }
+.score-bar {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', mono; font-size: 11px;
+}
+.score-bar-track { width: 40px; height: 3px; border-radius: 2px; background: var(--bg-subtle); overflow: hidden; }
+.score-bar-fill { height: 100%; border-radius: 2px; }
+
+/* Filters */
+.filter-bar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    padding: 10px 12px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    margin-bottom: 16px;
+}
+
+.flag-kw { color: var(--success); }
+.flag-dq { color: var(--danger); }
+</style>
+
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Leady</h1>
+                <p class="page-subtitle" id="page-count">—</p>
+            </div>
+            <div class="flex gap-2 items-center">
+                <a href="leads-pipeline.html" class="btn btn-secondary btn-sm"><i class="ph ph-kanban"></i> Widok Pipeline</a>
+                <button class="btn btn-secondary btn-sm" onclick="exportLeadsCSV()"><i class="ph ph-download-simple"></i> CSV</button>
+            </div>
+        </div>
+
+        <!-- KPI bar -->
+        <div class="leads-kpi">
+            <a href="?status=new" class="lkpi">
+                <div class="lkpi-label"><i class="ph ph-sparkle"></i> Nowe</div>
+                <div class="lkpi-value" id="kpi-new">—</div>
+                <div class="lkpi-sub">z formularza, czekają</div>
+            </a>
+            <a href="?type=HOT" class="lkpi">
+                <div class="lkpi-label"><i class="ph ph-fire text-red-400"></i> HOT</div>
+                <div class="lkpi-value" id="kpi-hot">—</div>
+                <div class="lkpi-sub">wysokiej jakości</div>
+            </a>
+            <a href="?status=qualified" class="lkpi">
+                <div class="lkpi-label"><i class="ph ph-check-circle text-emerald-400"></i> Zakwalifikowani</div>
+                <div class="lkpi-value" id="kpi-qualified">—</div>
+                <div class="lkpi-sub">do konwersji</div>
+            </a>
+            <a href="?stale=1" class="lkpi">
+                <div class="lkpi-label"><i class="ph ph-clock-countdown text-amber-400"></i> Zagrożone</div>
+                <div class="lkpi-value" id="kpi-stale">—</div>
+                <div class="lkpi-sub">3+ dni bez kontaktu</div>
+            </a>
+            <a href="?status=won" class="lkpi">
+                <div class="lkpi-label"><i class="ph ph-trophy"></i> Konwersje 30d</div>
+                <div class="lkpi-value" id="kpi-won">—</div>
+                <div class="lkpi-sub" id="kpi-won-sub">—</div>
+            </a>
+        </div>
+
+        <div id="saved-views-bar" class="mb-3"></div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+            <input id="f-search" class="filter-input" placeholder="Szukaj: imię, telefon, email..." style="width: 260px">
+            <select id="f-status" class="filter-input">
+                <option value="">Wszystkie statusy</option>
+                <option value="new">Nowe</option>
+                <option value="contacted">Kontaktowany</option>
+                <option value="qualified">Zakwalifikowany</option>
+                <option value="proposal">Oferta</option>
+                <option value="won">Wygrany</option>
+                <option value="disqualified">Niekwalifikowany</option>
+                <option value="lost">Stracony</option>
+            </select>
+            <select id="f-type" class="filter-input">
+                <option value="">Jakość (wszystkie)</option>
+                <option value="HOT">HOT</option>
+                <option value="WARM">WARM</option>
+                <option value="COLD">COLD</option>
+            </select>
+            <select id="f-permit" class="filter-input">
+                <option value="">Typ sprawy (wszystkie)</option>
+                <option value="temporary">Pobyt czasowy</option>
+                <option value="permanent">Pobyt stały</option>
+                <option value="eu-resident">Rezydent UE</option>
+                <option value="citizenship">Obywatelstwo</option>
+                <option value="work">Pobyt + praca</option>
+                <option value="residence">Residence</option>
+            </select>
+            <select id="f-assigned" class="filter-input">
+                <option value="">Opiekun (wszyscy)</option>
+                <option value="__unassigned__">Nieprzypisane</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="resetFilters()"><i class="ph ph-eraser"></i> Wyczyść</button>
+        </div>
+
+        <!-- LIST VIEW -->
+        <div class="card">
+            <div class="overflow-x-auto" style="max-height: calc(100vh - 380px)">
+                <table class="gmp-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="name">Osoba</th>
+                            <th data-sort="status">Status</th>
+                            <th data-sort="type">Jakość</th>
+                            <th data-sort="score" class="text-right">Score</th>
+                            <th>Sprawa</th>
+                            <th>Lokalizacja</th>
+                            <th data-sort="assigned">Opiekun</th>
+                            <th data-sort="created" class="text-right">Przyszedł</th>
+                            <th data-sort="contact" class="text-right">Kontakt</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list-tbody">
+                        <tr><td colspan="9" class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="components/sidebar.js" data-active="leads"></script>
+<script>
+let allLeads = [];
+let staffList = [];
+
+const STATUS_LABELS = {
+    new: 'Nowy', contacted: 'Kontaktowany', qualified: 'Zakwalifikowany',
+    proposal: 'Oferta', won: 'Wygrany',
+    disqualified: 'Niekwalifik.', lost: 'Stracony', converted: 'Wygrany',
+};
+
+const PERMIT_LABELS = {
+    temporary: 'Pobyt czasowy', permanent: 'Pobyt stały', 'eu-resident': 'Rezydent UE',
+    citizenship: 'Obywatelstwo', work: 'Pobyt + praca', residence: 'Residence',
+};
+
+const SITUATION_LABELS = {
+    'no-fingerprints': 'Brak odcisków', rejected: 'Odrzucony', stuck: 'Sprawa stoi',
+    letter: 'Wezwanie z urzędu', new: 'Nowa sprawa', waiting: 'Oczekuje',
+    'new-application': 'Nowa sprawa',
+};
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    const { data: staff } = await db.from('gmp_staff').select('id, full_name, color').order('full_name');
+    staffList = staff || [];
+    const sel = document.getElementById('f-assigned');
+    staffList.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.full_name;
+        sel.appendChild(o);
+    });
+
+    // Apply URL params
+    const params = new URLSearchParams(location.search);
+    ['status', 'type', 'permit', 'assigned'].forEach(k => {
+        const v = params.get(k);
+        if (v) document.getElementById('f-' + k).value = v;
+    });
+
+    await loadLeads();
+    setupListeners();
+
+    if (window.gmpSavedViews) {
+        gmpSavedViews.init({
+            page: 'leads',
+            container: document.getElementById('saved-views-bar'),
+            getCurrentFilters: () => ({
+                search: document.getElementById('f-search').value,
+                status: document.getElementById('f-status').value,
+                type: document.getElementById('f-type').value,
+                permit: document.getElementById('f-permit').value,
+                assigned: document.getElementById('f-assigned').value,
+            }),
+            applyFilters: (f) => {
+                document.getElementById('f-search').value = f.search || '';
+                document.getElementById('f-status').value = f.status || '';
+                document.getElementById('f-type').value = f.type || '';
+                document.getElementById('f-permit').value = f.permit || '';
+                document.getElementById('f-assigned').value = f.assigned || '';
+                renderAll();
+            },
+        });
+    }
+
+    renderAll();
+}
+
+async function loadLeads() {
+    allLeads = await fetchAll(() => db.from('gmp_leads_overview').select('*').order('created_at', { ascending: false }), 1000, 5000);
+    document.getElementById('page-count').textContent = `${allLeads.length} leadów w bazie`;
+}
+
+function setupListeners() {
+    let t;
+    document.getElementById('f-search').addEventListener('input', () => { clearTimeout(t); t = setTimeout(renderAll, 250); });
+    ['f-status', 'f-type', 'f-permit', 'f-assigned'].forEach(id => {
+        document.getElementById(id).addEventListener('change', renderAll);
+    });
+}
+
+function filterLeads() {
+    const s = document.getElementById('f-search').value.toLowerCase().trim();
+    const status = document.getElementById('f-status').value;
+    const type = document.getElementById('f-type').value;
+    const permit = document.getElementById('f-permit').value;
+    const assigned = document.getElementById('f-assigned').value;
+
+    return allLeads.filter(l => {
+        if (s) {
+            const blob = `${l.name || ''} ${l.first_name || ''} ${l.last_name || ''} ${l.phone || ''} ${l.email || ''} ${l.details || ''}`.toLowerCase();
+            if (!blob.includes(s)) return false;
+        }
+        if (status) {
+            if (status === 'lost' && l.status !== 'lost' && l.status !== 'disqualified') return false;
+            else if (status !== 'lost' && l.status !== status) return false;
+        }
+        if (type && l.lead_type !== type) return false;
+        if (permit && l.permit_type !== permit) return false;
+        if (assigned === '__unassigned__' && l.assigned_to) return false;
+        if (assigned && assigned !== '__unassigned__' && l.assigned_to !== assigned) return false;
+        return true;
+    });
+}
+
+function renderAll() {
+    renderKPIs();
+    renderList();
+}
+
+function renderKPIs() {
+    const newCnt = allLeads.filter(l => l.status === 'new').length;
+    const hotCnt = allLeads.filter(l => l.lead_type === 'HOT' && !['won', 'lost', 'disqualified'].includes(l.status)).length;
+    const qualifiedCnt = allLeads.filter(l => l.status === 'qualified').length;
+    const staleCnt = allLeads.filter(l => !['won', 'lost', 'disqualified'].includes(l.status) && (l.days_since_contact === null || l.days_since_contact >= 3) && l.days_since_created >= 3).length;
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
+    const wonRecent = allLeads.filter(l => l.status === 'won' && l.converted_at && new Date(l.converted_at) >= thirtyDaysAgo);
+    const wonValue = wonRecent.reduce((s, l) => s + (l.estimated_value || 0), 0);
+
+    document.getElementById('kpi-new').textContent = fmt.num(newCnt);
+    document.getElementById('kpi-hot').textContent = fmt.num(hotCnt);
+    document.getElementById('kpi-qualified').textContent = fmt.num(qualifiedCnt);
+    document.getElementById('kpi-stale').textContent = fmt.num(staleCnt);
+    document.getElementById('kpi-won').textContent = fmt.num(wonRecent.length);
+    document.getElementById('kpi-won-sub').textContent = `~ ${fmt.money(wonValue)} wartości`;
+}
+
+// ======== LIST VIEW ========
+function renderList() {
+    const rows = filterLeads();
+    const tbody = document.getElementById('list-tbody');
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><i class="ph ph-magnet"></i><div>Brak leadów dla tych filtrów</div></td></tr>';
+        return;
+    }
+    tbody.innerHTML = rows.map(l => {
+        const name = (l.first_name || l.last_name) ? `${l.last_name || ''} ${l.first_name || ''}`.trim() : (l.name || '—');
+        const score = l.lead_score || 0;
+        const scoreColor = score >= 60 ? 'var(--danger)' : score >= 35 ? 'var(--warn)' : 'var(--accent)';
+        const daysAgoBadge = l.days_since_contact === null ? 'bez kontaktu' : `${l.days_since_contact}d`;
+        const contactClass = l.days_since_contact === null || l.days_since_contact >= 3 ? 'text-amber-300' : 'text-tertiary';
+
+        return `<tr class="clickable" onclick="location.href='lead.html?id=${l.id}'">
+            <td>
+                <div class="lead-name-cell">
+                    ${window.avatar(name, 'sm')}
+                    <div class="min-w-0">
+                        <div class="text-sm text-white truncate">${esc(name)}</div>
+                        <div class="lead-contact">${esc(l.phone || '')}${l.email ? ' · ' + esc(l.email) : ''}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="st st-${l.status}">${STATUS_LABELS[l.status] || l.status}</span></td>
+            <td>${l.lead_type ? `<span class="lt-badge lt-${l.lead_type}">${l.lead_type}</span>` : '—'}</td>
+            <td class="text-right">
+                <div class="score-bar justify-end">
+                    <div class="score-bar-track"><div class="score-bar-fill" style="width: ${Math.min(100, score)}%; background: ${scoreColor}"></div></div>
+                    <span style="color: ${scoreColor}">${score}</span>
+                </div>
+            </td>
+            <td class="text-xs text-zinc-400">
+                <div>${esc(PERMIT_LABELS[l.permit_type] || l.permit_type || '—')}</div>
+                ${l.situation ? `<div class="text-zinc-600">${esc(SITUATION_LABELS[l.situation] || l.situation)}</div>` : ''}
+            </td>
+            <td class="text-xs text-zinc-400">${esc(l.location || '—')}</td>
+            <td class="text-xs text-zinc-400">${l.assigned_name ? esc(l.assigned_name) : '<span class="text-amber-400">nieprzypisany</span>'}</td>
+            <td class="text-right text-xs text-zinc-500 mono">${fmt.daysAgo(l.created_at)}</td>
+            <td class="text-right text-xs mono ${contactClass}">${daysAgoBadge}</td>
+        </tr>`;
+    }).join('');
+}
+
+function resetFilters() {
+    ['f-search', 'f-status', 'f-type', 'f-permit', 'f-assigned'].forEach(id => document.getElementById(id).value = '');
+    renderAll();
+}
+
+function exportLeadsCSV() {
+    const rows = filterLeads();
+    const exportRows = rows.map(l => ({
+        name: (l.first_name || l.last_name) ? `${l.last_name || ''} ${l.first_name || ''}`.trim() : (l.name || ''),
+        phone: l.phone || '',
+        email: l.email || '',
+        status: STATUS_LABELS[l.status] || l.status,
+        lead_type: l.lead_type || '',
+        score: l.lead_score || 0,
+        permit: PERMIT_LABELS[l.permit_type] || '',
+        situation: SITUATION_LABELS[l.situation] || '',
+        location: l.location || '',
+        assigned: l.assigned_name || '',
+        created: l.created_at,
+        details: l.details || '',
+    }));
+    exportCsv('leady', exportRows, [
+        ['Imię i nazwisko', 'name'], ['Telefon', 'phone'], ['Email', 'email'],
+        ['Status', 'status'], ['Jakość', 'lead_type'], ['Score', 'score'],
+        ['Typ sprawy', 'permit'], ['Sytuacja', 'situation'], ['Lokalizacja', 'location'],
+        ['Opiekun', 'assigned'], ['Data wpływu', 'created'], ['Szczegóły', 'details'],
+    ]);
+}
+</script>
+
+</body>
+</html>

@@ -45,10 +45,11 @@
                             <th>Email</th>
                             <th class="text-right">Klientów</th>
                             <th class="text-right">Spraw</th>
+                            <th class="row-open"></th>
                         </tr>
                     </thead>
                     <tbody id="tbody">
-                        <tr><td colspan="7" class="p-4 text-zinc-500 text-center"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        <tr><td colspan="8" class="p-4 text-zinc-500 text-center"><span class="spinner mr-2"></span>Ładuję...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -81,12 +82,12 @@ async function loadList() {
     q = q.order('name').range(from, from + PAGE_SIZE - 1);
     const { data, error, count } = await q;
     const tbody = document.getElementById('tbody');
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
     totalRows = count || 0;
     document.getElementById('count').textContent = `${fmt.num(totalRows)} pracodawców`;
 
     if (!data?.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ph ph-buildings"></i><div>Brak</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="ph ph-buildings"></i><div>Brak</div></td></tr>';
         renderPagination(); return;
     }
 
@@ -109,6 +110,7 @@ async function loadList() {
             <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(e.contact_email || '')}</td>
             <td class="text-right text-xs">${cByEmp[e.id] || 0}</td>
             <td class="text-right text-xs">${caseByEmp[e.id] || 0}</td>
+            <td class="row-open">${window.rowOpen()}</td>
         </tr>`).join('');
     renderPagination();
 }

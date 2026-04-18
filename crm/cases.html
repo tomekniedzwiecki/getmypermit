@@ -13,6 +13,10 @@
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
     <script src="components/modals.js" defer></script>
+    <script src="components/bulk-modal.js" defer></script>
+    <script src="components/tags.js" defer></script>
+    <script src="components/inline-edit.js" defer></script>
+    <script src="components/saved-views.js" defer></script>
 </head>
 <body>
 <div class="app-layout">
@@ -138,13 +142,27 @@
             </div>
         </div>
 
+        <!-- Saved views -->
+        <div id="saved-views-bar" class="mb-3"></div>
+
+        <!-- Tag filter chips -->
+        <div id="tag-filter-bar" class="flex items-center gap-2 mb-3 flex-wrap">
+            <span class="text-xs text-zinc-500 flex items-center gap-1"><i class="ph ph-tag"></i> Tagi:</span>
+            <div id="tag-filters" class="flex gap-1 flex-wrap"></div>
+        </div>
+
         <!-- Bulk actions bar -->
-        <div id="bulk-bar" class="hidden card p-3 mb-3" style="background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3)">
-            <div class="flex items-center gap-3 flex-wrap">
-                <span class="text-sm text-white">Zaznaczono <span id="bulk-count" class="font-bold">0</span> spraw</span>
-                <button class="btn btn-secondary btn-sm" onclick="bulkAssignStaff()"><i class="ph ph-user"></i> Przypisz opiekuna</button>
-                <button class="btn btn-secondary btn-sm" onclick="bulkChangeStatus()"><i class="ph ph-arrows-left-right"></i> Zmień status</button>
-                <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.case-chk').forEach(c => c.checked = false); document.getElementById('sel-all').checked = false; updateBulkBar();">Wyczyść</button>
+        <div id="bulk-bar" class="hidden card p-3 mb-3" style="background: var(--accent-subtle); border-color: var(--accent-border)">
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-sm text-white flex items-center gap-2 mr-2"><i class="ph ph-check-square-offset text-accent"></i> Zaznaczono <span id="bulk-count" class="font-bold">0</span></span>
+                <button class="btn btn-secondary btn-sm" onclick="bulkAssignStaff()"><i class="ph ph-user"></i> Opiekun</button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkChangeStatus()"><i class="ph ph-flag"></i> Status</button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkChangeStage()"><i class="ph ph-stack"></i> Etap</button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkChangeCategory()"><i class="ph ph-tag"></i> Kategoria</button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkAddTag()"><i class="ph ph-plus-circle"></i> Dodaj tag</button>
+                <button class="btn btn-secondary btn-sm" onclick="bulkPin()"><i class="ph ph-push-pin"></i> Przypnij</button>
+                <button class="btn btn-secondary btn-sm text-red-400" onclick="bulkDelete()"><i class="ph ph-trash"></i> Usuń</button>
+                <button class="btn btn-ghost btn-sm ml-auto" onclick="clearSelection()">Wyczyść</button>
             </div>
         </div>
 
@@ -164,13 +182,15 @@
                             <th data-sort="status">Status</th>
                             <th data-sort="stage">Etap</th>
                             <th data-sort="staff">Opiekun</th>
+                            <th>Tagi</th>
                             <th data-sort="date_accepted">Przyjęta</th>
                             <th class="text-right" data-sort="fee_amount">Kwota</th>
                             <th class="text-right" data-sort="date_last_activity">Ostatnia akt.</th>
+                            <th class="row-open"></th>
                         </tr>
                     </thead>
                     <tbody id="cases-tbody">
-                        <tr><td colspan="11" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        <tr><td colspan="15" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -212,6 +232,45 @@ async function init() {
     });
 
     await loadFilters();
+    await renderTagFilters();
+
+    // Saved views
+    if (window.gmpSavedViews) {
+        gmpSavedViews.init({
+            page: 'cases',
+            container: document.getElementById('saved-views-bar'),
+            getCurrentFilters: () => ({
+                search: document.getElementById('f-search').value,
+                status: document.getElementById('f-status').value,
+                stage: document.getElementById('f-stage').value,
+                category: document.getElementById('f-category').value,
+                staff: document.getElementById('f-staff').value,
+                department: document.getElementById('f-department').value,
+                employer: document.getElementById('f-employer').value,
+                method: document.getElementById('f-method').value,
+                date_from: document.getElementById('f-date-from').value,
+                date_to: document.getElementById('f-date-to').value,
+                tags: [...activeTagFilters],
+            }),
+            applyFilters: (f) => {
+                document.getElementById('f-search').value = f.search || '';
+                document.getElementById('f-status').value = f.status || '';
+                document.getElementById('f-stage').value = f.stage || '';
+                document.getElementById('f-category').value = f.category || '';
+                document.getElementById('f-staff').value = f.staff || '';
+                document.getElementById('f-department').value = f.department || '';
+                document.getElementById('f-employer').value = f.employer || '';
+                document.getElementById('f-method').value = f.method || '';
+                document.getElementById('f-date-from').value = f.date_from || '';
+                document.getElementById('f-date-to').value = f.date_to || '';
+                activeTagFilters = f.tags || [];
+                currentPage = 1;
+                renderTagFilters();
+                loadCases();
+            },
+        });
+    }
+
     await loadCases();
 
     // Obsluga filtrow
@@ -364,9 +423,30 @@ function buildQuery() {
 
 async function loadCases() {
     const tbody = document.getElementById('cases-tbody');
-    tbody.innerHTML = '<tr><td colspan="11" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="15" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>';
 
     const search = document.getElementById('f-search').value.trim();
+
+    // Tag filter: pre-fetch case_ids z wybranymi tagami (AND między tagami)
+    let tagCaseIds = null;
+    if (activeTagFilters.length) {
+        const { data: tagRows } = await db.from('gmp_entity_tags')
+            .select('entity_id, tag_id')
+            .eq('entity_type', 'case')
+            .in('tag_id', activeTagFilters);
+        const counts = {};
+        (tagRows || []).forEach(r => counts[r.entity_id] = (counts[r.entity_id] || 0) + 1);
+        tagCaseIds = Object.entries(counts)
+            .filter(([_, cnt]) => cnt === activeTagFilters.length)
+            .map(([id, _]) => id);
+        if (!tagCaseIds.length) {
+            totalRows = 0;
+            document.getElementById('page-count').textContent = '0 spraw (brak z wybranymi tagami)';
+            tbody.innerHTML = '<tr><td colspan="15" class="empty-state"><i class="ph ph-tag"></i><div>Brak spraw z wybranymi tagami</div></td></tr>';
+            renderPagination();
+            return;
+        }
+    }
 
     // Strategia dla search po client name: najpierw znajdujemy client_id, potem filtrujemy
     let clientIdFilter = null;
@@ -414,6 +494,9 @@ async function loadCases() {
         if (dTo) q = q.lte('date_accepted', dTo);
     }
 
+    // Tag filter
+    if (tagCaseIds) q = q.in('id', tagCaseIds);
+
     const from = (currentPage - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     q = q.order('is_pinned', { ascending: false })
@@ -423,7 +506,7 @@ async function loadCases() {
 
     const { data, error, count } = await q;
     if (error) {
-        tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-red-400">Błąd: ${esc(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="15" class="p-6 text-center text-red-400">Błąd: ${esc(error.message)}</td></tr>`;
         return;
     }
 
@@ -431,17 +514,21 @@ async function loadCases() {
     document.getElementById('page-count').textContent = `${fmt.num(totalRows)} spraw`;
 
     if (!data?.length) {
-        tbody.innerHTML = '<tr><td colspan="11" class="empty-state"><i class="ph ph-folder-open"></i><div>Brak spraw dla tych filtrów</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="15" class="empty-state"><i class="ph ph-folder-open"></i><div>Brak spraw dla tych filtrów</div></td></tr>';
         renderPagination();
         return;
     }
 
     currentData = data;
+    // Fetch tagów dla wszystkich spraw na stronie
+    tagsByCase = window.gmpTags ? await gmpTags.fetchForEntities('case', data.map(r => r.id)) : {};
     renderRows();
     renderPagination();
 }
 
 let currentData = [];
+let tagsByCase = {};
+let activeTagFilters = []; // tag IDs
 
 function renderRows() {
     const tbody = document.getElementById('cases-tbody');
@@ -451,35 +538,110 @@ function renderRows() {
         const staff = row.gmp_staff?.full_name ? esc(row.gmp_staff.full_name) : '<span class="text-zinc-600">—</span>';
         const staffAva = row.gmp_staff?.full_name ? window.avatar(row.gmp_staff.full_name, 'sm') : '';
         const nr = row.case_number || (row.znak_sprawy ? row.znak_sprawy.slice(-20) : row.id.slice(0, 8));
+        const caseTags = tagsByCase[row.id] || [];
+        const tagsHTML = caseTags.length
+            ? `<div class="tag-dots">${caseTags.slice(0, 4).map(t => gmpTags.dot(t)).join('')}${caseTags.length > 4 ? `<span class="text-xs text-zinc-500">+${caseTags.length - 4}</span>` : ''}</div>`
+            : '';
         return `
             <tr class="clickable" data-id="${row.id}">
                 <td onclick="event.stopPropagation()"><input type="checkbox" class="case-chk" value="${row.id}"></td>
                 <td onclick="togglePin('${row.id}', ${row.is_pinned ? 'true' : 'false'}); event.stopPropagation();" style="cursor: pointer">
                     <i class="ph ${row.is_pinned ? 'ph-fill ph-push-pin text-amber-400' : 'ph-push-pin text-zinc-700'}" title="${row.is_pinned ? 'Odepnij' : 'Przypnij'}"></i>
                 </td>
-                <td class="font-mono text-xs row-nav">${esc(nr)}</td>
-                <td class="row-nav">${client}</td>
-                <td class="text-zinc-300 text-xs row-nav">${employer}</td>
-                <td class="text-zinc-400 text-xs row-nav">${esc(row.case_type || '—')}</td>
-                <td class="text-xs row-nav">${row.category ? `<span class="badge badge-category">${esc(row.category)}</span>` : ''}</td>
-                <td class="row-nav"><span class="badge badge-${row.status}">${esc(row.status || '—')}</span></td>
-                <td class="text-xs row-nav">${row.stage ? `<span class="badge badge-stage">${esc(row.stage)}</span>` : ''}</td>
-                <td class="text-zinc-300 text-xs row-nav"><div class="flex items-center gap-2">${staffAva}<span>${staff}</span></div></td>
-                <td class="text-zinc-500 text-xs row-nav">${fmt.date(row.date_accepted)}</td>
-                <td class="text-right font-mono text-xs ${row.fee_amount ? 'text-emerald-300' : 'text-zinc-600'} row-nav">${row.fee_amount ? fmt.money(row.fee_amount) : '—'}</td>
-                <td class="text-right text-zinc-500 text-xs row-nav">${fmt.daysAgo(row.date_last_activity)}</td>
+                <td class="font-mono text-xs">${esc(nr)}</td>
+                <td>${client}</td>
+                <td class="text-zinc-300 text-xs">${employer}</td>
+                <td class="text-zinc-400 text-xs">${esc(row.case_type || '—')}</td>
+                <td class="text-xs">${row.category ? `<span class="badge badge-category">${esc(row.category)}</span>` : ''}</td>
+                <td data-edit-status="${row.id}" data-val="${esc(row.status || '')}" onclick="event.stopPropagation()"><span class="badge badge-${row.status}">${esc(row.status || '—')}</span></td>
+                <td class="text-xs" data-edit-stage="${row.id}" data-val="${esc(row.stage || '')}" onclick="event.stopPropagation()">${row.stage ? `<span class="badge badge-stage">${esc(row.stage)}</span>` : '<span class="text-zinc-600">—</span>'}</td>
+                <td class="text-zinc-300 text-xs" data-edit-staff="${row.id}" data-val="${esc(row.assigned_to || '')}" onclick="event.stopPropagation()"><div class="flex items-center gap-2">${staffAva}<span>${staff}</span></div></td>
+                <td>${tagsHTML}</td>
+                <td class="text-zinc-500 text-xs">${fmt.date(row.date_accepted)}</td>
+                <td class="text-right font-mono text-xs ${row.fee_amount ? 'text-emerald-300' : 'text-zinc-600'}">${row.fee_amount ? fmt.money(row.fee_amount) : '—'}</td>
+                <td class="text-right text-zinc-500 text-xs">${fmt.daysAgo(row.date_last_activity)}</td>
+                <td class="row-open">${window.rowOpen()}</td>
             </tr>`;
     }).join('');
 
-    // Navigation handlers
-    tbody.querySelectorAll('tr').forEach(tr => {
-        const id = tr.dataset.id;
-        tr.querySelectorAll('.row-nav').forEach(td => {
-            td.addEventListener('click', () => window.location.href = 'case.html?id=' + id);
-        });
+    // Cały wiersz klikalny - navigacja do case.html
+    tbody.querySelectorAll('tr.clickable').forEach(tr => {
+        tr.addEventListener('click', () => window.location.href = 'case.html?id=' + tr.dataset.id);
     });
     tbody.querySelectorAll('.case-chk').forEach(chk => {
         chk.addEventListener('change', updateBulkBar);
+    });
+    attachInlineEdits();
+}
+
+function attachInlineEdits() {
+    if (!window.gmpInlineEdit) return;
+
+    const STATUS_OPTS = [
+        { value: 'lead', label: 'Lead' },
+        { value: 'zlecona', label: 'Zlecona' },
+        { value: 'aktywna', label: 'Aktywna' },
+        { value: 'zakonczona', label: 'Zakończona' },
+        { value: 'archiwum', label: 'Archiwum' },
+    ];
+    const STAGE_OPTS = [
+        { value: 'weryfikacja_dokumentow', label: 'Weryfikacja dok.' },
+        { value: 'zlozenie_wniosku', label: 'Złożenie wniosku' },
+        { value: 'oczekiwanie_na_osobiste', label: 'Oczek. osobiste' },
+        { value: 'wyznaczono_termin', label: 'Wyznaczony termin' },
+        { value: 'po_osobistym', label: 'Po osobistym' },
+        { value: 'oczekiwanie_na_decyzje', label: 'Oczek. decyzji' },
+        { value: 'zakonczenie', label: 'Zakończenie' },
+        { value: 'odwolanie', label: 'Odwołanie' },
+        { value: 'umorzenie', label: 'Umorzenie' },
+    ];
+    const STAFF_OPTS = [
+        { value: '', label: '(nieprzypisany)' },
+        ...staffList.map(s => ({ value: s.id, label: s.full_name })),
+    ];
+
+    document.querySelectorAll('[data-edit-status]').forEach(cell => {
+        const caseId = cell.dataset.editStatus;
+        gmpInlineEdit.attach(cell, {
+            value: cell.dataset.val,
+            options: STATUS_OPTS,
+            display: (v) => `<span class="badge badge-${v}">${v}</span>`,
+            onSave: async (newVal) => {
+                const { error } = await db.from('gmp_cases').update({ status: newVal }).eq('id', caseId);
+                if (error) throw error;
+            },
+        });
+    });
+    document.querySelectorAll('[data-edit-stage]').forEach(cell => {
+        const caseId = cell.dataset.editStage;
+        gmpInlineEdit.attach(cell, {
+            value: cell.dataset.val,
+            options: STAGE_OPTS,
+            placeholder: '(brak etapu)',
+            display: (v) => v ? `<span class="badge badge-stage">${v}</span>` : '<span class="text-zinc-600">—</span>',
+            onSave: async (newVal) => {
+                const { error } = await db.from('gmp_cases').update({ stage: newVal || null }).eq('id', caseId);
+                if (error) throw error;
+            },
+        });
+    });
+    document.querySelectorAll('[data-edit-staff]').forEach(cell => {
+        const caseId = cell.dataset.editStaff;
+        gmpInlineEdit.attach(cell, {
+            value: cell.dataset.val,
+            options: STAFF_OPTS,
+            placeholder: null,
+            display: (v, opt) => {
+                if (!v) return '<span class="text-zinc-600">—</span>';
+                const staff = staffList.find(s => s.id === v);
+                const ava = staff ? window.avatar(staff.full_name, 'sm') : '';
+                return `<div class="flex items-center gap-2">${ava}<span>${esc(opt?.label || v)}</span></div>`;
+            },
+            onSave: async (newVal) => {
+                const { error } = await db.from('gmp_cases').update({ assigned_to: newVal || null }).eq('id', caseId);
+                if (error) throw error;
+            },
+        });
     });
 }
 
@@ -502,30 +664,254 @@ function updateBulkBar() {
     }
 }
 
+// ======== TAG FILTERS ========
+async function renderTagFilters() {
+    const all = await gmpTags.loadAll();
+    const el = document.getElementById('tag-filters');
+    if (!all.length) { el.innerHTML = '<span class="text-xs text-zinc-600">brak tagów</span>'; return; }
+    el.innerHTML = all.map(t => {
+        const active = activeTagFilters.includes(t.id);
+        return `<button class="tag-chip tag-chip-sm" data-tag-id="${t.id}" style="--tag-color: ${t.color}; ${active ? 'box-shadow: 0 0 0 1.5px ' + t.color : 'opacity: 0.55'}; cursor: pointer">
+            <span class="tag-dot"></span>${esc(t.name)}
+        </button>`;
+    }).join('');
+    el.querySelectorAll('[data-tag-id]').forEach(btn => btn.addEventListener('click', () => {
+        const id = btn.dataset.tagId;
+        const idx = activeTagFilters.indexOf(id);
+        if (idx >= 0) activeTagFilters.splice(idx, 1);
+        else activeTagFilters.push(id);
+        currentPage = 1;
+        renderTagFilters();
+        loadCases();
+    }));
+}
+
+// ======== BULK HELPERS ========
+function getSelectedIds() {
+    return Array.from(document.querySelectorAll('.case-chk:checked')).map(c => c.value);
+}
+
+function clearSelection() {
+    document.querySelectorAll('.case-chk').forEach(c => c.checked = false);
+    document.getElementById('sel-all').checked = false;
+    updateBulkBar();
+}
+
 async function bulkAssignStaff() {
-    const selected = Array.from(document.querySelectorAll('.case-chk:checked')).map(c => c.value);
-    if (!selected.length) return;
-    const { data: staffList } = await db.from('gmp_staff').select('id, full_name').order('full_name');
-    const opts = staffList.map((s, i) => `${i+1}. ${s.full_name}`).join('\n');
-    const pick = prompt(`Przypisz ${selected.length} spraw do opiekuna. Wybierz numer:\n${opts}`);
-    const idx = parseInt(pick) - 1;
-    if (isNaN(idx) || !staffList[idx]) return;
-    const { error } = await db.from('gmp_cases').update({ assigned_to: staffList[idx].id }).in('id', selected);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Przypisano ${selected.length} spraw do ${staffList[idx].full_name}`);
-    loadCases();
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    gmpBulk.open({
+        title: 'Przypisz opiekuna',
+        count: ids.length,
+        fields: [
+            {
+                type: 'select', name: 'assigned_to', label: 'Opiekun', required: true,
+                placeholder: '— wybierz opiekuna —',
+                options: [
+                    { value: '__null__', label: '(usuń przypisanie)' },
+                    ...staffList.map(s => ({ value: s.id, label: s.full_name })),
+                ],
+            },
+            { type: 'textarea', name: 'note', label: 'Notatka do historii (opcj.)', placeholder: 'np. przekazuję Annie - konflikt interesów' },
+        ],
+        confirmLabel: 'Przypisz',
+        onConfirm: async (values) => {
+            const staffId = values.assigned_to === '__null__' ? null : values.assigned_to;
+            const { error } = await db.from('gmp_cases').update({ assigned_to: staffId }).in('id', ids);
+            if (error) throw error;
+
+            // Optional: log activity
+            if (values.note) {
+                const staffName = staffId ? staffList.find(s => s.id === staffId)?.full_name : 'nieprzypisane';
+                await db.from('gmp_case_activities').insert(ids.map(case_id => ({
+                    case_id, activity_type: 'note',
+                    content: `[Bulk] Przypisanie → ${staffName}. ${values.note}`,
+                    created_by: window.currentStaff?.id,
+                })));
+            }
+            toast.success(`Przypisano ${ids.length} spraw`);
+            clearSelection();
+            loadCases();
+        },
+    });
 }
 
 async function bulkChangeStatus() {
-    const selected = Array.from(document.querySelectorAll('.case-chk:checked')).map(c => c.value);
-    if (!selected.length) return;
-    const statuses = ['lead', 'zlecona', 'aktywna', 'zakonczona', 'archiwum'];
-    const pick = prompt(`Zmień status ${selected.length} spraw. Wpisz:\n${statuses.join(' / ')}`);
-    if (!pick || !statuses.includes(pick.trim())) return;
-    const { error } = await db.from('gmp_cases').update({ status: pick.trim() }).in('id', selected);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Zmieniono status ${selected.length} spraw`);
-    loadCases();
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    gmpBulk.open({
+        title: 'Zmień status spraw',
+        count: ids.length,
+        fields: [
+            {
+                type: 'radio', name: 'status', label: 'Nowy status', required: true,
+                options: [
+                    { value: 'lead', label: 'Lead', description: 'Nowy, niezatwierdzony' },
+                    { value: 'zlecona', label: 'Zlecona', description: 'Podpisana umowa, czeka na start' },
+                    { value: 'aktywna', label: 'Aktywna', description: 'W toku' },
+                    { value: 'zakonczona', label: 'Zakończona', description: 'Decyzja / finał' },
+                    { value: 'archiwum', label: 'Archiwum', description: 'Nieaktualna, zamknięta' },
+                ],
+            },
+        ],
+        confirmLabel: 'Zmień status',
+        onConfirm: async (values) => {
+            const { error } = await db.from('gmp_cases').update({ status: values.status }).in('id', ids);
+            if (error) throw error;
+            toast.success(`Zmieniono status ${ids.length} spraw`);
+            clearSelection();
+            loadCases();
+        },
+    });
+}
+
+async function bulkChangeStage() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    gmpBulk.open({
+        title: 'Zmień etap postępowania',
+        count: ids.length,
+        fields: [
+            {
+                type: 'select', name: 'stage', label: 'Nowy etap', required: true,
+                placeholder: '— wybierz etap —',
+                options: [
+                    { value: 'weryfikacja_dokumentow', label: 'Weryfikacja dokumentów' },
+                    { value: 'zlozenie_wniosku', label: 'Złożenie wniosku' },
+                    { value: 'oczekiwanie_na_osobiste', label: 'Oczekiwanie na osobiste' },
+                    { value: 'wyznaczono_termin', label: 'Wyznaczony termin' },
+                    { value: 'po_osobistym', label: 'Po osobistym' },
+                    { value: 'oczekiwanie_na_decyzje', label: 'Oczekiwanie na decyzję' },
+                    { value: 'zakonczenie', label: 'Zakończenie' },
+                    { value: 'odwolanie', label: 'Odwołanie' },
+                    { value: 'umorzenie', label: 'Umorzenie' },
+                ],
+            },
+        ],
+        confirmLabel: 'Zmień etap',
+        onConfirm: async (values) => {
+            const { error } = await db.from('gmp_cases').update({ stage: values.stage }).in('id', ids);
+            if (error) throw error;
+            toast.success(`Zmieniono etap ${ids.length} spraw`);
+            clearSelection();
+            loadCases();
+        },
+    });
+}
+
+async function bulkChangeCategory() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    gmpBulk.open({
+        title: 'Zmień kategorię',
+        count: ids.length,
+        fields: [
+            {
+                type: 'select', name: 'category', label: 'Kategoria', required: true,
+                placeholder: '— wybierz kategorię —',
+                options: [
+                    { value: 'pobyt', label: 'Pobyt' },
+                    { value: 'rezydent', label: 'Rezydent dł.-term.' },
+                    { value: 'zezwolenie_a', label: 'Zezwolenie typ A' },
+                    { value: 'smart_work', label: 'Smart Work' },
+                    { value: 'pozostale', label: 'Pozostałe' },
+                    { value: 'rozliczenie_historyczne', label: 'Historyczne' },
+                ],
+            },
+        ],
+        confirmLabel: 'Zmień kategorię',
+        onConfirm: async (values) => {
+            const { error } = await db.from('gmp_cases').update({ category: values.category }).in('id', ids);
+            if (error) throw error;
+            toast.success(`Zmieniono kategorię ${ids.length} spraw`);
+            clearSelection();
+            loadCases();
+        },
+    });
+}
+
+async function bulkPin() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    gmpBulk.open({
+        title: 'Przypinanie spraw',
+        count: ids.length,
+        fields: [
+            {
+                type: 'radio', name: 'action', label: 'Akcja', required: true,
+                options: [
+                    { value: 'pin', label: 'Przypnij', description: 'Sprawy pojawią się na górze listy' },
+                    { value: 'unpin', label: 'Odepnij', description: 'Powrót do normalnej kolejności' },
+                ],
+            },
+        ],
+        confirmLabel: 'Wykonaj',
+        onConfirm: async (values) => {
+            const pinned = values.action === 'pin';
+            const { error } = await db.from('gmp_cases').update({ is_pinned: pinned }).in('id', ids);
+            if (error) throw error;
+            toast.success(`${pinned ? 'Przypięto' : 'Odpięto'} ${ids.length} spraw`);
+            clearSelection();
+            loadCases();
+        },
+    });
+}
+
+async function bulkAddTag() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    const allTags = await gmpTags.loadAll();
+    gmpBulk.open({
+        title: 'Dodaj tag do spraw',
+        count: ids.length,
+        fields: [
+            {
+                type: 'select', name: 'tag_id', label: 'Tag', required: true,
+                placeholder: '— wybierz tag —',
+                options: allTags.map(t => ({ value: t.id, label: t.name })),
+            },
+        ],
+        confirmLabel: 'Dodaj tag',
+        onConfirm: async (values) => {
+            const rows = ids.map(case_id => ({
+                entity_type: 'case',
+                entity_id: case_id,
+                tag_id: values.tag_id,
+                added_by: window.currentStaff?.id,
+            }));
+            // Upsert — ignoruj duplikaty (unique constraint)
+            const { error } = await db.from('gmp_entity_tags').upsert(rows, {
+                onConflict: 'entity_type,entity_id,tag_id', ignoreDuplicates: true,
+            });
+            if (error) throw error;
+            toast.success(`Tag dodany do ${ids.length} spraw`);
+            clearSelection();
+            loadCases();
+        },
+    });
+}
+
+async function bulkDelete() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    gmpBulk.open({
+        title: 'Usuń sprawy',
+        count: ids.length,
+        description: 'Operacja nieodwracalna. Usunięte zostaną sprawy wraz z ich historią (notatki, zadania, płatności).',
+        fields: [
+            { type: 'text', name: 'confirm', label: `Wpisz "USUN" aby potwierdzić`, required: true, placeholder: 'USUN' },
+        ],
+        confirmLabel: 'Usuń na zawsze',
+        confirmClass: 'btn-primary',
+        onConfirm: async (values) => {
+            if (values.confirm !== 'USUN') throw new Error('Nieprawidłowe potwierdzenie');
+            const { error } = await db.from('gmp_cases').delete().in('id', ids);
+            if (error) throw error;
+            toast.success(`Usunięto ${ids.length} spraw`);
+            clearSelection();
+            loadCases();
+        },
+    });
 }
 
 function renderPagination() {

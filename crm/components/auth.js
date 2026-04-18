@@ -42,6 +42,18 @@
     if (error) throw error;
   }
 
+  async function sendPasswordReset(email) {
+    const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/crm/reset-password.html',
+    });
+    if (error) throw error;
+  }
+
+  async function updatePassword(newPassword) {
+    const { error } = await window.supabaseClient.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }
+
   async function logout() {
     await window.supabaseClient.auth.signOut();
     window.location.href = 'index.html';
@@ -62,7 +74,7 @@
   // Export
   window.gmpAuth = {
     getSession, getCurrentUser, getCurrentStaff,
-    login, sendMagicLink, logout,
+    login, sendMagicLink, sendPasswordReset, updatePassword, logout,
     enforceAuth,
   };
 

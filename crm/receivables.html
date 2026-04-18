@@ -94,69 +94,146 @@
 .age-4      { background: rgba(239,68,68,0.14); color: #fca5a5; }
 .age-5      { background: rgba(127,29,29,0.3); color: #fca5a5; }
 
-/* Worklist row - clean, minimal */
+/* === WORKLIST ROW - Linear-style clean grid === */
+.work-list { display: flex; flex-direction: column; gap: 6px; }
+
 .work-row {
     display: grid;
-    grid-template-columns: 36px 1fr auto auto;
-    gap: 16px;
+    grid-template-columns: 40px minmax(0, 1fr) 170px 136px;
     align-items: center;
+    gap: 16px;
     padding: 14px 16px;
+    background: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: var(--r-lg);
-    background: var(--bg-elevated);
-    transition: all 120ms;
+    transition: border-color 120ms, background 120ms;
+    min-height: 66px;
     position: relative;
+    text-decoration: none;
+    color: inherit;
 }
-.work-row:hover { border-color: var(--border-hover); }
-.work-row .row-actions { opacity: 0; transition: opacity 120ms; }
-.work-row:hover .row-actions { opacity: 1; }
-.work-row::before {
-    content: '';
-    position: absolute;
-    left: -1px;
-    top: 8px;
-    bottom: 8px;
-    width: 2px;
-    background: transparent;
-    border-radius: 2px;
-    transition: background 150ms;
+.work-row:hover {
+    border-color: var(--border-hover);
+    background: var(--bg);
 }
-.work-row[data-priority="high"]::before { background: var(--danger); }
-.work-row[data-priority="mid"]::before { background: var(--warn); }
+.work-row.prio-high { border-left: 2px solid var(--danger); }
+.work-row.prio-mid  { border-left: 2px solid var(--warn); }
+.work-row.prio-high, .work-row.prio-mid { padding-left: 15px; }
 
-.work-main { min-width: 0; }
-.work-title { font-size: var(--fs-md); font-weight: 500; color: var(--text); line-height: 1.3; }
-.work-sub { font-size: var(--fs-xs); color: var(--text-tertiary); margin-top: 3px; display: flex; gap: 8px; flex-wrap: wrap; }
-.work-sub .dot { color: var(--text-disabled); }
+.work-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 
+.work-title-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.work-name {
+    font-size: var(--fs-md);
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    line-height: 1.35;
+}
+.work-name:hover { color: var(--accent); }
+
+.work-meta-line {
+    font-size: var(--fs-xs);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.4;
+}
+.work-meta-line .sep { color: var(--text-disabled); flex-shrink: 0; }
+.work-meta-line > span { flex-shrink: 0; }
+.work-meta-line .flex-item { min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
+
+.work-amount-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+}
 .work-amount {
     font-family: 'JetBrains Mono', monospace;
     font-size: 16px;
     font-weight: 600;
     color: var(--text);
-    font-variant-numeric: tabular-nums;
-    text-align: right;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
 }
-.work-interest { font-size: var(--fs-xs); color: var(--warn); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.work-interest {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--warn);
+    margin-top: 2px;
+    letter-spacing: -0.01em;
+}
 
-.row-actions { display: flex; gap: 2px; }
-.row-action {
+.work-actions-col {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+    opacity: 0.55;
+    transition: opacity 100ms;
+}
+.work-row:hover .work-actions-col { opacity: 1; }
+
+.work-action {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 30px; height: 30px;
     border-radius: var(--r-md);
     color: var(--text-tertiary);
-    border: none;
     background: transparent;
+    border: none;
     cursor: pointer;
-    transition: all 100ms;
+    transition: background 100ms, color 100ms;
     font-size: 15px;
+    text-decoration: none;
+    flex-shrink: 0;
 }
-.row-action:hover { background: var(--bg-hover); color: var(--text); }
-.row-action.primary { color: var(--accent); }
-.row-action.primary:hover { background: var(--accent-subtle); }
+.work-action:hover:not(:disabled) { background: var(--bg-hover); color: var(--text); }
+.work-action:disabled { opacity: 0.25; cursor: not-allowed; }
+.work-action.is-call:hover { color: var(--success); }
+.work-action.is-wa:hover { color: #25d366; }
+.work-action.is-email:hover { color: var(--accent); }
+.work-action.is-danger:hover { color: var(--danger); }
+
+/* Inline badge pack for title line - small */
+.work-title-line .lvl,
+.work-title-line .age,
+.work-title-line .pill {
+    flex-shrink: 0;
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 7px;
+    border-radius: var(--r-sm);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    line-height: 1.6;
+}
+.pill-warn   { background: var(--warn-subtle);    color: #fcd34d; }
+.pill-danger { background: var(--danger-subtle);  color: #fca5a5; }
+.pill-success { background: var(--success-subtle); color: #6ee7b7; }
+.pill-muted  { background: var(--bg-subtle);     color: var(--text-tertiary); }
+.pill i { font-size: 10px; }
 
 /* Dropdown menu */
 .dropdown {
@@ -214,6 +291,9 @@
                 <p class="page-subtitle">Aktywny proces odzyskiwania należności</p>
             </div>
             <div class="flex gap-2">
+                <button class="btn btn-secondary btn-sm" onclick="runAutomation()" title="Eskaluje poziomy, tworzy zadania dla opiekunów">
+                    <i class="ph ph-robot"></i> Uruchom automatyzację
+                </button>
                 <button class="btn btn-secondary btn-sm" onclick="refreshPriorities()">
                     <i class="ph ph-arrow-clockwise"></i> Przelicz priorytety
                 </button>
@@ -355,12 +435,11 @@ function render() {
 }
 
 function workRow(c) {
-    const client = (c.last_name || '—') + ' ' + (c.first_name || '');
+    const client = ((c.last_name || '—') + ' ' + (c.first_name || '')).trim();
     const age = getAgeDays(c);
     const bucket = getBucket(age);
     const interest = age ? calcInterest(c.remaining_amount, age) : 0;
-    const priorityClass = c.priority_score >= 70 ? 'high' : (c.priority_score >= 45 ? 'mid' : '');
-    const contact = hasContact(c);
+    const prioClass = c.priority_score >= 70 ? 'prio-high' : (c.priority_score >= 45 ? 'prio-mid' : '');
 
     const phoneDigits = (c.phone || '').replace(/\D/g, '');
     const phoneIntl = phoneDigits && !phoneDigits.startsWith('48') ? '48' + phoneDigits : phoneDigits;
@@ -369,40 +448,51 @@ function workRow(c) {
     const callUrl = phoneDigits ? `tel:${phoneIntl || phoneDigits}` : null;
 
     const promiseDue = c.promise_to_pay_date && c.promise_to_pay_date < new Date().toISOString().slice(0, 10);
-    const promiseLabel = promiseDue ? `<span class="lvl lvl-demand_final"><i class="ph ph-x-circle"></i>&nbsp;obietnica niedotrzymana</span>` :
-                       (c.promise_to_pay_date ? `<span class="lvl lvl-reminder_soft"><i class="ph ph-handshake"></i>&nbsp;obiecał ${fmt.date(c.promise_to_pay_date)}</span>` : '');
+
+    // Status pills in title line (max 1-2 to keep clean)
+    const pills = [];
+    if (promiseDue) pills.push(`<span class="pill pill-danger"><i class="ph ph-x-circle"></i>obietnica niedotrzymana</span>`);
+    else if (c.promise_to_pay_date) pills.push(`<span class="pill pill-success"><i class="ph ph-handshake"></i>obiecał ${fmt.date(c.promise_to_pay_date)}</span>`);
+    if (!hasContact(c)) pills.push(`<span class="pill pill-warn"><i class="ph ph-phone-slash"></i>brak kontaktu</span>`);
+
+    // Meta line - compact
+    const metaBits = [];
+    if (c.case_number) metaBits.push(`<span class="mono">#${esc(c.case_number)}</span>`);
+    if (c.employer_name) metaBits.push(`<span class="flex-item">${esc(c.employer_name)}</span>`);
+    metaBits.push(c.assigned_name ? `<span>${esc(c.assigned_name)}</span>` : `<span class="text-warn">nieprzypisana</span>`);
+    if (c.phone) metaBits.push(`<span class="mono">${esc(c.phone)}</span>`);
+    if (c.last_contact_at) metaBits.push(`<span>ostatni kontakt: ${fmt.daysAgo(c.last_contact_at)}</span>`);
 
     return `
-    <div class="work-row" data-priority="${priorityClass}" data-id="${c.collection_id}">
+    <div class="work-row ${prioClass}" data-id="${c.collection_id}">
         ${window.avatar(client)}
+
         <div class="work-main">
-            <div class="flex items-center gap-2 flex-wrap">
-                <a href="case.html?id=${c.case_id}" class="work-title hover:text-accent hover:underline">${esc(client)}</a>
+            <div class="work-title-line">
+                <a href="case.html?id=${c.case_id}" class="work-name">${esc(client)}</a>
                 <span class="lvl lvl-${c.level}">${LEVEL_LABELS[c.level] || c.level}</span>
                 ${bucket ? `<span class="age ${bucket.cls}">${age}d</span>` : ''}
-                ${promiseLabel}
-                ${!contact ? `<span class="lvl lvl-demand_final"><i class="ph ph-phone-slash"></i>&nbsp;brak kontaktu</span>` : ''}
+                ${pills.join('')}
             </div>
-            <div class="work-sub">
-                ${c.case_number ? `<span class="mono">#${esc(c.case_number)}</span>` : ''}
-                ${c.employer_name ? `<span class="dot">·</span><span>${esc(c.employer_name)}</span>` : ''}
-                ${c.assigned_name ? `<span class="dot">·</span><span>${esc(c.assigned_name)}</span>` : '<span class="dot">·</span><span class="text-warn">nieprzypisana</span>'}
-                ${c.phone ? `<span class="dot">·</span><span class="mono">${esc(c.phone)}</span>` : ''}
-                ${c.last_contact_at ? `<span class="dot">·</span><span>ostatni kontakt ${fmt.daysAgo(c.last_contact_at)}</span>` : ''}
+            <div class="work-meta-line">
+                ${metaBits.join('<span class="sep">·</span>')}
             </div>
         </div>
-        <div>
+
+        <div class="work-amount-col">
             <div class="work-amount">${fmt.money(c.remaining_amount)}</div>
             ${interest > 50 ? `<div class="work-interest">+${fmt.money(interest)} odsetki</div>` : ''}
         </div>
-        <div class="row-actions">
-            ${callUrl ? `<a href="${callUrl}" class="row-action primary" onclick="logActivity('${c.collection_id}', 'phone_call')" title="Zadzwoń"><i class="ph ph-phone-call"></i></a>` : ''}
-            ${waUrl ? `<a href="${waUrl}" target="_blank" class="row-action" onclick="logActivity('${c.collection_id}', 'whatsapp')" title="WhatsApp"><i class="ph ph-whatsapp-logo"></i></a>` : ''}
-            ${mailUrl ? `<a href="${mailUrl}" class="row-action" onclick="logActivity('${c.collection_id}', 'email')" title="Email"><i class="ph ph-envelope"></i></a>` : ''}
-            <button class="row-action" onclick="openLogModal('${c.collection_id}')" title="Zapisz kontakt"><i class="ph ph-chat-text"></i></button>
-            <button class="row-action" onclick="openPromiseModal('${c.collection_id}')" title="Obietnica zapłaty"><i class="ph ph-handshake"></i></button>
-            <button class="row-action" onclick="generateDemandPDF('${c.collection_id}')" title="Generuj wezwanie PDF"><i class="ph ph-file-pdf"></i></button>
-            <button class="row-action" onclick="openMoreMenu(event, '${c.collection_id}')" title="Więcej"><i class="ph ph-dots-three"></i></button>
+
+        <div class="work-actions-col">
+            ${callUrl
+                ? `<a href="${callUrl}" class="work-action is-call" onclick="event.stopPropagation(); logActivity('${c.collection_id}', 'phone_call')" title="Zadzwoń"><i class="ph ph-phone-call"></i></a>`
+                : `<button class="work-action is-call" disabled title="Brak telefonu"><i class="ph ph-phone-call"></i></button>`}
+            ${mailUrl
+                ? `<a href="${mailUrl}" class="work-action is-email" onclick="event.stopPropagation(); logActivity('${c.collection_id}', 'email')" title="Email"><i class="ph ph-envelope"></i></a>`
+                : `<button class="work-action is-email" disabled title="Brak emaila"><i class="ph ph-envelope"></i></button>`}
+            <button class="work-action" onclick="event.stopPropagation(); openLogModal('${c.collection_id}')" title="Zapisz kontakt"><i class="ph ph-chat-text"></i></button>
+            <button class="work-action" onclick="event.stopPropagation(); openMoreMenu(event, '${c.collection_id}')" title="Więcej akcji"><i class="ph ph-dots-three"></i></button>
         </div>
     </div>`;
 }
@@ -594,6 +684,7 @@ function renderAll() {
                         <th>Opiekun</th>
                         <th>Ostatni kontakt</th>
                         <th class="text-right" data-sort="priority">Priorytet</th>
+                        <th class="row-open"></th>
                     </tr></thead>
                     <tbody id="all-tbody"></tbody>
                 </table>
@@ -646,6 +737,7 @@ function renderAll() {
                 <td class="text-sm">${esc(c.assigned_name || '—')}</td>
                 <td class="text-sm text-tertiary">${c.last_contact_at ? fmt.daysAgo(c.last_contact_at) : '—'}</td>
                 <td class="text-right mono text-sm font-semibold">${c.priority_score}</td>
+                <td class="row-open">${window.rowOpen()}</td>
             </tr>`;
         }).join('');
     }
@@ -710,7 +802,7 @@ function renderNoContact() {
         <div class="card">
             <div class="overflow-x-auto">
                 <table class="gmp-table">
-                    <thead><tr><th>Klient</th><th>Pracodawca</th><th>Nr sprawy</th><th class="text-right">Wiek</th><th class="text-right">Kwota</th><th>Opiekun</th><th></th></tr></thead>
+                    <thead><tr><th>Klient</th><th>Pracodawca</th><th>Nr sprawy</th><th class="text-right">Wiek</th><th class="text-right">Kwota</th><th>Opiekun</th><th></th><th class="row-open"></th></tr></thead>
                     <tbody>${noContact.map(c => {
                         const client = (c.last_name || '—') + ' ' + (c.first_name || '');
                         const age = getAgeDays(c);
@@ -723,6 +815,7 @@ function renderNoContact() {
                             <td class="text-right mono font-semibold">${fmt.money(c.remaining_amount)}</td>
                             <td class="text-sm">${esc(c.assigned_name || '—')}</td>
                             <td onclick="event.stopPropagation()"><button class="btn btn-ghost btn-sm" onclick="openLogModal('${c.collection_id}')"><i class="ph ph-plus"></i> Kontakt</button></td>
+                            <td class="row-open">${window.rowOpen()}</td>
                         </tr>`;
                     }).join('')}</tbody>
                 </table>
@@ -777,7 +870,7 @@ function renderOld() {
         <div class="card">
             <div class="overflow-x-auto">
                 <table class="gmp-table">
-                    <thead><tr><th>Klient</th><th class="text-right">Kwota</th><th class="text-right">Wiek</th><th>Kontakt</th><th>Opiekun</th><th class="text-right">Prob.</th><th></th></tr></thead>
+                    <thead><tr><th>Klient</th><th class="text-right">Kwota</th><th class="text-right">Wiek</th><th>Kontakt</th><th>Opiekun</th><th class="text-right">Prob.</th><th></th><th class="row-open"></th></tr></thead>
                     <tbody>${old.map(c => {
                         const client = (c.last_name || '—') + ' ' + (c.first_name || '');
                         const age = getAgeDays(c);
@@ -793,6 +886,7 @@ function renderOld() {
                             <td onclick="event.stopPropagation()">
                                 ${contact ? `<button class="btn btn-ghost btn-sm" onclick="generateDemandPDF('${c.collection_id}')" title="Wygeneruj wezwanie"><i class="ph ph-file-pdf"></i></button>` : ''}
                             </td>
+                            <td class="row-open">${window.rowOpen()}</td>
                         </tr>`;
                     }).join('')}</tbody>
                 </table>
@@ -806,14 +900,23 @@ let openDropdown = null;
 function openMoreMenu(e, collectionId) {
     e.stopPropagation();
     if (openDropdown) { openDropdown.remove(); openDropdown = null; }
+    const c = allCollections.find(x => x.collection_id === collectionId);
     const btn = e.currentTarget;
     const rect = btn.getBoundingClientRect();
     const menu = document.createElement('div');
     menu.className = 'dropdown';
     menu.style.top = (rect.bottom + 4) + 'px';
     menu.style.right = (window.innerWidth - rect.right) + 'px';
+
+    const phoneDigits = (c?.phone || '').replace(/\D/g, '');
+    const phoneIntl = phoneDigits && !phoneDigits.startsWith('48') ? '48' + phoneDigits : phoneDigits;
+
     menu.innerHTML = `
+        ${phoneIntl ? `<a class="dropdown-item" href="https://wa.me/${phoneIntl}" target="_blank" onclick="logActivity('${collectionId}', 'whatsapp')"><i class="ph ph-whatsapp-logo"></i>Napisz WhatsApp</a>` : ''}
+        <div class="dropdown-item" onclick="openPromiseModal('${collectionId}')"><i class="ph ph-handshake"></i>Obietnica zapłaty</div>
+        <div class="dropdown-item" onclick="generateDemandPDF('${collectionId}')"><i class="ph ph-file-pdf"></i>Wygeneruj wezwanie PDF</div>
         <div class="dropdown-item" onclick="escalate('${collectionId}')"><i class="ph ph-arrow-up"></i>Eskalacja do wyższego poziomu</div>
+        <div style="border-top: 1px solid var(--border); margin: 4px 0"></div>
         <div class="dropdown-item" onclick="markAsPaid('${collectionId}')"><i class="ph ph-check-circle"></i>Oznacz jako opłacone</div>
         <div class="dropdown-item" onclick="pauseCollection('${collectionId}')"><i class="ph ph-pause"></i>Wstrzymaj windykację</div>
         <div class="dropdown-item danger" onclick="writeOff('${collectionId}')"><i class="ph ph-x-circle"></i>Odpisz jako stratę</div>
@@ -1088,6 +1191,17 @@ async function generateDemandPDF(collectionId) {
     toast.success('PDF wygenerowany');
     await loadCollections();
     render();
+}
+
+async function runAutomation() {
+    if (!confirm('Uruchomić automatyzację windykacji?\n\nEskaluje poziomy (30/60/90/120/150/365 dni), utworzy zadania dla opiekunów i powiadomi ich. Bezpieczne - zerowa wysyłka automatyczna, tylko zadania do wykonania.')) return;
+    toast.info('Przetwarzanie...');
+    const { data, error } = await db.rpc('gmp_process_collections_reminders');
+    if (error) { toast.error(error.message); return; }
+    const r = data?.[0] || {};
+    toast.success(`Eskalowano: ${r.escalated_count} · zadań: ${r.tasks_created} · obietnic niedotrzymanych: ${r.promise_broken_count} · powiadomień: ${r.notifications_sent}`);
+    await loadCollections();
+    render(); renderKPIs();
 }
 
 async function refreshPriorities() {

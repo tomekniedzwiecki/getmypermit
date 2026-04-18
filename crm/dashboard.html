@@ -6,18 +6,255 @@
     <title>Dashboard - GetMyPermit CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="components/layout.css">
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
 </head>
 <body>
+
+<style>
+/* === HERO KPI CARDS === */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .kpi-grid { grid-template-columns: 1fr; } }
+
+.kpi {
+    position: relative;
+    padding: 22px 24px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-2xl);
+    overflow: hidden;
+    transition: border-color 150ms, transform 150ms;
+}
+.kpi:hover { border-color: var(--border-hover); }
+.kpi-glow {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(600px circle at 0% 0%, var(--kpi-glow, rgba(99,102,241,0.12)), transparent 60%);
+    opacity: 0.8;
+}
+.kpi-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-tertiary);
+    display: flex; align-items: center; gap: 6px;
+}
+.kpi-value {
+    font-size: 36px; font-weight: 700; letter-spacing: -0.03em;
+    color: var(--text); line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    margin: 10px 0 6px; position: relative;
+}
+.kpi-sub { font-size: var(--fs-xs); color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; }
+.kpi-trend-up   { color: var(--success); }
+.kpi-trend-down { color: var(--danger); }
+
+.kpi--indigo { --kpi-glow: rgba(99,102,241,0.18); }
+.kpi--rose   { --kpi-glow: rgba(244,63,94,0.15); }
+.kpi--emerald{ --kpi-glow: rgba(16,185,129,0.15); }
+.kpi--amber  { --kpi-glow: rgba(245,158,11,0.15); }
+
+.kpi-icon {
+    position: absolute; top: 18px; right: 18px;
+    width: 36px; height: 36px; border-radius: var(--r-lg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; opacity: 0.9;
+}
+.kpi--indigo .kpi-icon  { background: rgba(99,102,241,0.12);  color: #a5b4fc; }
+.kpi--rose .kpi-icon    { background: rgba(244,63,94,0.10);   color: #fda4af; }
+.kpi--emerald .kpi-icon { background: rgba(16,185,129,0.10);  color: #6ee7b7; }
+.kpi--amber .kpi-icon   { background: rgba(245,158,11,0.10);  color: #fcd34d; }
+
+/* === DZIS BAR === */
+.today-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--bg-elevated);
+    overflow: hidden;
+}
+.today-bar > div {
+    padding: 16px 18px;
+    border-right: 1px solid var(--border);
+    display: flex; gap: 14px; align-items: center;
+}
+.today-bar > div:last-child { border-right: none; }
+.today-bar .icon-box {
+    width: 38px; height: 38px; border-radius: var(--r-lg);
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.today-bar .num { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1; }
+.today-bar .lbl { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; font-weight: 500; }
+@media (max-width: 900px) { .today-bar { grid-template-columns: repeat(2, 1fr); } .today-bar > div:nth-child(2) { border-right: none; } }
+
+/* === PIPELINE FUNNEL === */
+.pipeline {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+@media (max-width: 1200px) { .pipeline { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 700px)  { .pipeline { grid-template-columns: repeat(2, 1fr); } }
+
+.stage {
+    padding: 14px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 120ms, transform 120ms, background 120ms;
+    position: relative; display: flex; flex-direction: column; gap: 4px;
+    min-height: 88px;
+}
+.stage:hover { border-color: var(--accent); background: var(--accent-subtle); }
+.stage-idx {
+    position: absolute; top: 8px; right: 10px;
+    font-size: 10px; color: var(--text-disabled); font-family: 'JetBrains Mono', mono;
+}
+.stage-name { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+.stage-count { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); font-variant-numeric: tabular-nums; margin-top: auto; line-height: 1; }
+.stage-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+/* === SECTION HEADERS === */
+.section-h {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 28px 0 12px;
+}
+.section-h h2 {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--text-tertiary);
+    display: flex; align-items: center; gap: 8px;
+}
+.section-h h2 i { font-size: 16px; color: var(--text-secondary); }
+.section-h a { font-size: var(--fs-xs); color: var(--text-tertiary); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; transition: color 100ms; }
+.section-h a:hover { color: var(--text); }
+
+/* === ALERT TILE (3 kolumny przyczyn bezczynności) === */
+.alert-tile {
+    padding: 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    display: flex; align-items: center; gap: 14px;
+    text-decoration: none; color: inherit;
+    transition: border-color 120ms, background 120ms;
+}
+.alert-tile:hover { border-color: var(--border-hover); background: var(--bg); }
+.alert-tile .at-icon {
+    width: 42px; height: 42px; border-radius: var(--r-lg);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+}
+.alert-tile .at-num { font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+.alert-tile .at-lbl { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+
+/* Lists */
+.list-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-top: 1px solid var(--border);
+    text-decoration: none; color: inherit;
+    transition: background 100ms;
+}
+.list-item:first-child { border-top: none; }
+.list-item:hover { background: var(--bg-hover); }
+.list-title { font-size: var(--fs-md); color: var(--text); line-height: 1.3; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-sub { font-size: var(--fs-xs); color: var(--text-tertiary); margin-top: 2px; }
+
+/* Windykacja mini */
+.col-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto auto;
+    gap: 10px; align-items: center;
+    padding: 11px 14px; border-top: 1px solid var(--border);
+    text-decoration: none; color: inherit;
+}
+.col-row:first-child { border-top: none; }
+.col-row:hover { background: var(--bg-hover); }
+.col-row .rank {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--bg-subtle); color: var(--text-tertiary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', mono;
+}
+.col-row .rank.top { background: rgba(239,68,68,0.15); color: #fca5a5; }
+
+/* Timeline agenda */
+.timeline { padding: 6px 0; }
+.tl-item {
+    display: grid; grid-template-columns: 56px 1fr; gap: 12px;
+    padding: 10px 16px; text-decoration: none; color: inherit;
+    transition: background 100ms; border-top: 1px solid var(--border);
+}
+.tl-item:first-child { border-top: none; }
+.tl-item:hover { background: var(--bg-hover); }
+.tl-time { font-family: 'JetBrains Mono', mono; font-size: 12px; color: var(--accent); font-weight: 500; padding-top: 1px; }
+.tl-body { min-width: 0; }
+.tl-title { font-size: var(--fs-md); color: var(--text); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-sub { font-size: var(--fs-xs); color: var(--text-tertiary); margin-top: 2px; }
+
+/* Team leaderboard */
+.team-table { width: 100%; border-collapse: collapse; }
+.team-table td { padding: 10px 14px; border-top: 1px solid var(--border); vertical-align: middle; font-size: var(--fs-sm); }
+.team-table tr:first-child td { border-top: none; }
+.team-table tr:hover td { background: var(--bg-hover); }
+.team-table .name { display: flex; align-items: center; gap: 10px; }
+.load-bar { width: 80px; height: 4px; border-radius: 4px; background: var(--bg-subtle); overflow: hidden; }
+.load-bar > div { height: 100%; background: var(--accent); border-radius: 4px; }
+
+/* Activity feed */
+.feed-item {
+    display: flex; gap: 12px; padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    text-decoration: none; color: inherit;
+    transition: background 100ms;
+}
+.feed-item:first-child { border-top: none; }
+.feed-item:hover { background: var(--bg-hover); }
+.feed-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0; margin-top: 10px;
+}
+.feed-text { font-size: var(--fs-sm); color: var(--text); line-height: 1.4; flex: 1; min-width: 0; }
+.feed-meta { font-size: var(--fs-xs); color: var(--text-tertiary); margin-top: 2px; }
+
+/* Revenue chart */
+.chart-wrap { height: 240px; position: relative; padding: 6px 4px; }
+
+/* Karty które mają rozciągnąć się na wysokość siblinga */
+.card-stretch { display: flex; flex-direction: column; height: 100%; }
+.card-stretch .chart-wrap { flex: 1; min-height: 200px; height: auto; }
+.card-stretch .chart-footer {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.card-stretch .chart-footer > div {
+    padding: 12px 14px;
+    border-right: 1px solid var(--border);
+}
+.card-stretch .chart-footer > div:last-child { border-right: none; }
+.chart-footer .foot-num { font-size: 18px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
+.chart-footer .foot-lbl { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+
+/* Skeleton / loading */
+.skeleton { background: linear-gradient(90deg, var(--bg-subtle), var(--bg-subtlest), var(--bg-subtle)); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--r-sm); }
+
+/* Utility */
+.muted { color: var(--text-tertiary); }
+.mono { font-family: 'JetBrains Mono', mono; font-variant-numeric: tabular-nums; }
+.divider-h { height: 1px; background: var(--border); margin: 16px 0; }
+</style>
+
 <div class="app-layout">
     <div id="sidebar-placeholder"></div>
 
     <main class="app-main">
+
+        <!-- PAGE HEADER -->
         <div class="page-header">
             <div>
                 <h1 class="page-title" id="greeting">Dashboard</h1>
@@ -29,114 +266,266 @@
             </div>
         </div>
 
-        <!-- DZIŚ - najwyższy priorytet -->
-        <section class="card mb-4" style="background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(168,85,247,0.06)); border-color: rgba(139,92,246,0.2)">
-            <div class="card-header flex items-center justify-between">
-                <span><i class="ph ph-sun-horizon text-amber-400 mr-2"></i>DZIŚ — <span id="today-date"></span></span>
-                <span class="text-xs text-zinc-500" id="today-summary">—</span>
+        <!-- ============ HERO KPI ============ -->
+        <div class="kpi-grid">
+            <a href="cases.html?preset=aktywne" class="kpi kpi--indigo">
+                <div class="kpi-glow"></div>
+                <div class="kpi-icon"><i class="ph ph-briefcase"></i></div>
+                <div class="kpi-label">Aktywne sprawy</div>
+                <div class="kpi-value" id="k-active">—</div>
+                <div class="kpi-sub"><span id="k-active-trend">—</span></div>
+            </a>
+            <a href="receivables.html" class="kpi kpi--rose">
+                <div class="kpi-glow"></div>
+                <div class="kpi-icon"><i class="ph ph-scales"></i></div>
+                <div class="kpi-label">Do odzyskania</div>
+                <div class="kpi-value" id="k-debt">—</div>
+                <div class="kpi-sub" id="k-debt-sub">—</div>
+            </a>
+            <a href="payments.html" class="kpi kpi--emerald">
+                <div class="kpi-glow"></div>
+                <div class="kpi-icon"><i class="ph ph-trend-up"></i></div>
+                <div class="kpi-label">Przychód miesiąca</div>
+                <div class="kpi-value" id="k-rev">—</div>
+                <div class="kpi-sub"><span id="k-rev-trend">—</span></div>
+            </a>
+            <a href="alerts.html" class="kpi kpi--amber">
+                <div class="kpi-glow"></div>
+                <div class="kpi-icon"><i class="ph ph-bell-ringing"></i></div>
+                <div class="kpi-label">Alerty 30+ dni</div>
+                <div class="kpi-value" id="k-alerts">—</div>
+                <div class="kpi-sub" id="k-alerts-sub">sprawy bez aktywności</div>
+            </a>
+        </div>
+
+        <!-- ============ DZIS ============ -->
+        <div class="section-h">
+            <h2><i class="ph ph-sun-horizon"></i>Dziś — <span id="today-date" class="muted font-normal">—</span></h2>
+            <a href="appointments.html">Kalendarz <i class="ph ph-arrow-right"></i></a>
+        </div>
+
+        <div class="today-bar mb-4">
+            <div>
+                <div class="icon-box" style="background: var(--accent-subtle); color: #a5b4fc"><i class="ph ph-calendar-blank"></i></div>
+                <div><div class="num" id="d-meetings">—</div><div class="lbl">Spotkania</div></div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-0">
-                <div class="p-4 border-r border-zinc-900/50">
-                    <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider"><i class="ph ph-calendar-blank"></i> Spotkania dziś</div>
-                    <div class="text-2xl font-bold text-blue-300" id="d-meetings">—</div>
-                    <div class="text-xs text-zinc-600" id="d-meetings-sub">—</div>
+            <div>
+                <div class="icon-box" style="background: rgba(6,182,212,0.10); color: #67e8f9"><i class="ph ph-fingerprint"></i></div>
+                <div><div class="num" id="d-fingerprints">—</div><div class="lbl">Odciski / Stawiennictwo</div></div>
+            </div>
+            <div>
+                <div class="icon-box" style="background: rgba(245,158,11,0.10); color: #fcd34d"><i class="ph ph-check-square"></i></div>
+                <div><div class="num" id="d-tasks">—</div><div class="lbl">Zadania dziś</div></div>
+            </div>
+            <div>
+                <div class="icon-box" style="background: rgba(16,185,129,0.10); color: #6ee7b7"><i class="ph ph-user-plus"></i></div>
+                <div><div class="num" id="d-leads">—</div><div class="lbl">Nowe leady 24h</div></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <section class="card">
+                <div class="card-header"><i class="ph ph-calendar-heart"></i> Plan dnia — terminarz</div>
+                <div id="plan-list" class="timeline max-h-[340px] overflow-y-auto">
+                    <div class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
                 </div>
-                <div class="p-4 border-r border-zinc-900/50">
-                    <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider"><i class="ph ph-fingerprint"></i> Odciski dziś</div>
-                    <div class="text-2xl font-bold text-cyan-300" id="d-fingerprints">—</div>
-                    <div class="text-xs text-zinc-600" id="d-fingerprints-sub">—</div>
+            </section>
+
+            <section class="card">
+                <div class="card-header flex items-center justify-between">
+                    <span><i class="ph ph-check-square"></i> Moje zadania</span>
+                    <a href="tasks.html" class="text-xs muted hover:text-white">Wszystkie →</a>
                 </div>
-                <div class="p-4 border-r border-zinc-900/50">
-                    <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider"><i class="ph ph-user-plus"></i> Nowe leady (24h)</div>
-                    <div class="text-2xl font-bold text-emerald-300" id="d-leads">—</div>
-                    <div class="text-xs text-zinc-600" id="d-leads-sub">z formularza</div>
+                <div id="my-tasks" class="max-h-[340px] overflow-y-auto">
+                    <div class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
                 </div>
-                <div class="p-4">
-                    <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider"><i class="ph ph-list-checks"></i> Zadania na dziś</div>
-                    <div class="text-2xl font-bold text-amber-300" id="d-tasks">—</div>
-                    <div class="text-xs text-zinc-600" id="d-tasks-sub">—</div>
+            </section>
+        </div>
+
+        <!-- ============ PIPELINE SPRAW ============ -->
+        <div class="section-h">
+            <h2><i class="ph ph-flow-arrow"></i>Przepływ spraw — etapy postępowania</h2>
+            <a href="kanban.html">Widok Kanban <i class="ph ph-arrow-right"></i></a>
+        </div>
+
+        <div class="pipeline" id="pipeline">
+            <a href="cases.html?status=lead" class="stage"><span class="stage-idx">01</span><div class="stage-name">Lead</div><div class="stage-count" id="p-lead">—</div><div class="stage-sub">potencjalni klienci</div></a>
+            <a href="cases.html?stage=weryfikacja_dokumentow" class="stage"><span class="stage-idx">02</span><div class="stage-name">Weryfikacja</div><div class="stage-count" id="p-weryf">—</div><div class="stage-sub">dokumentów</div></a>
+            <a href="cases.html?stage=zlozenie_wniosku" class="stage"><span class="stage-idx">03</span><div class="stage-name">Do złożenia</div><div class="stage-count" id="p-zloz">—</div><div class="stage-sub">wniosku</div></a>
+            <a href="cases.html?stage=oczekiwanie_na_osobiste" class="stage"><span class="stage-idx">04</span><div class="stage-name">Oczek. osobiste</div><div class="stage-count" id="p-oczek-os">—</div><div class="stage-sub">odciski / PIO</div></a>
+            <a href="cases.html?stage=po_osobistym" class="stage"><span class="stage-idx">05</span><div class="stage-name">Po osobistym</div><div class="stage-count" id="p-po-os">—</div><div class="stage-sub">dokumenty wysłane</div></a>
+            <a href="cases.html?stage=oczekiwanie_na_decyzje" class="stage"><span class="stage-idx">06</span><div class="stage-name">Oczek. decyzji</div><div class="stage-count" id="p-oczek-dec">—</div><div class="stage-sub">postępowanie</div></a>
+            <a href="cases.html?stage=odwolanie" class="stage"><span class="stage-idx">07</span><div class="stage-name">Odwołanie</div><div class="stage-count" id="p-odw">—</div><div class="stage-sub">po decyzji</div></a>
+        </div>
+
+        <!-- ============ ALERTY BEZCZYNNOSCI ============ -->
+        <div class="section-h">
+            <h2><i class="ph ph-warning-circle"></i>Alerty bezczynności — gdzie stoi sprawa</h2>
+            <a href="alerts.html">Wszystkie <i class="ph ph-arrow-right"></i></a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+            <a href="alerts.html?reason=brak_pracownika" class="alert-tile">
+                <div class="at-icon" style="background: rgba(239,68,68,0.12); color: #fca5a5"><i class="ph ph-user-focus"></i></div>
+                <div><div class="at-num" id="a-pracownik">—</div><div class="at-lbl">brak działania pracownika</div></div>
+            </a>
+            <a href="alerts.html?reason=brak_urzedu" class="alert-tile">
+                <div class="at-icon" style="background: rgba(245,158,11,0.12); color: #fcd34d"><i class="ph ph-buildings"></i></div>
+                <div><div class="at-num" id="a-urzad">—</div><div class="at-lbl">brak reakcji urzędu</div></div>
+            </a>
+            <a href="alerts.html?reason=brak_klienta" class="alert-tile">
+                <div class="at-icon" style="background: rgba(168,85,247,0.12); color: #d8b4fe"><i class="ph ph-user-circle-minus"></i></div>
+                <div><div class="at-num" id="a-klient">—</div><div class="at-lbl">klient nie dostarcza dokumentów</div></div>
+            </a>
+        </div>
+
+        <!-- Szczegółowa lista alertów + windykacja TOP 5 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <section class="card">
+                <div class="card-header flex items-center justify-between">
+                    <span><i class="ph ph-clock-countdown"></i> Sprawy bez aktywności 30+ dni</span>
+                    <a href="alerts.html" class="text-xs muted hover:text-white">Wszystkie →</a>
                 </div>
+                <div id="alerts-list" class="max-h-[360px] overflow-y-auto">
+                    <div class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header flex items-center justify-between">
+                    <span><i class="ph ph-scales"></i> Windykacja — TOP 5 priorytet</span>
+                    <a href="receivables.html" class="text-xs muted hover:text-white">Worklist →</a>
+                </div>
+                <div id="debt-top" class="max-h-[360px] overflow-y-auto">
+                    <div class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ============ ŚWIEŻE LEADY Z FORMULARZA ============ -->
+        <div class="section-h">
+            <h2><i class="ph ph-magnet"></i>Świeże leady z getmypermit.pl</h2>
+            <a href="leads.html">Pipeline <i class="ph ph-arrow-right"></i></a>
+        </div>
+
+        <section class="card mb-4">
+            <div id="fresh-leads" class="divide-y" style="border-color: var(--border)">
+                <div class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
             </div>
         </section>
 
-        <!-- Plan dnia + Moje zadania -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-            <section class="card">
+        <!-- ============ FINANSE ============ -->
+        <div class="section-h">
+            <h2><i class="ph ph-chart-line"></i>Finanse</h2>
+            <a href="payments.html">Szczegóły <i class="ph ph-arrow-right"></i></a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <section class="card lg:col-span-2">
                 <div class="card-header flex items-center justify-between">
-                    <span><i class="ph ph-calendar-heart text-blue-400 mr-2"></i>Plan dnia</span>
-                    <a href="appointments.html" class="text-xs text-zinc-500 hover:text-white">Kalendarz →</a>
+                    <span><i class="ph ph-currency-circle-dollar"></i> Przychody — 12 miesięcy</span>
+                    <span class="text-xs muted" id="rev-total">—</span>
                 </div>
-                <div id="plan-list" class="divide-y divide-zinc-900/50 max-h-[360px] overflow-y-auto">
-                    <div class="p-4 text-zinc-600 text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
-                </div>
+                <div class="chart-wrap"><canvas id="chart-revenue"></canvas></div>
             </section>
 
             <section class="card">
-                <div class="card-header flex items-center justify-between">
-                    <span><i class="ph ph-check-square text-emerald-400 mr-2"></i>Moje zadania</span>
-                    <a href="tasks.html" class="text-xs text-zinc-500 hover:text-white">Wszystkie →</a>
-                </div>
-                <div id="my-tasks" class="divide-y divide-zinc-900/50 max-h-[360px] overflow-y-auto">
-                    <div class="p-4 text-zinc-600 text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
+                <div class="card-header"><i class="ph ph-wallet"></i> Struktura miesiąca</div>
+                <div class="p-4 space-y-3">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs muted">Gotówka</span>
+                            <span class="mono text-sm" id="fin-cash">—</span>
+                        </div>
+                        <div class="load-bar"><div id="bar-cash" style="width: 0%; background: var(--accent)"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs muted">Przelew</span>
+                            <span class="mono text-sm" id="fin-transfer">—</span>
+                        </div>
+                        <div class="load-bar"><div id="bar-transfer" style="width: 0%; background: var(--success)"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs muted">Faktura</span>
+                            <span class="mono text-sm" id="fin-invoice">—</span>
+                        </div>
+                        <div class="load-bar"><div id="bar-invoice" style="width: 0%; background: var(--warn)"></div></div>
+                    </div>
+                    <div class="divider-h"></div>
+                    <div class="flex justify-between">
+                        <span class="text-sm muted">Faktury do wystawienia</span>
+                        <span class="mono text-sm text-amber-300" id="fin-to-issue">—</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm muted">Opłaty administracyjne</span>
+                        <span class="mono text-sm" id="fin-admin">—</span>
+                    </div>
                 </div>
             </section>
         </div>
 
-        <!-- Drugi rząd - stats + alerty + ostatnie -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-            <section class="card">
-                <div class="card-header flex items-center gap-2"><i class="ph ph-bell-ringing text-red-400"></i>Alerty bezczynności</div>
-                <div id="alerts-list" class="divide-y divide-zinc-900/50 max-h-[360px] overflow-y-auto">
-                    <div class="p-4 text-zinc-600 text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
+        <!-- ============ ZESPOL + NOWE SPRAWY ============ -->
+        <div class="section-h">
+            <h2><i class="ph ph-users-three"></i>Zespół — obciążenie i wyniki</h2>
+            <a href="staff.html">Pełna analityka <i class="ph ph-arrow-right"></i></a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <section class="card lg:col-span-3">
+                <div class="card-header"><i class="ph ph-trophy"></i> Pracownicy — aktywność (ten miesiąc)</div>
+                <div class="overflow-x-auto">
+                    <table class="team-table">
+                        <thead><tr>
+                            <td style="color: var(--text-tertiary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500">Opiekun</td>
+                            <td style="color: var(--text-tertiary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; text-align: right">Aktywne</td>
+                            <td style="color: var(--text-tertiary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; text-align: right">Przyjęte MC</td>
+                            <td style="color: var(--text-tertiary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; text-align: right">Alerty</td>
+                            <td style="color: var(--text-tertiary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; text-align: right">Zadania po term.</td>
+                            <td style="color: var(--text-tertiary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500">Obciążenie</td>
+                        </tr></thead>
+                        <tbody id="team-tbody">
+                            <tr><td colspan="6" class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
-            <section class="card">
+            <section class="card card-stretch lg:col-span-2">
                 <div class="card-header flex items-center justify-between">
-                    <span><i class="ph ph-folder-plus text-emerald-400 mr-2"></i>Ostatnio dodane</span>
-                    <a href="cases.html" class="text-xs text-zinc-500 hover:text-white">Wszystkie →</a>
+                    <span><i class="ph ph-file-plus"></i> Nowe sprawy — ten miesiąc</span>
+                    <span class="text-xs muted" id="new-cases-total">—</span>
                 </div>
-                <div id="recent-cases" class="divide-y divide-zinc-900/50 max-h-[360px] overflow-y-auto">
-                    <div class="p-4 text-zinc-600 text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header flex items-center justify-between">
-                    <span><i class="ph ph-coins text-yellow-400 mr-2"></i>Finanse (miesiąc)</span>
-                    <a href="payments.html" class="text-xs text-zinc-500 hover:text-white">Szczegóły →</a>
-                </div>
-                <div class="p-4 space-y-3" id="finance-summary">
-                    <div class="flex justify-between"><span class="text-zinc-500 text-sm">Wpływy razem</span><span class="text-emerald-400 font-bold font-mono text-lg" id="fin-total">—</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-zinc-500">Gotówka</span><span class="font-mono" id="fin-cash">—</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-zinc-500">Przelew</span><span class="font-mono" id="fin-transfer">—</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-zinc-500">Faktura</span><span class="font-mono" id="fin-invoice">—</span></div>
-                    <div class="divider"></div>
-                    <div class="flex justify-between"><span class="text-zinc-500 text-sm">Zaległe płatności</span><span class="text-red-400 font-medium" id="fin-overdue">—</span></div>
-                    <div class="flex justify-between"><span class="text-zinc-500 text-sm">Do wystawienia</span><span class="text-amber-300 font-medium" id="fin-to-issue">—</span></div>
+                <div class="chart-wrap"><canvas id="chart-new-cases"></canvas></div>
+                <div class="chart-footer">
+                    <div>
+                        <div class="foot-num" id="nc-total">—</div>
+                        <div class="foot-lbl">Razem przyjęte</div>
+                    </div>
+                    <div>
+                        <div class="foot-num" id="nc-avg">—</div>
+                        <div class="foot-lbl">Średnio / dzień</div>
+                    </div>
+                    <div>
+                        <div class="foot-num" id="nc-trend">—</div>
+                        <div class="foot-lbl">vs poprzedni mc.</div>
+                    </div>
                 </div>
             </section>
         </div>
 
-        <!-- Statystyki ogólne (drugi rzad) -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div class="card p-3">
-                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">AKTYWNYCH SPRAW</div>
-                <div class="text-2xl font-bold text-white" id="stat-active">—</div>
-            </div>
-            <div class="card p-3">
-                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">LEADÓW</div>
-                <div class="text-2xl font-bold text-white" id="stat-leads">—</div>
-            </div>
-            <div class="card p-3">
-                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">KLIENTÓW</div>
-                <div class="text-2xl font-bold text-white" id="stat-clients">—</div>
-            </div>
-            <div class="card p-3">
-                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">PRACODAWCÓW</div>
-                <div class="text-2xl font-bold text-white" id="stat-employers">—</div>
-            </div>
+        <!-- ============ FEED AKTYWNOSCI ============ -->
+        <div class="section-h">
+            <h2><i class="ph ph-activity"></i>Ostatnia aktywność w systemie</h2>
         </div>
+
+        <section class="card mb-6">
+            <div id="activity-feed" class="max-h-[420px] overflow-y-auto">
+                <div class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
+            </div>
+        </section>
+
     </main>
 </div>
 
@@ -144,103 +533,212 @@
 <script>
 document.addEventListener('gmp-auth-ready', loadDashboard);
 
+const REASON_LABELS = {
+    brak_pracownika: 'pracownik',
+    brak_urzedu: 'urząd',
+    brak_klienta: 'klient',
+    brak_dokumentow: 'dokumenty',
+};
+
 async function loadDashboard() {
-    // Powitanie
+    // Greeting
     const h = new Date().getHours();
     const greet = h < 12 ? 'Dzień dobry' : (h < 18 ? 'Miłej pracy' : 'Dobry wieczór');
     const name = window.currentStaff?.full_name?.split(' ')[0] || '';
-    document.getElementById('greeting').textContent = `${greet}${name ? ', ' + name : ''}!`;
+    document.getElementById('greeting').textContent = `${greet}${name ? ', ' + name : ''}`;
     const today = new Date();
-    const polskieDnie = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
-    const polskieMiesiace = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
-    document.getElementById('greeting-sub').textContent = `${polskieDnie[today.getDay()]}, ${today.getDate()} ${polskieMiesiace[today.getMonth()]} ${today.getFullYear()}`;
-    document.getElementById('today-date').textContent = today.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' });
+    const dni = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+    const msc = ['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'];
+    const subtitle = `${dni[today.getDay()]}, ${today.getDate()} ${msc[today.getMonth()]} ${today.getFullYear()}`;
+    document.getElementById('greeting-sub').textContent = subtitle;
+    document.getElementById('today-date').textContent = `${today.getDate()} ${msc[today.getMonth()]}`;
 
-    Promise.all([loadTodayKPI(), loadPlanDnia(), loadMyTasks(), loadAlerts(), loadRecentCases(), loadFinance(), loadStats()]);
+    // Ładuj sekwencyjnie od najważniejszych - wizualnie przyjemniej
+    await Promise.all([
+        loadKPIs(),
+        loadToday(),
+        loadPipeline(),
+        loadAlertsByReason(),
+        loadAlertsList(),
+        loadDebtTop(),
+        loadRevenueChart(),
+        loadFinanceStructure(),
+        loadTeam(),
+        loadNewCasesChart(),
+        loadActivityFeed(),
+        loadMyTasks(),
+        loadPlan(),
+        loadFreshLeads(),
+    ]);
 }
 
-async function loadTodayKPI() {
+// ============ HERO KPI ============
+async function loadKPIs() {
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
+    const today = now.toISOString().slice(0, 10);
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+
+    const [activeCnt, debtOv, revCur, revPrev, alertsCnt, weekNew] = await Promise.all([
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).in('status', ['aktywna', 'zlecona']),
+        db.from('gmp_collection_overview').select('remaining_amount').eq('status', 'active').gt('remaining_amount', 0),
+        db.from('gmp_payments').select('amount').gte('payment_date', firstOfMonth).lt('payment_date', today),
+        db.from('gmp_payments').select('amount').gte('payment_date', firstOfLastMonth).lt('payment_date', firstOfMonth),
+        db.from('gmp_case_alerts').select('id', { count: 'exact', head: true }).eq('inactivity_level', 'inactive_30'),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).gte('date_accepted', weekAgo),
+    ]);
+
+    // Aktywne sprawy
+    document.getElementById('k-active').textContent = fmt.num(activeCnt.count || 0);
+    document.getElementById('k-active-trend').innerHTML = `<span class="kpi-trend-up"><i class="ph ph-trend-up"></i> +${weekNew.count || 0}</span> <span class="muted">w ostatnim tygodniu</span>`;
+
+    // Windykacja
+    const debtTotal = (debtOv.data || []).reduce((s, r) => s + Number(r.remaining_amount || 0), 0);
+    document.getElementById('k-debt').textContent = fmt.money(debtTotal).replace(/\s?zł$/, '');
+    document.getElementById('k-debt-sub').innerHTML = `<i class="ph ph-currency-circle-dollar"></i> ${(debtOv.data || []).length} aktywnych windykacji`;
+
+    // Przychód
+    const revNow = (revCur.data || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+    const revOld = (revPrev.data || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+    document.getElementById('k-rev').textContent = fmt.money(revNow).replace(/\s?zł$/, '');
+    const pct = revOld > 0 ? Math.round((revNow - revOld) / revOld * 100) : null;
+    const trendHTML = pct === null
+        ? `<span class="muted">brak danych ubiegły miesiąc</span>`
+        : (pct >= 0
+            ? `<span class="kpi-trend-up"><i class="ph ph-trend-up"></i> +${pct}%</span> <span class="muted">vs poprzedni</span>`
+            : `<span class="kpi-trend-down"><i class="ph ph-trend-down"></i> ${pct}%</span> <span class="muted">vs poprzedni</span>`);
+    document.getElementById('k-rev-trend').innerHTML = trendHTML;
+
+    // Alerty
+    document.getElementById('k-alerts').textContent = fmt.num(alertsCnt.count || 0);
+}
+
+// ============ DZIS BAR + TIMELINE ============
+async function loadToday() {
     const today = new Date().toISOString().slice(0, 10);
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
     const [appts, subs, leads, tasks] = await Promise.all([
         db.from('gmp_crm_appointments').select('id, appointment_type').eq('scheduled_date', today),
         db.from('gmp_submissions_queue').select('id').gte('scheduled_at', today + 'T00:00:00').lte('scheduled_at', today + 'T23:59:59'),
-        db.from('gmp_cases').select('id').eq('status', 'lead').gte('created_at', yesterday),
+        db.from('permit_leads').select('id', { count: 'exact', head: true }).gte('created_at', yesterday),
         window.currentStaff
-            ? db.from('gmp_tasks').select('id, due_date, status').eq('assigned_to', window.currentStaff.id).in('status', ['pending', 'in_progress']).lte('due_date', today)
-            : Promise.resolve({ data: [] }),
+            ? db.from('gmp_tasks').select('id', { count: 'exact', head: true }).eq('assigned_to', window.currentStaff.id).in('status', ['pending', 'in_progress']).lte('due_date', today)
+            : Promise.resolve({ count: 0 }),
     ]);
 
-    const meetingCount = (appts.data || []).filter(a => a.appointment_type !== 'osobiste_odciski').length;
-    const fingerprintsFromAppts = (appts.data || []).filter(a => a.appointment_type === 'osobiste_odciski').length;
-    const fingerprintsFromSubs = (subs.data || []).length;
+    const meetings = (appts.data || []).filter(a => a.appointment_type !== 'osobiste_odciski').length;
+    const fpFromAppts = (appts.data || []).filter(a => a.appointment_type === 'osobiste_odciski').length;
+    const fpFromSubs = (subs.data || []).length;
 
-    document.getElementById('d-meetings').textContent = meetingCount;
-    document.getElementById('d-meetings-sub').textContent = meetingCount === 0 ? 'brak spotkań' : (meetingCount === 1 ? '1 spotkanie' : meetingCount + ' spotkań');
-
-    const totalFp = fingerprintsFromAppts + fingerprintsFromSubs;
-    document.getElementById('d-fingerprints').textContent = totalFp;
-    document.getElementById('d-fingerprints-sub').textContent = totalFp === 0 ? 'brak odcisków' : 'zaplanowane stawiennictwa';
-
-    document.getElementById('d-leads').textContent = (leads.data || []).length;
-
-    const tasksCount = (tasks.data || []).length;
-    const overdue = (tasks.data || []).filter(t => t.due_date && t.due_date < today).length;
-    document.getElementById('d-tasks').textContent = tasksCount;
-    document.getElementById('d-tasks-sub').textContent = overdue ? `${overdue} po terminie` : (tasksCount ? 'na dziś' : 'brak');
-
-    document.getElementById('today-summary').textContent = `${meetingCount + totalFp} zdarzeń • ${(leads.data || []).length} nowych leadów • ${tasksCount} zadań`;
+    document.getElementById('d-meetings').textContent = meetings;
+    document.getElementById('d-fingerprints').textContent = fpFromAppts + fpFromSubs;
+    document.getElementById('d-tasks').textContent = tasks.count || 0;
+    document.getElementById('d-leads').textContent = leads.count || 0;
 }
 
-async function loadPlanDnia() {
+async function loadPlan() {
     const today = new Date().toISOString().slice(0, 10);
     const [appts, subs] = await Promise.all([
-        db.from('gmp_crm_appointments').select('id, appointment_type, scheduled_date, scheduled_time, title, notes, case_id, client_id, gmp_clients(last_name, first_name)').eq('scheduled_date', today).order('scheduled_time', { ascending: true, nullsLast: true }),
+        db.from('gmp_crm_appointments').select('id, appointment_type, scheduled_time, title, case_id, client_id, gmp_clients(last_name, first_name)').eq('scheduled_date', today).order('scheduled_time', { ascending: true, nullsLast: true }),
         db.from('gmp_submissions_queue').select('id, scheduled_at, client_id, gmp_clients(last_name, first_name), gmp_offices(city, code)').gte('scheduled_at', today + 'T00:00:00').lte('scheduled_at', today + 'T23:59:59').order('scheduled_at'),
     ]);
 
     const items = [];
     (appts.data || []).forEach(a => items.push({
         time: a.scheduled_time?.slice(0, 5) || '',
-        type: a.appointment_type,
         title: a.gmp_clients ? `${a.gmp_clients.last_name} ${a.gmp_clients.first_name}` : (a.title || '—'),
-        sub: a.title || '',
+        sub: a.title || (a.appointment_type === 'osobiste_odciski' ? 'Odciski palców' : 'Spotkanie'),
         href: a.case_id ? 'case.html?id=' + a.case_id : (a.client_id ? 'clients.html?id=' + a.client_id : '#'),
-        icon: a.appointment_type === 'osobiste_odciski' ? 'ph-fingerprint text-cyan-400' : (a.appointment_type === 'konsultacja' ? 'ph-chat-circle-text text-blue-400' : 'ph-calendar text-purple-400'),
+        icon: a.appointment_type === 'osobiste_odciski' ? 'ph-fingerprint' : 'ph-calendar',
     }));
     (subs.data || []).forEach(s => items.push({
         time: s.scheduled_at?.slice(11, 16) || '',
-        type: 'fingerprints',
         title: s.gmp_clients ? `${s.gmp_clients.last_name} ${s.gmp_clients.first_name}` : '—',
-        sub: 'Wniosek / odciski' + (s.gmp_offices ? ' • ' + (s.gmp_offices.city || s.gmp_offices.code) : ''),
+        sub: 'Stawiennictwo' + (s.gmp_offices ? ' • ' + (s.gmp_offices.city || s.gmp_offices.code) : ''),
         href: s.client_id ? 'clients.html?id=' + s.client_id : '#',
-        icon: 'ph-fingerprint text-cyan-400',
+        icon: 'ph-fingerprint',
     }));
     items.sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
     const el = document.getElementById('plan-list');
     if (!items.length) {
-        el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-coffee"></i><div>Dziś masz spokojnie — brak spotkań w kalendarzu</div></div>';
+        el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-coffee"></i><div>Dziś spokojny dzień — brak spotkań w kalendarzu</div></div>';
         return;
     }
     el.innerHTML = items.map(i => `
-        <a href="${i.href}" class="block p-3 hover:bg-zinc-900/50 flex items-start gap-3">
-            <div class="w-12 text-center font-mono text-xs text-amber-300 flex-shrink-0 mt-0.5">${i.time || '—'}</div>
-            <i class="ph ${i.icon} text-lg mt-0.5"></i>
-            <div class="flex-1 min-w-0">
-                <div class="text-sm text-white truncate">${esc(i.title)}</div>
-                <div class="text-xs text-zinc-500">${esc(i.sub || i.type)}</div>
+        <a href="${i.href}" class="tl-item">
+            <div class="tl-time">${i.time || '—'}</div>
+            <div class="tl-body">
+                <div class="tl-title"><i class="ph ${i.icon}"></i>${esc(i.title)}</div>
+                <div class="tl-sub">${esc(i.sub)}</div>
             </div>
         </a>`).join('');
 }
 
-async function loadAlerts() {
-    const { data, error } = await db.from('gmp_case_alerts').select('*').in('inactivity_level', ['inactive_30', 'never_active']).order('days_inactive', { ascending: false, nullsFirst: false }).limit(8);
+async function loadMyTasks() {
+    const el = document.getElementById('my-tasks');
+    if (!window.currentStaff) { el.innerHTML = '<div class="p-6 text-center muted text-sm">Brak profilu staff</div>'; return; }
+
+    const { data } = await db.from('gmp_tasks')
+        .select('id, title, due_date, status, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))')
+        .eq('assigned_to', window.currentStaff.id).in('status', ['pending', 'in_progress'])
+        .order('due_date', { ascending: true, nullsLast: true }).limit(10);
+
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check-circle text-emerald-400"></i><div>Brak otwartych zadań — świetnie</div></div>'; return; }
+
+    const today = new Date().toISOString().slice(0, 10);
+    el.innerHTML = data.map(t => {
+        const overdue = t.due_date && t.due_date < today;
+        const client = t.gmp_cases?.gmp_clients ? `${esc(t.gmp_cases.gmp_clients.last_name)} ${esc(t.gmp_cases.gmp_clients.first_name)}` : '';
+        return `<a href="${t.case_id ? 'case.html?id=' + t.case_id : '#'}" class="list-item">
+            <i class="ph ${overdue ? 'ph-warning-circle text-red-400' : 'ph-circle text-zinc-600'}" style="font-size: 16px"></i>
+            <div class="flex-1 min-w-0">
+                <div class="list-title">${esc(t.title)}</div>
+                <div class="list-sub ${overdue ? 'text-red-400' : ''}">${t.due_date ? fmt.date(t.due_date) : 'brak terminu'}${client ? ' · ' + client : ''}${overdue ? ' · po terminie' : ''}</div>
+            </div>
+        </a>`;
+    }).join('');
+}
+
+// ============ PIPELINE ============
+async function loadPipeline() {
+    const [lead, weryf, zloz, oczekOs, poOs, oczekDec, odw] = await Promise.all([
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('status', 'lead'),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('stage', 'weryfikacja_dokumentow').in('status', ['aktywna', 'zlecona']),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('stage', 'zlozenie_wniosku').in('status', ['aktywna', 'zlecona']),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).in('stage', ['oczekiwanie_na_osobiste', 'wyznaczono_termin']).in('status', ['aktywna', 'zlecona']),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('stage', 'po_osobistym').in('status', ['aktywna', 'zlecona']),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('stage', 'oczekiwanie_na_decyzje').in('status', ['aktywna', 'zlecona']),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('stage', 'odwolanie'),
+    ]);
+    document.getElementById('p-lead').textContent       = fmt.num(lead.count || 0);
+    document.getElementById('p-weryf').textContent      = fmt.num(weryf.count || 0);
+    document.getElementById('p-zloz').textContent       = fmt.num(zloz.count || 0);
+    document.getElementById('p-oczek-os').textContent   = fmt.num(oczekOs.count || 0);
+    document.getElementById('p-po-os').textContent      = fmt.num(poOs.count || 0);
+    document.getElementById('p-oczek-dec').textContent  = fmt.num(oczekDec.count || 0);
+    document.getElementById('p-odw').textContent        = fmt.num(odw.count || 0);
+}
+
+// ============ ALERTY ============
+async function loadAlertsByReason() {
+    const { data } = await db.from('gmp_case_alerts').select('inactivity_reason').eq('inactivity_level', 'inactive_30');
+    const by = { brak_pracownika: 0, brak_urzedu: 0, brak_klienta: 0 };
+    (data || []).forEach(r => { if (by[r.inactivity_reason] !== undefined) by[r.inactivity_reason]++; });
+    document.getElementById('a-pracownik').textContent = by.brak_pracownika;
+    document.getElementById('a-urzad').textContent = by.brak_urzedu;
+    document.getElementById('a-klient').textContent = by.brak_klienta;
+}
+
+async function loadAlertsList() {
+    const { data } = await db.from('gmp_case_alerts')
+        .select('*').eq('inactivity_level', 'inactive_30')
+        .order('days_inactive', { ascending: false, nullsFirst: false }).limit(10);
 
     const el = document.getElementById('alerts-list');
-    if (error) { el.innerHTML = `<div class="p-4 text-red-400 text-sm">Błąd</div>`; return; }
-    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check-circle text-emerald-400"></i><div>Brak alertów — wszystko ogarnięte</div></div>'; return; }
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check text-emerald-400"></i><div>Brak alertów bezczynności</div></div>'; return; }
 
     const caseIds = data.map(r => r.case_id);
     const { data: cases } = await db.from('gmp_cases').select('id, case_number, gmp_clients(last_name, first_name), gmp_staff(full_name)').in('id', caseIds);
@@ -249,98 +747,323 @@ async function loadAlerts() {
     el.innerHTML = data.map(a => {
         const c = byId[a.case_id] || {};
         const client = c.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
-        const reason = a.inactivity_reason && a.inactivity_reason !== 'none' ? ` • ${a.inactivity_reason.replace('brak_', '')}` : '';
-        return `<a href="case.html?id=${a.case_id}" class="block p-3 hover:bg-zinc-900/50">
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm text-white truncate">${client}</div>
-                    <div class="text-xs text-zinc-500 truncate">${esc(c.gmp_staff?.full_name || '—')}${reason}</div>
-                </div>
-                <span class="badge badge-inactive-30 flex-shrink-0">${a.days_inactive || 'nigdy'} ${a.days_inactive ? 'dni' : ''}</span>
+        const reason = a.inactivity_reason && REASON_LABELS[a.inactivity_reason] ? REASON_LABELS[a.inactivity_reason] : '';
+        return `<a href="case.html?id=${a.case_id}" class="list-item">
+            <div class="flex-1 min-w-0">
+                <div class="list-title">${client}</div>
+                <div class="list-sub">${esc(c.gmp_staff?.full_name || 'nieprzypisana')}${reason ? ' · ' + reason : ''}</div>
             </div>
+            <span class="mono text-sm text-red-400">${a.days_inactive || 'nigdy'}${a.days_inactive ? 'd' : ''}</span>
         </a>`;
     }).join('');
 }
 
-async function loadRecentCases() {
-    const { data } = await db.from('gmp_cases').select('id, case_number, case_type, status, created_at, gmp_clients(last_name, first_name), gmp_staff(full_name)').order('created_at', { ascending: false }).limit(8);
-    const el = document.getElementById('recent-cases');
-    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-folder"></i><div>Brak spraw</div></div>'; return; }
-    el.innerHTML = data.map(c => {
-        const client = c.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
-        return `<a href="case.html?id=${c.id}" class="block p-3 hover:bg-zinc-900/50">
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm text-white truncate">${client}</div>
-                    <div class="text-xs text-zinc-500 truncate">${esc(c.case_type || '—')} • ${fmt.daysAgo(c.created_at)}</div>
-                </div>
-                <span class="badge badge-${c.status} flex-shrink-0">${esc(c.status)}</span>
+// ============ WINDYKACJA TOP 5 ============
+async function loadDebtTop() {
+    const { data } = await db.from('gmp_collection_overview')
+        .select('*').eq('status', 'active').gt('remaining_amount', 0)
+        .order('priority_score', { ascending: false }).limit(5);
+
+    const el = document.getElementById('debt-top');
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check text-emerald-400"></i><div>Brak aktywnych windykacji</div></div>'; return; }
+
+    el.innerHTML = data.map((c, idx) => {
+        const client = ((c.last_name || '—') + ' ' + (c.first_name || '')).trim();
+        const age = c.date_last_activity || c.date_accepted;
+        const days = age ? Math.floor((Date.now() - new Date(age).getTime()) / 86400000) : null;
+        return `<a href="case.html?id=${c.case_id}" class="col-row">
+            <div class="rank ${idx === 0 ? 'top' : ''}">${idx + 1}</div>
+            <div class="min-w-0">
+                <div class="list-title">${esc(client)}</div>
+                <div class="list-sub">${esc(c.employer_name || 'brak pracodawcy')} · ${esc(c.assigned_name || 'nieprzypisana')}${days ? ' · ' + days + 'd' : ''}</div>
             </div>
+            <div class="mono text-sm text-red-400 font-semibold">${fmt.money(c.remaining_amount)}</div>
+            <div class="mono text-xs muted">p${c.priority_score}</div>
         </a>`;
     }).join('');
 }
 
-async function loadMyTasks() {
-    const el = document.getElementById('my-tasks');
-    if (!window.currentStaff) { el.innerHTML = '<div class="p-4 text-zinc-600 text-sm">Brak profilu staff</div>'; return; }
+// ============ REVENUE CHART 12M ============
+async function loadRevenueChart() {
+    const months = [];
+    const start = new Date();
+    start.setDate(1); start.setMonth(start.getMonth() - 11);
+    for (let i = 0; i < 12; i++) {
+        const d = new Date(start); d.setMonth(d.getMonth() + i);
+        months.push({
+            key: d.toISOString().slice(0, 7),
+            label: ['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'][d.getMonth()],
+            year: d.getFullYear() % 100,
+            amount: 0,
+        });
+    }
 
-    const { data } = await db.from('gmp_tasks').select('id, title, due_date, status, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))').eq('assigned_to', window.currentStaff.id).in('status', ['pending', 'in_progress']).order('due_date', { ascending: true, nullsLast: true }).limit(10);
-    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check-circle text-emerald-400"></i><div>Brak otwartych zadań — brawo</div></div>'; return; }
+    const firstMonth = months[0].key + '-01';
+    const pays = await fetchAll(() => db.from('gmp_payments').select('amount, payment_date').gte('payment_date', firstMonth));
+    pays.forEach(p => {
+        if (!p.payment_date) return;
+        const key = p.payment_date.slice(0, 7);
+        const m = months.find(x => x.key === key);
+        if (m) m.amount += Number(p.amount || 0);
+    });
 
-    const today = new Date().toISOString().slice(0, 10);
-    el.innerHTML = data.map(t => {
-        const overdue = t.due_date && t.due_date < today;
-        const client = t.gmp_cases?.gmp_clients ? `${esc(t.gmp_cases.gmp_clients.last_name)} ${esc(t.gmp_cases.gmp_clients.first_name)}` : '';
-        return `<a href="${t.case_id ? 'case.html?id=' + t.case_id : '#'}" class="block p-3 hover:bg-zinc-900/50">
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm text-white truncate">${esc(t.title)}</div>
-                    <div class="text-xs ${overdue ? 'text-red-400' : 'text-zinc-500'}">${t.due_date ? fmt.date(t.due_date) : 'brak terminu'}${client ? ' • ' + client : ''}</div>
-                </div>
-                ${overdue ? '<span class="badge badge-inactive-30">po terminie</span>' : ''}
-            </div>
-        </a>`;
-    }).join('');
+    const total = months.reduce((s, m) => s + m.amount, 0);
+    document.getElementById('rev-total').textContent = `suma ${fmt.money(total)}`;
+
+    const ctx = document.getElementById('chart-revenue');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: months.map(m => m.label + (m.label === 'sty' ? ` '${m.year}` : '')),
+            datasets: [{
+                data: months.map(m => m.amount),
+                backgroundColor: months.map((_, i) => i === 11 ? '#6366f1' : 'rgba(99,102,241,0.35)'),
+                borderRadius: 6,
+                borderWidth: 0,
+                maxBarThickness: 36,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: { label: ctx => fmt.money(ctx.parsed.y) },
+                    backgroundColor: '#111113', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+                    titleColor: '#f4f4f5', bodyColor: '#a1a1aa', padding: 10, cornerRadius: 6,
+                },
+            },
+            scales: {
+                x: { ticks: { color: '#71717a', font: { size: 11, family: 'Inter' } }, grid: { display: false }, border: { display: false } },
+                y: {
+                    ticks: {
+                        color: '#71717a', font: { size: 10, family: 'JetBrains Mono' },
+                        callback: v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v,
+                    },
+                    grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false },
+                },
+            },
+        },
+    });
 }
 
-async function loadFinance() {
+// ============ FINANSE STRUKTURA ============
+async function loadFinanceStructure() {
     const now = new Date();
     const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
     const next = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().slice(0, 10);
-    const pays = await fetchAll(() => db.from('gmp_payments').select('amount, method').gte('payment_date', first).lt('payment_date', next));
+    const pays = await fetchAll(() => db.from('gmp_payments').select('amount, method, kind').gte('payment_date', first).lt('payment_date', next));
 
-    let cash = 0, transfer = 0, invoice = 0, other = 0;
+    let cash = 0, transfer = 0, invoice = 0, other = 0, admin = 0;
     pays.forEach(p => {
         const a = Number(p.amount) || 0;
+        if (p.kind === 'admin_fee') admin += a;
         if (p.method === 'gotowka') cash += a;
         else if (p.method === 'przelew') transfer += a;
         else if (p.method === 'faktura') invoice += a;
         else other += a;
     });
+    const maxV = Math.max(cash, transfer, invoice, 1);
+
     document.getElementById('fin-cash').textContent = fmt.money(cash);
     document.getElementById('fin-transfer').textContent = fmt.money(transfer);
     document.getElementById('fin-invoice').textContent = fmt.money(invoice);
-    document.getElementById('fin-total').textContent = fmt.money(cash + transfer + invoice + other);
+    document.getElementById('fin-admin').textContent = fmt.money(admin);
 
-    const today = new Date().toISOString().slice(0, 10);
-    const { count: overdueCount } = await db.from('gmp_payment_plans').select('id', { count: 'exact', head: true }).lt('due_date', today);
-    document.getElementById('fin-overdue').textContent = overdueCount ? `${overdueCount} planów` : 'brak';
+    document.getElementById('bar-cash').style.width = (cash / maxV * 100) + '%';
+    document.getElementById('bar-transfer').style.width = (transfer / maxV * 100) + '%';
+    document.getElementById('bar-invoice').style.width = (invoice / maxV * 100) + '%';
 
     const { count: toIssue } = await db.from('gmp_invoices').select('id', { count: 'exact', head: true }).eq('status', 'to_issue');
-    document.getElementById('fin-to-issue').textContent = toIssue ? `${toIssue} faktur` : 'brak';
+    document.getElementById('fin-to-issue').textContent = toIssue ? `${toIssue} sztuk` : '0';
 }
 
-async function loadStats() {
-    const [active, leads, clients, employers] = await Promise.all([
-        db.from('gmp_cases').select('id', { count: 'exact', head: true }).in('status', ['aktywna', 'zlecona']),
-        db.from('gmp_cases').select('id', { count: 'exact', head: true }).eq('status', 'lead'),
-        db.from('gmp_clients').select('id', { count: 'exact', head: true }),
-        db.from('gmp_employers').select('id', { count: 'exact', head: true }),
+// ============ TEAM LEADERBOARD ============
+async function loadTeam() {
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const today = now.toISOString().slice(0, 10);
+
+    const [staff, activeCases, newCases, alerts, overdueTasks] = await Promise.all([
+        db.from('gmp_staff').select('id, full_name, color').order('full_name'),
+        db.from('gmp_cases').select('assigned_to').in('status', ['aktywna', 'zlecona']),
+        db.from('gmp_cases').select('assigned_to, date_accepted').gte('date_accepted', firstOfMonth),
+        db.from('gmp_case_alerts').select('case_id, inactivity_level').eq('inactivity_level', 'inactive_30'),
+        db.from('gmp_tasks').select('assigned_to, due_date, status').in('status', ['pending', 'in_progress']).lt('due_date', today),
     ]);
-    document.getElementById('stat-active').textContent = fmt.num(active.count || 0);
-    document.getElementById('stat-leads').textContent = fmt.num(leads.count || 0);
-    document.getElementById('stat-clients').textContent = fmt.num(clients.count || 0);
-    document.getElementById('stat-employers').textContent = fmt.num(employers.count || 0);
+
+    // Build assigned_to mapping for alerts (need to join via gmp_cases)
+    const alertCaseIds = (alerts.data || []).map(a => a.case_id);
+    let alertByStaff = {};
+    if (alertCaseIds.length) {
+        const { data: alertCases } = await db.from('gmp_cases').select('id, assigned_to').in('id', alertCaseIds);
+        (alertCases || []).forEach(c => {
+            if (c.assigned_to) alertByStaff[c.assigned_to] = (alertByStaff[c.assigned_to] || 0) + 1;
+        });
+    }
+
+    const byStaff = {};
+    (staff.data || []).forEach(s => {
+        byStaff[s.id] = { id: s.id, name: s.full_name, color: s.color, active: 0, newCount: 0, alerts: alertByStaff[s.id] || 0, overdueTasks: 0 };
+    });
+    (activeCases.data || []).forEach(c => { if (c.assigned_to && byStaff[c.assigned_to]) byStaff[c.assigned_to].active++; });
+    (newCases.data || []).forEach(c => { if (c.assigned_to && byStaff[c.assigned_to]) byStaff[c.assigned_to].newCount++; });
+    (overdueTasks.data || []).forEach(t => { if (t.assigned_to && byStaff[t.assigned_to]) byStaff[t.assigned_to].overdueTasks++; });
+
+    const rows = Object.values(byStaff).filter(r => r.active > 0 || r.newCount > 0).sort((a, b) => b.active - a.active);
+    const maxActive = Math.max(1, ...rows.map(r => r.active));
+
+    const tbody = document.getElementById('team-tbody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center muted text-sm">Brak danych</td></tr>'; return; }
+    tbody.innerHTML = rows.map(r => `
+        <tr>
+            <td><div class="name">${window.avatar(r.name, 'sm')}<span>${esc(r.name)}</span></div></td>
+            <td class="mono text-right">${r.active}</td>
+            <td class="mono text-right text-emerald-300">${r.newCount || '—'}</td>
+            <td class="mono text-right ${r.alerts > 5 ? 'text-red-400 font-semibold' : r.alerts > 0 ? 'text-amber-300' : 'muted'}">${r.alerts || '—'}</td>
+            <td class="mono text-right ${r.overdueTasks > 0 ? 'text-red-400' : 'muted'}">${r.overdueTasks || '—'}</td>
+            <td><div class="load-bar"><div style="width: ${r.active / maxActive * 100}%"></div></div></td>
+        </tr>
+    `).join('');
+}
+
+// ============ NEW CASES CHART ============
+async function loadNewCasesChart() {
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
+    const [cases, lastMonthCases, staff] = await Promise.all([
+        db.from('gmp_cases').select('assigned_to, date_accepted').gte('date_accepted', firstOfMonth),
+        db.from('gmp_cases').select('id', { count: 'exact', head: true }).gte('date_accepted', firstOfLastMonth).lt('date_accepted', firstOfMonth),
+        db.from('gmp_staff').select('id, full_name'),
+    ]);
+
+    const staffMap = Object.fromEntries((staff.data || []).map(s => [s.id, s.full_name.split(' ')[0]]));
+    const counts = {};
+    (cases.data || []).forEach(c => {
+        const name = c.assigned_to ? (staffMap[c.assigned_to] || '?') : '(nieprzypisane)';
+        counts[name] = (counts[name] || 0) + 1;
+    });
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+    const totalNew = (cases.data || []).length;
+    const daysPassed = Math.max(1, now.getDate());
+    const avgPerDay = (totalNew / daysPassed).toFixed(1);
+    const lastMonthTotal = lastMonthCases.count || 0;
+    const pct = lastMonthTotal > 0 ? Math.round((totalNew - lastMonthTotal) / lastMonthTotal * 100) : null;
+
+    document.getElementById('new-cases-total').textContent = `${totalNew} spraw`;
+    document.getElementById('nc-total').textContent = fmt.num(totalNew);
+    document.getElementById('nc-avg').textContent = avgPerDay;
+    const trendEl = document.getElementById('nc-trend');
+    if (pct === null) {
+        trendEl.textContent = '—';
+        trendEl.className = 'foot-num muted';
+    } else if (pct >= 0) {
+        trendEl.innerHTML = `<span class="text-emerald-400">+${pct}%</span>`;
+    } else {
+        trendEl.innerHTML = `<span class="text-red-400">${pct}%</span>`;
+    }
+
+    const ctx = document.getElementById('chart-new-cases');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: entries.map(e => e[0]),
+            datasets: [{ data: entries.map(e => e[1]), backgroundColor: '#10b981cc', borderRadius: 6, borderWidth: 0, maxBarThickness: 28 }],
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: '#111113', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1, titleColor: '#f4f4f5', bodyColor: '#a1a1aa', padding: 10, cornerRadius: 6 },
+            },
+            scales: {
+                x: { ticks: { color: '#71717a', font: { size: 10 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } },
+                y: { ticks: { color: '#a1a1aa', font: { size: 11 } }, grid: { display: false }, border: { display: false } },
+            },
+        },
+    });
+}
+
+// ============ FRESH LEADS Z FORMULARZA ============
+async function loadFreshLeads() {
+    const { data } = await db.from('gmp_leads_overview')
+        .select('*')
+        .in('status', ['new', 'contacted'])
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+    const el = document.getElementById('fresh-leads');
+    if (!data?.length) {
+        el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-magnet"></i><div>Brak nowych leadów z formularza</div></div>';
+        return;
+    }
+
+    const STATUS_LBL = { new: 'Nowy', contacted: 'Kontakt' };
+    const PERMIT_LBL = { temporary: 'Pobyt czasowy', permanent: 'Pobyt stały', 'eu-resident': 'Rezydent UE', citizenship: 'Obywatelstwo', work: 'Pobyt + praca', residence: 'Residence' };
+    const SITUATION_LBL = { 'no-fingerprints': 'brak odcisków', rejected: 'odrzucony', stuck: 'stoi', letter: 'wezwanie', new: 'nowa', waiting: 'oczekuje' };
+
+    el.innerHTML = data.map(l => {
+        const name = (l.first_name || l.last_name) ? `${l.last_name || ''} ${l.first_name || ''}`.trim() : (l.name || '—');
+        const isDolno = l.location === 'wroclaw' || l.location === 'dolnoslaskie';
+        const permitText = PERMIT_LBL[l.permit_type] || l.permit_type || '';
+        const situationText = SITUATION_LBL[l.situation] || l.situation || '';
+        const desc = [permitText, situationText, l.location].filter(Boolean).join(' · ');
+        const typeCls = l.lead_type === 'HOT' ? 'text-red-400' : l.lead_type === 'WARM' ? 'text-amber-300' : 'text-zinc-400';
+
+        return `<a href="lead.html?id=${l.id}" class="flex items-center gap-3 p-3 hover:bg-zinc-900/30" style="text-decoration: none; color: inherit">
+            ${window.avatar(name, 'sm')}
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-white truncate">${esc(name)}</span>
+                    ${l.lead_type ? `<span class="text-[10px] font-semibold ${typeCls}">${l.lead_type}</span>` : ''}
+                    ${isDolno ? '<i class="ph ph-check-circle text-emerald-400" title="Woj. dolnośląskie" style="font-size: 12px"></i>' : (l.location === 'other' ? '<i class="ph ph-warning-circle text-amber-400" title="Poza regionem" style="font-size: 12px"></i>' : '')}
+                </div>
+                <div class="text-xs muted truncate">${esc(desc)}</div>
+            </div>
+            <div class="text-right flex-shrink-0">
+                <div class="text-xs text-zinc-500 mono">${esc(l.phone || '')}</div>
+                <div class="text-[10px] muted">${fmt.daysAgo(l.created_at)}</div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0" style="background: ${l.status === 'new' ? 'rgba(99,102,241,0.12)' : 'rgba(245,158,11,0.12)'}; color: ${l.status === 'new' ? '#a5b4fc' : '#fcd34d'}">${STATUS_LBL[l.status]}</span>
+        </a>`;
+    }).join('');
+}
+
+// ============ ACTIVITY FEED ============
+async function loadActivityFeed() {
+    const el = document.getElementById('activity-feed');
+    const { data } = await db.from('gmp_case_activities')
+        .select('id, activity_type, content, created_at, case_id, created_by, gmp_cases(case_number, gmp_clients(last_name, first_name)), gmp_staff(full_name)')
+        .order('created_at', { ascending: false }).limit(15);
+
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-clock-counter-clockwise"></i><div>Brak aktywności</div></div>'; return; }
+
+    const typeIcons = {
+        note: 'ph-note', email: 'ph-envelope', sms: 'ph-chat',
+        phone_call: 'ph-phone', whatsapp: 'ph-whatsapp-logo',
+        letter: 'ph-envelope-simple', letter_certified: 'ph-envelope-simple',
+        document: 'ph-file', status_change: 'ph-arrows-clockwise',
+        stage_change: 'ph-arrows-clockwise', payment: 'ph-currency-circle-dollar',
+        appointment: 'ph-calendar', escalation: 'ph-arrow-up',
+        promise_to_pay: 'ph-handshake', meeting: 'ph-users',
+    };
+
+    el.innerHTML = data.map(a => {
+        const c = a.gmp_cases;
+        const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+        const author = a.gmp_staff?.full_name ? esc(a.gmp_staff.full_name) : 'system';
+        const preview = (a.content || '').slice(0, 100);
+        const typeLabel = (a.activity_type || '').replace(/_/g, ' ');
+        return `<a href="${a.case_id ? 'case.html?id=' + a.case_id : '#'}" class="feed-item">
+            <i class="ph ${typeIcons[a.activity_type] || 'ph-circle'}" style="font-size: 16px; color: var(--text-secondary); margin-top: 2px"></i>
+            <div class="flex-1 min-w-0">
+                <div class="feed-text"><span class="text-white">${client}</span> <span class="muted">· ${typeLabel}</span>${preview ? ` — ${esc(preview)}` : ''}</div>
+                <div class="feed-meta">${author} · ${fmt.daysAgo(a.created_at)}</div>
+            </div>
+        </a>`;
+    }).join('');
 }
 </script>
 </body>

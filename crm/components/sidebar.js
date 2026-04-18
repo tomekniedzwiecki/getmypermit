@@ -10,6 +10,13 @@
       label: 'PRACA',
       items: [
         { href: 'dashboard.html', icon: 'ph-house', color: 'text-blue-400', label: 'Dashboard', id: 'dashboard' },
+        {
+          href: 'leads.html', icon: 'ph-magnet', color: 'text-pink-400', label: 'Leady', id: 'leads',
+          children: [
+            { href: 'leads.html', label: 'Lista', id: 'leads' },
+            { href: 'leads-pipeline.html', label: 'Pipeline', id: 'leads-pipeline' },
+          ]
+        },
         { href: 'cases.html', icon: 'ph-folders', color: 'text-white', label: 'Sprawy', id: 'cases' },
         { href: 'kanban.html', icon: 'ph-kanban', color: 'text-purple-400', label: 'Kanban', id: 'kanban' },
         { href: 'tasks.html', icon: 'ph-check-square', color: 'text-emerald-400', label: 'Zadania', id: 'tasks' },
@@ -49,11 +56,21 @@
   ];
 
   function renderItem(item) {
-    return `
-      <a href="${item.href}" data-page="${item.id}" class="sidebar-link ${activePage === item.id ? 'active' : ''} w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-zinc-400 text-sm font-medium">
+    const isParentActive = item.children?.some(c => c.id === activePage);
+    const mainActive = activePage === item.id || isParentActive;
+    let html = `
+      <a href="${item.href}" data-page="${item.id}" class="sidebar-link ${mainActive ? 'active' : ''} w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-zinc-400 text-sm font-medium">
         <i class="ph ${item.icon} text-lg ${item.color}"></i>
         <span>${item.label}</span>
       </a>`;
+    // Render children only when parent section is active
+    if (item.children && mainActive) {
+      html += `<div class="sidebar-sub">` + item.children.map(c => `
+        <a href="${c.href}" class="sidebar-sublink ${activePage === c.id ? 'active' : ''}">
+          <span class="dot"></span>${c.label}
+        </a>`).join('') + `</div>`;
+    }
+    return html;
   }
 
   function renderSection(sec) {
@@ -82,40 +99,41 @@
           ${sections.map(renderSection).join('')}
         </nav>
 
-        <!-- Info o zalogowanym + logout -->
-        <div class="border-t border-zinc-900 p-3">
-          <div id="sidebar-user" class="px-3 py-2 mb-2 text-xs text-zinc-500">
-            <div class="flex items-center gap-2">
-              <div class="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center">
-                <i class="ph ph-user text-zinc-500"></i>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div id="sidebar-user-name" class="text-zinc-300 text-xs truncate">—</div>
-                <div id="sidebar-user-role" class="text-zinc-600 text-[10px]">—</div>
+        <!-- Footer: search + user menu -->
+        <div class="sidebar-footer">
+          <!-- Search (primary CTA) -->
+          <button class="sidebar-search" onclick="gmpSearch && gmpSearch.open()" title="Szukaj (Ctrl+K)">
+            <i class="ph ph-magnifying-glass"></i>
+            <span>Szukaj</span>
+            <kbd class="sidebar-kbd">⌘K</kbd>
+          </button>
+
+          <!-- User card + icon actions -->
+          <div class="sidebar-user-card">
+            <div class="sidebar-user-info">
+              <span id="sidebar-user-avatar" class="avatar avatar-sm"></span>
+              <div class="min-w-0 flex-1">
+                <div id="sidebar-user-name" class="sidebar-user-name">—</div>
+                <div id="sidebar-user-role" class="sidebar-user-role">—</div>
               </div>
             </div>
+            <div class="sidebar-user-actions">
+              <button class="sidebar-icon-btn" onclick="window.gmpTheme && gmpTheme.toggle()" title="Przełącz motyw">
+                <i class="ph ph-moon" id="theme-icon"></i>
+              </button>
+              <button class="sidebar-icon-btn" onclick="gmpSearch && gmpSearch.help()" title="Pomoc (?)">
+                <i class="ph ph-question"></i>
+              </button>
+              <button id="sidebar-logout" class="sidebar-icon-btn" title="Wyloguj">
+                <i class="ph ph-sign-out"></i>
+              </button>
+            </div>
           </div>
-          <div class="flex gap-1 mb-2">
-            <button class="sidebar-link flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg text-zinc-500 hover:text-white text-xs" onclick="gmpSearch && gmpSearch.open()" title="Szukaj (Ctrl+K)">
-              <i class="ph ph-magnifying-glass"></i>
-              <span>Szukaj</span>
-            </button>
-            <button class="sidebar-link flex items-center justify-center px-3 py-2 rounded-lg text-zinc-500 hover:text-white" onclick="window.gmpTheme && gmpTheme.toggle()" title="Przełącz motyw">
-              <i class="ph ph-moon" id="theme-icon"></i>
-            </button>
-            <button class="sidebar-link flex items-center justify-center px-3 py-2 rounded-lg text-zinc-500 hover:text-white" onclick="gmpSearch && gmpSearch.help()" title="Pomoc (?)">
-              <i class="ph ph-question"></i>
-            </button>
-          </div>
-          <button id="sidebar-logout" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-900 text-sm transition-colors">
-            <i class="ph ph-sign-out text-lg"></i>
-            <span>Wyloguj</span>
-          </button>
         </div>
       </aside>`;
   }
 
-  // Auto-load shortcuts.js + theme.js
+  // Auto-load shortcuts.js + theme.js + notifications.js
   if (!window._gmpShortcutsLoaded) {
     window._gmpShortcutsLoaded = true;
     const s = document.createElement('script');
@@ -124,6 +142,9 @@
     const t = document.createElement('script');
     t.src = 'components/theme.js';
     document.head.appendChild(t);
+    const n = document.createElement('script');
+    n.src = 'components/notifications.js';
+    document.head.appendChild(n);
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -140,10 +161,13 @@
   // Gdy auth ready - wypelnij info o userze
   document.addEventListener('gmp-auth-ready', (e) => {
     const { user, staff } = e.detail;
+    const name = staff?.full_name || user?.email || '—';
     const nameEl = document.getElementById('sidebar-user-name');
     const roleEl = document.getElementById('sidebar-user-role');
-    if (nameEl) nameEl.textContent = staff?.full_name || user?.email || '—';
+    const avatarEl = document.getElementById('sidebar-user-avatar');
+    if (nameEl) nameEl.textContent = name;
     if (roleEl) roleEl.textContent = staff?.role || 'user';
+    if (avatarEl && window.avatar) avatarEl.outerHTML = window.avatar(name, 'sm').replace('class="avatar avatar-sm"', 'class="avatar avatar-sm" id="sidebar-user-avatar"');
   });
 
   window.GMP_CRM_SIDEBAR = { sections, generate: generateSidebar };

@@ -48,10 +48,11 @@
                             <th>Data wysłania</th>
                             <th class="text-right">Kwota</th>
                             <th></th>
+                            <th class="row-open"></th>
                         </tr>
                     </thead>
                     <tbody id="tbody">
-                        <tr><td colspan="7" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        <tr><td colspan="8" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -77,9 +78,9 @@ async function loadList() {
     q = q.order('created_at', { ascending: false }).limit(500);
     const { data, error, count } = await q;
     const tbody = document.getElementById('tbody');
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
     document.getElementById('count').textContent = `${fmt.num(count || 0)} faktur`;
-    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ph ph-receipt"></i><div>Brak faktur</div></td></tr>'; return; }
+    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="ph ph-receipt"></i><div>Brak faktur</div></td></tr>'; return; }
 
     tbody.innerHTML = data.map(inv => {
         const party = inv.gmp_employers ? esc(inv.gmp_employers.name) : (inv.gmp_clients ? `${esc(inv.gmp_clients.last_name)} ${esc(inv.gmp_clients.first_name)}` : '—');
@@ -97,6 +98,7 @@ async function loadList() {
                     <button class="btn btn-ghost btn-sm" onclick="generatePDF('${inv.id}')" title="PDF"><i class="ph ph-file-pdf text-red-400"></i></button>
                     <button class="btn btn-ghost btn-sm" onclick="changeStatus('${inv.id}', '${inv.status}')" title="Zmień status"><i class="ph ph-arrows-clockwise"></i></button>
                 </td>
+                <td class="row-open">${inv.case_id ? window.rowOpen() : ''}</td>
             </tr>`;
     }).join('');
 }

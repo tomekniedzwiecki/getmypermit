@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline leadów - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+
+<style>
+.lt-badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 999px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.lt-HOT  { background: rgba(239,68,68,0.15);  color: #fca5a5; }
+.lt-WARM { background: rgba(245,158,11,0.15); color: #fcd34d; }
+.lt-COLD { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+
+/* ========== PIPELINE CANVAS ========== */
+.pipe-wrap {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(280px, 1fr));
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 2px 12px;
+    height: calc(100vh - 230px);
+}
+@media (max-width: 1500px) {
+    .pipe-wrap { grid-template-columns: repeat(6, 290px); }
+}
+
+.pipe-col {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    min-height: 400px;
+    max-height: 100%;
+    overflow: hidden;
+}
+.pipe-col-h {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-elevated);
+    display: flex; align-items: center; gap: 8px;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    position: sticky; top: 0; z-index: 2;
+}
+.pipe-col-h .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.pipe-col-h .title { flex: 1; }
+.pipe-col-h .count { font-family: 'JetBrains Mono', mono; font-size: 11px; color: var(--text-tertiary); padding: 2px 8px; background: var(--bg); border-radius: 999px; }
+.pipe-col-h .value { font-family: 'JetBrains Mono', mono; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+.pipe-col[data-status="new"]          .dot { background: #6366f1; }
+.pipe-col[data-status="contacted"]    .dot { background: #f59e0b; }
+.pipe-col[data-status="qualified"]    .dot { background: #10b981; }
+.pipe-col[data-status="proposal"]     .dot { background: #a855f7; }
+.pipe-col[data-status="won"]          .dot { background: #10b981; }
+.pipe-col[data-status="disqualified"] .dot { background: #71717a; }
+
+.pipe-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pipe-list.drag-over {
+    background: rgba(99,102,241,0.06);
+    box-shadow: inset 0 0 0 2px var(--accent-border);
+}
+
+.pipe-card {
+    padding: 11px 13px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    cursor: grab;
+    transition: border-color 120ms, transform 120ms, box-shadow 120ms;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.pipe-card:active { cursor: grabbing; }
+.pipe-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+.pipe-card.dragging { opacity: 0.35; transform: rotate(-1.5deg) scale(0.98); }
+
+.pipe-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.pipe-card .name { font-size: var(--fs-sm); font-weight: 600; color: var(--text); line-height: 1.2; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipe-card .permit-line { font-size: 11px; color: var(--text-secondary); line-height: 1.3; }
+.pipe-card .situation {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px; border-radius: var(--r-sm);
+    font-size: 10px; font-weight: 500;
+    background: var(--bg-subtle); color: var(--text-tertiary);
+    margin-top: 6px;
+}
+.pipe-card .situation.hot { background: rgba(239,68,68,0.1); color: #fca5a5; }
+
+.pipe-card-bottom {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
+.pipe-card .score-pill {
+    font-family: 'JetBrains Mono', mono;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+.pipe-card .region-flag {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 10px;
+}
+.region-ok { color: #6ee7b7; }
+.region-warn { color: #fcd34d; }
+.region-bad { color: #fca5a5; }
+
+/* Pipeline KPI bar */
+.pipe-kpi {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+.pipe-kpi > div {
+    padding: 10px 14px;
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 2px;
+}
+.pipe-kpi > div:last-child { border-right: none; }
+.pipe-kpi .pk-l { font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); letter-spacing: 0.08em; }
+.pipe-kpi .pk-v { font-size: 18px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.pipe-kpi .pk-s { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', mono; }
+
+.empty-col {
+    padding: 24px 12px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    border: 1.5px dashed var(--border);
+    border-radius: var(--r-md);
+    margin: 8px 4px;
+}
+
+/* Filter chips */
+.filter-chip {
+    padding: 5px 12px;
+    font-size: 12px;
+    border-radius: 999px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 100ms;
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.filter-chip:hover { border-color: var(--border-hover); color: var(--text); }
+.filter-chip.active { background: var(--accent-subtle); border-color: var(--accent-border); color: var(--accent); }
+</style>
+
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Pipeline leadów</h1>
+                <p class="page-subtitle" id="page-sub">—</p>
+            </div>
+            <div class="flex gap-2 items-center">
+                <a href="leads.html" class="btn btn-secondary btn-sm"><i class="ph ph-list"></i> Widok listy</a>
+            </div>
+        </div>
+
+        <!-- Pipeline KPI bar -->
+        <div class="pipe-kpi" id="pipe-kpi">
+            <div><span class="pk-l">Nowe</span><span class="pk-v" id="pk-new">—</span><span class="pk-s" id="pk-new-v">—</span></div>
+            <div><span class="pk-l">Kontakt</span><span class="pk-v" id="pk-contacted">—</span><span class="pk-s" id="pk-contacted-v">—</span></div>
+            <div><span class="pk-l">Zakwalifik.</span><span class="pk-v" id="pk-qualified">—</span><span class="pk-s" id="pk-qualified-v">—</span></div>
+            <div><span class="pk-l">Oferta</span><span class="pk-v" id="pk-proposal">—</span><span class="pk-s" id="pk-proposal-v">—</span></div>
+            <div><span class="pk-l">Wygrane 30d</span><span class="pk-v text-emerald-400" id="pk-won">—</span><span class="pk-s" id="pk-won-v">—</span></div>
+            <div><span class="pk-l">Konwersja</span><span class="pk-v" id="pk-rate">—</span><span class="pk-s">lead → umowa</span></div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="flex items-center gap-2 flex-wrap mb-3">
+            <input id="f-search" class="filter-input" placeholder="Szukaj..." style="width: 220px">
+            <div class="flex gap-1.5">
+                <button class="filter-chip active" data-type="">Wszystkie</button>
+                <button class="filter-chip" data-type="HOT"><i class="ph ph-fire"></i> HOT</button>
+                <button class="filter-chip" data-type="WARM">WARM</button>
+                <button class="filter-chip" data-type="COLD">COLD</button>
+            </div>
+            <div class="h-4 w-px bg-zinc-800 mx-2"></div>
+            <select id="f-assigned" class="filter-input">
+                <option value="">Opiekun (wszyscy)</option>
+                <option value="__unassigned__">Nieprzypisane</option>
+            </select>
+            <select id="f-permit" class="filter-input">
+                <option value="">Typ sprawy (wszystkie)</option>
+                <option value="temporary">Pobyt czasowy</option>
+                <option value="permanent">Pobyt stały</option>
+                <option value="eu-resident">Rezydent UE</option>
+                <option value="citizenship">Obywatelstwo</option>
+                <option value="work">Pobyt + praca</option>
+                <option value="residence">Residence</option>
+            </select>
+            <span class="text-xs muted ml-auto">Przeciągnij kartę aby zmienić status. Dwie strony w lewo: Wygrany → konwersja do sprawy.</span>
+        </div>
+
+        <!-- Pipeline -->
+        <div class="pipe-wrap">
+            <div class="pipe-col" data-status="new">
+                <div class="pipe-col-h"><span class="dot"></span><div class="title">Nowy</div><span class="count" id="c-new">0</span></div>
+                <div class="pipe-list" data-status="new"></div>
+            </div>
+            <div class="pipe-col" data-status="contacted">
+                <div class="pipe-col-h"><span class="dot"></span><div class="title">Kontaktowany</div><span class="count" id="c-contacted">0</span></div>
+                <div class="pipe-list" data-status="contacted"></div>
+            </div>
+            <div class="pipe-col" data-status="qualified">
+                <div class="pipe-col-h"><span class="dot"></span><div class="title">Zakwalifikowany</div><span class="count" id="c-qualified">0</span></div>
+                <div class="pipe-list" data-status="qualified"></div>
+            </div>
+            <div class="pipe-col" data-status="proposal">
+                <div class="pipe-col-h"><span class="dot"></span><div class="title">Oferta</div><span class="count" id="c-proposal">0</span></div>
+                <div class="pipe-list" data-status="proposal"></div>
+            </div>
+            <div class="pipe-col" data-status="won">
+                <div class="pipe-col-h"><span class="dot"></span><div class="title">Wygrany</div><span class="count" id="c-won">0</span></div>
+                <div class="pipe-list" data-status="won"></div>
+            </div>
+            <div class="pipe-col" data-status="disqualified">
+                <div class="pipe-col-h"><span class="dot"></span><div class="title">Odrzuceni</div><span class="count" id="c-dq">0</span></div>
+                <div class="pipe-list" data-status="disqualified"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="components/sidebar.js" data-active="leads-pipeline"></script>
+<script>
+let allLeads = [];
+let filterType = '';
+
+const PERMIT_LABELS = {
+    temporary: 'Pobyt czasowy', permanent: 'Pobyt stały', 'eu-resident': 'Rezydent UE',
+    citizenship: 'Obywatelstwo', work: 'Pobyt + praca', residence: 'Residence',
+};
+const SITUATION_LABELS = {
+    'no-fingerprints': 'Brak odcisków palców', rejected: 'Odrzucony', stuck: 'Sprawa stoi',
+    letter: 'Wezwanie z urzędu', new: 'Nowa sprawa', waiting: 'Oczekuje',
+    'new-application': 'Nowa sprawa',
+};
+const STATUS_LABELS = {
+    new: 'Nowy', contacted: 'Kontaktowany', qualified: 'Zakwalifikowany',
+    proposal: 'Oferta', won: 'Wygrany', disqualified: 'Niekwalifik.', lost: 'Stracony', converted: 'Wygrany',
+};
+
+document.addEventListener('gmp-auth-ready', init);
+
+async function init() {
+    const { data: staff } = await db.from('gmp_staff').select('id, full_name').order('full_name');
+    const sel = document.getElementById('f-assigned');
+    (staff || []).forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.full_name;
+        sel.appendChild(o);
+    });
+
+    await loadLeads();
+    setupListeners();
+    render();
+}
+
+async function loadLeads() {
+    allLeads = await fetchAll(() => db.from('gmp_leads_overview').select('*').order('created_at', { ascending: false }), 1000, 5000);
+    document.getElementById('page-sub').textContent = `${allLeads.length} leadów w bazie · przeciągnij kartę aby zmienić status`;
+}
+
+function setupListeners() {
+    let t;
+    document.getElementById('f-search').addEventListener('input', () => { clearTimeout(t); t = setTimeout(render, 200); });
+    ['f-assigned', 'f-permit'].forEach(id => document.getElementById(id).addEventListener('change', render));
+    document.querySelectorAll('.filter-chip').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        filterType = b.dataset.type;
+        render();
+    }));
+}
+
+function filterLeads() {
+    const s = document.getElementById('f-search').value.toLowerCase().trim();
+    const assigned = document.getElementById('f-assigned').value;
+    const permit = document.getElementById('f-permit').value;
+    return allLeads.filter(l => {
+        if (s) {
+            const blob = `${l.name || ''} ${l.first_name || ''} ${l.last_name || ''} ${l.phone || ''} ${l.email || ''} ${l.details || ''}`.toLowerCase();
+            if (!blob.includes(s)) return false;
+        }
+        if (filterType && l.lead_type !== filterType) return false;
+        if (assigned === '__unassigned__' && l.assigned_to) return false;
+        if (assigned && assigned !== '__unassigned__' && l.assigned_to !== assigned) return false;
+        if (permit && l.permit_type !== permit) return false;
+        return true;
+    });
+}
+
+function render() {
+    const rows = filterLeads();
+    renderKPI(rows);
+    renderPipe(rows);
+}
+
+function renderKPI(rows) {
+    const byStatus = {};
+    ['new', 'contacted', 'qualified', 'proposal', 'won', 'disqualified', 'lost'].forEach(s => byStatus[s] = []);
+    rows.forEach(l => {
+        const key = l.status === 'converted' ? 'won' : l.status;
+        if (byStatus[key]) byStatus[key].push(l);
+    });
+
+    ['new', 'contacted', 'qualified', 'proposal'].forEach(s => {
+        document.getElementById('pk-' + s).textContent = byStatus[s].length;
+        const totalValue = byStatus[s].reduce((sum, l) => sum + (l.estimated_value || 0), 0);
+        document.getElementById('pk-' + s + '-v').textContent = totalValue > 0 ? `~ ${fmt.money(totalValue)}` : '';
+    });
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
+    const wonRecent = byStatus.won.filter(l => l.converted_at && new Date(l.converted_at) >= thirtyDaysAgo);
+    document.getElementById('pk-won').textContent = wonRecent.length;
+    const wonValue = wonRecent.reduce((s, l) => s + (l.estimated_value || 0), 0);
+    document.getElementById('pk-won-v').textContent = wonValue > 0 ? `~ ${fmt.money(wonValue)}` : '';
+
+    const totalClosed = byStatus.won.length + byStatus.disqualified.length + byStatus.lost.length;
+    const rate = totalClosed > 0 ? Math.round(byStatus.won.length / totalClosed * 100) : 0;
+    document.getElementById('pk-rate').textContent = totalClosed > 0 ? rate + '%' : '—';
+}
+
+function renderPipe(rows) {
+    const byStatus = {
+        new: [], contacted: [], qualified: [], proposal: [], won: [], disqualified: [],
+    };
+    rows.forEach(l => {
+        let key = l.status;
+        if (key === 'lost') key = 'disqualified';
+        if (key === 'converted') key = 'won';
+        if (byStatus[key]) byStatus[key].push(l);
+    });
+
+    Object.keys(byStatus).forEach(s => {
+        const el = document.querySelector(`.pipe-list[data-status="${s}"]`);
+        const items = byStatus[s];
+        document.getElementById('c-' + (s === 'disqualified' ? 'dq' : s)).textContent = items.length;
+        el.innerHTML = items.length
+            ? items.map(pipeCard).join('')
+            : `<div class="empty-col">Pusta kolumna — przeciągnij tu kartę</div>`;
+    });
+
+    // Drag handlers
+    document.querySelectorAll('.pipe-card').forEach(card => {
+        card.addEventListener('dragstart', e => {
+            card.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', card.dataset.id);
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    });
+    document.querySelectorAll('.pipe-list').forEach(list => {
+        list.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; list.classList.add('drag-over'); });
+        list.addEventListener('dragleave', (e) => { if (!list.contains(e.relatedTarget)) list.classList.remove('drag-over'); });
+        list.addEventListener('drop', async e => {
+            e.preventDefault();
+            list.classList.remove('drag-over');
+            const id = e.dataTransfer.getData('text/plain');
+            await changeStatus(id, list.dataset.status);
+        });
+    });
+}
+
+function pipeCard(l) {
+    const name = (l.first_name || l.last_name) ? `${l.last_name || ''} ${l.first_name || ''}`.trim() : (l.name || '—');
+    const score = l.lead_score || 0;
+    const permit = PERMIT_LABELS[l.permit_type] || l.permit_type || '';
+    const situation = SITUATION_LABELS[l.situation] || l.situation || '';
+    const isHotSituation = ['no-fingerprints', 'letter', 'rejected'].includes(l.situation);
+
+    let regionClass = 'region-warn';
+    let regionIcon = 'ph-question';
+    let regionText = l.location || '—';
+    if (l.location === 'wroclaw') { regionClass = 'region-ok'; regionIcon = 'ph-check-circle'; regionText = 'Wrocław'; }
+    else if (l.location === 'dolnoslaskie') { regionClass = 'region-ok'; regionIcon = 'ph-check-circle'; regionText = 'Dolnośląskie'; }
+    else if (l.location === 'other') { regionClass = 'region-bad'; regionIcon = 'ph-x-circle'; regionText = 'Poza regionem'; }
+
+    const scoreBg = score >= 60 ? 'rgba(239,68,68,0.15)' : score >= 35 ? 'rgba(245,158,11,0.15)' : 'rgba(99,102,241,0.12)';
+    const scoreColor = score >= 60 ? '#fca5a5' : score >= 35 ? '#fcd34d' : '#a5b4fc';
+    const estimatedVal = l.estimated_value ? ` · ~${fmt.money(l.estimated_value).replace(/\s?zł$/, 'zł')}` : '';
+
+    return `<a href="lead.html?id=${l.id}" class="pipe-card" draggable="true" data-id="${l.id}">
+        <div class="pipe-card-top">
+            ${window.avatar(name, 'sm')}
+            <div class="name">${esc(name)}</div>
+            ${l.lead_type ? `<span class="lt-badge lt-${l.lead_type}">${l.lead_type}</span>` : ''}
+        </div>
+        <div class="permit-line">${permit ? esc(permit) : '<span class="muted">Typ nieokreślony</span>'}${estimatedVal}</div>
+        ${situation ? `<span class="situation ${isHotSituation ? 'hot' : ''}">${isHotSituation ? '<i class="ph ph-fire"></i>' : '<i class="ph ph-chat-circle-dots"></i>'} ${esc(situation)}</span>` : ''}
+        <div class="pipe-card-bottom">
+            <span class="region-flag ${regionClass}"><i class="ph ${regionIcon}"></i> ${esc(regionText)}</span>
+            <div class="flex items-center gap-2">
+                <span class="mono">${fmt.daysAgo(l.created_at).replace('temu', '').trim()}</span>
+                <span class="score-pill" style="background: ${scoreBg}; color: ${scoreColor}">${score}</span>
+            </div>
+        </div>
+    </a>`;
+}
+
+async function changeStatus(leadId, newStatus) {
+    const lead = allLeads.find(l => l.id === leadId);
+    if (!lead) return;
+    if (lead.status === newStatus) return;
+    if (newStatus === 'disqualified' && (lead.status === 'lost')) return;
+
+    // Won = konwersja
+    if (newStatus === 'won' && !lead.converted_case_id) {
+        const name = (lead.first_name || lead.last_name) ? `${lead.last_name || ''} ${lead.first_name || ''}`.trim() : (lead.name || 'ten lead');
+        if (!confirm(`Konwertować "${name}" do sprawy CRM?\nUtworzy się klient + sprawa (status: zlecona).`)) {
+            render(); return;
+        }
+        const { data, error } = await db.rpc('gmp_convert_lead_to_case', { lead_id: leadId });
+        if (error) { toast.error(error.message); render(); return; }
+        toast.success('Lead skonwertowany → nowa sprawa CRM');
+        await loadLeads();
+        render();
+        return;
+    }
+
+    const updates = { status: newStatus };
+    if (newStatus === 'contacted' && !lead.last_contact_at) {
+        updates.last_contact_at = new Date().toISOString();
+    }
+    const { error } = await db.from('permit_leads').update(updates).eq('id', leadId);
+    if (error) { toast.error(error.message); render(); return; }
+    toast.success(`→ ${STATUS_LABELS[newStatus]}`);
+    await loadLeads();
+    render();
+}
+</script>
+
+</body>
+</html>

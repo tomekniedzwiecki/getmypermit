@@ -58,10 +58,11 @@
                             <th>Telefon</th>
                             <th>Email</th>
                             <th class="text-right">Spraw</th>
+                            <th class="row-open"></th>
                         </tr>
                     </thead>
                     <tbody id="tbody">
-                        <tr><td colspan="7" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        <tr><td colspan="8" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -132,13 +133,13 @@ async function loadList() {
 
     const { data, error, count } = await q;
     const tbody = document.getElementById('tbody');
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
 
     totalRows = count || 0;
     document.getElementById('count').textContent = `${fmt.num(totalRows)} klientów`;
 
     if (!data?.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ph ph-users"></i><div>Brak klientów</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="ph ph-users"></i><div>Brak klientów</div></td></tr>';
         renderPagination(); return;
     }
 
@@ -159,6 +160,7 @@ async function loadList() {
             <td class="font-mono text-xs text-zinc-300">${esc(c.phone || '')}</td>
             <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(c.email || '')}</td>
             <td class="text-right text-zinc-400 text-xs">${casesByClient[c.id] || 0}</td>
+            <td class="row-open">${window.rowOpen()}</td>
         </tr>
     `).join('');
     renderPagination();

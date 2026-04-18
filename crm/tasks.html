@@ -46,10 +46,11 @@
                             <th>Termin</th>
                             <th>Utworzone</th>
                             <th>Status</th>
+                            <th class="row-open"></th>
                         </tr>
                     </thead>
                     <tbody id="tbody">
-                        <tr><td colspan="7" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        <tr><td colspan="8" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -82,7 +83,7 @@ async function loadList() {
 
     const today = new Date().toISOString().slice(0,10);
     if (view === 'mine') {
-        if (!window.currentStaff) { document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="p-6 text-zinc-500">Brak profilu staff dla bieżącego usera</td></tr>'; return; }
+        if (!window.currentStaff) { document.getElementById('tbody').innerHTML = '<tr><td colspan="8" class="p-6 text-zinc-500">Brak profilu staff dla bieżącego usera</td></tr>'; return; }
         q = q.eq('assigned_to', window.currentStaff.id).in('status', ['pending', 'in_progress']);
     } else if (view === 'all-open') {
         q = q.in('status', ['pending', 'in_progress']);
@@ -97,8 +98,8 @@ async function loadList() {
 
     const { data, error } = await q;
     const tbody = document.getElementById('tbody');
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ph ph-check-circle"></i><div>Brak zadań</div></td></tr>'; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="ph ph-check-circle"></i><div>Brak zadań</div></td></tr>'; return; }
 
     tbody.innerHTML = data.map(t => {
         const c = t.gmp_cases;
@@ -114,6 +115,7 @@ async function loadList() {
                 <td class="text-xs ${overdue ? 'text-red-400 font-medium' : 'text-zinc-400'}">${t.due_date ? fmt.date(t.due_date) : '—'}</td>
                 <td class="text-xs text-zinc-500">${fmt.daysAgo(t.created_at)}</td>
                 <td><span class="badge ${done ? 'badge-zakonczona' : 'badge-zlecona'}">${esc(t.status)}</span></td>
+                <td class="row-open">${t.case_id ? window.rowOpen() : ''}</td>
             </tr>`;
     }).join('');
 }
