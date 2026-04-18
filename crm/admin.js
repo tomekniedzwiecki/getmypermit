@@ -170,7 +170,7 @@ async function loadStaffPerf(forceRefresh = false) {
 
     const [staffR, casesR, activitiesR, paymentsR, tasksOverdueR] = await Promise.all([
         db.from('gmp_staff').select('id, full_name, email, role, last_login_at').order('full_name'),
-        db.from('gmp_cases').select('id, status, assigned_to, date_closed, fee_amount, created_at'),
+        db.from('gmp_cases').select('id, status, assigned_to, date_last_activity, fee_amount, created_at'),
         db.from('gmp_case_activities').select('created_by, created_at').gte('created_at', since7d),
         db.from('gmp_payments').select('amount, payment_date, case_id').gte('payment_date', since30d),
         db.from('gmp_tasks').select('assigned_to, due_date, completed_at').is('completed_at', null).lt('due_date', new Date().toISOString()),
@@ -194,7 +194,8 @@ async function loadStaffPerf(forceRefresh = false) {
     // Metryki
     const rows = staff.map(s => {
         const activeCases = cases.filter(c => c.assigned_to === s.id && ['zlecona', 'aktywna'].includes(c.status)).length;
-        const closed30 = cases.filter(c => c.assigned_to === s.id && c.date_closed && new Date(c.date_closed) >= new Date(since30d)).length;
+        // "Zamknięte w 30d" — aproksymacja: status='zakonczona' + ostatnia aktywność w 30d (konwencja z analytics.html)
+        const closed30 = cases.filter(c => c.assigned_to === s.id && c.status === 'zakonczona' && c.date_last_activity && new Date(c.date_last_activity) >= new Date(since30d)).length;
         const acts7 = activities.filter(a => a.created_by === s.id).length;
         const overdue = overdueTasks.filter(t => t.assigned_to === s.id).length;
         const revenue = revenueBy[s.id] || 0;
@@ -258,7 +259,7 @@ async function loadRisk(forceRefresh = false) {
             gmp_staff:assigned_to(full_name)
         `).in('status', ['zlecona', 'aktywna']).order('date_last_activity', { ascending: true, nullsFirst: true }),
         db.from('gmp_invoices').select(`
-            id, number, issue_date, amount_gross, status, case_id,
+            id, invoice_number, issue_date, amount, status, case_id,
             gmp_cases(case_number, gmp_clients(first_name, last_name))
         `).in('status', ['issued', 'sent']),
         db.from('gmp_intake_tokens').select(`
@@ -297,9 +298,9 @@ async function loadRisk(forceRefresh = false) {
             ? `${inv.gmp_cases.gmp_clients.first_name || ''} ${inv.gmp_cases.gmp_clients.last_name || ''}`.trim()
             : '';
         const base = {
-            title: `Faktura ${inv.number} · ${client}`,
+            title: `Faktura ${inv.invoice_number} · ${client}`,
             href: `case.html?id=${inv.case_id}&tab=finance`,
-            meta: [`Kwota <b>${Number(inv.amount_gross || 0).toLocaleString('pl-PL')} zł</b>`, `<b>${daysOverdue} dni</b> przeterminowana`],
+            meta: [`Kwota <b>${Number(inv.amount || 0).toLocaleString('pl-PL')} zł</b>`, `<b>${daysOverdue} dni</b> przeterminowana`],
         };
         if (daysOverdue > 60) critical.push(base);
         else if (daysOverdue > 30) warning.push(base);
@@ -360,7 +361,7 @@ async function loadFinance() {
         db.from('gmp_payments').select('amount').gte('payment_date', monthStart.toISOString().slice(0, 10)),
         db.from('gmp_payments').select('amount').gte('payment_date', prevMonthStart.toISOString().slice(0, 10)).lt('payment_date', prevMonthEnd.toISOString().slice(0, 10)),
         db.from('gmp_invoices').select(`
-            id, number, amount_gross, issue_date, status, case_id,
+            id, invoice_number, amount, issue_date, status, case_id,
             gmp_cases(case_number, assigned_to, gmp_clients(first_name, last_name), gmp_staff:assigned_to(full_name))
         `).in('status', ['issued', 'sent']).lt('issue_date', d14.toISOString().slice(0, 10)),
         db.from('gmp_collections').select('total_due, amount_recovered'),
@@ -377,7 +378,7 @@ async function loadFinance() {
     const recovered = (collectionsR.data || []).reduce((s, c) => s + Number(c.amount_recovered || 0), 0);
     const collectionRate = totalDue > 0 ? Math.round((recovered / totalDue) * 100) : 0;
 
-    const overdueTotal = (overdueR.data || []).reduce((s, inv) => s + Number(inv.amount_gross || 0), 0);
+    const overdueTotal = (overdueR.data || []).reduce((s, inv) => s + Number(inv.amount || 0), 0);
 
     document.getElementById('k-pipeline').textContent = (pipeline / 1000).toFixed(0) + 'k zł';
     document.getElementById('k-pipeline-sub').textContent = `${(activeCasesR.data || []).length} aktywnych`;
@@ -402,9 +403,9 @@ async function loadFinance() {
             const client = inv.gmp_cases?.gmp_clients ? `${inv.gmp_cases.gmp_clients.first_name || ''} ${inv.gmp_cases.gmp_clients.last_name || ''}`.trim() : '—';
             const lawyer = inv.gmp_cases?.gmp_staff?.full_name || '—';
             return `<tr>
-                <td><a href="case.html?id=${inv.case_id}&tab=finance" style="color: #a5b4fc">${esc(inv.number)}</a></td>
+                <td><a href="case.html?id=${inv.case_id}&tab=finance" style="color: #a5b4fc">${esc(inv.invoice_number)}</a></td>
                 <td>${esc(client)}</td>
-                <td class="mono-num" style="text-align: right">${Number(inv.amount_gross || 0).toLocaleString('pl-PL')} zł</td>
+                <td class="mono-num" style="text-align: right">${Number(inv.amount || 0).toLocaleString('pl-PL')} zł</td>
                 <td class="mono-num" style="text-align: right; color: ${days > 60 ? '#fca5a5' : days > 30 ? '#fcd34d' : 'inherit'}">${days}</td>
                 <td>${esc(lawyer)}</td>
                 <td style="color: var(--text-tertiary); font-size: 11px">—</td>
