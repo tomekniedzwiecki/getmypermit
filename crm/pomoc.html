@@ -426,6 +426,7 @@
                 <div class="help-toc-title">W tym podręczniku</div>
 
                 <a href="#start" class="active">Wprowadzenie</a>
+                <a href="#szybki-start">Szybki start (5 min)</a>
                 <a href="#workflow">Jak to działa: lead → sprawa</a>
 
                 <div class="group-label">Moduły pracy</div>
@@ -460,6 +461,7 @@
                 <a href="#skroty">Skróty klawiszowe</a>
                 <a href="#role">Role i uprawnienia</a>
                 <a href="#faq">Najczęstsze pytania</a>
+                <a href="#problemy">Rozwiązywanie problemów</a>
             </aside>
 
             <!-- ============ CONTENT ============ -->
@@ -504,6 +506,27 @@
                         <i class="ph ph-lightbulb"></i>
                         <div>Na dole sidebaru masz <strong>wyszukiwarkę</strong> (<kbd>Ctrl</kbd> + <kbd>K</kbd>). Znajduje sprawy, klientów, pracodawców po dowolnym fragmencie tekstu — najszybsza droga do konkretnej teczki.</div>
                     </div>
+
+                    <h3>Orientacja po panelu</h3>
+                    <ul>
+                        <li><strong>Lewy sidebar</strong> — nawigacja główna, na dole: wyszukiwarka, profil użytkownika, przełącznik motywu (<i class="ph ph-moon"></i> / <i class="ph ph-sun"></i>), ikona pomocy (<i class="ph ph-question"></i>), wyloguj.</li>
+                        <li><strong>Prawy dolny róg</strong> — <strong>FAB</strong> (pływający przycisk), po kliknięciu: Szukaj, Nowa sprawa, Nowy klient.</li>
+                        <li><strong>Na telefonie</strong> — sidebar chowa się pod hamburger (<i class="ph ph-list"></i>) na górnej belce.</li>
+                        <li><strong>Motyw ciemny / jasny</strong> — ikonką księżyca / słońca w stopce sidebaru (albo przez Ctrl+K → „motyw").</li>
+                    </ul>
+                </section>
+
+                <!-- ============ SZYBKI START ============ -->
+                <section class="help-section" id="szybki-start" style="margin-top: -24px;">
+                    <h2><i class="ph ph-rocket-launch"></i>Szybki start — pierwsze 5 minut</h2>
+                    <p class="lede">Minimum, które musisz opanować, żeby sensownie pracować w panelu.</p>
+                    <ol class="steps">
+                        <li><span class="step-title">Naciśnij <kbd>Ctrl</kbd> + <kbd>K</kbd></span><span class="step-desc">Najszybsza droga do czegokolwiek: klient, sprawa, moduł, akcja. Zapamiętaj ten skrót — zastąpi Ci 90% klikania w menu.</span></li>
+                        <li><span class="step-title">Otwórz Dashboard</span><span class="step-desc">Zobacz co się dzieje dziś: KPI, zadania na dziś, nowe leady.</span></li>
+                        <li><span class="step-title">Wejdź w Sprawy</span><span class="step-desc">Rzuć okiem na listę, kliknij dowolną sprawę — zapoznaj się z 8 zakładkami w karcie sprawy.</span></li>
+                        <li><span class="step-title">Przetestuj inline edit</span><span class="step-desc">W liście spraw kliknij status, etap lub opiekuna — otworzy się dropdown, bez wchodzenia w szczegóły.</span></li>
+                        <li><span class="step-title">Sprawdź Alerty</span><span class="step-desc">To pierwszy moduł do otwarcia rano — pokazuje co może nam umknąć (bezczynność, zaległe zadania i płatności).</span></li>
+                    </ol>
                 </section>
 
                 <!-- ============ WORKFLOW ============ -->
@@ -623,23 +646,36 @@
                     <h3>Operacje masowe</h3>
                     <p>Zaznacz wiele spraw checkboxem, potem użyj paska akcji: przypisz opiekuna, zmień status/etap/kategorię, dodaj tag, przypnij, usuń.</p>
 
+                    <h3>Przypinanie</h3>
+                    <p>Kliknij ikonę pinezki przy sprawie, żeby przypiąć ją na górę listy — przydatne dla aktualnie prowadzonych. Filtr „tylko przypięte" jest też w Kanbanie.</p>
+
+                    <h3>Tagi i zapisane widoki</h3>
+                    <p>Sprawy możesz otagować (np. „prio", „trudny klient"). Tagi filtrujesz z paska u góry. <strong>Zapisane widoki</strong> (chipy obok filtrów) pozwalają zapisać ulubione kombinacje filtrów — np. „moje aktywne w tym miesiącu" jako jeden klik.</p>
+
                     <h3>Karta sprawy (szczegóły)</h3>
-                    <p>Po wejściu w sprawę masz 6 zakładek:</p>
+                    <p>Po wejściu w sprawę masz 8 zakładek:</p>
                     <div class="dl">
-                        <dt>Ogólne</dt>
-                        <dd>Dane sprawy: typ, etap, kategoria, pracodawca, data przyjęcia, kwota, metoda złożenia. Historia zmian.</dd>
-                        <dt>Dokumenty</dt>
-                        <dd>Upload plików (drag & drop), kategoria, wersjonowanie.</dd>
-                        <dt>Notatki</dt>
-                        <dd>Feed notatek zespołu, edytor z możliwością wstawienia szablonu.</dd>
-                        <dt>Oś czasu</dt>
-                        <dd>Wszystkie wydarzenia chronologicznie: notatki, zmiany statusu, płatności, emaile, zadania.</dd>
-                        <dt>Ankieta klienta</dt>
-                        <dd>Formularz do wypełnienia przez klienta (intake) — postęp i status.</dd>
+                        <dt>Przegląd</dt>
+                        <dd>Syntetyczny widok: kluczowe daty, kwoty, ostatnie wydarzenia, skrót do pełnej historii.</dd>
+                        <dt>Historia</dt>
+                        <dd>Chronologiczny feed wszystkich wydarzeń: notatki, zmiany statusu/etapu, płatności, emaile, zadania. Tu dodajesz nową notatkę (z szablonu lub od zera).</dd>
                         <dt>Zadania</dt>
-                        <dd>Zadania przypisane do tej sprawy.</dd>
-                        <dt>Komunikacja</dt>
-                        <dd>Historia wysłanych emaili, SMS-ów, WhatsAppów z tym klientem + szybki composer z szablonami.</dd>
+                        <dd>Lista zadań dla tej sprawy, checkbox oznaczający ukończone, przypisanie do osoby, termin.</dd>
+                        <dt>Finanse</dt>
+                        <dd>Wszystko o pieniądzach: kwota sprawy, wpłaty, faktury. Tu odnotujesz nową płatność.</dd>
+                        <dt>Dokumenty</dt>
+                        <dd>Upload plików (drag & drop), kategoria (pełnomocnictwo, wniosek, dowód tożsamości itp.), wersjonowanie.</dd>
+                        <dt>Terminy</dt>
+                        <dd>Spotkania i wizyty urzędowe związane z tą sprawą. Synchronizacja z Kalendarzem.</dd>
+                        <dt>Ankieta klienta</dt>
+                        <dd>Formularz intake, który wysyłasz klientowi do wypełnienia. Widzisz postęp i status (zaproszony / w toku / przesłany / zatwierdzony).</dd>
+                        <dt>Dane szczegółowe</dt>
+                        <dd>Szczegółowe pola sprawy do edycji: typ, kategoria, metoda złożenia, pracodawca, znak sprawy w urzędzie, numery identyfikacyjne itd.</dd>
+                    </div>
+
+                    <div class="callout note">
+                        <i class="ph ph-info"></i>
+                        <div>W karcie sprawy działa skrót <kbd>Ctrl</kbd> + <kbd>S</kbd> — zapisuje aktualnie edytowane pole bez klikania.</div>
                     </div>
                 </section>
 
@@ -647,10 +683,10 @@
                     <h2><i class="ph ph-kanban"></i>Kanban</h2>
                     <p class="lede">Tablica Kanban dla spraw — kolumny to etapy postępowania, karty to sprawy. Alternatywa dla tabeli, użyteczna gdy chcesz zobaczyć „co gdzie stoi".</p>
                     <ul>
-                        <li>11 kolumn: weryfikacja → złożenie → oczekiwanie na osobiste → wyznaczony termin → po osobistym → oczekiwanie na decyzję → zakończenie → odwołanie → umorzenie.</li>
-                        <li><strong>Przeciągnij kartę</strong> między kolumnami — automatycznie zmienia etap sprawy.</li>
+                        <li>11 kolumn: <strong>Lead (brak etapu) → Weryfikacja dokumentów → Złożenie wniosku → Przystąpienie → Oczek. osobistego → Wyznaczony termin → Po osobistym → Oczek. decyzji → Zakończenie → Odwołanie → Umorzenie</strong>.</li>
+                        <li><strong>Przeciągnij kartę</strong> między kolumnami — automatycznie zmienia etap sprawy (a gdy przeciągniesz na etap z grupy „aktywnych", status też przeskoczy na <code>aktywna</code>).</li>
                         <li><strong>Swimlanes</strong> (przełącznik) — dodatkowy podział na wiersze wg opiekuna.</li>
-                        <li>Filtry: opiekun, kategoria, status, „tylko przypięte".</li>
+                        <li>Filtry: opiekun, kategoria, status (aktywne / zlecone / wszystkie), „tylko przypięte".</li>
                     </ul>
                     <a href="kanban.html" class="mod" style="display:inline-flex;flex-direction:row;align-items:center;gap:8px;padding:8px 14px;margin-top:8px;">
                         <i class="ph ph-arrow-right"></i>
@@ -754,19 +790,20 @@
                 <section class="help-section" id="mod-windykacja">
                     <h2><i class="ph ph-warning-circle"></i>Windykacja</h2>
                     <p class="lede">Zaległości powyżej 14 dni — śledzenie, eskalacja, wezwania.</p>
-                    <p>Dla każdej zaległości masz status:</p>
+                    <p>Ścieżka eskalacji (10 poziomów):</p>
                     <div class="status-legend">
-                        <span class="badge badge-neutral">nowy</span>
-                        <span class="badge badge-info">reminder miękki</span>
-                        <span class="badge badge-warn">reminder stanowczy</span>
-                        <span class="badge badge-warn">wezwanie 1</span>
-                        <span class="badge badge-danger">wezwanie ostateczne</span>
-                        <span class="badge badge-danger">pre-sądowe</span>
-                        <span class="badge badge-danger">sąd</span>
-                        <span class="badge badge-success">rozliczone</span>
-                        <span class="badge badge-archiwum">odpis</span>
+                        <span class="badge badge-neutral">Nowa</span>
+                        <span class="badge badge-success">Przypomnienie</span>
+                        <span class="badge badge-info">Ponaglenie</span>
+                        <span class="badge badge-warn">Wezwanie</span>
+                        <span class="badge badge-danger">Ostateczne</span>
+                        <span class="badge badge-danger">Przedsądowe</span>
+                        <span class="badge badge-danger">EPU</span>
+                        <span class="badge badge-danger">Sąd</span>
+                        <span class="badge badge-success">Opłacona</span>
+                        <span class="badge badge-archiwum">Odpisana</span>
                     </div>
-                    <p>Dni zaległości są kolorowane (zielone → czerwone). Z poziomu modułu wyślesz email z szablonem albo dodasz notatkę ze statusem kroku windykacyjnego.</p>
+                    <p>Dni zaległości są kolorowane (zielone → czerwone). Z poziomu modułu wyślesz email z gotowym szablonem wezwania, dodasz notatkę albo przesuniesz poziom eskalacji. <strong>EPU</strong> = Elektroniczne Postępowanie Upominawcze.</p>
                 </section>
 
                 <section class="help-section" id="mod-faktury">
@@ -829,10 +866,14 @@
 
                     <h3>Zamienić leada w sprawę</h3>
                     <ol class="steps">
-                        <li><span class="step-title">Oznacz leada jako wygrany</span><span class="step-desc">W karcie leada zmień status na <code>wygrany</code>.</span></li>
-                        <li><span class="step-title">Kliknij „Utwórz sprawę z leada"</span><span class="step-desc">Przycisk pojawia się gdy lead jest wygrany. Wypełniasz dane: typ, kategoria, kwota, pracodawca.</span></li>
-                        <li><span class="step-title">Sprawa trafia do <a href="cases.html">Spraw</a></span><span class="step-desc">Status <code>zlecona</code>, etap <code>weryfikacja dokumentów</code>. Dane klienta automatycznie przenoszone do kartoteki.</span></li>
+                        <li><span class="step-title">Wejdź w kartę leada</span><span class="step-desc">Kliknij lead w liście lub pipeline.</span></li>
+                        <li><span class="step-title">Zmień status na „Wygrany"</span><span class="step-desc">W nagłówku karty leada. System automatycznie zapyta: <em>„Konwertować leada do sprawy CRM? Utworzy się klient i sprawa (status: zlecona)."</em></span></li>
+                        <li><span class="step-title">Potwierdź konwersję</span><span class="step-desc">Dane klienta przenoszą się do kartoteki <a href="clients.html">Klienci</a>, powstaje sprawa w <a href="cases.html">Sprawach</a>. W karcie leada pojawia się link do utworzonej sprawy (widoczny na zawsze jako ślad).</span></li>
                     </ol>
+                    <div class="callout note">
+                        <i class="ph ph-info"></i>
+                        <div>Alternatywnie możesz utworzyć sprawę od zera w <a href="cases.html">Sprawach → „Nowa sprawa"</a> (bez leada) — ale wtedy ręcznie wybierasz lub tworzysz klienta.</div>
+                    </div>
 
                     <h3>Masowo przypisać opiekuna do wielu spraw</h3>
                     <ol class="steps">
@@ -843,8 +884,8 @@
 
                     <h3>Odnotować wpłatę od klienta</h3>
                     <ol class="steps">
-                        <li><span class="step-title">Najszybciej: z karty sprawy</span><span class="step-desc">Na karcie sprawy → <strong>„Dodaj płatność"</strong>. Kwota, forma, data, notatka.</span></li>
-                        <li><span class="step-title">Alternatywa: moduł <a href="payments.html">Płatności</a></span><span class="step-desc">Przycisk <strong>„Nowa płatność"</strong> — wybierasz klienta / pracodawcę, sprawę, kwotę.</span></li>
+                        <li><span class="step-title">Najszybciej: z karty sprawy → zakładka <strong>Finanse</strong></span><span class="step-desc">Tam dodasz płatność: kwota, forma (gotówka / przelew / karta / faktura / inne), data, opcjonalna notatka. Wpłata od razu wiąże się ze sprawą.</span></li>
+                        <li><span class="step-title">Alternatywa: moduł <a href="payments.html">Płatności</a></span><span class="step-desc">Przycisk <strong>„Nowa płatność"</strong> — ręcznie wybierasz klienta lub pracodawcę, sprawę, kwotę. Przydatne gdy nie wiesz jeszcze do której sprawy przypisać.</span></li>
                         <li><span class="step-title">Jeśli była faktura</span><span class="step-desc">Zmień jej status na <strong>zapłacona</strong> w <a href="invoices.html">Fakturach</a> — wpłata doksięguje się automatycznie.</span></li>
                     </ol>
 
@@ -860,17 +901,45 @@
                 <!-- ============ SKRÓTY ============ -->
                 <section class="help-section" id="skroty">
                     <h2><i class="ph ph-keyboard"></i>Skróty klawiszowe</h2>
-                    <p class="lede">Najszybsze drogi do pracy. Działają z dowolnego miejsca w panelu.</p>
+                    <p class="lede">Panel ma bogaty system skrótów — warto opanować kilka podstawowych. Pełną listę zobaczysz w panelu klawiszem <kbd>?</kbd>.</p>
 
+                    <h3>Akcje natychmiastowe</h3>
                     <div class="dl">
                         <dt><kbd>Ctrl</kbd> + <kbd>K</kbd> <span style="color:var(--text-muted);font-weight:400;">(Mac: <kbd>⌘</kbd> + <kbd>K</kbd>)</span></dt>
-                        <dd>Otwarcie globalnej wyszukiwarki — znajduje sprawy, klientów, pracodawców po dowolnym fragmencie.</dd>
+                        <dd>Globalna wyszukiwarka — znajduje sprawy, klientów, pracodawców po dowolnym fragmencie. Najważniejszy skrót.</dd>
+                        <dt><kbd>/</kbd></dt>
+                        <dd>Alternatywnie otwiera wyszukiwarkę (gdy nie jesteś w polu tekstowym).</dd>
                         <dt><kbd>?</kbd></dt>
-                        <dd>Lista wszystkich skrótów klawiszowych (w panelu).</dd>
+                        <dd>Podgląd pełnej listy skrótów w panelu.</dd>
+                        <dt><kbd>N</kbd></dt>
+                        <dd>Nowa sprawa — natychmiastowe otwarcie modala.</dd>
+                        <dt><kbd>Ctrl</kbd> + <kbd>S</kbd></dt>
+                        <dd>W karcie sprawy — zapis aktualnie edytowanego pola.</dd>
                         <dt><kbd>Esc</kbd></dt>
-                        <dd>Zamknięcie modala / wyszukiwarki / dropdownu.</dd>
-                        <dt><kbd>Enter</kbd></dt>
-                        <dd>W formularzach — submit. W wyszukiwarce — otwiera pierwszy wynik.</dd>
+                        <dd>Zamyka modal, wyszukiwarkę, dropdown.</dd>
+                    </div>
+
+                    <h3>Nawigacja sekwencyjna (G + litera)</h3>
+                    <p>Naciśnij <kbd>G</kbd>, potem (w ciągu 1 sekundy) literę modułu:</p>
+                    <div class="dl">
+                        <dt><kbd>G</kbd> <kbd>D</kbd></dt><dd>Dashboard</dd>
+                        <dt><kbd>G</kbd> <kbd>S</kbd></dt><dd>Sprawy</dd>
+                        <dt><kbd>G</kbd> <kbd>K</kbd></dt><dd>Klienci</dd>
+                        <dt><kbd>G</kbd> <kbd>E</kbd></dt><dd>Pracodawcy</dd>
+                        <dt><kbd>G</kbd> <kbd>L</kbd></dt><dd>Prawnicy (staff)</dd>
+                        <dt><kbd>G</kbd> <kbd>C</kbd></dt><dd>Kalendarz</dd>
+                        <dt><kbd>G</kbd> <kbd>U</kbd></dt><dd>Kolejka wniosków</dd>
+                        <dt><kbd>G</kbd> <kbd>T</kbd></dt><dd>Zadania</dd>
+                        <dt><kbd>G</kbd> <kbd>A</kbd></dt><dd>Alerty</dd>
+                        <dt><kbd>G</kbd> <kbd>P</kbd></dt><dd>Płatności</dd>
+                        <dt><kbd>G</kbd> <kbd>I</kbd></dt><dd>Faktury</dd>
+                        <dt><kbd>G</kbd> <kbd>Z</kbd></dt><dd>Analiza</dd>
+                        <dt><kbd>G</kbd> <kbd>W</kbd></dt><dd>Wzory dokumentów</dd>
+                    </div>
+
+                    <div class="callout">
+                        <i class="ph ph-lightbulb"></i>
+                        <div>Skróty <kbd>G</kbd>+litera nie działają gdy kursor jest w polu tekstowym — nie psują pisania.</div>
                     </div>
                 </section>
 
@@ -948,6 +1017,46 @@
                     <div class="faq-item">
                         <div class="faq-q">Nie widzę sekcji „Super admin" w menu — czemu?</div>
                         <div class="faq-a">Sekcja jest ukryta dla wszystkich poza rolą <strong>owner</strong>. Jeśli powinieneś ją widzieć, sprawdź w sidebarze swoją rolę (dolny lewy róg) — musi być „owner".</div>
+                    </div>
+                </section>
+
+                <!-- ============ TROUBLESHOOTING ============ -->
+                <section class="help-section" id="problemy">
+                    <h2><i class="ph ph-wrench"></i>Rozwiązywanie problemów</h2>
+                    <p class="lede">Gdy coś nie działa — zacznij tutaj. Większość problemów to cache albo chwilowa utrata sesji.</p>
+
+                    <h3>Nie mogę się zalogować</h3>
+                    <ul>
+                        <li>Sprawdź, czy wpisujesz <strong>email służbowy</strong> (nie prywatny).</li>
+                        <li>Kliknij „Nie pamiętam hasła" — reset wysyła link na skrzynkę w ciągu 1–2 minut (zajrzyj też do SPAMu).</li>
+                        <li>Jeśli reset nie dochodzi — użyj jednorazowego linku logowania („Wolisz bez hasła?").</li>
+                        <li>Jeśli nadal nic — konto mogło zostać dezaktywowane; napisz do Tomka.</li>
+                    </ul>
+
+                    <h3>Strona wygląda dziwnie, brakuje elementów</h3>
+                    <p>To najczęściej cache przeglądarki po aktualizacji panelu. Wciśnij <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd> (Mac: <kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd>) — to odświeża z pominięciem cache.</p>
+
+                    <h3>Zmiany, które zrobiłem, zniknęły</h3>
+                    <ul>
+                        <li>Upewnij się, że zmianę zapisałeś — w kartach widać wskaźnik zapisu.</li>
+                        <li>Sprawdź inline edit: trzeba kliknąć poza pole albo <kbd>Enter</kbd>, żeby zapisać.</li>
+                        <li>Jeśli przeglądarka zrestartowała się w trakcie edycji — formularze zapisują się on-blur, ale edytor notatki tylko po kliknięciu „Zapisz".</li>
+                    </ul>
+
+                    <h3>Sprawa, której szukam, nie istnieje</h3>
+                    <ul>
+                        <li>Sprawdź zakładkę <strong>„Zakończone"</strong> w Sprawach (domyślnie widzisz aktywne).</li>
+                        <li>Wpisz nazwisko klienta w <kbd>Ctrl</kbd> + <kbd>K</kbd> — szuka po wszystkich statusach.</li>
+                        <li>Sprawa mogła zostać zarchiwizowana — w bazie jest, zgłoś Tomkowi o przywrócenie.</li>
+                    </ul>
+
+                    <h3>Błąd „401 Unauthorized" / wylogowało mnie</h3>
+                    <p>Sesja wygasła (po kilku godzinach nieaktywności). Zaloguj się ponownie. Jeśli dzieje się to często — zgłoś Tomkowi (może wymagać przedłużenia tokenu).</p>
+
+                    <h3>Kontakt</h3>
+                    <div class="callout">
+                        <i class="ph ph-chat-circle"></i>
+                        <div>Brakuje czegoś w panelu, coś działa nie tak, potrzebujesz funkcji? <strong>Napisz do Tomka</strong> — im konkretniej (screen + opis kroków), tym szybciej zostanie naprawione. Drobne usprawnienia trafiają na produkcję zwykle tego samego dnia.</div>
                     </div>
                 </section>
 
