@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomoc - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="img/favicon-192.png">
+    <link rel="apple-touch-icon" href="img/favicon-192.png">
+    <link rel="shortcut icon" href="img/favicon.ico">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+
+<style>
+    /* === HELP PAGE === */
+    .help-layout {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        gap: 40px;
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+        .help-layout { grid-template-columns: 1fr; gap: 0; }
+        .help-toc { display: none; }
+    }
+
+    /* TOC sidebar */
+    .help-toc {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+        padding-right: 8px;
+        border-right: 1px solid var(--border);
+    }
+    .help-toc-title {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        margin-bottom: 10px;
+        padding-left: 12px;
+    }
+    .help-toc a {
+        display: block;
+        padding: 6px 12px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-radius: var(--r-sm);
+        border-left: 2px solid transparent;
+        transition: all 120ms;
+        margin-bottom: 2px;
+    }
+    .help-toc a:hover { color: var(--text); background: var(--bg-hover); }
+    .help-toc a.active {
+        color: var(--accent);
+        background: var(--accent-subtle);
+        border-left-color: var(--accent);
+    }
+    .help-toc .sub {
+        padding-left: 24px;
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+    .help-toc .group-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        padding: 12px 12px 4px;
+    }
+
+    /* Content */
+    .help-content { padding-bottom: 120px; }
+
+    .help-hero {
+        padding: 32px 0 28px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 32px;
+    }
+    .help-hero .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 12px;
+    }
+    .help-hero h1 {
+        font-size: 36px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--text);
+        line-height: 1.1;
+    }
+    .help-hero p {
+        font-size: 15px;
+        color: var(--text-secondary);
+        margin-top: 12px;
+        line-height: 1.6;
+        max-width: 640px;
+    }
+
+    /* Section */
+    .help-section { margin-bottom: 56px; scroll-margin-top: 24px; }
+    .help-section h2 {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .help-section h2 i {
+        font-size: 22px;
+        color: var(--accent);
+        background: var(--accent-subtle);
+        border: 1px solid var(--accent-border);
+        border-radius: var(--r-md);
+        padding: 6px;
+        width: 34px; height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .help-section .lede {
+        color: var(--text-secondary);
+        font-size: 14px;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+
+    .help-section h3 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 24px 0 8px;
+        letter-spacing: -0.01em;
+    }
+    .help-section p { color: var(--text-secondary); font-size: 14px; line-height: 1.65; margin-bottom: 10px; }
+    .help-section ul, .help-section ol {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.65;
+        padding-left: 20px;
+        margin-bottom: 12px;
+    }
+    .help-section li { margin-bottom: 6px; }
+    .help-section li strong, .help-section p strong { color: var(--text); font-weight: 600; }
+    .help-section a { color: var(--accent); text-decoration: none; }
+    .help-section a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    /* Module card */
+    .mod-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 14px;
+    }
+    @media (max-width: 700px) { .mod-grid { grid-template-columns: 1fr; } }
+
+    .mod {
+        display: flex;
+        flex-direction: column;
+        padding: 16px 18px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        text-decoration: none;
+        transition: all 150ms;
+        position: relative;
+    }
+    .mod:hover {
+        border-color: var(--border-hover);
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+    .mod-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    .mod-ic {
+        width: 28px; height: 28px;
+        flex-shrink: 0;
+        border-radius: var(--r-sm);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-subtle);
+        font-size: 14px;
+    }
+    .mod-title { font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -0.005em; }
+    .mod-desc { font-size: 12.5px; color: var(--text-tertiary); line-height: 1.55; }
+    .mod-go {
+        position: absolute; top: 14px; right: 14px;
+        color: var(--text-muted);
+        font-size: 14px;
+        transition: color 120ms, transform 120ms;
+    }
+    .mod:hover .mod-go { color: var(--accent); transform: translateX(2px); }
+
+    /* Callout */
+    .callout {
+        display: flex;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--accent-subtle);
+        border: 1px solid var(--accent-border);
+        border-radius: var(--r-md);
+        margin: 14px 0;
+    }
+    .callout.warn {
+        background: var(--warn-subtle);
+        border-color: rgba(245,158,11,0.25);
+    }
+    .callout.note {
+        background: var(--bg-subtle);
+        border-color: var(--border);
+    }
+    .callout > i { font-size: 16px; flex-shrink: 0; margin-top: 2px; color: var(--accent); }
+    .callout.warn > i { color: var(--warn); }
+    .callout.note > i { color: var(--text-tertiary); }
+    .callout > div { font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); }
+    .callout > div strong { color: var(--text); }
+
+    /* Steps (numbered) */
+    .steps {
+        list-style: none;
+        counter-reset: step;
+        padding: 0;
+        margin: 14px 0;
+    }
+    .steps > li {
+        counter-increment: step;
+        position: relative;
+        padding: 14px 14px 14px 48px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        margin-bottom: 8px;
+    }
+    .steps > li::before {
+        content: counter(step);
+        position: absolute;
+        left: 14px; top: 14px;
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .steps .step-title { font-size: 14px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px; }
+    .steps .step-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .steps code { background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 4px; font-size: 11.5px; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+
+    /* Keyboard key */
+    kbd {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 11px;
+        padding: 2px 7px;
+        background: var(--bg);
+        border: 1px solid var(--border-strong);
+        border-radius: 4px;
+        color: var(--text);
+        font-weight: 500;
+        line-height: 1.5;
+        box-shadow: 0 1px 0 var(--border);
+    }
+
+    /* Dictionary table (for short glossaries) */
+    .dl {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 12px 20px;
+        margin: 12px 0;
+        padding: 16px 18px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+    }
+    .dl dt {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+    }
+    .dl dd {
+        margin: 0;
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.55;
+    }
+    @media (max-width: 600px) {
+        .dl { grid-template-columns: 1fr; gap: 2px 0; }
+        .dl dt { padding-top: 8px; }
+    }
+
+    /* Flow diagram (ascii-ish flow arrow) */
+    .flow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 18px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        margin: 14px 0;
+    }
+    .flow-node {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 13px;
+        color: var(--text);
+        font-weight: 500;
+    }
+    .flow-node i { color: var(--accent); font-size: 14px; }
+    .flow-arrow { color: var(--text-muted); font-size: 14px; }
+
+    /* FAQ */
+    .faq-item {
+        padding: 14px 18px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        margin-bottom: 8px;
+    }
+    .faq-q {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 6px;
+        letter-spacing: -0.005em;
+    }
+    .faq-a {
+        font-size: 13.5px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+    .faq-a code { background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 4px; font-size: 11.5px; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+    /* Role table */
+    .role-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 12px 0;
+        font-size: 13px;
+    }
+    .role-table th {
+        text-align: left;
+        padding: 10px 14px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-subtle);
+    }
+    .role-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-secondary);
+        vertical-align: top;
+    }
+    .role-table td strong { color: var(--text); }
+    .role-table tr:last-child td { border-bottom: none; }
+    .role-table .role-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+    }
+    .role-table .role-owner { background: rgba(236,72,153,0.12); color: #fbcfe8; }
+    .role-table .role-admin { background: rgba(239,68,68,0.12); color: #fca5a5; }
+    .role-table .role-lawyer { background: var(--accent-subtle); color: #a5b4fc; }
+    .role-table .role-assistant { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+
+    /* Status badge list */
+    .status-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 8px 0 14px;
+    }
+    .status-legend .badge { font-size: 11px; padding: 3px 10px; }
+</style>
+
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="app-main">
+        <div class="help-layout">
+            <!-- ============ TOC ============ -->
+            <aside class="help-toc" id="help-toc">
+                <div class="help-toc-title">W tym podręczniku</div>
+
+                <a href="#start" class="active">Wprowadzenie</a>
+                <a href="#workflow">Jak to działa: lead → sprawa</a>
+
+                <div class="group-label">Moduły pracy</div>
+                <a href="#mod-dashboard">Dashboard</a>
+                <a href="#mod-leady">Leady i pipeline</a>
+                <a href="#mod-sprawy">Sprawy</a>
+                <a href="#mod-kanban">Kanban</a>
+                <a href="#mod-zadania">Zadania</a>
+                <a href="#mod-alerty">Alerty</a>
+
+                <div class="group-label">Kalendarz</div>
+                <a href="#mod-kalendarz">Kalendarz spotkań</a>
+                <a href="#mod-wnioski">Kolejka wniosków</a>
+
+                <div class="group-label">Kartoteki</div>
+                <a href="#mod-klienci">Klienci</a>
+                <a href="#mod-pracodawcy">Pracodawcy</a>
+                <a href="#mod-prawnicy">Prawnicy</a>
+
+                <div class="group-label">Finanse</div>
+                <a href="#mod-platnosci">Płatności</a>
+                <a href="#mod-windykacja">Windykacja</a>
+                <a href="#mod-faktury">Faktury</a>
+                <a href="#mod-analiza">Analiza</a>
+
+                <div class="group-label">Pozostałe</div>
+                <a href="#mod-biblioteka">Biblioteka wzorów</a>
+                <a href="#mod-admin">Super admin</a>
+
+                <div class="group-label">Praktyka</div>
+                <a href="#operacje">Częste operacje</a>
+                <a href="#skroty">Skróty klawiszowe</a>
+                <a href="#role">Role i uprawnienia</a>
+                <a href="#faq">Najczęstsze pytania</a>
+            </aside>
+
+            <!-- ============ CONTENT ============ -->
+            <div class="help-content">
+
+                <!-- ============ HERO ============ -->
+                <header class="help-hero">
+                    <div class="eyebrow">
+                        <i class="ph ph-book-open-text"></i>
+                        Podręcznik użytkownika
+                    </div>
+                    <h1>Panel kancelarii GetMyPermit</h1>
+                    <p>Krótki przewodnik po wszystkich modułach CRM — co gdzie znajdziesz, jak wygląda typowy przepływ sprawy od leada do zakończenia, i jak wykonać najczęstsze operacje. Otwieraj tę stronę kiedy coś jest niejasne; każdy tytuł modułu jest klikalny.</p>
+                </header>
+
+                <!-- ============ START ============ -->
+                <section class="help-section" id="start">
+                    <h2><i class="ph ph-compass"></i>Wprowadzenie</h2>
+                    <p class="lede">Panel jest wyłącznie dla pracowników kancelarii. Każdy ma swój login; uprawnienia zależą od roli.</p>
+
+                    <h3>Logowanie i sesja</h3>
+                    <ul>
+                        <li>Strona logowania: <a href="index.html">crm.getmypermit.pl</a> — email służbowy + hasło.</li>
+                        <li>Nie pamiętasz hasła? Kliknij <strong>„Nie pamiętam hasła"</strong> pod polem hasła — dostaniesz link do resetu na email.</li>
+                        <li>Alternatywnie możesz zalogować się linkiem jednorazowym (przycisk <strong>„Wyślij mi jednorazowy link"</strong>) — przydatne gdy zapomnisz hasła i nie chcesz go zmieniać.</li>
+                        <li><strong>Zapamiętaj mój email</strong> zapisuje jedynie adres w przeglądarce; hasło <strong>nigdy</strong> nie jest przechowywane.</li>
+                        <li>Wylogowanie: ikona <i class="ph ph-sign-out"></i> w dolnym lewym rogu sidebaru.</li>
+                    </ul>
+
+                    <h3>Struktura menu</h3>
+                    <p>Lewy sidebar dzieli funkcje na grupy:</p>
+                    <ul>
+                        <li><strong>Praca</strong> — codzienna robota: leady, sprawy, zadania.</li>
+                        <li><strong>Kalendarz</strong> — spotkania i wizyty w urzędach.</li>
+                        <li><strong>Kartoteki</strong> — bazy danych klientów, pracodawców, prawników.</li>
+                        <li><strong>Finanse</strong> — płatności, faktury, windykacja, raporty.</li>
+                        <li><strong>Biblioteka</strong> — wzory dokumentów, szablony emaili.</li>
+                        <li><strong>Super admin</strong> — widoczne tylko dla właściciela instancji.</li>
+                    </ul>
+
+                    <div class="callout">
+                        <i class="ph ph-lightbulb"></i>
+                        <div>Na dole sidebaru masz <strong>wyszukiwarkę</strong> (<kbd>Ctrl</kbd> + <kbd>K</kbd>). Znajduje sprawy, klientów, pracodawców po dowolnym fragmencie tekstu — najszybsza droga do konkretnej teczki.</div>
+                    </div>
+                </section>
+
+                <!-- ============ WORKFLOW ============ -->
+                <section class="help-section" id="workflow">
+                    <h2><i class="ph ph-flow-arrow"></i>Jak to działa: lead → sprawa</h2>
+                    <p class="lede">Typowy cykl pracy — od pierwszego kontaktu klienta, przez obsługę sprawy, aż po rozliczenie. Każdy etap ma swoje miejsce w menu.</p>
+
+                    <div class="flow">
+                        <span class="flow-node"><i class="ph ph-magnet"></i>Lead</span>
+                        <span class="flow-arrow">→</span>
+                        <span class="flow-node"><i class="ph ph-user-plus"></i>Klient</span>
+                        <span class="flow-arrow">→</span>
+                        <span class="flow-node"><i class="ph ph-folders"></i>Sprawa</span>
+                        <span class="flow-arrow">→</span>
+                        <span class="flow-node"><i class="ph ph-paper-plane-tilt"></i>Złożenie wniosku</span>
+                        <span class="flow-arrow">→</span>
+                        <span class="flow-node"><i class="ph ph-buildings"></i>Urząd</span>
+                        <span class="flow-arrow">→</span>
+                        <span class="flow-node"><i class="ph ph-check-circle"></i>Decyzja</span>
+                        <span class="flow-arrow">→</span>
+                        <span class="flow-node"><i class="ph ph-coins"></i>Rozliczenie</span>
+                    </div>
+
+                    <ol class="steps">
+                        <li>
+                            <span class="step-title">Wpływa lead</span>
+                            <span class="step-desc">Klient wypełnia formularz na <a href="https://getmypermit.pl/" target="_blank" rel="noopener">getmypermit.pl</a> lub dodajemy go ręcznie w <a href="leads.html">Leadach</a>. Lead dostaje status <code>nowy</code> i trafia na górę listy.</span>
+                        </li>
+                        <li>
+                            <span class="step-title">Kwalifikacja leada</span>
+                            <span class="step-desc">Opiekun kontaktuje się, ocenia jakość (<strong>HOT / WARM / COLD</strong>), ustawia typ sprawy (pobyt czasowy / stały / obywatelstwo itp.) i przechodzi przez statusy <code>kontaktowany → zakwalifikowany → propozycja</code>.</span>
+                        </li>
+                        <li>
+                            <span class="step-title">Konwersja leada w sprawę</span>
+                            <span class="step-desc">Po podpisaniu umowy lead zostaje oznaczony jako <code>wygrany</code> i z jego karty tworzymy <strong>nową sprawę</strong> — klient trafia do kartoteki, sprawa do <a href="cases.html">Spraw</a> z etapem <code>weryfikacja dokumentów</code>.</span>
+                        </li>
+                        <li>
+                            <span class="step-title">Obsługa sprawy</span>
+                            <span class="step-desc">Na karcie sprawy dodajesz dokumenty, notatki, zadania dla siebie i zespołu, rejestrujesz komunikację z klientem. Etap przesuwa się przez <code>złożenie → oczekiwanie → osobiste → decyzja</code>.</span>
+                        </li>
+                        <li>
+                            <span class="step-title">Stawiennictwa i wizyty</span>
+                            <span class="step-desc">Umówione wizyty (konsultacja, odcisk biometryczny, osobiste stawiennictwo) ląduj ą w <a href="appointments.html">Kalendarzu</a>. Złożenia wniosków w urzędach — w <a href="submissions.html">Kolejce wniosków</a>.</span>
+                        </li>
+                        <li>
+                            <span class="step-title">Rozliczenie</span>
+                            <span class="step-desc">Faktura wystawiana z modułu <a href="invoices.html">Faktury</a>, wpłaty księgowane w <a href="payments.html">Płatnościach</a>. Jeśli zaległość > 14 dni — sprawa pojawia się w <a href="receivables.html">Windykacji</a>.</span>
+                        </li>
+                        <li>
+                            <span class="step-title">Zamknięcie</span>
+                            <span class="step-desc">Po decyzji urzędu status sprawy zmieniasz na <code>zakończona</code>. Przychód zasila <a href="analytics.html">Analizę</a>.</span>
+                        </li>
+                    </ol>
+                </section>
+
+                <!-- ============ MODUŁY: PRACA ============ -->
+                <section class="help-section" id="mod-dashboard">
+                    <h2><i class="ph ph-house"></i>Dashboard</h2>
+                    <p class="lede">Strona startowa po zalogowaniu — syntetyczny obraz tego, co się dzieje w kancelarii dziś i w tym miesiącu.</p>
+                    <h3>Co tu znajdziesz</h3>
+                    <ul>
+                        <li><strong>Karty KPI</strong>: przychód roku, średnio miesięcznie, nowe sprawy (30 dni), konwersja leadów.</li>
+                        <li><strong>Pipeline leadów</strong> w formie lejka: od <code>nowych</code> do <code>wygranych / straconych</code>.</li>
+                        <li><strong>Widok „dziś"</strong> — zadania, spotkania i alerty na bieżący dzień.</li>
+                        <li><strong>Świeże leady z getmypermit.pl</strong> — najnowsze wpisy z formularza.</li>
+                    </ul>
+                    <a href="dashboard.html" class="mod" style="display:inline-flex;flex-direction:row;align-items:center;gap:8px;padding:8px 14px;margin-top:8px;">
+                        <i class="ph ph-arrow-right"></i>
+                        <span>Otwórz Dashboard</span>
+                    </a>
+                </section>
+
+                <section class="help-section" id="mod-leady">
+                    <h2><i class="ph ph-magnet"></i>Leady i pipeline</h2>
+                    <p class="lede">Wszystko, co przyszło z zewnątrz — potencjalni klienci, których jeszcze nie obsługujemy jako sprawę.</p>
+
+                    <h3>Lista leadów</h3>
+                    <p>W <a href="leads.html">Leadach</a> widzisz tabelę wszystkich wpisów. Kluczowe kolumny:</p>
+                    <ul>
+                        <li><strong>Jakość</strong> (HOT / WARM / COLD) — oceniasz ręcznie po pierwszej rozmowie.</li>
+                        <li><strong>Score</strong> (0–100) — automatyczna ocena na podstawie danych z formularza.</li>
+                        <li><strong>Status</strong>: nowy → kontaktowany → zakwalifikowany → propozycja → wygrany/stracony.</li>
+                        <li><strong>Typ sprawy</strong>: Pobyt czasowy, Pobyt stały, Rezydent UE, Obywatelstwo, Praca, Residence.</li>
+                        <li><strong>Dni od kontaktu</strong> — czerwono-żółto-zielony wskaźnik aktywności.</li>
+                    </ul>
+                    <p>Filtry (góra strony): szukaj, status, jakość, typ, opiekun. Zapisz ulubione kombinacje jako <strong>widoki</strong> (chipy obok filtrów).</p>
+                    <p><strong>Export do CSV</strong> — przycisk w prawym górnym rogu tabeli.</p>
+
+                    <h3>Pipeline (Kanban)</h3>
+                    <p><a href="leads-pipeline.html">Pipeline</a> to ta sama lista, ale jako tablica — 6 kolumn (statusy). <strong>Przeciągnij kartę</strong> między kolumnami, żeby zmienić status leada bez wchodzenia w szczegóły. W nagłówku każdej kolumny masz licznik leadów i sumaryczną wartość.</p>
+
+                    <div class="callout">
+                        <i class="ph ph-star"></i>
+                        <div><strong>Najlepsze praktyki:</strong> nowy lead powinien być dotknięty w ciągu 24h. Leady zaniedbane > 3 dni widzisz w module <a href="alerts.html">Alerty</a>.</div>
+                    </div>
+                </section>
+
+                <section class="help-section" id="mod-sprawy">
+                    <h2><i class="ph ph-folders"></i>Sprawy</h2>
+                    <p class="lede">Serce CRM — każdy klient, z którym mamy umowę, ma tu teczkę. Wszystko dzieje się wokół sprawy.</p>
+
+                    <h3>Lista spraw</h3>
+                    <p>W <a href="cases.html">Sprawach</a> widzisz wszystkie teczki. Szybkie zakładki u góry:</p>
+                    <ul>
+                        <li><strong>Wszystkie</strong>, <strong>Przyjęte</strong>, <strong>Aktywne</strong>, <strong>Do złożenia</strong>, <strong>Oczekujące osobistego</strong>, <strong>Po osobistym</strong>, <strong>Oczekują decyzji</strong>, <strong>Odwołania</strong>, <strong>Zakończone</strong>.</li>
+                    </ul>
+                    <p>Każdy wiersz to jedna sprawa. Kliknij, aby otworzyć <strong>kartę sprawy</strong>.</p>
+
+                    <h3>Inline edycja</h3>
+                    <p>Nie musisz otwierać sprawy, żeby zmienić podstawowe pola. Wystarczy kliknąć na:</p>
+                    <ul>
+                        <li><strong>Status</strong> — dropdown ze zmianą.</li>
+                        <li><strong>Etap</strong> — 11 etapów postępowania.</li>
+                        <li><strong>Opiekun</strong> — przypisanie prawnika.</li>
+                    </ul>
+
+                    <h3>Operacje masowe</h3>
+                    <p>Zaznacz wiele spraw checkboxem, potem użyj paska akcji: przypisz opiekuna, zmień status/etap/kategorię, dodaj tag, przypnij, usuń.</p>
+
+                    <h3>Karta sprawy (szczegóły)</h3>
+                    <p>Po wejściu w sprawę masz 6 zakładek:</p>
+                    <div class="dl">
+                        <dt>Ogólne</dt>
+                        <dd>Dane sprawy: typ, etap, kategoria, pracodawca, data przyjęcia, kwota, metoda złożenia. Historia zmian.</dd>
+                        <dt>Dokumenty</dt>
+                        <dd>Upload plików (drag & drop), kategoria, wersjonowanie.</dd>
+                        <dt>Notatki</dt>
+                        <dd>Feed notatek zespołu, edytor z możliwością wstawienia szablonu.</dd>
+                        <dt>Oś czasu</dt>
+                        <dd>Wszystkie wydarzenia chronologicznie: notatki, zmiany statusu, płatności, emaile, zadania.</dd>
+                        <dt>Ankieta klienta</dt>
+                        <dd>Formularz do wypełnienia przez klienta (intake) — postęp i status.</dd>
+                        <dt>Zadania</dt>
+                        <dd>Zadania przypisane do tej sprawy.</dd>
+                        <dt>Komunikacja</dt>
+                        <dd>Historia wysłanych emaili, SMS-ów, WhatsAppów z tym klientem + szybki composer z szablonami.</dd>
+                    </div>
+                </section>
+
+                <section class="help-section" id="mod-kanban">
+                    <h2><i class="ph ph-kanban"></i>Kanban</h2>
+                    <p class="lede">Tablica Kanban dla spraw — kolumny to etapy postępowania, karty to sprawy. Alternatywa dla tabeli, użyteczna gdy chcesz zobaczyć „co gdzie stoi".</p>
+                    <ul>
+                        <li>11 kolumn: weryfikacja → złożenie → oczekiwanie na osobiste → wyznaczony termin → po osobistym → oczekiwanie na decyzję → zakończenie → odwołanie → umorzenie.</li>
+                        <li><strong>Przeciągnij kartę</strong> między kolumnami — automatycznie zmienia etap sprawy.</li>
+                        <li><strong>Swimlanes</strong> (przełącznik) — dodatkowy podział na wiersze wg opiekuna.</li>
+                        <li>Filtry: opiekun, kategoria, status, „tylko przypięte".</li>
+                    </ul>
+                    <a href="kanban.html" class="mod" style="display:inline-flex;flex-direction:row;align-items:center;gap:8px;padding:8px 14px;margin-top:8px;">
+                        <i class="ph ph-arrow-right"></i>
+                        <span>Otwórz Kanban</span>
+                    </a>
+                </section>
+
+                <section class="help-section" id="mod-zadania">
+                    <h2><i class="ph ph-check-square"></i>Zadania</h2>
+                    <p class="lede">Lista rzeczy do zrobienia — twoich i zespołu. Powiązane ze sprawą albo wolnostojące.</p>
+                    <ul>
+                        <li>Widoki: <strong>Moje</strong>, <strong>Wszystkie otwarte</strong>, <strong>Po terminie</strong>, <strong>Ukończone</strong>.</li>
+                        <li>Checkbox przy zadaniu = oznaczenie jako ukończone.</li>
+                        <li>Kliknij zadanie powiązane ze sprawą → skok do karty sprawy.</li>
+                        <li>Dodaj nowe zadanie z karty sprawy (zakładka <em>Zadania</em>) albo globalnie.</li>
+                    </ul>
+                </section>
+
+                <section class="help-section" id="mod-alerty">
+                    <h2><i class="ph ph-bell-ringing"></i>Alerty bezczynności</h2>
+                    <p class="lede">3 kolumny = 3 typy alarmów. Wchodź tu rano — to pokazuje, co może nam umknąć.</p>
+                    <ul>
+                        <li><strong>Sprawy bez aktywności</strong> — nie dotykane > 30 / 14–30 dni / nigdy. Przyczyna: pracownik / urząd / klient / dokumenty.</li>
+                        <li><strong>Zaległe zadania</strong> — przekroczony termin.</li>
+                        <li><strong>Zaległe płatności</strong> — powiązane z Windykacją.</li>
+                    </ul>
+                </section>
+
+                <!-- ============ KALENDARZ ============ -->
+                <section class="help-section" id="mod-kalendarz">
+                    <h2><i class="ph ph-calendar-check"></i>Kalendarz spotkań</h2>
+                    <p class="lede">Widok tygodniowy z wizytami — konsultacje, odciski biometryczne, osobiste stawiennictwa.</p>
+                    <ul>
+                        <li>Widok: 7 dni obok siebie, każdy jako kolumna z wydarzeniami.</li>
+                        <li>Kliknij dzień → lista szczegółów (klient, czas, notatki, transport).</li>
+                        <li>Przyciski nawigacji: poprzedni / następny tydzień / dziś.</li>
+                        <li>Sekcja <strong>Nadchodzące odciski (14 dni)</strong> — szybkie łącze do Kolejki wniosków.</li>
+                    </ul>
+                </section>
+
+                <section class="help-section" id="mod-wnioski">
+                    <h2><i class="ph ph-paper-plane-tilt"></i>Kolejka wniosków</h2>
+                    <p class="lede">Rejestr wszystkich złożeń w urzędach — papier, elektronicznie, osobiście.</p>
+                    <ul>
+                        <li>Zakładki wg urzędu: <strong>SUW Wałbrzych, Legnica, DUW Wrocław, elektronicznie, tylko oczekujące</strong>.</li>
+                        <li>Kluczowe pola: numer biletu, MOS/PIO, data wysłania, data stawiennictwa, transport, status, uwagi.</li>
+                        <li>Filtry: szukaj, status, data stawiennictwa.</li>
+                        <li>CSV export + paginacja (100 na stronę).</li>
+                    </ul>
+                </section>
+
+                <!-- ============ KARTOTEKI ============ -->
+                <section class="help-section" id="mod-klienci">
+                    <h2><i class="ph ph-users"></i>Klienci</h2>
+                    <p class="lede">Kartoteka cudzoziemców — wszystko co wiemy o naszych klientach.</p>
+                    <ul>
+                        <li>Kolumny: nazwisko, imię, data urodzenia, obywatelstwo, pracodawca, kontakt, liczba spraw.</li>
+                        <li>Filtry: szukaj, obywatelstwo, pracodawca.</li>
+                        <li>Kliknij wiersz → dane osobowe, lista spraw tego klienta, pracodawca, profil zaufany, notatki.</li>
+                        <li>Przycisk <strong>„Nowy klient"</strong> — szybki modal; po zapisie przeniesie Cię do jego karty.</li>
+                    </ul>
+                </section>
+
+                <section class="help-section" id="mod-pracodawcy">
+                    <h2><i class="ph ph-buildings"></i>Pracodawcy</h2>
+                    <p class="lede">Firmy zatrudniające naszych klientów.</p>
+                    <ul>
+                        <li>Kolumny: nazwa, NIP, osoba kontaktowa, telefon, email, liczba klientów, liczba spraw.</li>
+                        <li>Kliknij wiersz → dane firmy, lista jej klientów, wszystkie sprawy.</li>
+                        <li>Faktury można wystawiać na pracodawcę (jeśli on płaci za obsługę klienta) lub bezpośrednio na klienta.</li>
+                    </ul>
+                </section>
+
+                <section class="help-section" id="mod-prawnicy">
+                    <h2><i class="ph ph-scales"></i>Prawnicy (Staff)</h2>
+                    <p class="lede">Zespół kancelarii — kto kim jest i jaką ma produktywność.</p>
+                    <ul>
+                        <li>KPI: aktywni pracownicy, spraw przydzielonych, średnio spraw/opiekun, top przychód.</li>
+                        <li>Kolumny: imię, rola, klientów, spraw razem / aktywnych / zakończonych, leadów, przychód, zadań otwartych, zaległych.</li>
+                        <li>Kliknij wiersz → panel z wykresem przychodu, listą klientów i spraw, zadaniami.</li>
+                    </ul>
+                    <div class="callout note">
+                        <i class="ph ph-info"></i>
+                        <div>Dodawanie nowych pracowników z ich rolami → patrz sekcja <a href="#role">Role i uprawnienia</a>.</div>
+                    </div>
+                </section>
+
+                <!-- ============ FINANSE ============ -->
+                <section class="help-section" id="mod-platnosci">
+                    <h2><i class="ph ph-coins"></i>Płatności</h2>
+                    <p class="lede">Rejestr wpłat od klientów i pracodawców — gotówka, przelew, karta, faktura, inne.</p>
+                    <ul>
+                        <li><strong>Globalne filtry</strong>: okres (dziś, miesiąc, ostatnie 12 mies., wszystko), opiekun, forma, kto płaci (klient / pracodawca), rodzaj (wynagrodzenie / opłaty administracyjne).</li>
+                        <li><strong>KPI strip</strong>: wpłaty w okresie, dziś, trend MoM, zaległości, prognoza 90 dni.</li>
+                        <li>Tabela: klient/pracodawca, sprawa, kwota, forma, data, notatki.</li>
+                        <li>Wykresy: przychody w czasie, porównanie YoY, wolumen spraw.</li>
+                        <li>Ręczny wpis nowej płatności — przycisk u góry.</li>
+                    </ul>
+                </section>
+
+                <section class="help-section" id="mod-windykacja">
+                    <h2><i class="ph ph-warning-circle"></i>Windykacja</h2>
+                    <p class="lede">Zaległości powyżej 14 dni — śledzenie, eskalacja, wezwania.</p>
+                    <p>Dla każdej zaległości masz status:</p>
+                    <div class="status-legend">
+                        <span class="badge badge-neutral">nowy</span>
+                        <span class="badge badge-info">reminder miękki</span>
+                        <span class="badge badge-warn">reminder stanowczy</span>
+                        <span class="badge badge-warn">wezwanie 1</span>
+                        <span class="badge badge-danger">wezwanie ostateczne</span>
+                        <span class="badge badge-danger">pre-sądowe</span>
+                        <span class="badge badge-danger">sąd</span>
+                        <span class="badge badge-success">rozliczone</span>
+                        <span class="badge badge-archiwum">odpis</span>
+                    </div>
+                    <p>Dni zaległości są kolorowane (zielone → czerwone). Z poziomu modułu wyślesz email z szablonem albo dodasz notatkę ze statusem kroku windykacyjnego.</p>
+                </section>
+
+                <section class="help-section" id="mod-faktury">
+                    <h2><i class="ph ph-receipt"></i>Faktury</h2>
+                    <p class="lede">Wystawianie, wysyłanie, oznaczanie jako zapłacone.</p>
+                    <ul>
+                        <li>Kolumny: pracodawca / klient, opis, status (do wystawienia / wysłana / zapłacona), wysłana do, data, kwota.</li>
+                        <li>Nowa faktura: wybór odbiorcy (klient lub pracodawca), kwota, opis.</li>
+                        <li>Eksport PDF pojedynczej faktury, CSV dla całej listy.</li>
+                        <li>Oznacz jako <strong>zapłaconą</strong> → automatyczne księgowanie w Płatnościach.</li>
+                    </ul>
+                </section>
+
+                <section class="help-section" id="mod-analiza">
+                    <h2><i class="ph ph-chart-line-up"></i>Analiza i raporty</h2>
+                    <p class="lede">Miesięczny / roczny przegląd finansów i wolumenu spraw.</p>
+                    <ul>
+                        <li>KPI: przychód roku, średnio/miesiąc, średnio na sprawę, nowe sprawy w miesiącu.</li>
+                        <li>Wykresy: przychód w czasie (24 / 12 / wszystko miesięcy), porównanie rok-do-roku, roczne, wolumen spraw nowych i zakończonych, przychód per prawnik, top pracodawcy.</li>
+                        <li>Wybór roku bazowego u góry.</li>
+                        <li>Export CSV trendów.</li>
+                    </ul>
+                </section>
+
+                <!-- ============ BIBLIOTEKA ============ -->
+                <section class="help-section" id="mod-biblioteka">
+                    <h2><i class="ph ph-file-text"></i>Biblioteka wzorów</h2>
+                    <p class="lede">Centralne repozytorium dokumentów i szablonów tekstów.</p>
+                    <ul>
+                        <li><strong>Pliki</strong> — wzory Word/PDF pogrupowane: pełnomocnictwa, wnioski, odwołania, umowy, oświadczenia, zezwolenia, inne.</li>
+                        <li><strong>Notatki i maile</strong> — szablony gotowych notatek i emaili (np. „Wezwanie do uzupełnienia dokumentów"). Dostępne z edytora notatki w karcie sprawy.</li>
+                        <li>Upload nowego wzoru, edycja opisu, kategorii, usunięcie.</li>
+                    </ul>
+                    <div class="callout warn">
+                        <i class="ph ph-warning"></i>
+                        <div>Moduł jest w <strong>fazie rozbudowy</strong> — część szablonów może być jeszcze pusta. Zgłaszaj brakujące wzory Tomkowi.</div>
+                    </div>
+                </section>
+
+                <section class="help-section" id="mod-admin">
+                    <h2><i class="ph ph-shield-star"></i>Super admin</h2>
+                    <p class="lede">Panel administracyjny instancji — widoczny wyłącznie dla roli <strong>owner</strong>.</p>
+                    <ul>
+                        <li>Statystyki bazy: użytkownicy, sprawy, klienci, płatności.</li>
+                        <li>Zakładki: users (zarządzanie rolami), audit log (kto co zrobił), encryption keys, backups, webhooks.</li>
+                        <li>Wykresy aktywności systemu i użycia przestrzeni dyskowej.</li>
+                    </ul>
+                </section>
+
+                <!-- ============ OPERACJE ============ -->
+                <section class="help-section" id="operacje">
+                    <h2><i class="ph ph-magic-wand"></i>Częste operacje — krok po kroku</h2>
+
+                    <h3>Dodać nowego leada ręcznie</h3>
+                    <ol class="steps">
+                        <li><span class="step-title">Wejdź w <a href="leads.html">Leady</a></span><span class="step-desc">Kliknij przycisk <strong>„Nowy lead"</strong> w prawym górnym rogu.</span></li>
+                        <li><span class="step-title">Wypełnij dane podstawowe</span><span class="step-desc">Imię, nazwisko, telefon, email, typ sprawy, lokalizacja.</span></li>
+                        <li><span class="step-title">Zapisz i ustaw opiekuna</span><span class="step-desc">Lead pojawia się na liście ze statusem <code>nowy</code>. Inline edit → dropdown <strong>Opiekun</strong>.</span></li>
+                    </ol>
+
+                    <h3>Zamienić leada w sprawę</h3>
+                    <ol class="steps">
+                        <li><span class="step-title">Oznacz leada jako wygrany</span><span class="step-desc">W karcie leada zmień status na <code>wygrany</code>.</span></li>
+                        <li><span class="step-title">Kliknij „Utwórz sprawę z leada"</span><span class="step-desc">Przycisk pojawia się gdy lead jest wygrany. Wypełniasz dane: typ, kategoria, kwota, pracodawca.</span></li>
+                        <li><span class="step-title">Sprawa trafia do <a href="cases.html">Spraw</a></span><span class="step-desc">Status <code>zlecona</code>, etap <code>weryfikacja dokumentów</code>. Dane klienta automatycznie przenoszone do kartoteki.</span></li>
+                    </ol>
+
+                    <h3>Masowo przypisać opiekuna do wielu spraw</h3>
+                    <ol class="steps">
+                        <li><span class="step-title">Wejdź w <a href="cases.html">Sprawy</a> i przefiltruj listę</span><span class="step-desc">Np. „bez opiekuna" albo wg kategorii.</span></li>
+                        <li><span class="step-title">Zaznacz sprawy checkboxami</span><span class="step-desc">W lewej kolumnie tabeli. Możesz zaznaczyć wszystkie checkboxem w nagłówku.</span></li>
+                        <li><span class="step-title">Pasek akcji → „Przypisz opiekuna"</span><span class="step-desc">Pojawi się u góry. Wybierz prawnika z listy, potwierdź.</span></li>
+                    </ol>
+
+                    <h3>Odnotować wpłatę od klienta</h3>
+                    <ol class="steps">
+                        <li><span class="step-title">Najszybciej: z karty sprawy</span><span class="step-desc">Na karcie sprawy → <strong>„Dodaj płatność"</strong>. Kwota, forma, data, notatka.</span></li>
+                        <li><span class="step-title">Alternatywa: moduł <a href="payments.html">Płatności</a></span><span class="step-desc">Przycisk <strong>„Nowa płatność"</strong> — wybierasz klienta / pracodawcę, sprawę, kwotę.</span></li>
+                        <li><span class="step-title">Jeśli była faktura</span><span class="step-desc">Zmień jej status na <strong>zapłacona</strong> w <a href="invoices.html">Fakturach</a> — wpłata doksięguje się automatycznie.</span></li>
+                    </ol>
+
+                    <h3>Wystawić fakturę pracodawcy</h3>
+                    <ol class="steps">
+                        <li><span class="step-title">Wejdź w <a href="invoices.html">Faktury</a> → „Nowa faktura"</span><span class="step-desc">Modal.</span></li>
+                        <li><span class="step-title">Wybierz pracodawcę</span><span class="step-desc">Jeśli nie ma go jeszcze w <a href="employers.html">Pracodawcach</a> — dodaj go najpierw.</span></li>
+                        <li><span class="step-title">Kwota, opis, związane sprawy</span><span class="step-desc">Jedna faktura może obejmować wiele spraw tego pracodawcy.</span></li>
+                        <li><span class="step-title">Zapisz i wyślij</span><span class="step-desc">Status przechodzi z <code>do wystawienia</code> na <code>wysłana</code>. Klient dostaje PDF mailem.</span></li>
+                    </ol>
+                </section>
+
+                <!-- ============ SKRÓTY ============ -->
+                <section class="help-section" id="skroty">
+                    <h2><i class="ph ph-keyboard"></i>Skróty klawiszowe</h2>
+                    <p class="lede">Najszybsze drogi do pracy. Działają z dowolnego miejsca w panelu.</p>
+
+                    <div class="dl">
+                        <dt><kbd>Ctrl</kbd> + <kbd>K</kbd> <span style="color:var(--text-muted);font-weight:400;">(Mac: <kbd>⌘</kbd> + <kbd>K</kbd>)</span></dt>
+                        <dd>Otwarcie globalnej wyszukiwarki — znajduje sprawy, klientów, pracodawców po dowolnym fragmencie.</dd>
+                        <dt><kbd>?</kbd></dt>
+                        <dd>Lista wszystkich skrótów klawiszowych (w panelu).</dd>
+                        <dt><kbd>Esc</kbd></dt>
+                        <dd>Zamknięcie modala / wyszukiwarki / dropdownu.</dd>
+                        <dt><kbd>Enter</kbd></dt>
+                        <dd>W formularzach — submit. W wyszukiwarce — otwiera pierwszy wynik.</dd>
+                    </div>
+                </section>
+
+                <!-- ============ ROLE ============ -->
+                <section class="help-section" id="role">
+                    <h2><i class="ph ph-users-three"></i>Role i uprawnienia</h2>
+                    <p class="lede">Każdy użytkownik ma przypisaną rolę. Role są hierarchiczne — wyższa widzi to, co niższa, plus dodatkowe funkcje.</p>
+
+                    <table class="role-table">
+                        <thead>
+                            <tr>
+                                <th>Rola</th>
+                                <th>Kto</th>
+                                <th>Co może</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="role-badge role-owner">owner</span></td>
+                                <td><strong>Właściciel instancji</strong> (jedna osoba)</td>
+                                <td>Pełny dostęp + panel <strong>Super admin</strong>: zarządzanie użytkownikami, audit log, kopie, webhooks.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="role-badge role-admin">admin</span></td>
+                                <td>Administrator kancelarii</td>
+                                <td>Zarządzanie zespołem (dodawanie prawników, zmiana ról), wszystkie sprawy, finanse, ustawienia.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="role-badge role-lawyer">lawyer</span></td>
+                                <td>Prawnik / opiekun sprawy</td>
+                                <td>Dostęp do wszystkich spraw i klientów, prowadzenie postępowań, wystawianie faktur, rejestrowanie płatności.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="role-badge role-assistant">assistant</span></td>
+                                <td>Asystent prawny</td>
+                                <td>Ograniczony dostęp: wspierający dla prawnika — zadania, notatki, dokumenty, kalendarz.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="callout note">
+                        <i class="ph ph-user-circle"></i>
+                        <div>Swoją rolę widzisz w dolnym lewym rogu sidebaru (pod imieniem i nazwiskiem).</div>
+                    </div>
+                </section>
+
+                <!-- ============ FAQ ============ -->
+                <section class="help-section" id="faq">
+                    <h2><i class="ph ph-question"></i>Najczęstsze pytania</h2>
+
+                    <div class="faq-item">
+                        <div class="faq-q">Skąd w CRM biorą się leady?</div>
+                        <div class="faq-a">Z formularza na <a href="https://getmypermit.pl/" target="_blank" rel="noopener">getmypermit.pl</a> — każde wypełnienie automatycznie tworzy lead. Możesz też dodać leada ręcznie (np. z polecenia) przyciskiem <strong>„Nowy lead"</strong>.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Czym się różni status od etapu sprawy?</div>
+                        <div class="faq-a"><strong>Status</strong> mówi o stanie relacji z klientem (lead / zlecona / aktywna / zakończona / archiwum). <strong>Etap</strong> to pozycja w procesie urzędowym (weryfikacja / złożenie / osobiste / decyzja…). Status zmienia się rzadko, etap — wiele razy w trakcie sprawy.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Co zrobić gdy coś nie działa?</div>
+                        <div class="faq-a">Najpierw odśwież stronę z pominięciem cache: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd>. Jeśli nadal nie działa, zgłoś Tomkowi (screen + opis kroków).</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Czy mogę odzyskać przypadkowo usuniętą sprawę?</div>
+                        <div class="faq-a">Tak — usunięcie w panelu to oznaczenie jako „archiwum", rekord pozostaje w bazie. Zgłoś Tomkowi, żeby przywrócił. W szybszym tempie: zamiast usuwać, zmień status na <strong>archiwum</strong>.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Czy panel jest bezpieczny? Gdzie są dane klientów?</div>
+                        <div class="faq-a">Dane w bazie Supabase (UE), połączenie szyfrowane (HTTPS). Każda sesja logowana. Dostęp tylko po zalogowaniu, hasła przechowywane hashowane. Super admin ma audit log — kto co zrobił.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Jak dodać nowego pracownika kancelarii?</div>
+                        <div class="faq-a">Kontakt do Tomka — super admin tworzy konto w systemie auth, przypisuje rolę i dodaje do <a href="staff.html">Prawników</a>. Nowy pracownik dostaje email z linkiem do ustawienia hasła.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Nie widzę sekcji „Super admin" w menu — czemu?</div>
+                        <div class="faq-a">Sekcja jest ukryta dla wszystkich poza rolą <strong>owner</strong>. Jeśli powinieneś ją widzieć, sprawdź w sidebarze swoją rolę (dolny lewy róg) — musi być „owner".</div>
+                    </div>
+                </section>
+
+                <!-- Footer -->
+                <div style="padding: 24px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; display:flex; gap: 10px; align-items:center; justify-content: space-between; flex-wrap: wrap;">
+                    <span>Podręcznik użytkownika GetMyPermit CRM · v1.0</span>
+                    <span>Brakuje czegoś? Zgłoś Tomkowi.</span>
+                </div>
+
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+// Active TOC highlight on scroll
+(function() {
+    const links = document.querySelectorAll('.help-toc a[href^="#"]');
+    const sections = Array.from(links).map(a => ({
+        link: a,
+        section: document.querySelector(a.getAttribute('href')),
+    })).filter(x => x.section);
+
+    function onScroll() {
+        const scrollPos = window.scrollY + 80;
+        let active = sections[0];
+        for (const s of sections) {
+            if (s.section.offsetTop <= scrollPos) active = s;
+        }
+        links.forEach(l => l.classList.remove('active'));
+        if (active) active.link.classList.add('active');
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Smooth scroll on click
+    links.forEach(a => {
+        a.addEventListener('click', (e) => {
+            const target = document.querySelector(a.getAttribute('href'));
+            if (!target) return;
+            e.preventDefault();
+            const y = target.getBoundingClientRect().top + window.scrollY - 24;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+            history.replaceState(null, '', a.getAttribute('href'));
+        });
+    });
+})();
+</script>
+
+<script src="components/sidebar.js" data-active="pomoc"></script>
+
+</body>
+</html>

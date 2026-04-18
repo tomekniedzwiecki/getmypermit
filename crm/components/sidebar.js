@@ -51,6 +51,7 @@
       label: 'BIBLIOTEKA',
       items: [
         { href: 'templates.html', icon: 'ph-file-text', color: 'text-zinc-400', label: 'Wzory dokumentów', id: 'templates' },
+        { href: 'pomoc.html', icon: 'ph-book-open-text', color: 'text-sky-400', label: 'Pomoc', id: 'pomoc' },
       ]
     },
     {
