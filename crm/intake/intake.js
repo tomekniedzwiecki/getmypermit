@@ -258,17 +258,23 @@ async function lookupZip(zip) {
     } catch (e) { return null; }
 }
 
-// === OCR via Edge Function ===
+// === OCR via Edge Function (graceful fail jeśli brak klucza / timeout) ===
 async function ocrDocument(docType, storagePath, docId) {
     try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 20000); // 20s timeout
         const res = await fetch(`${SUPABASE_URL}/functions/v1/intake-ocr`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
             body: JSON.stringify({ intake_token: intake.token, doc_type: docType, storage_path: storagePath, doc_id: docId }),
+            signal: controller.signal,
         });
+        clearTimeout(timer);
         if (!res.ok) return null;
-        return await res.json();
-    } catch (e) { console.warn('OCR failed', e); return null; }
+        const data = await res.json();
+        if (data?.error) return null; // np. brak OPENAI_API_KEY
+        return data;
+    } catch (e) { console.warn('OCR skipped', e.message); return null; }
 }
 
 // Auto-fill fields from OCR result
