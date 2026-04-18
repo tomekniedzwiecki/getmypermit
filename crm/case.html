@@ -175,6 +175,7 @@
                     <button class="case-tab" data-tab="finance"><i class="ph ph-coins"></i> Finanse <span class="case-tab-count" id="cnt-finance">0</span></button>
                     <button class="case-tab" data-tab="documents"><i class="ph ph-file"></i> Dokumenty <span class="case-tab-count" id="cnt-docs">0</span></button>
                     <button class="case-tab" data-tab="calendar"><i class="ph ph-calendar"></i> Terminy <span class="case-tab-count" id="cnt-appts">0</span></button>
+                    <button class="case-tab" data-tab="intake"><i class="ph ph-clipboard-text"></i> Ankieta klienta <span class="case-tab-count" id="cnt-intake">—</span></button>
                     <button class="case-tab" data-tab="data"><i class="ph ph-gear"></i> Dane szczegółowe</button>
                 </div>
             </div>
@@ -352,6 +353,19 @@
                             </div>
                             <div id="appointments-list">
                                 <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ANKIETA KLIENTA TAB -->
+                    <div class="tab-panel hidden" data-panel="intake">
+                        <section class="module-card mb-4">
+                            <div class="module-card-header">
+                                <span><i class="ph ph-clipboard-text text-indigo-400 mr-1"></i>Ankieta klienta — MOS 2.0</span>
+                                <div id="intake-actions"></div>
+                            </div>
+                            <div id="intake-body" class="p-4">
+                                <div class="text-zinc-500 text-sm">Ładuję...</div>
                             </div>
                         </section>
                     </div>
@@ -633,7 +647,215 @@ function switchTab(name) {
         renderCalendarTab();
         tabsLoaded.calendar = true;
     }
+    if (name === 'intake') { renderIntakeTab(); }
 }
+
+// === INTAKE TAB (MOS 2.0 ankieta) ===
+let currentIntake = null;
+let currentIntakeDocs = [];
+
+async function renderIntakeTab() {
+    const body = document.getElementById('intake-body');
+    const actions = document.getElementById('intake-actions');
+    const countEl = document.getElementById('cnt-intake');
+
+    const { data: intakes } = await db.from('gmp_intake_tokens')
+        .select('*').eq('case_id', caseId).order('created_at', { ascending: false }).limit(1);
+    const intake = intakes?.[0];
+    currentIntake = intake;
+
+    if (!intake) {
+        actions.innerHTML = '';
+        countEl.textContent = '';
+        body.innerHTML = `
+            <div class="empty-state" style="padding: 32px 16px">
+                <i class="ph ph-clipboard-text" style="font-size: 36px; color: var(--text-disabled); margin-bottom: 12px"></i>
+                <div style="color: var(--text-secondary); margin-bottom: 4px">Brak wysłanej ankiety</div>
+                <div class="text-xs text-zinc-600 mb-4">Wygeneruj link i wyślij klientowi, aby wypełnił swoje dane i dokumenty</div>
+                <button class="btn btn-primary" onclick="createIntake()"><i class="ph ph-paper-plane-tilt"></i> Wygeneruj link do ankiety</button>
+            </div>`;
+        return;
+    }
+
+    const statusLabel = {
+        invited: '<span style="color: #a1a1aa">Link wysłany, czeka</span>',
+        in_progress: '<span style="color: #fcd34d">W trakcie wypełniania</span>',
+        submitted: '<span style="color: #6ee7b7">✓ Klient wysłał — do przeglądu</span>',
+        approved: '<span style="color: #10b981">✓ Zatwierdzone</span>',
+        rejected: '<span style="color: #fca5a5">Odrzucone</span>',
+    }[intake.status] || intake.status;
+
+    countEl.textContent = intake.status === 'submitted' ? '!' : '';
+    countEl.style.background = intake.status === 'submitted' ? 'rgba(16,185,129,0.2)' : '';
+    countEl.style.color = intake.status === 'submitted' ? '#6ee7b7' : '';
+
+    // Fetch documents
+    const { data: docs } = await db.from('gmp_intake_documents').select('*').eq('intake_id', intake.id);
+    currentIntakeDocs = docs || [];
+
+    // Build URL
+    const intakeUrl = `${location.origin}/intake/?t=${intake.token}`;
+    const data = intake.data || {};
+    const filledCount = Object.keys(data).filter(k => data[k] !== null && data[k] !== '' && data[k] !== false).length;
+
+    actions.innerHTML = `
+        <button class="btn btn-ghost btn-sm" onclick="copyIntakeLink()" title="Kopiuj link"><i class="ph ph-link"></i></button>
+        <button class="btn btn-ghost btn-sm" onclick="sendIntakeWhatsApp()" title="WhatsApp"><i class="ph ph-whatsapp-logo"></i></button>
+        ${intake.status === 'submitted' ? `<button class="btn btn-primary btn-sm" onclick="approveIntake()"><i class="ph ph-check"></i> Zatwierdź</button>` : ''}
+    `;
+
+    const langName = { pl: 'Polski', en: 'English', uk: 'Українська', ru: 'Русский', hi: 'हिन्दी' }[intake.language] || intake.language;
+    const expiresIn = Math.ceil((new Date(intake.expires_at) - new Date()) / 86400000);
+
+    body.innerHTML = `
+        <div style="display: grid; gap: 16px">
+            <!-- Status card -->
+            <div style="padding: 14px; background: var(--bg-subtle); border-radius: 10px; border-left: 3px solid ${intake.status === 'submitted' ? 'var(--success)' : 'var(--accent)'}">
+                <div style="font-weight: 600; margin-bottom: 6px">${statusLabel}</div>
+                <div class="text-xs text-zinc-500">
+                    Język: ${langName} · Wysłano: ${fmt.daysAgo(intake.created_at)} · Link wygasa za ${expiresIn} dni
+                    ${intake.status === 'submitted' ? ` · <span style="color: #6ee7b7">Klient wysłał ${fmt.daysAgo(intake.submitted_at)}</span>` : ''}
+                </div>
+            </div>
+
+            <!-- Link preview -->
+            <div style="background: var(--bg-subtle); padding: 10px 12px; border-radius: 8px; font-family: 'JetBrains Mono', mono; font-size: 11px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap" id="intake-url-display">${intakeUrl}</div>
+
+            <!-- Dane klienta -->
+            ${filledCount > 0 ? `
+            <div>
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary)">Odpowiedzi klienta (${filledCount} pól wypełnionych)</div>
+                <div id="intake-data-display" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 14px">${renderIntakeDataTable(data)}</div>
+            </div>` : '<div class="text-zinc-500 text-sm italic">Klient jeszcze nie zaczął wypełniać</div>'}
+
+            <!-- Dokumenty -->
+            ${currentIntakeDocs.length > 0 ? `
+            <div>
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary)">Dokumenty klienta (${currentIntakeDocs.length})</div>
+                <div style="display: grid; gap: 6px">${renderIntakeDocs()}</div>
+            </div>` : ''}
+
+            <!-- Akcje -->
+            ${intake.status === 'submitted' ? `
+            <div style="border-top: 1px solid var(--border); padding-top: 14px; display: flex; gap: 8px; flex-wrap: wrap">
+                <button class="btn btn-primary" onclick="approveIntake()"><i class="ph ph-check"></i> Zatwierdź i generuj Playbook</button>
+                <button class="btn btn-secondary" onclick="rejectIntake()"><i class="ph ph-x"></i> Poproś o korektę</button>
+            </div>` : ''}
+        </div>
+    `;
+}
+
+function renderIntakeDataTable(data) {
+    const FIELD_LABELS = {
+        first_name: 'Imię', last_name: 'Nazwisko', birth_date: 'Data ur.', nationality: 'Obywatelstwo',
+        gender: 'Płeć', passport_number: 'Nr paszportu', passport_expiry: 'Ważny do',
+        phone: 'Telefon', email: 'Email', whatsapp_number: 'WhatsApp', preferred_contact: 'Preferowany kontakt',
+        zip: 'Kod pocztowy', city: 'Miasto', street: 'Ulica', building: 'Nr domu', flat: 'Mieszkanie',
+        voivodeship: 'Województwo', registration_type: 'Zameldowanie',
+        has_job: 'Pracuje', employer_name: 'Pracodawca', employer_nip: 'NIP', position: 'Stanowisko',
+        contract_type: 'Umowa', salary_gross: 'Wynagrodzenie', working_hours: 'Wymiar',
+        arrival_date: 'Przyjazd', current_visa: 'Obecny dokument', had_previous: 'Poprzednie karty', had_refusal: 'Odmowy',
+        purpose: 'Cel wniosku', ground: 'Podstawa', situation: 'Sytuacja',
+    };
+    let rows = '';
+    Object.entries(FIELD_LABELS).forEach(([k, label]) => {
+        const v = data[k];
+        if (v === undefined || v === null || v === '') return;
+        rows += `<div style="display: flex; justify-content: space-between; padding: 5px 0; font-size: 12px; border-bottom: 1px solid var(--border)"><span style="color: var(--text-tertiary)">${label}</span><span style="color: var(--text); text-align: right">${esc(String(v))}</span></div>`;
+    });
+    return rows || '<div class="text-zinc-500">Brak danych</div>';
+}
+
+function renderIntakeDocs() {
+    return currentIntakeDocs.map(d => {
+        const docLabels = { passport: 'Paszport', contract: 'Umowa', payslips: 'Paski wypłat', zus: 'ZUS', photo_bio: 'Zdjęcie biometryczne', registration: 'Zameldowanie', birth_cert: 'Akt urodzenia', other: 'Inne' };
+        const size = d.file_size ? Math.round(d.file_size / 1024) + ' KB' : '';
+        return `<div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--bg-subtle); border-radius: 6px">
+            <i class="ph ph-file" style="font-size: 18px; color: var(--text-tertiary)"></i>
+            <div style="flex: 1; min-width: 0">
+                <div style="font-size: 12px">${docLabels[d.doc_type] || d.doc_type}</div>
+                <div style="font-size: 10px; color: var(--text-tertiary)">${esc(d.file_name || '—')} · ${size}</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="downloadIntakeDoc('${d.storage_path}', '${esc(d.file_name || 'doc')}')"><i class="ph ph-download"></i></button>
+        </div>`;
+    }).join('');
+}
+
+window.createIntake = async function() {
+    // Generuje token i rekord
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(36).padStart(2, '0')).join('').slice(0, 32);
+    const { data, error } = await db.from('gmp_intake_tokens').insert({
+        token, case_id: caseId,
+        client_id: caseData?.client_id || null,
+        language: 'en',
+        created_by: window.currentStaff?.id,
+    }).select().single();
+    if (error) { toast.error(error.message); return; }
+    toast.success('Link wygenerowany');
+    renderIntakeTab();
+};
+
+window.copyIntakeLink = function() {
+    if (!currentIntake) return;
+    const url = `${location.origin}/intake/?t=${currentIntake.token}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Link skopiowany');
+};
+
+window.sendIntakeWhatsApp = function() {
+    if (!currentIntake) return;
+    const url = `${location.origin}/intake/?t=${currentIntake.token}`;
+    const phone = (caseData?.gmp_clients?.phone || '').replace(/\D/g, '');
+    const intl = phone && !phone.startsWith('48') ? '48' + phone : phone;
+    const clientName = caseData?.gmp_clients?.first_name || '';
+    const msg = encodeURIComponent(`Hi ${clientName}! 👋\nPlease fill in this 15-min form for your residence permit:\n${url}\n(Valid for 30 days)`);
+    window.open(intl ? `https://wa.me/${intl}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank');
+};
+
+window.downloadIntakeDoc = async function(path, name) {
+    const { data, error } = await db.storage.from('intake-docs').createSignedUrl(path, 3600);
+    if (error) { toast.error(error.message); return; }
+    window.open(data.signedUrl, '_blank');
+};
+
+window.approveIntake = async function() {
+    if (!currentIntake) return;
+    if (!confirm('Zatwierdzić ankietę? Dane zostaną przeniesione do sprawy i wygenerowany zostanie Playbook MOS 2.0.')) return;
+    // Sync dane do klienta
+    const d = currentIntake.data || {};
+    if (caseData?.client_id && (d.first_name || d.last_name)) {
+        const updates = {};
+        if (d.first_name) updates.first_name = d.first_name;
+        if (d.last_name) updates.last_name = d.last_name;
+        if (d.birth_date) updates.birth_date = d.birth_date;
+        if (d.nationality) updates.nationality = d.nationality;
+        if (d.phone) updates.phone = d.phone;
+        if (d.email) updates.email = d.email;
+        if (Object.keys(updates).length) {
+            await db.from('gmp_clients').update(updates).eq('id', caseData.client_id);
+        }
+    }
+    await db.from('gmp_intake_tokens').update({
+        status: 'approved',
+        reviewed_by: window.currentStaff?.id,
+        reviewed_at: new Date().toISOString(),
+    }).eq('id', currentIntake.id);
+    toast.success('Ankieta zatwierdzona');
+    window.open(`/playbook/?t=${currentIntake.token}`, '_blank');
+    renderIntakeTab();
+};
+
+window.rejectIntake = async function() {
+    if (!currentIntake) return;
+    const notes = prompt('Co poprawić? (Zostanie wysłane do klienta)');
+    if (!notes) return;
+    await db.from('gmp_intake_tokens').update({
+        status: 'in_progress',
+        review_notes: notes,
+    }).eq('id', currentIntake.id);
+    toast.success('Poproszono o korektę');
+    renderIntakeTab();
+};
 
 async function loadStaffAndDepts() {
     const [{ data: staff }, { data: depts }, { data: inspectors }] = await Promise.all([

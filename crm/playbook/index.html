@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>MOS 2.0 Playbook</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','Noto Sans Devanagari','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="../intake/i18n.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0a; --bg-elevated: #111113; --bg-subtle: #161618;
+            --bg-hover: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.14);
+            --text: #f4f4f5; --text-secondary: #a1a1aa; --text-tertiary: #71717a;
+            --accent: #6366f1; --accent-subtle: rgba(99,102,241,0.1);
+            --success: #10b981; --warn: #f59e0b; --danger: #ef4444;
+        }
+        [lang="hi"] body { font-family: 'Noto Sans Devanagari', 'Inter', sans-serif; }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: var(--bg); color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 0 0 80px;
+            min-height: 100vh;
+        }
+
+        .pb-container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .pb-hero {
+            text-align: center;
+            padding: 40px 20px 24px;
+        }
+        .pb-hero .ico {
+            width: 72px; height: 72px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #10b981, #06b6d4, #6366f1);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+            color: white; font-size: 32px;
+            box-shadow: 0 12px 40px -8px rgba(16,185,129,0.5);
+        }
+        .pb-hero h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8px; }
+        .pb-hero .sub { color: var(--text-secondary); font-size: 15px; }
+        .pb-hero .meta { color: var(--text-tertiary); font-size: 12px; margin-top: 8px; }
+
+        .pb-step {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: border-color 120ms;
+        }
+        .pb-step.done { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04); }
+        .pb-step-head {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 12px;
+        }
+        .pb-step-num {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: var(--bg-subtle);
+            border: 1.5px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 600;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .pb-step.done .pb-step-num {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+        .pb-step h2 {
+            flex: 1;
+            font-size: 17px; font-weight: 600;
+            margin: 0;
+        }
+        .pb-step .desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        /* Copy fields */
+        .pb-copy-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 14px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .pb-copy-row .lbl {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 500;
+            min-width: 110px;
+        }
+        .pb-copy-row .val {
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text);
+            word-break: break-word;
+        }
+        .pb-copy-btn {
+            padding: 6px 12px;
+            background: var(--accent-subtle);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex; align-items: center; gap: 4px;
+            white-space: nowrap;
+            transition: all 120ms;
+        }
+        .pb-copy-btn:hover { background: var(--accent); color: white; }
+        .pb-copy-btn.copied { background: var(--success); color: white; border-color: var(--success); }
+
+        /* External link button */
+        .pb-cta {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(180deg, #6366f1, #5856eb);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            margin: 10px 0;
+        }
+        .pb-cta:hover { filter: brightness(1.1); }
+
+        /* Document row with download */
+        .pb-doc {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px;
+            background: var(--bg-subtle);
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+        .pb-doc .doc-ic {
+            width: 36px; height: 36px;
+            background: var(--accent-subtle);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--accent);
+        }
+        .pb-doc .doc-body { flex: 1; min-width: 0; }
+        .pb-doc .doc-title { font-size: 13px; font-weight: 500; }
+        .pb-doc .doc-sub { font-size: 11px; color: var(--text-tertiary); }
+
+        /* Topbar */
+        .pb-topbar {
+            position: sticky; top: 0;
+            background: rgba(10,10,10,0.92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 10;
+            padding: 12px 20px;
+            display: flex; align-items: center; gap: 12px;
+            max-width: 640px; margin: 0 auto;
+        }
+        .pb-topbar .brand {
+            flex: 1;
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 600;
+        }
+        .pb-topbar .brand .ico {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+        }
+        .lang-btn {
+            padding: 6px 10px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+
+        /* Support CTA at bottom */
+        .pb-support {
+            position: fixed;
+            bottom: 20px; right: 20px;
+            padding: 14px 20px;
+            background: #25d366;
+            color: white;
+            border-radius: 999px;
+            box-shadow: 0 8px 24px -4px rgba(37,211,102,0.6);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-flex; align-items: center; gap: 8px;
+            z-index: 20;
+        }
+
+        /* Progress bar top */
+        .pb-progress {
+            height: 3px;
+            background: var(--bg-subtle);
+            position: sticky; top: 53px;
+            z-index: 9;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        .pb-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+            width: 0%;
+            transition: width 240ms;
+        }
+
+        .warning {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            color: #fcd34d;
+            margin-top: 12px;
+            display: flex; gap: 10px;
+        }
+        .warning i { flex-shrink: 0; font-size: 18px; margin-top: 1px; }
+
+        .checklist-item {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 8px 0;
+            font-size: 13px; color: var(--text-secondary);
+        }
+        .checklist-item input { margin-top: 3px; }
+
+        /* QR section */
+        .pb-qr-box {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .pb-qr-box img { max-width: 180px; border-radius: 8px; background: white; padding: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="pb-topbar">
+    <div class="brand">
+        <div class="ico"><i class="ph ph-book-open"></i></div>
+        <span>MOS 2.0 Playbook</span>
+    </div>
+    <button class="lang-btn" id="lang-btn">
+        <span id="lang-flag">🇬🇧</span>
+        <span id="lang-code">EN</span>
+    </button>
+</div>
+
+<div class="pb-progress"><div class="pb-progress-fill" id="pb-progress"></div></div>
+
+<div id="state-loading" style="padding: 60px 20px; text-align: center">
+    <div style="width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 700ms linear infinite; margin: 0 auto 16px"></div>
+    <div style="color: var(--text-tertiary)">Loading your playbook…</div>
+</div>
+
+<div id="state-error" class="hidden" style="padding: 60px 20px; text-align: center">
+    <i class="ph ph-warning-circle" style="font-size: 48px; color: var(--warn)"></i>
+    <h1 style="margin: 16px 0 8px">Playbook not available</h1>
+    <p style="color: var(--text-secondary)">Please contact your law firm.</p>
+</div>
+
+<div id="pb-main" class="hidden pb-container">
+
+    <div class="pb-hero">
+        <div class="ico"><i class="ph ph-rocket-launch"></i></div>
+        <h1 id="pb-greeting">Your MOS 2.0 Playbook</h1>
+        <div class="sub" id="pb-sub">Step-by-step guide to complete your application</div>
+        <div class="meta" id="pb-meta"></div>
+    </div>
+
+    <div id="pb-steps"></div>
+
+    <div class="pb-qr-box">
+        <h2 style="font-size: 16px; margin: 0 0 8px">Need help on mobile?</h2>
+        <p style="color: var(--text-tertiary); font-size: 13px; margin-bottom: 12px">Scan this QR to open playbook on your phone</p>
+        <div id="qr-code"></div>
+    </div>
+
+</div>
+
+<a class="pb-support hidden" id="pb-support-btn" href="#" target="_blank">
+    <i class="ph ph-whatsapp-logo" style="font-size: 18px"></i>
+    <span>Help</span>
+</a>
+
+<script>
+@keyframes spin { to { transform: rotate(360deg); } }
+</script>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+<script src="playbook.js"></script>
+</body>
+</html>
