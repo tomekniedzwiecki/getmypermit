@@ -7,73 +7,590 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="components/layout.css">
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } }
     </script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js" data-require-auth="false"></script>
+    <style>
+        body { background: var(--bg); }
+
+        /* === SPLIT LAYOUT === */
+        .auth-split { display: grid; grid-template-columns: 1fr; min-height: 100vh; }
+        @media (min-width: 1024px) { .auth-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); } }
+
+        /* === FORM PANEL === */
+        .auth-form-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 28px clamp(20px, 5vw, 56px);
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-form-inner {
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
+        }
+        .auth-brand-sm {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .auth-brand-sm .logo-mark {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 24px -4px rgba(139, 92, 246, 0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .auth-brand-sm .logo-mark i { color: white; font-size: 18px; }
+        .auth-brand-sm .brand-text {
+            font-weight: 700; font-size: 14px; color: var(--text);
+            letter-spacing: -0.01em;
+        }
+        .auth-brand-sm .brand-sub {
+            font-size: 10px; color: var(--text-tertiary);
+            text-transform: uppercase; letter-spacing: 0.08em;
+            margin-top: 1px;
+        }
+
+        .auth-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            color: var(--text);
+            line-height: 1.15;
+        }
+        .auth-subtitle {
+            color: var(--text-tertiary);
+            font-size: 14px;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* === INPUT WITH ICON === */
+        .input-group { position: relative; }
+        .input-group > i.field-ic {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 16px;
+            pointer-events: none;
+            transition: color 150ms;
+        }
+        .input-group:focus-within > i.field-ic { color: var(--accent); }
+        .input-group .input {
+            padding-left: 38px;
+            padding-right: 38px;
+            height: 44px;
+            font-size: 14px;
+        }
+        .input-group .input-action {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: var(--r-sm);
+            transition: color 120ms, background 120ms;
+        }
+        .input-group .input-action:hover { color: var(--text); background: var(--bg-hover); }
+
+        /* Caps lock hint */
+        .caps-hint {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--warn);
+        }
+        .caps-hint.show { display: inline-flex; }
+        .caps-hint i { font-size: 13px; }
+
+        /* Checkbox (remember me) */
+        .check-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .check {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .check input { display: none; }
+        .check .box {
+            width: 16px; height: 16px;
+            border-radius: 4px;
+            border: 1.5px solid var(--border-strong);
+            background: var(--bg);
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: all 120ms;
+            flex-shrink: 0;
+        }
+        .check .box i { font-size: 12px; color: white; opacity: 0; transition: opacity 100ms; }
+        .check input:checked + .box { background: var(--accent); border-color: var(--accent); }
+        .check input:checked + .box i { opacity: 1; }
+        .check:hover .box { border-color: var(--accent); }
+        .link-btn {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 0;
+            transition: color 120ms;
+        }
+        .link-btn:hover { color: var(--accent); }
+
+        /* Submit button — tall + with chevron */
+        .btn-submit {
+            width: 100%;
+            height: 44px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: -0.005em;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #6366f1 0%, #5856eb 100%);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 20px -6px rgba(99, 102, 241, 0.7);
+            transition: transform 120ms, box-shadow 120ms, filter 120ms;
+        }
+        .btn-submit:hover:not(:disabled) {
+            filter: brightness(1.08);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.2) inset, 0 10px 28px -6px rgba(99, 102, 241, 0.8);
+        }
+        .btn-submit:active:not(:disabled) { transform: translateY(1px); }
+
+        /* Divider */
+        .auth-divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 18px 0;
+        }
+        .auth-divider .line { flex: 1; height: 1px; background: var(--border); }
+        .auth-divider span { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+        /* Magic link button */
+        .btn-magic {
+            width: 100%;
+            height: 44px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 10px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            transition: all 120ms;
+        }
+        .btn-magic:hover:not(:disabled) {
+            background: var(--bg-subtlest);
+            border-color: var(--border-hover);
+            color: var(--text);
+        }
+        .btn-magic i { font-size: 15px; color: var(--text-muted); }
+        .btn-magic:hover i { color: var(--accent); }
+
+        /* Footer */
+        .auth-footer-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.6;
+            margin-top: 16px;
+        }
+        .auth-footer-note a, .auth-footer-note button {
+            color: var(--text-tertiary);
+            text-decoration: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: inherit;
+            padding: 0;
+        }
+        .auth-footer-note a:hover, .auth-footer-note button:hover { color: var(--text); }
+
+        /* Footer meta row (in form panel bottom) */
+        .auth-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding-top: 20px;
+        }
+        .auth-meta .kbd {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 10px;
+            padding: 2px 6px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-tertiary);
+        }
+
+        /* === BRAND PANEL (right side) === */
+        .auth-brand-panel {
+            display: none;
+            position: relative;
+            overflow: hidden;
+            background: #0c0b16;
+            color: white;
+        }
+        @media (min-width: 1024px) { .auth-brand-panel { display: flex; flex-direction: column; } }
+
+        .auth-brand-bg {
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(1000px 600px at 90% -10%, rgba(168, 85, 247, 0.35), transparent 55%),
+                radial-gradient(900px 700px at -10% 110%, rgba(79, 70, 229, 0.35), transparent 55%),
+                radial-gradient(500px 500px at 50% 50%, rgba(139, 92, 246, 0.08), transparent 70%),
+                linear-gradient(135deg, #0c0b16 0%, #0e1430 50%, #1a0c2a 100%);
+        }
+        /* Subtle grid overlay */
+        .auth-brand-grid {
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+            opacity: 0.5;
+        }
+        /* Floating orb */
+        .auth-brand-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            animation: floatOrb 14s ease-in-out infinite;
+        }
+        .orb-1 { width: 300px; height: 300px; top: -80px; right: -40px; background: radial-gradient(circle, rgba(168, 85, 247, 0.5), transparent 70%); }
+        .orb-2 { width: 260px; height: 260px; bottom: -60px; left: 10%; background: radial-gradient(circle, rgba(99, 102, 241, 0.55), transparent 70%); animation-delay: -7s; }
+        @keyframes floatOrb {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -30px) scale(1.08); }
+        }
+
+        .auth-brand-content {
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 48px 56px;
+        }
+
+        /* Big logo */
+        .brand-logo-lg {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .brand-logo-lg .mark {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 16px 40px -8px rgba(168, 85, 247, 0.6), inset 0 1px 0 rgba(255,255,255,0.25);
+        }
+        .brand-logo-lg .mark i { color: white; font-size: 26px; }
+        .brand-logo-lg .name { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
+        .brand-logo-lg .tag { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
+
+        /* Middle content */
+        .brand-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 12px 5px 8px;
+            background: rgba(168, 85, 247, 0.12);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 999px;
+            font-size: 11px;
+            color: #e9d5ff;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            margin-bottom: 20px;
+        }
+        .brand-eyebrow .dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #c084fc;
+            box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.25);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .brand-headline {
+            font-size: 40px;
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -0.035em;
+            color: white;
+            max-width: 480px;
+        }
+        .brand-headline .hi {
+            background: linear-gradient(120deg, #c084fc 0%, #818cf8 60%, #60a5fa 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand-sub {
+            margin-top: 18px;
+            font-size: 15px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.65);
+            max-width: 460px;
+        }
+
+        /* Feature list */
+        .brand-features {
+            margin-top: 36px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .brand-feat {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+        .brand-feat .ic {
+            width: 36px; height: 36px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #c084fc;
+            font-size: 18px;
+        }
+        .brand-feat .text { padding-top: 2px; }
+        .brand-feat .t1 { font-size: 14px; color: white; font-weight: 600; letter-spacing: -0.01em; }
+        .brand-feat .t2 { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 2px; line-height: 1.5; }
+
+        /* Bottom quote / stat card */
+        .brand-stat-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 18px 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .brand-stat-card .ic-big {
+            width: 44px; height: 44px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.25));
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center;
+            color: #c4b5fd;
+            font-size: 20px;
+        }
+        .brand-stat-card .txt { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.55; }
+        .brand-stat-card .txt b { color: white; font-weight: 600; }
+
+        /* Message bubble */
+        .msg-bubble {
+            margin-top: 16px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            display: none;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .msg-bubble.show { display: flex; animation: fadeIn 200ms ease-out; }
+        .msg-bubble i { flex-shrink: 0; font-size: 15px; margin-top: 1px; }
+        .msg-bubble.error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; }
+        .msg-bubble.success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); color: #6ee7b7; }
+        .msg-bubble.info { background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25); color: #a5b4fc; }
+
+        /* Button spinner positioning */
+        .btn-submit .spinner { border-color: rgba(255,255,255,0.3); border-top-color: white; }
+
+        /* Mobile tweaks */
+        @media (max-width: 640px) {
+            .auth-form-panel { padding: 24px 20px; }
+            .auth-title { font-size: 24px; }
+            .auth-meta { flex-direction: column; gap: 8px; align-items: center; text-align: center; }
+        }
+    </style>
 </head>
-<body class="min-h-screen flex items-center justify-center relative overflow-hidden">
-    <!-- Gradient background -->
-    <div class="absolute inset-0 opacity-40 pointer-events-none">
-        <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-blue-600/30 to-purple-600/30 blur-3xl rounded-full"></div>
-        <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-purple-600/20 to-pink-600/20 blur-3xl rounded-full"></div>
-    </div>
-
-    <div class="w-full max-w-md px-6 relative z-10 animate-enter">
-        <!-- Logo -->
-        <div class="flex items-center justify-center gap-3 mb-10">
-            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-xl">
-                <i class="ph ph-scales text-white text-2xl"></i>
-            </div>
-            <div>
-                <div class="text-white font-bold text-xl">GetMyPermit</div>
-                <div class="text-zinc-500 text-xs">Panel kancelarii</div>
-            </div>
-        </div>
-
-        <!-- Login card -->
-        <div class="card p-8">
-            <h1 class="text-lg font-semibold text-white mb-2">Zaloguj się</h1>
-            <p class="text-zinc-500 text-sm mb-6">Dostęp tylko dla pracowników kancelarii.</p>
-
-            <form id="login-form" class="space-y-4">
+<body>
+    <div class="auth-split">
+        <!-- ============ FORM PANEL ============ -->
+        <section class="auth-form-panel">
+            <!-- Top: small brand (only visible on mobile where right panel is hidden, + subtle on desktop top) -->
+            <div class="auth-brand-sm lg:hidden">
+                <div class="logo-mark"><i class="ph ph-scales"></i></div>
                 <div>
-                    <label>Email</label>
-                    <input type="email" id="email" class="input w-full" required autocomplete="email" placeholder="imie@getmypermit.pl">
+                    <div class="brand-text">GetMyPermit</div>
+                    <div class="brand-sub">Panel kancelarii</div>
                 </div>
-                <div>
-                    <label>Hasło</label>
-                    <input type="password" id="password" class="input w-full" required autocomplete="current-password">
+            </div>
+
+            <!-- Middle: form -->
+            <div class="auth-form-inner animate-enter">
+                <h1 class="auth-title">Witaj z powrotem.</h1>
+                <p class="auth-subtitle">Zaloguj się do panelu kancelarii, aby kontynuować pracę nad sprawami.</p>
+
+                <form id="login-form" class="mt-8 space-y-4" autocomplete="on" novalidate>
+                    <div>
+                        <label for="email">Email służbowy</label>
+                        <div class="input-group">
+                            <i class="ph ph-envelope field-ic"></i>
+                            <input
+                                type="email" id="email" name="email"
+                                class="input" required autocomplete="email"
+                                placeholder="imie@getmypermit.pl"
+                                autofocus>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-[6px]">
+                            <label for="password" class="!mb-0">Hasło</label>
+                            <button type="button" id="forgot-btn" class="link-btn">Nie pamiętam hasła</button>
+                        </div>
+                        <div class="input-group">
+                            <i class="ph ph-lock-key field-ic"></i>
+                            <input
+                                type="password" id="password" name="password"
+                                class="input" required autocomplete="current-password"
+                                placeholder="••••••••">
+                            <button type="button" id="toggle-pwd" class="input-action" aria-label="Pokaż hasło" tabindex="-1">
+                                <i class="ph ph-eye" id="toggle-pwd-ic"></i>
+                            </button>
+                        </div>
+                        <div id="caps-hint" class="caps-hint">
+                            <i class="ph ph-arrow-fat-up"></i>
+                            <span>Caps Lock jest włączony</span>
+                        </div>
+                    </div>
+
+                    <div class="check-row pt-1">
+                        <label class="check">
+                            <input type="checkbox" id="remember" checked>
+                            <span class="box"><i class="ph-bold ph-check"></i></span>
+                            <span>Zapamiętaj mnie</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" id="login-btn" class="btn btn-submit">
+                        <span id="login-btn-text">Zaloguj się</span>
+                        <span id="login-btn-spinner" class="hidden spinner"></span>
+                    </button>
+                </form>
+
+                <div class="auth-divider">
+                    <div class="line"></div>
+                    <span>lub</span>
+                    <div class="line"></div>
                 </div>
-                <button type="submit" id="login-btn" class="btn btn-primary w-full">
-                    <span id="login-btn-text">Zaloguj</span>
-                    <span id="login-btn-spinner" class="hidden spinner"></span>
+
+                <button id="magic-link-btn" class="btn btn-magic">
+                    <i class="ph ph-envelope-simple-open"></i>
+                    <span>Wyślij mi jednorazowy link logowania</span>
                 </button>
-                <div class="flex justify-end">
-                    <button type="button" id="forgot-btn" class="text-xs text-zinc-500 hover:text-white transition-colors">Nie pamiętam hasła</button>
-                </div>
-            </form>
 
-            <div class="my-5 flex items-center gap-3">
-                <div class="flex-1 h-px bg-zinc-900"></div>
-                <span class="text-zinc-600 text-xs">lub</span>
-                <div class="flex-1 h-px bg-zinc-900"></div>
+                <div id="msg" class="msg-bubble"></div>
             </div>
 
-            <button id="magic-link-btn" class="btn btn-secondary w-full">
-                <i class="ph ph-envelope-simple"></i>
-                Zaloguj się przez link z emaila
-            </button>
+            <!-- Footer meta -->
+            <div class="auth-meta">
+                <div>© <span id="year"></span> GetMyPermit · Wyłącznie dla pracowników kancelarii</div>
+                <div class="hidden sm:flex items-center gap-2">
+                    <span>Naciśnij</span>
+                    <span class="kbd">Enter</span>
+                    <span>aby się zalogować</span>
+                </div>
+            </div>
+        </section>
 
-            <div id="msg" class="mt-4 text-sm hidden"></div>
-        </div>
+        <!-- ============ BRAND PANEL ============ -->
+        <aside class="auth-brand-panel" aria-hidden="true">
+            <div class="auth-brand-bg"></div>
+            <div class="auth-brand-grid"></div>
+            <div class="auth-brand-orb orb-1"></div>
+            <div class="auth-brand-orb orb-2"></div>
 
-        <div class="text-center mt-6 text-zinc-600 text-xs">
-            Problemy z logowaniem? Skontaktuj się z Tomkiem.
-        </div>
+            <div class="auth-brand-content">
+                <!-- Top: big brand -->
+                <div class="brand-logo-lg">
+                    <div class="mark"><i class="ph ph-scales"></i></div>
+                    <div>
+                        <div class="name">GetMyPermit</div>
+                        <div class="tag">Panel operacyjny kancelarii</div>
+                    </div>
+                </div>
+
+                <!-- Middle: headline + features -->
+                <div>
+                    <div class="brand-eyebrow">
+                        <span class="dot"></span>
+                        <span>Wewnętrzny system kancelarii</span>
+                    </div>
+                    <h2 class="brand-headline">
+                        Kompleksowe zarządzanie <span class="hi">sprawami pobytowymi</span> w jednym miejscu.
+                    </h2>
+                    <p class="brand-sub">
+                        Leady, klienci, terminy w urzędach, dokumenty i rozliczenia —
+                        wszystko pod kontrolą zespołu kancelarii.
+                    </p>
+
+                    <div class="brand-features">
+                        <div class="brand-feat">
+                            <div class="ic"><i class="ph ph-users-three"></i></div>
+                            <div class="text">
+                                <div class="t1">Pipeline leadów i klientów</div>
+                                <div class="t2">Od pierwszego kontaktu ze strony www aż po złożony wniosek.</div>
+                            </div>
+                        </div>
+                        <div class="brand-feat">
+                            <div class="ic"><i class="ph ph-folder-notch-open"></i></div>
+                            <div class="text">
+                                <div class="t1">Teczki spraw i dokumenty</div>
+                                <div class="t2">Karta pobytu, pobyt stały, obywatelstwo — każda sprawa z pełną historią.</div>
+                            </div>
+                        </div>
+                        <div class="brand-feat">
+                            <div class="ic"><i class="ph ph-calendar-check"></i></div>
+                            <div class="text">
+                                <div class="t1">Terminy urzędowe i przypomnienia</div>
+                                <div class="t2">Wizyty w urzędzie, deadline'y wniosków, alerty — zanim będzie za późno.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom: trust -->
+                <div class="brand-stat-card">
+                    <div class="ic-big"><i class="ph ph-shield-check"></i></div>
+                    <div class="txt">
+                        Dane klientów kancelarii są chronione.
+                        Dostęp wyłącznie dla <b>autoryzowanych pracowników</b> — każda sesja jest logowana.
+                    </div>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script>
@@ -90,15 +607,15 @@
         const $ = (s) => document.querySelector(s);
         const msgEl = $('#msg');
 
+        // Year
+        $('#year').textContent = new Date().getFullYear();
+
         function showMsg(text, type = 'error') {
-            msgEl.className = 'mt-4 text-sm px-3 py-2 rounded-md ' + (
-                type === 'error' ? 'bg-red-900/30 border border-red-800/50 text-red-300' :
-                type === 'success' ? 'bg-emerald-900/30 border border-emerald-800/50 text-emerald-300' :
-                'bg-blue-900/30 border border-blue-800/50 text-blue-300'
-            );
-            msgEl.textContent = text;
-            msgEl.classList.remove('hidden');
+            const icon = type === 'error' ? 'ph-warning-circle' : type === 'success' ? 'ph-check-circle' : 'ph-info';
+            msgEl.className = 'msg-bubble show ' + type;
+            msgEl.innerHTML = `<i class="ph ${icon}"></i><span>${text}</span>`;
         }
+        function hideMsg() { msgEl.className = 'msg-bubble'; }
 
         function setLoading(loading) {
             $('#login-btn').disabled = loading;
@@ -106,14 +623,54 @@
             $('#login-btn-spinner').classList.toggle('hidden', !loading);
         }
 
+        // Password visibility toggle
+        const pwdInput = $('#password');
+        const pwdToggle = $('#toggle-pwd');
+        const pwdToggleIc = $('#toggle-pwd-ic');
+        pwdToggle.addEventListener('click', () => {
+            const isPwd = pwdInput.type === 'password';
+            pwdInput.type = isPwd ? 'text' : 'password';
+            pwdToggleIc.classList.remove(isPwd ? 'ph-eye' : 'ph-eye-slash');
+            pwdToggleIc.classList.add(isPwd ? 'ph-eye-slash' : 'ph-eye');
+            pwdToggle.setAttribute('aria-label', isPwd ? 'Ukryj hasło' : 'Pokaż hasło');
+        });
+
+        // Caps Lock detection (only while focused on password)
+        const capsHint = $('#caps-hint');
+        function updateCaps(e) {
+            if (document.activeElement !== pwdInput) { capsHint.classList.remove('show'); return; }
+            if (e.getModifierState && e.getModifierState('CapsLock')) capsHint.classList.add('show');
+            else capsHint.classList.remove('show');
+        }
+        pwdInput.addEventListener('keydown', updateCaps);
+        pwdInput.addEventListener('keyup', updateCaps);
+        pwdInput.addEventListener('blur', () => capsHint.classList.remove('show'));
+
+        // Remember me — prefill email
+        try {
+            const savedEmail = localStorage.getItem('gmp_remember_email');
+            if (savedEmail) {
+                $('#email').value = savedEmail;
+                $('#remember').checked = true;
+                // focus on password if email already filled
+                setTimeout(() => pwdInput.focus(), 50);
+            }
+        } catch (_) {}
+
         $('#login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            hideMsg();
             const email = $('#email').value.trim();
             const password = $('#password').value;
             setLoading(true);
             try {
                 await window.gmpAuth.login(email, password);
-                showMsg('Zalogowano. Przekierowanie...', 'success');
+                // Persist email if remember checked
+                try {
+                    if ($('#remember').checked) localStorage.setItem('gmp_remember_email', email);
+                    else localStorage.removeItem('gmp_remember_email');
+                } catch (_) {}
+                showMsg('Zalogowano. Przekierowanie…', 'success');
                 const params = new URLSearchParams(window.location.search);
                 const returnTo = params.get('return') || 'dashboard.html';
                 setTimeout(() => window.location.href = returnTo, 400);
@@ -124,19 +681,21 @@
         });
 
         $('#magic-link-btn').addEventListener('click', async () => {
+            hideMsg();
             const email = $('#email').value.trim();
-            if (!email) { showMsg('Podaj najpierw email'); return; }
+            if (!email) { showMsg('Podaj najpierw email powyżej.'); $('#email').focus(); return; }
             try {
                 await window.gmpAuth.sendMagicLink(email);
-                showMsg('Link wysłany na ' + email + '. Sprawdź pocztę.', 'success');
+                showMsg('Link został wysłany na ' + email + '. Sprawdź skrzynkę (także SPAM).', 'success');
             } catch (err) {
                 showMsg(err.message || 'Błąd wysyłania linku');
             }
         });
 
         $('#forgot-btn').addEventListener('click', async () => {
+            hideMsg();
             const email = $('#email').value.trim();
-            if (!email) { showMsg('Wpisz najpierw email powyżej, potem kliknij ponownie.'); return; }
+            if (!email) { showMsg('Wpisz najpierw email powyżej, potem kliknij ponownie.'); $('#email').focus(); return; }
             try {
                 await window.gmpAuth.sendPasswordReset(email);
                 showMsg(`Link do resetu hasła wysłany na ${email}. Sprawdź skrzynkę (także SPAM).`, 'success');
