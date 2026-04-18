@@ -1,23 +1,4 @@
 {
-  "cleanUrls": false,
-  "trailingSlash": false,
-  "rewrites": [
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "crm.getmypermit.pl" }],
-      "destination": "/crm/index.html"
-    },
-    {
-      "source": "/index.html",
-      "has": [{ "type": "host", "value": "crm.getmypermit.pl" }],
-      "destination": "/crm/index.html"
-    },
-    {
-      "source": "/(.+)",
-      "has": [{ "type": "host", "value": "crm.getmypermit.pl" }],
-      "destination": "/crm/$1"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
