@@ -11,7 +11,6 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // 9=employment-yn, 10=employer, 11=salary, 12=history, 13=purpose, 14=documents,
 // 15=review, 16=success
 const TOTAL_STEPS = 17;
-const PROGRESS_STEPS = 15; // do 15 bo welcome i success nie liczą
 
 const DOC_TYPES = [
     { key: 'passport',     required: true,  icon: 'ph-identification-card' },
@@ -89,12 +88,36 @@ let pendingCaptureRotation = 0;
     setupKeyboardNav();
     setupSwipeNav();
     initCountryPickers();
-    setupHelpButton();
+    restorePassportZone();
 
     // Resume at saved step
     const resumeStep = Math.min(data.current_step || 0, 15);
     goToStep(resumeStep, true);
 })();
+
+// Restore passport zone state if already uploaded (after resume)
+async function restorePassportZone() {
+    const passport = uploadedDocs.find(d => d.doc_type === 'passport');
+    if (!passport) return;
+    const zone = document.getElementById('passport-zone');
+    if (!zone) return;
+    zone.classList.add('uploaded');
+    zone.querySelector('.cap-title').textContent = intakeI18n.t('documents.uploaded') || '✓ Uploaded';
+    zone.querySelector('.cap-hint').textContent = passport.file_name || 'passport.jpg';
+    const { data: signed } = await db.storage.from('intake-docs').createSignedUrl(passport.storage_path, 3600);
+    const preview = document.getElementById('passport-preview');
+    if (signed && preview) {
+        const sizeKb = passport.file_size ? Math.round(passport.file_size / 1024) + ' KB' : '';
+        preview.innerHTML = `<div class="uploaded-preview">
+            <img src="${signed.signedUrl}" alt="Passport">
+            <div class="up-body">
+                <div class="up-title">✓ ${intakeI18n.t('documents.uploaded') || 'Uploaded'}</div>
+                <div class="up-sub">${escapeHtml(passport.file_name || '')}${sizeKb ? ' · ' + sizeKb : ''}</div>
+            </div>
+            <button class="up-remove" onclick="removePassport('${passport.id}', '${passport.storage_path}')">${intakeI18n.t('common.remove') || 'Remove'}</button>
+        </div>`;
+    }
+}
 
 function showExpired(reason) {
     console.warn('intake expired:', reason);
@@ -144,12 +167,13 @@ window.pickLang = async function(code) {
     applyI18n();
     renderLangPicker();
     renderDocs();
+    updateProgress();
     if (currentStep === 15) renderReview();
     if (intake) {
         await db.from('gmp_intake_tokens').update({ language: code }).eq('id', intake.id);
     }
 };
-window.closeLangSheet = () => document.getElementById('lang-sheet').classList.remove('open');
+window.closeLangSheet = () => closeSheet('lang-sheet');
 
 function openSheet(id) {
     const el = document.getElementById(id);
@@ -234,8 +258,14 @@ function goToStep(n, silent = false) {
         return;
     } else {
         back.style.display = '';
-        nextText.textContent = intakeI18n.t('common.next');
-        nextIco.className = 'ph ph-caret-right';
+        // Jeśli edytujemy z review → button pokazuje "Back to review"
+        if (returnToReview) {
+            nextText.textContent = intakeI18n.t('review.back_to_review') || 'Back to review';
+            nextIco.className = 'ph ph-arrow-u-up-left';
+        } else {
+            nextText.textContent = intakeI18n.t('common.next');
+            nextIco.className = 'ph ph-caret-right';
+        }
         nav.style.display = '';
     }
 
@@ -282,17 +312,37 @@ function showMilestone(step) {
     toast.classList.add('show');
 }
 
+// Track: ostatni step z którego przyszliśmy do "edit" (z review)
+let returnToReview = false;
+
 function setupNav() {
     document.getElementById('btn-next').addEventListener('click', async () => {
         if (currentStep === 15) {
             await submitIntake();
             return;
         }
-        if (!validateCurrentStep()) return;
+        if (!validateCurrentStep({ showErrors: true })) {
+            // Subtle shake on button
+            const btn = document.getElementById('btn-next');
+            btn.animate([
+                { transform: 'translateX(0)' }, { transform: 'translateX(-4px)' },
+                { transform: 'translateX(4px)' }, { transform: 'translateX(0)' },
+            ], { duration: 200 });
+            return;
+        }
+        // Jeśli weszliśmy z review przez "Edit", wracamy tam
+        if (returnToReview) {
+            returnToReview = false;
+            goToStep(15);
+            return;
+        }
         let next = currentStep + 1;
         goToStep(next);
     });
-    document.getElementById('btn-back').addEventListener('click', () => goToStep(Math.max(0, currentStep - 1)));
+    document.getElementById('btn-back').addEventListener('click', () => {
+        returnToReview = false;
+        goToStep(Math.max(0, currentStep - 1));
+    });
 }
 
 function setupKeyboardNav() {
@@ -666,6 +716,21 @@ window.setArrivalDate = function(daysBack) {
     formData.arrival_date = el.value;
     validateCurrentStep();
     saveData();
+    // Highlight visual na wybranym quick-pick
+    const step = document.querySelector('[data-step="12"]');
+    if (step) {
+        step.querySelectorAll('.quick-pick').forEach(qp => {
+            qp.style.background = '';
+            qp.style.color = '';
+            qp.style.borderColor = '';
+        });
+        const btn = [...step.querySelectorAll('.quick-pick')].find(b => b.getAttribute('onclick')?.includes(`(${daysBack})`));
+        if (btn) {
+            btn.style.background = 'var(--bg-accent)';
+            btn.style.color = 'var(--accent-text)';
+            btn.style.borderColor = 'var(--border-accent)';
+        }
+    }
 };
 
 // === VALIDATION ===
@@ -688,7 +753,7 @@ const REQUIRED_PER_STEP = {
     15: ['agree_processing'],
 };
 
-function validateCurrentStep() {
+function validateCurrentStep(opts = {}) {
     const required = REQUIRED_PER_STEP[currentStep] || [];
     const errors = [];
     required.forEach(k => {
@@ -700,19 +765,32 @@ function validateCurrentStep() {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.push('email');
     }
 
-    document.querySelectorAll('.field.has-error').forEach(f => f.classList.remove('has-error'));
+    // Clear old errors
+    const activeStep = document.querySelector(`[data-step="${currentStep}"]`);
+    if (activeStep) {
+        activeStep.querySelectorAll('.field.has-error').forEach(f => f.classList.remove('has-error'));
+    }
+
+    // Show errors on fields (only when user tries to proceed)
+    if (opts.showErrors && errors.length > 0 && activeStep) {
+        errors.forEach(k => {
+            const el = activeStep.querySelector(`[data-field="${k}"]`);
+            if (el) {
+                const field = el.closest('.field') || el.closest('.input-prefix')?.closest('.field');
+                if (field) field.classList.add('has-error');
+            }
+            // Special for nationality/passport_issuing (country pickers)
+            const btn = activeStep.querySelector(`#pick-${k}`);
+            if (btn) {
+                btn.style.borderColor = 'var(--danger)';
+                setTimeout(() => btn.style.borderColor = '', 2500);
+            }
+        });
+    }
 
     const nextBtn = document.getElementById('btn-next');
     nextBtn.disabled = errors.length > 0;
     return errors.length === 0;
-}
-
-// === HELP BUTTON ===
-function setupHelpButton() {
-    const url = `https://wa.me/48500000000?text=${encodeURIComponent('I need help with my residence permit form')}`;
-    const btn = document.getElementById('help-btn');
-    btn.href = url;
-    btn.classList.add('show');
 }
 
 // === DOCUMENT UPLOAD (with camera + compression) ===
@@ -762,20 +840,28 @@ function compressImage(file, maxDim, quality) {
     return new Promise((resolve) => {
         const img = new Image();
         const reader = new FileReader();
+        // Fallback: jeśli HEIC/coś nieobsługiwanego — wrzucamy plik as-is
+        const fallback = () => resolve(file);
+        reader.onerror = fallback;
+        img.onerror = fallback;
         reader.onload = (e) => {
             img.onload = () => {
-                let w = img.width, h = img.height;
-                if (w > maxDim || h > maxDim) {
-                    if (w > h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
-                    else { w = Math.round(w * (maxDim / h)); h = maxDim; }
-                }
-                const canvas = document.createElement('canvas');
-                canvas.width = w; canvas.height = h;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, w, h);
-                canvas.toBlob(blob => {
-                    resolve(new File([blob], file.name.replace(/\.(heic|heif|png)$/i, '.jpg'), { type: 'image/jpeg' }));
-                }, 'image/jpeg', quality);
+                try {
+                    let w = img.width, h = img.height;
+                    if (!w || !h) return fallback();
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+                        else { w = Math.round(w * (maxDim / h)); h = maxDim; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    canvas.toBlob(blob => {
+                        if (!blob) return fallback();
+                        resolve(new File([blob], file.name.replace(/\.(heic|heif|png)$/i, '.jpg'), { type: 'image/jpeg' }));
+                    }, 'image/jpeg', quality);
+                } catch (err) { fallback(); }
             };
             img.src = e.target.result;
         };
@@ -785,14 +871,19 @@ function compressImage(file, maxDim, quality) {
 
 function showPreview(blob) {
     const img = document.getElementById('preview-img');
+    if (img.src && img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
     img.src = URL.createObjectURL(blob);
     img.style.transform = `rotate(${pendingCaptureRotation}deg)`;
     document.getElementById('preview-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
 }
 
 window.closePreview = function() {
     document.getElementById('preview-modal').classList.remove('open');
+    const img = document.getElementById('preview-img');
+    if (img.src && img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
     pendingCaptureBlob = null;
+    document.body.style.overflow = '';
 };
 
 window.rotatePreview = function() {
@@ -1018,6 +1109,16 @@ function prefillPassportDetails() {
         }
     });
     updateCountryPickerDisplays();
+    // Adaptive lead: zmieniamy komunikat wg stanu
+    const leadEl = document.getElementById('passport-details-lead');
+    if (leadEl) {
+        const hasOcrFill = formData.passport_number || formData.passport_expiry;
+        if (hasOcrFill) {
+            leadEl.textContent = intakeI18n.t('q.passport_details.lead_ocr') || intakeI18n.t('q.passport_details.lead') || 'Check the values — correct if needed.';
+        } else {
+            leadEl.textContent = intakeI18n.t('q.passport_details.lead_manual') || 'Enter the values from your passport.';
+        }
+    }
 }
 
 // === DOCS LIST (step 14) ===
@@ -1056,7 +1157,21 @@ function renderDocs() {
     }
 }
 
-window.pickDocFile = function(docType) {
+window.pickDocFile = async function(docType) {
+    // Jeśli dokument już jest wgrany, usuń stary przed nowym (replace, nie append)
+    const docType_def = DOC_TYPES.find(d => d.key === docType);
+    if (!docType_def?.multi) {
+        const existing = uploadedDocs.filter(d => d.doc_type === docType);
+        if (existing.length > 0) {
+            const confirmed = confirm(intakeI18n.t('documents.confirm_replace') || 'Replace existing file?');
+            if (!confirmed) return;
+            for (const d of existing) {
+                await db.storage.from('intake-docs').remove([d.storage_path]);
+                await db.from('gmp_intake_documents').delete().eq('id', d.id);
+            }
+            uploadedDocs = uploadedDocs.filter(d => d.doc_type !== docType);
+        }
+    }
     triggerCapture(docType);
 };
 
@@ -1145,7 +1260,7 @@ function renderReview() {
         return `<div class="review-section">
             <div class="review-header">
                 <div class="review-header-l"><i class="ph ${sec.icon}"></i> <strong>${sec.label}</strong></div>
-                <button class="review-edit" onclick="goToStep(${sec.step})">${intakeI18n.t('common.edit') || 'Edit'}</button>
+                <button class="review-edit" onclick="editFromReview(${sec.step})">${intakeI18n.t('common.edit') || 'Edit'}</button>
             </div>
             <div class="review-body">${rows}</div>
         </div>`;
@@ -1171,6 +1286,11 @@ function renderReview() {
 
     el.innerHTML = html;
 }
+
+window.editFromReview = function(step) {
+    returnToReview = true;
+    goToStep(step);
+};
 
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
 
