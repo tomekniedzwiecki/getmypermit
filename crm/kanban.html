@@ -220,25 +220,27 @@
 
 /* === MOBILE kanban === */
 @media (max-width: 600px) {
-    .kanban-board { grid-template-columns: repeat(11, 85vw) !important; gap: 8px; padding-bottom: 8px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-    .kanban-col { min-height: calc(100vh - 240px); max-height: calc(100vh - 200px); scroll-snap-align: start; padding: 6px; }
-    .kanban-col-header { position: sticky; top: 0; z-index: 2; padding: 6px 8px; font-size: 13px; background: var(--bg); border-radius: 8px; }
+    .kanban-board {
+        grid-template-columns: repeat(11, 85vw) !important;
+        gap: 8px;
+        padding-bottom: 8px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+    .kanban-col {
+        min-height: calc(100vh - 280px);
+        max-height: calc(100vh - 240px);
+        scroll-snap-align: start;
+        padding: 6px;
+    }
+    .kanban-col-header {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
     .swim-cols { grid-template-columns: repeat(11, 70vw) !important; }
     .swim-label { min-width: 120px !important; padding: 8px !important; }
     .swim-row { grid-template-columns: 120px 1fr !important; }
     .view-toggle-kb button { padding: 8px 12px; font-size: 12px; min-height: 36px; }
-    /* Hint: swipe */
-    .kanban-board::before {
-        content: '← Przesuń → aby zobaczyć kolejne etapy';
-        display: block;
-        grid-column: 1;
-        padding: 8px;
-        font-size: 10px;
-        color: var(--text-tertiary);
-        text-align: center;
-        position: sticky;
-        left: 0;
-    }
 }
 </style>
 <script src="components/sidebar.js" data-active="kanban"></script>
