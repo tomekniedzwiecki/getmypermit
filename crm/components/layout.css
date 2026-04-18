@@ -1286,17 +1286,17 @@ label {
     .case-tabs { margin: 12px -16px 0 !important; padding: 0 16px !important; }
 
     /* Grid patterns - wymuś 1-kolumnowe */
-    .grid.md\\:grid-cols-2,
-    .grid.md\\:grid-cols-3,
-    .grid.md\\:grid-cols-4,
-    .grid.md\\:grid-cols-6,
-    .grid.lg\\:grid-cols-2,
-    .grid.lg\\:grid-cols-3,
-    .grid.lg\\:grid-cols-4,
-    .grid.lg\\:grid-cols-5,
-    .grid.xl\\:grid-cols-3,
-    .grid.xl\\:grid-cols-4,
-    .grid.xl\\:grid-cols-6 {
+    .grid.md\:grid-cols-2,
+    .grid.md\:grid-cols-3,
+    .grid.md\:grid-cols-4,
+    .grid.md\:grid-cols-6,
+    .grid.lg\:grid-cols-2,
+    .grid.lg\:grid-cols-3,
+    .grid.lg\:grid-cols-4,
+    .grid.lg\:grid-cols-5,
+    .grid.xl\:grid-cols-3,
+    .grid.xl\:grid-cols-4,
+    .grid.xl\:grid-cols-6 {
         grid-template-columns: 1fr !important;
     }
     /* Pozwól 2 kolumny tam gdzie ma sens (KPI) */
