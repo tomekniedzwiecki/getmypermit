@@ -41,27 +41,25 @@
         }
         .auth-brand-sm {
             display: inline-flex;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
         }
-        .auth-brand-sm .logo-mark {
-            width: 36px; height: 36px;
-            border-radius: 10px;
+        .auth-brand-sm .logo-full {
             background: white;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 20px -6px rgba(37, 99, 235, 0.45), inset 0 0 0 1px rgba(37, 99, 235, 0.08);
-            padding: 5px;
-            overflow: hidden;
+            padding: 8px 14px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px -6px rgba(37, 99, 235, 0.35), inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+            display: inline-flex;
+            align-items: center;
         }
-        .auth-brand-sm .logo-mark img { width: 100%; height: 100%; object-fit: contain; }
-        .auth-brand-sm .brand-text {
-            font-weight: 700; font-size: 14px; color: var(--text);
-            letter-spacing: -0.01em;
+        .auth-brand-sm .logo-full img {
+            height: 24px; width: auto; display: block;
         }
         .auth-brand-sm .brand-sub {
             font-size: 10px; color: var(--text-tertiary);
             text-transform: uppercase; letter-spacing: 0.08em;
-            margin-top: 1px;
+            padding-left: 2px;
         }
 
         .auth-title {
@@ -303,21 +301,28 @@
         /* Big logo */
         .brand-logo-lg {
             display: inline-flex;
-            align-items: center;
-            gap: 14px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
         }
-        .brand-logo-lg .mark {
-            width: 52px; height: 52px;
-            border-radius: 14px;
+        .brand-logo-lg .logo-full-lg {
             background: white;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 16px 40px -8px rgba(37, 99, 235, 0.55), inset 0 0 0 1px rgba(255,255,255,0.2);
-            padding: 7px;
-            overflow: hidden;
+            padding: 12px 20px;
+            border-radius: 14px;
+            box-shadow: 0 16px 40px -8px rgba(37, 99, 235, 0.4), inset 0 0 0 1px rgba(255,255,255,0.15);
+            display: inline-flex;
+            align-items: center;
         }
-        .brand-logo-lg .mark img { width: 100%; height: 100%; object-fit: contain; }
-        .brand-logo-lg .name { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
-        .brand-logo-lg .tag { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
+        .brand-logo-lg .logo-full-lg img {
+            height: 34px; width: auto; display: block;
+        }
+        .brand-logo-lg .tag {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            padding-left: 4px;
+        }
 
         /* Middle content */
         .brand-eyebrow {
@@ -448,11 +453,10 @@
         <section class="auth-form-panel">
             <!-- Top: small brand (only visible on mobile where right panel is hidden, + subtle on desktop top) -->
             <div class="auth-brand-sm lg:hidden">
-                <div class="logo-mark"><img src="img/favicon-192.png" alt="GetMyPermit" width="36" height="36"></div>
-                <div>
-                    <div class="brand-text">GetMyPermit</div>
-                    <div class="brand-sub">Panel kancelarii</div>
+                <div class="logo-full">
+                    <img src="img/logo.webp" alt="getmypermit.pl" width="160" height="24">
                 </div>
+                <div class="brand-sub">Panel kancelarii</div>
             </div>
 
             <!-- Middle: form -->
@@ -543,11 +547,10 @@
             <div class="auth-brand-content">
                 <!-- Top: big brand -->
                 <div class="brand-logo-lg">
-                    <div class="mark"><img src="img/favicon-192.png" alt="GetMyPermit" width="52" height="52"></div>
-                    <div>
-                        <div class="name">GetMyPermit</div>
-                        <div class="tag">Panel operacyjny kancelarii</div>
+                    <div class="logo-full-lg">
+                        <img src="img/logo.webp" alt="getmypermit.pl" width="230" height="34">
                     </div>
+                    <div class="tag">Panel operacyjny kancelarii</div>
                 </div>
 
                 <!-- Middle: headline + features -->
