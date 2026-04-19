@@ -576,6 +576,7 @@
                 <div class="help-toc-title">W tym podręczniku</div>
 
                 <a href="#start" class="active">Wprowadzenie</a>
+                <a href="#zmiany">Ostatnie zmiany</a>
                 <a href="#szybki-start">Szybki start (5 min)</a>
                 <a href="#workflow">Jak to działa: lead → sprawa</a>
 
@@ -583,6 +584,7 @@
                 <a href="#mod-dashboard">Dashboard</a>
                 <a href="#mod-leady">Leady i pipeline</a>
                 <a href="#mod-sprawy">Sprawy</a>
+                <a href="#mod-zezwolenia">Zezwolenia na pracę</a>
                 <a href="#mod-kanban">Kanban</a>
                 <a href="#mod-zadania">Zadania</a>
                 <a href="#mod-alerty">Alerty</a>
@@ -637,7 +639,7 @@
                     <div class="hero-meta">
                         <span class="meta-item"><i class="ph ph-clock"></i> ~15 min czytania</span>
                         <span class="meta-item"><i class="ph ph-stack"></i> 17 modułów</span>
-                        <span class="meta-item"><i class="ph ph-arrow-clockwise"></i> Ostatnia aktualizacja: <span id="last-update">2026-04-18</span></span>
+                        <span class="meta-item"><i class="ph ph-arrow-clockwise"></i> Ostatnia aktualizacja: <span id="last-update">2026-04-19</span></span>
                     </div>
                 </header>
 
@@ -681,6 +683,48 @@
                 </section>
 
                 <!-- ============ SZYBKI START ============ -->
+                <!-- ============ CHANGELOG ============ -->
+                <section class="help-section" id="zmiany">
+                    <h2><i class="ph ph-sparkle"></i>Ostatnie zmiany w systemie</h2>
+                    <p class="lede">Co doszło / co się zmieniło — od najnowszego. Aktualizowane przy każdym wdrożeniu.</p>
+
+                    <div class="callout note">
+                        <i class="ph ph-calendar"></i>
+                        <div><strong>2026-04-19 — duża aktualizacja po uwagach Pawła</strong></div>
+                    </div>
+
+                    <h3>Nowy model spraw: typ strony</h3>
+                    <p>Przy tworzeniu sprawy wybierasz jeden z 3 typów:</p>
+                    <ul>
+                        <li><strong>Cudzoziemiec</strong> — sprawa indywidualna (karty pobytu, zezwolenia).</li>
+                        <li><strong>Pracodawca</strong> — zezwolenia na pracę / audyt. Do jednej sprawy możesz przypisać wielu pracowników. Dedykowana zakładka <a href="#mod-zezwolenia">Zezwolenia na pracę</a>.</li>
+                        <li><strong>Inna</strong> — cywilna / karna / gospodarcza / opinia prawna. Masz pola <em>termin odpowiedzi</em> i <em>termin rozprawy</em>.</li>
+                    </ul>
+                    <p>Typ można zmienić w karcie sprawy (zakładka <em>Dane szczegółowe</em> → pole <em>Typ strony sprawy</em>).</p>
+
+                    <h3>PESEL na karcie klienta</h3>
+                    <p>Pole PESEL (11 cyfr) dostępne przy tworzeniu i edycji klienta. Wyświetla się w panelu sprawy.</p>
+
+                    <h3>Plan płatności — tworzenie i edycja</h3>
+                    <p>W zakładce <em>Finanse</em> karty sprawy, karta „Plan płatności" ma teraz ikonę ołówka. Pola: kwota planowana, płatnik (klient/pracodawca), liczba rat, termin, notatki.</p>
+
+                    <h3>Koszyk faktur (zbiorcze)</h3>
+                    <p>W karcie sprawy zamiast „Wystaw fakturę" dodajesz <strong>sprawę do koszyka</strong>. W module <a href="invoices.html">Faktury</a> → zakładka „Koszyk zbiorczy" grupuje wpisy per pracodawca+miesiąc. Przycisk „Wystaw zbiorczą" tworzy jedną fakturę z opisem wszystkich spraw.</p>
+
+                    <h3>Opłaty administracyjne — odrębna kategoria</h3>
+                    <p>Przy dodawaniu wpłaty wybierz <em>Rodzaj</em>: Wynagrodzenie kancelarii / Opłata administracyjna. Opłaty adm. <strong>nie</strong> pomniejszają już wynagrodzenia w żadnym zestawieniu (KPI, dashboard, windykacja, analityka).</p>
+
+                    <h3>Role: dodano „manager" + per-user overrides</h3>
+                    <p>Nowa rola <strong>manager</strong> — dla Wiktorii i Oleksandra (dostęp do globalnych finansów i analityki zespołu, bez usuwania). Patrz <a href="#role">Role</a>.</p>
+                    <p>W Super Admin → Zespół możesz <strong>nadpisać</strong> pojedyncze uprawnienie dla konkretnej osoby (np. dać prawnikowi dostęp do faktur bez zmiany roli).</p>
+
+                    <h3>Tworzenie kont z panelu</h3>
+                    <p>W Super Admin → Zespół → „Nowy pracownik" wpisujesz dane + zaznaczasz „Utwórz konto" → dostajesz <strong>link dostępowy do skopiowania</strong> (przez Kopiuj / mailto / WhatsApp). Pracownik klika link, ustawia hasło, loguje się na swój email.</p>
+
+                    <h3>„Nie pamiętam hasła" — dedykowana strona</h3>
+                    <p>Na stronie logowania przycisk otwiera teraz <a href="forgot-password.html">/forgot-password.html</a> z formularzem i ekranem potwierdzenia.</p>
+                </section>
+
                 <section class="help-section" id="szybki-start" style="margin-top: -24px;">
                     <h2><i class="ph ph-rocket-launch"></i>Szybki start — pierwsze 5 minut</h2>
                     <p class="lede">Minimum, które musisz opanować, żeby sensownie pracować w panelu.</p>
@@ -797,6 +841,15 @@
                     <h2><i class="ph ph-folders"></i>Sprawy</h2>
                     <p class="lede">Serce CRM — każdy klient, z którym mamy umowę, ma tu teczkę. Wszystko dzieje się wokół sprawy.</p>
 
+                    <h3>Typ sprawy (party_type)</h3>
+                    <p>Przy <strong>tworzeniu nowej sprawy</strong> modal pyta najpierw o typ strony:</p>
+                    <ul>
+                        <li><span class="badge" style="background: rgba(6,182,212,0.15); color: #67e8f9; border-color: rgba(6,182,212,0.3); padding: 2px 8px; border-radius: 999px; font-size: 11px">Cudzoziemiec</span> — sprawa indywidualna (karty pobytu, zezwolenia jednoosobowe).</li>
+                        <li><span class="badge" style="background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 999px; font-size: 11px">Pracodawca</span> — zezwolenia na pracę / audyt. Do jednej sprawy przypisujesz firmę + <strong>wielu pracowników</strong>. Widok tabelaryczny w <a href="work-permits.html">Zezwolenia na pracę</a>.</li>
+                        <li><span class="badge" style="background: rgba(168,85,247,0.15); color: #c4b5fd; border-color: rgba(168,85,247,0.3); padding: 2px 8px; border-radius: 999px; font-size: 11px">Inna</span> — cywilna / karna / gospodarcza / opinia prawna. Z dodatkowymi polami: <em>termin odpowiedzi</em>, <em>termin rozprawy</em>. Klient może być osobą LUB firmą.</li>
+                    </ul>
+                    <p>Typ widać jako <strong>badge w nagłówku karty sprawy</strong> (obok statusu). Można go zmienić w zakładce <em>Dane szczegółowe</em> → pole <em>Typ strony sprawy</em>.</p>
+
                     <h3>Lista spraw</h3>
                     <p>W <a href="cases.html">Sprawach</a> widzisz wszystkie teczki. Szybkie zakładki u góry:</p>
                     <ul>
@@ -846,6 +899,29 @@
                         <i class="ph ph-info"></i>
                         <div>W karcie sprawy działa skrót <kbd>Ctrl</kbd> + <kbd>S</kbd> — zapisuje aktualnie edytowane pole bez klikania.</div>
                     </div>
+                </section>
+
+                <section class="help-section" id="mod-zezwolenia">
+                    <h2><i class="ph ph-identification-card"></i>Zezwolenia na pracę</h2>
+                    <p class="lede">Dedykowana zakładka dla spraw pracodawców (party_type = pracodawca).</p>
+
+                    <h3>3 widoki tego samego zestawu spraw</h3>
+                    <ul>
+                        <li><strong>Tabela</strong> — standardowa lista z kolumnami: nr sprawy, pracodawca, NIP, typ (zezw./audyt), liczba pracowników, data przyjęcia, status, opiekun, wynagrodzenie.</li>
+                        <li><strong>Chronologicznie</strong> — sprawy pogrupowane po miesiącach.</li>
+                        <li><strong>Analiza</strong> — ilościowa: top pracodawcy (ile spraw, ilu pracowników, sumaryczne wynagrodzenie), rozkład per rok.</li>
+                    </ul>
+
+                    <h3>Pracownicy w sprawie</h3>
+                    <p>W karcie sprawy pracodawcy (zakładka Przegląd) masz sekcję <strong>„Pracownicy w sprawie"</strong> — tabela z nazwiskami, PESEL-ami, obywatelstwem. Przycisk „Dodaj pracownika" otwiera picker klientów.</p>
+
+                    <h3>Filtry</h3>
+                    <p>Search (nr sprawy / pracodawca / pracownik), status, typ sprawy (work_permit / audit), konkretny pracodawca.</p>
+
+                    <a href="work-permits.html" class="mod" style="display:inline-flex;flex-direction:row;align-items:center;gap:8px;padding:8px 14px;margin-top:8px;">
+                        <i class="ph ph-arrow-right"></i>
+                        <span>Otwórz Zezwolenia na pracę</span>
+                    </a>
                 </section>
 
                 <section class="help-section" id="mod-kanban">
@@ -904,6 +980,10 @@
                 <section class="help-section" id="mod-wnioski">
                     <h2><i class="ph ph-paper-plane-tilt"></i>Kolejka wniosków</h2>
                     <p class="lede">Rejestr wszystkich złożeń w urzędach — papier, elektronicznie, osobiście.</p>
+                    <div class="callout note">
+                        <i class="ph ph-info"></i>
+                        <div><strong>Kolejka została wyczyszczona (2026-04-19).</strong> Zgodnie z uwagami Pawła nie migrujemy już starych złożeń — kolejka służy wyłącznie <strong>nowym wnioskom składanym od teraz</strong>. Wpisy dodajemy ręcznie przy każdym nowym złożeniu.</div>
+                    </div>
                     <ul>
                         <li>Zakładki wg urzędu: <strong>SUW Wałbrzych, Legnica, DUW Wrocław, elektronicznie, tylko oczekujące</strong>.</li>
                         <li>Kluczowe pola: numer biletu, MOS/PIO, data wysłania, data stawiennictwa, transport, status, uwagi.</li>
@@ -920,13 +1000,16 @@
 
                 <section class="help-section" id="mod-klienci">
                     <h2><i class="ph ph-users"></i>Klienci</h2>
-                    <p class="lede">Kartoteka cudzoziemców — wszystko co wiemy o naszych klientach.</p>
+                    <p class="lede">Kartoteka cudzoziemców i osób fizycznych — wszystko co wiemy o naszych klientach.</p>
                     <ul>
                         <li>Kolumny: nazwisko, imię, data urodzenia, obywatelstwo, pracodawca, kontakt, liczba spraw.</li>
                         <li>Filtry: szukaj, obywatelstwo, pracodawca.</li>
                         <li>Kliknij wiersz → dane osobowe, lista spraw tego klienta, pracodawca, profil zaufany, notatki.</li>
                         <li>Przycisk <strong>„Nowy klient"</strong> — szybki modal; po zapisie przeniesie Cię do jego karty.</li>
                     </ul>
+
+                    <h3>Pole PESEL</h3>
+                    <p>Na karcie klienta masz pole <strong>PESEL</strong> (11 cyfr). Walidacja sprawdza długość. PESEL wyświetla się w panelu klienta w karcie sprawy. Przydatny przy sprawach polskich obywateli (party_type = <em>inna</em>).</p>
                 </section>
 
                 <section class="help-section" id="mod-pracodawcy">
@@ -961,13 +1044,28 @@
 
                 <section class="help-section" id="mod-platnosci">
                     <h2><i class="ph ph-coins"></i>Płatności</h2>
-                    <p class="lede">Rejestr wpłat od klientów i pracodawców — gotówka, przelew, karta, faktura, inne.</p>
+                    <p class="lede">Rejestr wpłat od klientów i pracodawców — gotówka, przelew, karta, faktura, inne. <strong>Wymaga roli <code>manager</code>, <code>admin</code> lub <code>owner</code>.</strong></p>
+
+                    <h3>Wynagrodzenie vs opłata administracyjna (ważne!)</h3>
+                    <div class="callout warn">
+                        <i class="ph ph-warning"></i>
+                        <div>Przy dodawaniu wpłaty wybieraj poprawny <strong>Rodzaj</strong>. Opłata administracyjna (urzędowa, za wniosek itp.) <strong>nie</strong> pomniejsza wynagrodzenia kancelarii — jest liczona osobno w KPI i zestawieniach.</div>
+                    </div>
+                    <p>W karcie sprawy w zakładce <em>Finanse</em> widzisz 4 KPI:</p>
                     <ul>
-                        <li><strong>Globalne filtry</strong>: okres (dziś, miesiąc, ostatnie 12 mies., wszystko), opiekun, forma, kto płaci (klient / pracodawca), rodzaj (wynagrodzenie / opłaty administracyjne).</li>
+                        <li><strong>Wynagrodzenie</strong> — kwota planowana (fee_amount lub z planu)</li>
+                        <li><strong>Wpłacono (wynagr.)</strong> — suma wpłat typu <em>fee</em></li>
+                        <li><strong>Pozostało (wynagr.)</strong> — różnica</li>
+                        <li><strong>Opłaty administracyjne</strong> — suma wpłat typu <em>admin_fee</em> (osobna kategoria, nie wpływa na 3 powyżej)</li>
+                    </ul>
+                    <p>Windykacja, analityka i MRR również liczą tylko wynagrodzenie (bez opłat admin).</p>
+
+                    <h3>Globalny widok /payments.html</h3>
+                    <ul>
+                        <li><strong>Filtry</strong>: okres (dziś, miesiąc, ostatnie 12 mies., wszystko), opiekun, forma, kto płaci (klient / pracodawca), rodzaj (wynagrodzenie / opłaty administracyjne).</li>
                         <li><strong>KPI strip</strong>: wpłaty w okresie, dziś, trend MoM, zaległości, prognoza 90 dni.</li>
-                        <li>Tabela: klient/pracodawca, sprawa, kwota, forma, data, notatki.</li>
+                        <li>Zakładki: Wpłaty, <em>Opłaty administracyjne</em> (osobna), Zaległości, Prognoza, Miesiące.</li>
                         <li>Wykresy: przychody w czasie, porównanie YoY, wolumen spraw.</li>
-                        <li>Ręczny wpis nowej płatności — przycisk u góry.</li>
                     </ul>
                 </section>
 
@@ -992,13 +1090,22 @@
 
                 <section class="help-section" id="mod-faktury">
                     <h2><i class="ph ph-receipt"></i>Faktury</h2>
-                    <p class="lede">Wystawianie, wysyłanie, oznaczanie jako zapłacone.</p>
+                    <p class="lede">Koszyk zbiorczy + ręczne wystawianie. <strong>Wymaga roli <code>manager</code>, <code>admin</code> lub <code>owner</code>.</strong></p>
+
+                    <h3>Przepływ: sprawa → koszyk → faktura zbiorcza</h3>
+                    <ol class="steps">
+                        <li><span class="step-title">W karcie sprawy (zakładka Finanse)</span><span class="step-desc">Kliknij <strong>„Dodaj do koszyka faktur"</strong>. Wpisz kwotę i opis. Sprawa trafia do koszyka ze statusem <code>to_issue</code>.</span></li>
+                        <li><span class="step-title">Wejdź w <a href="invoices.html">Faktury</a> → zakładka „Koszyk zbiorczy"</span><span class="step-desc">Widzisz wszystkie sprawy w koszyku <strong>pogrupowane per (pracodawca + miesiąc)</strong>. Każda grupa ma sumaryczną kwotę.</span></li>
+                        <li><span class="step-title">Wystaw fakturę zbiorczą</span><span class="step-desc">Kliknij „Wystaw zbiorczą" na grupie → wpisz numer → powstaje <strong>jedna faktura</strong> z opisem zawierającym wszystkie sprawy składowe. Pozycje źródłowe dostają status <code>cancelled</code> z notatką „Ujęte w fakturze zbiorczej X" (audyt).</span></li>
+                    </ol>
+
+                    <h3>Pozostałe widoki</h3>
                     <ul>
-                        <li>Kolumny: pracodawca / klient, opis, status (do wystawienia / wysłana / zapłacona), wysłana do, data, kwota.</li>
-                        <li>Nowa faktura: wybór odbiorcy (klient lub pracodawca), kwota, opis.</li>
-                        <li>Eksport PDF pojedynczej faktury, CSV dla całej listy.</li>
-                        <li>Oznacz jako <strong>zapłaconą</strong> → automatyczne księgowanie w Płatnościach.</li>
+                        <li><strong>Wszystkie</strong> — pełna lista faktur (koszyk + wystawione + wysłane + opłacone).</li>
+                        <li><strong>Do wystawienia (lista)</strong> — płaska lista koszyka bez grupowania.</li>
+                        <li><strong>Wysłane</strong>, <strong>Opłacone</strong> — standardowe filtry statusów.</li>
                     </ul>
+                    <p>Eksport PDF pojedynczej faktury, CSV dla całej listy. Oznaczenie <strong>„zapłacona"</strong> → automatyczne księgowanie w Płatnościach.</p>
                 </section>
 
                 <section class="help-section" id="mod-analiza">
@@ -1034,11 +1141,31 @@
 
                 <section class="help-section" id="mod-admin">
                     <h2><i class="ph ph-shield-star"></i>Super admin</h2>
-                    <p class="lede">Panel administracyjny instancji — widoczny wyłącznie dla roli <strong>owner</strong>.</p>
+                    <p class="lede">Panel dla <strong>owner</strong> i <strong>admin</strong>. Zakładki: Live pulse / <strong>Zespół</strong> / Ryzyko / Finanse / Audit.</p>
+
+                    <h3>Zespół — pełne zarządzanie kontami</h3>
+                    <p>Podzakładki:</p>
                     <ul>
-                        <li>Statystyki bazy: użytkownicy, sprawy, klienci, płatności.</li>
-                        <li>Zakładki: users (zarządzanie rolami), audit log (kto co zrobił), encryption keys, backups, webhooks.</li>
-                        <li>Wykresy aktywności systemu i użycia przestrzeni dyskowej.</li>
+                        <li><strong>Zarządzanie kontami</strong> — lista pracowników + matryca ról + tworzenie nowych kont (z generowaniem linku dostępowego).
+                            <ul>
+                                <li>Lista pokazuje: kolor, imię, email, rolę, status konta (aktywne / brak), ile ma nadpisanych uprawnień, ostatnio online.</li>
+                                <li>„Nowy pracownik" → formularz + matryca 14 uprawnień z możliwością nadpisania.</li>
+                                <li>Przy nowym koncie: checkbox „Utwórz konto i wygeneruj link dostępowy" → modal z linkiem do skopiowania (Kopiuj / mailto / WhatsApp).</li>
+                                <li>Przy istniejącym: „Wygeneruj nowy link dostępowy" (dla zapomnianych haseł).</li>
+                                <li>„Dezaktywuj" — ustawia <code>is_active = false</code>, odłącza <code>user_id</code>. Historia spraw zostaje.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Wydajność</strong> — score zespołu (ukończone × 3 + aktywności × 0.1 − overdue × 5), znormalizowany 0-100.</li>
+                    </ul>
+
+                    <h3>Live pulse</h3>
+                    <p>Na bieżąco co dzieje się w systemie: strumień aktywności, KPI dzisiaj (nowe sprawy, aktywności, zadania ukończone, online teraz). Odświeżane co 30s.</p>
+
+                    <h3>Ryzyko / Finanse / Audit</h3>
+                    <ul>
+                        <li><strong>Ryzyko</strong> — sprawy zagrożone (bez aktywności &gt; 30 dni, przedawnienia).</li>
+                        <li><strong>Finanse</strong> — globalne KPI (pipeline, MRR, collection rate, overdue).</li>
+                        <li><strong>Audit</strong> — kto co zrobił: akcje destrukcyjne, dostęp do haseł klientów, historia logowań.</li>
                     </ul>
                 </section>
 
@@ -1140,7 +1267,7 @@
                 <!-- ============ ROLE ============ -->
                 <section class="help-section" id="role">
                     <h2><i class="ph ph-users-three"></i>Role i uprawnienia</h2>
-                    <p class="lede">Każdy użytkownik ma przypisaną rolę. Role są hierarchiczne — wyższa widzi to, co niższa, plus dodatkowe funkcje.</p>
+                    <p class="lede">Każdy użytkownik ma przypisaną rolę. Rola decyduje co widzi w sidebarze i jakie akcje są dla niego dostępne. Każde uprawnienie można też <strong>indywidualnie nadpisać</strong> dla konkretnej osoby w Super Admin → Zespół.</p>
 
                     <table class="role-table">
                         <thead>
@@ -1153,26 +1280,74 @@
                         <tbody>
                             <tr>
                                 <td><span class="role-badge role-owner">owner</span></td>
-                                <td><strong>Właściciel instancji</strong> (jedna osoba)</td>
-                                <td>Pełny dostęp + panel <strong>Super admin</strong>: zarządzanie użytkownikami, audit log, kopie, webhooks.</td>
+                                <td><strong>Właściciel</strong> (Tomek, Paweł)</td>
+                                <td>Wszystko + panel <strong>Super admin</strong>: zarządzanie kontami, audit log, systemowe.</td>
                             </tr>
                             <tr>
                                 <td><span class="role-badge role-admin">admin</span></td>
                                 <td>Administrator kancelarii</td>
-                                <td>Zarządzanie zespołem (dodawanie prawników, zmiana ról), wszystkie sprawy, finanse, ustawienia.</td>
+                                <td>Jak owner — zarządza zespołem, zaprasza pracowników, usuwa sprawy.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="role-badge role-admin" style="background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3)">manager</span></td>
+                                <td>Rola nadzorcza (<strong>Wiktoria, Oleksandr</strong>)</td>
+                                <td>Wszystko co prawnik + globalne finanse (Płatności, Windykacja, Faktury) + analityka + moduł Prawnicy (wydajność zespołu). <strong>Bez</strong> usuwania.</td>
                             </tr>
                             <tr>
                                 <td><span class="role-badge role-lawyer">lawyer</span></td>
                                 <td>Prawnik / opiekun sprawy</td>
-                                <td>Dostęp do wszystkich spraw i klientów, prowadzenie postępowań, wystawianie faktur, rejestrowanie płatności.</td>
+                                <td>Wszystkie sprawy, zadania, terminy, dodawanie wpłat w karcie sprawy. <strong>Bez</strong> globalnych finansów, <strong>bez</strong> usuwania.</td>
                             </tr>
                             <tr>
                                 <td><span class="role-badge role-assistant">assistant</span></td>
                                 <td>Asystent prawny</td>
-                                <td>Ograniczony dostęp: wspierający dla prawnika — zadania, notatki, dokumenty, kalendarz.</td>
+                                <td>Jak prawnik — wspierający zadania, notatki, dokumenty, kalendarz.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="role-badge role-assistant" style="opacity: 0.8">staff</span></td>
+                                <td>Pracownik (domyślna)</td>
+                                <td>Rola startowa przy tworzeniu nowego konta — dostęp do spraw, zadań, płatności w sprawach.</td>
                             </tr>
                         </tbody>
                     </table>
+
+                    <h3>Matryca uprawnień (domyślne z roli)</h3>
+                    <table class="role-table">
+                        <thead>
+                            <tr>
+                                <th>Akcja / moduł</th>
+                                <th>staff / assistant / lawyer</th>
+                                <th>manager</th>
+                                <th>admin / owner</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Sprawy / zadania / terminy</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td></tr>
+                            <tr><td>Dodawanie i ewidencja wpłat w karcie sprawy</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td></tr>
+                            <tr><td>Archiwizacja spraw</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td></tr>
+                            <tr><td>Globalne finanse (Płatności, Windykacja, Faktury)</td><td style="text-align:center">❌</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td></tr>
+                            <tr><td>Analityka</td><td style="text-align:center">❌</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td></tr>
+                            <tr><td>Moduł „Prawnicy" (wydajność zespołu)</td><td style="text-align:center">❌</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td></tr>
+                            <tr><td>Usuwanie spraw / klientów / pracowników</td><td style="text-align:center">❌</td><td style="text-align:center">❌</td><td style="text-align:center">✅</td></tr>
+                            <tr><td>Zarządzanie kontami (Super Admin → Zespół)</td><td style="text-align:center">❌</td><td style="text-align:center">❌</td><td style="text-align:center">✅</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Per-user overrides (indywidualne nadpisanie)</h3>
+                    <p>W Super Admin → Zespół → Edytuj pracownika: sekcja „Uprawnienia — nadpisz indywidualnie". Dla każdego z 14 uprawnień możesz zaznaczyć „Nadpisz" i wybrać „Pozwól" / „Zabroń". Przykłady:</p>
+                    <ul>
+                        <li>Prawnik, który prowadzi całą księgowość → daj mu <em>view_global_finance</em> bez zmiany roli.</li>
+                        <li>Manager, który ma wgląd w audyt → daj mu <em>view_admin_panel</em>.</li>
+                        <li>Konkretny admin, który ma blokadę usuwania → zabroń <em>delete_case</em>.</li>
+                    </ul>
+
+                    <h3>Jak dodać nowego pracownika</h3>
+                    <ol class="steps">
+                        <li><span class="step-title">Super Admin → Zespół → „Nowy pracownik"</span><span class="step-desc">Wpisz imię + nazwisko, email, wybierz rolę (najczęściej <code>lawyer</code> lub <code>staff</code>).</span></li>
+                        <li><span class="step-title">Zaznacz „Utwórz konto i wygeneruj link dostępowy po zapisie"</span><span class="step-desc">Kliknij „Dodaj".</span></li>
+                        <li><span class="step-title">Skopiuj wygenerowany link</span><span class="step-desc">Modal pokaże link. Wyślij pracownikowi (Slack / WhatsApp / mailto — przyciski w modalu).</span></li>
+                        <li><span class="step-title">Pracownik klika link → ustawia hasło → zalogowany</span><span class="step-desc">Link ważny 1h. Jeśli wygaśnie — wejdź w edycję pracownika i „Wygeneruj nowy link dostępowy".</span></li>
+                    </ol>
 
                     <div class="callout note">
                         <i class="ph ph-user-circle"></i>
