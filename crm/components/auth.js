@@ -115,9 +115,24 @@
 
   function hasPermission(staff, perm) {
     if (!staff?.role) return false;
+    // Per-user override z gmp_staff.permission_overrides (edytowalny w Super Admin → Zespół)
+    const overrides = staff.permission_overrides || {};
+    if (Object.prototype.hasOwnProperty.call(overrides, perm)) {
+      return !!overrides[perm];
+    }
+    // Default z roli
     const allowed = PERMISSIONS[perm];
     if (!allowed) return false;
     return allowed.includes(staff.role);
+  }
+
+  // Lista wszystkich permissions (dla UI zarzadzania)
+  function listPermissions() {
+    return Object.keys(PERMISSIONS);
+  }
+  function getRoleDefaultForPermission(role, perm) {
+    const allowed = PERMISSIONS[perm];
+    return allowed ? allowed.includes(role) : false;
   }
 
   // Redirect jeśli brak uprawnienia
@@ -173,6 +188,7 @@
     getSession, getCurrentUser, getCurrentStaff,
     login, sendMagicLink, sendPasswordReset, updatePassword, logout,
     enforceAuth, requireRole, requirePermission, hasRole, hasPermission,
+    listPermissions, getRoleDefaultForPermission,
     isOwner, isAdminOrOwner, auditLog,
   };
 

@@ -29,7 +29,7 @@
                 </div>
                 <div class="flex gap-2">
                     <button class="btn btn-secondary" onclick="exportStaff()"><i class="ph ph-download-simple"></i> CSV</button>
-                    <button class="btn btn-primary" onclick="openNewStaff()"><i class="ph ph-plus"></i> Nowy</button>
+                    <a href="admin.html#staff" class="btn btn-primary" id="btn-manage-staff" style="display: none"><i class="ph ph-user-gear"></i> Zarządzaj zespołem</a>
                 </div>
             </div>
 
@@ -96,6 +96,10 @@ async function init() {
     if (!window.gmpAuth.hasPermission(window.currentStaff, 'view_team_performance')) {
         alert('Brak uprawnień do modułu prawników.');
         window.location.href = 'dashboard.html'; return;
+    }
+    // Przycisk "Zarzadzaj zespolem" tylko dla admin/owner (nie dla manager)
+    if (window.gmpAuth.hasPermission(window.currentStaff, 'manage_staff_accounts')) {
+        document.getElementById('btn-manage-staff').style.display = '';
     }
     const id = new URLSearchParams(window.location.search).get('id');
     if (id) {
@@ -307,7 +311,9 @@ async function loadDetail(staffId) {
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button class="btn btn-secondary" onclick="editStaff('${staff.id}')"><i class="ph ph-pencil-simple"></i> Edytuj</button>
+                    ${window.gmpAuth.hasPermission(window.currentStaff, 'manage_staff_accounts')
+                        ? `<a href="admin.html#staff" class="btn btn-secondary"><i class="ph ph-user-gear"></i> Edytuj w Super Admin</a>`
+                        : ''}
                 </div>
             </div>
 

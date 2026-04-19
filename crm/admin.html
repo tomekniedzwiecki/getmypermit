@@ -395,31 +395,96 @@
             <!-- ========================================================== -->
             <div class="admin-panel" data-panel="staff">
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px">
-                    <div>
-                        <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 2px">Wydajność zespołu</h2>
-                        <p style="font-size: 12px; color: var(--text-tertiary); margin: 0">Ostatnie 30 dni · Score = (ukończone × 3) + (aktywności × 0.1) − (overdue × 5), znormalizowane 0-100</p>
-                    </div>
-                    <button class="refresh-btn" onclick="refreshStaff()" id="staff-refresh-btn"><i class="ph ph-arrow-clockwise"></i> Odśwież</button>
+                <!-- Subtabs: Zarządzanie | Wydajność -->
+                <div class="admin-tabs" style="margin-bottom: 16px; border-bottom: 1px solid var(--border)">
+                    <button class="admin-tab active" data-subtab="manage" onclick="switchStaffSub('manage')"><i class="ph ph-user-gear"></i> Zarządzanie kontami</button>
+                    <button class="admin-tab" data-subtab="perf" onclick="switchStaffSub('perf')"><i class="ph ph-chart-bar"></i> Wydajność</button>
                 </div>
 
-                <table class="staff-perf-table">
-                    <thead>
-                        <tr>
-                            <th>Prawnik</th>
-                            <th style="text-align: right">Aktywne sprawy</th>
-                            <th style="text-align: right">Ukończone (30d)</th>
-                            <th style="text-align: right">Przychód (30d)</th>
-                            <th style="text-align: right">Aktywności (7d)</th>
-                            <th style="text-align: right">Zadania overdue</th>
-                            <th style="text-align: right">Ostatnio online</th>
-                            <th style="text-align: right">Score</th>
-                        </tr>
-                    </thead>
-                    <tbody id="staff-perf-body">
-                        <tr><td colspan="8" style="text-align: center; color: var(--text-tertiary); padding: 30px">Ładuję…</td></tr>
-                    </tbody>
-                </table>
+                <!-- SUBPANEL: MANAGE -->
+                <div id="staff-sub-manage">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px">
+                        <div>
+                            <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 2px">Zespół i dostępy</h2>
+                            <p style="font-size: 12px; color: var(--text-tertiary); margin: 0">Dodaj, edytuj i zarządzaj uprawnieniami pracowników</p>
+                        </div>
+                        <button class="refresh-btn" onclick="openStaffManageModal(null)" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none"><i class="ph ph-plus"></i> Nowy pracownik</button>
+                    </div>
+
+                    <!-- Role reference card -->
+                    <div class="card" style="padding: 16px; margin-bottom: 16px; background: rgba(99,102,241,0.05); border: 1px solid var(--accent-border)">
+                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #c4b5fd"><i class="ph ph-info"></i> Jak działają role (domyślne uprawnienia)</div>
+                        <div style="overflow-x: auto">
+                            <table style="width: 100%; font-size: 12px; border-collapse: collapse">
+                                <thead>
+                                    <tr style="text-align: left; color: var(--text-tertiary)">
+                                        <th style="padding: 6px 10px; border-bottom: 1px solid var(--border)">Rola</th>
+                                        <th style="padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: center">Sprawy/zadania/finanse sprawy</th>
+                                        <th style="padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: center">Globalne finanse</th>
+                                        <th style="padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: center">Analityka / wydajność zespołu</th>
+                                        <th style="padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: center">Usuwanie</th>
+                                        <th style="padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: center">Zarządzanie kontami</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td style="padding: 6px 10px"><b>staff / assistant / lawyer</b><div style="font-size: 10px; color: var(--text-tertiary)">pracownik merytoryczny</div></td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #ef4444">✗</td><td style="text-align: center; color: #ef4444">✗</td><td style="text-align: center; color: #ef4444">✗</td><td style="text-align: center; color: #ef4444">✗</td></tr>
+                                    <tr><td style="padding: 6px 10px"><b>manager</b><div style="font-size: 10px; color: var(--text-tertiary)">rola nadzorcza (Wiktoria, Oleksandr)</div></td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #ef4444">✗</td><td style="text-align: center; color: #ef4444">✗</td></tr>
+                                    <tr><td style="padding: 6px 10px"><b>admin</b><div style="font-size: 10px; color: var(--text-tertiary)">admin kancelarii</div></td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td></tr>
+                                    <tr><td style="padding: 6px 10px"><b>owner</b><div style="font-size: 10px; color: var(--text-tertiary)">właściciel</div></td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td><td style="text-align: center; color: #10b981">✓</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 10px">Przy edycji pracownika możesz nadpisać każde uprawnienie indywidualnie (checkbox „Nadpisz domyślne" przy danej pozycji).</div>
+                    </div>
+
+                    <!-- Staff list -->
+                    <table class="staff-perf-table">
+                        <thead>
+                            <tr>
+                                <th>Pracownik</th>
+                                <th>Email</th>
+                                <th>Rola</th>
+                                <th style="text-align: center">Konto w systemie</th>
+                                <th style="text-align: center">Aktywny</th>
+                                <th style="text-align: center">Nadpisane uprawnienia</th>
+                                <th style="text-align: right">Ostatnio online</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-manage-body">
+                            <tr><td colspan="8" style="text-align: center; color: var(--text-tertiary); padding: 30px">Ładuję…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- SUBPANEL: PERFORMANCE -->
+                <div id="staff-sub-perf" style="display: none">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px">
+                        <div>
+                            <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 2px">Wydajność zespołu</h2>
+                            <p style="font-size: 12px; color: var(--text-tertiary); margin: 0">Ostatnie 30 dni · Score = (ukończone × 3) + (aktywności × 0.1) − (overdue × 5), znormalizowane 0-100</p>
+                        </div>
+                        <button class="refresh-btn" onclick="refreshStaff()" id="staff-refresh-btn"><i class="ph ph-arrow-clockwise"></i> Odśwież</button>
+                    </div>
+
+                    <table class="staff-perf-table">
+                        <thead>
+                            <tr>
+                                <th>Prawnik</th>
+                                <th style="text-align: right">Aktywne sprawy</th>
+                                <th style="text-align: right">Ukończone (30d)</th>
+                                <th style="text-align: right">Przychód (30d)</th>
+                                <th style="text-align: right">Aktywności (7d)</th>
+                                <th style="text-align: right">Zadania overdue</th>
+                                <th style="text-align: right">Ostatnio online</th>
+                                <th style="text-align: right">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-perf-body">
+                            <tr><td colspan="8" style="text-align: center; color: var(--text-tertiary); padding: 30px">Ładuję…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- ========================================================== -->
@@ -594,6 +659,8 @@
 </div>
 
 <script src="components/sidebar.js" data-active="admin"></script>
+<script src="components/modals.js"></script>
 <script src="admin.js"></script>
+<div id="modals-container"></div>
 </body>
 </html>

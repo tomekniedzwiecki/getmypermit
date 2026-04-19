@@ -24,9 +24,14 @@ document.addEventListener('gmp-auth-ready', async (e) => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // Initial load
-    await loadPulse();
-    startPolling();
+    // Initial load — respect URL hash (np. admin.html#staff)
+    const hash = window.location.hash.replace('#', '');
+    if (hash && ['pulse', 'staff', 'risk', 'finance', 'audit'].includes(hash)) {
+        switchTab(hash);
+    } else {
+        await loadPulse();
+        startPolling();
+    }
 
     // Audit tab sub-switching
     window.switchAuditSub = (sub) => {
@@ -43,6 +48,23 @@ document.addEventListener('gmp-auth-ready', async (e) => {
     // Expose globals for onclick attrs
     window.refreshStaff = () => loadStaffPerf(true);
     window.refreshRisk = () => loadRisk(true);
+
+    // Staff subtab switching
+    window.switchStaffSub = (sub) => {
+        document.querySelectorAll('[data-subtab]').forEach(t => t.classList.remove('active'));
+        document.querySelector(`[data-subtab="${sub}"]`).classList.add('active');
+        document.getElementById('staff-sub-manage').style.display = sub === 'manage' ? '' : 'none';
+        document.getElementById('staff-sub-perf').style.display = sub === 'perf' ? '' : 'none';
+        if (sub === 'manage') loadStaffManage();
+        if (sub === 'perf') loadStaffPerf();
+    };
+
+    // Staff management globals
+    window.openStaffManageModal = openStaffManageModal;
+    window.saveStaffManage = saveStaffManage;
+    window.toggleOverride = toggleOverride;
+    window.deleteStaffAccount = deleteStaffAccount;
+    window.sendPasswordResetForStaff = sendPasswordResetForStaff;
 });
 
 function switchTab(tab) {
@@ -52,7 +74,7 @@ function switchTab(tab) {
     stopPolling();
 
     if (tab === 'pulse') { loadPulse(); startPolling(); }
-    else if (tab === 'staff') loadStaffPerf();
+    else if (tab === 'staff') loadStaffManage(); // default: manage subpanel
     else if (tab === 'risk') { loadRisk(); startPolling(loadRisk); }
     else if (tab === 'finance') loadFinance();
     else if (tab === 'audit') loadAuditActions();
@@ -566,4 +588,275 @@ function fmtDateTime(ts) {
     if (!ts) return '—';
     const d = new Date(ts);
     return d.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+// ============================================================
+// PANEL 2b: STAFF MANAGEMENT (req Pawel - pelny modul zespolu)
+// ============================================================
+const PERMISSION_LABELS = {
+    view_global_finance: 'Dostęp do globalnych finansów (Płatności, Windykacja, Faktury)',
+    view_analytics: 'Dostęp do analityki',
+    view_team_performance: 'Dostęp do modułu "Prawnicy" (wydajność zespołu)',
+    view_admin_panel: 'Dostęp do panelu Super Admin',
+    delete_case: 'Usuwanie spraw',
+    delete_client: 'Usuwanie klientów',
+    delete_staff: 'Usuwanie pracowników',
+    delete_payment: 'Usuwanie wpłat',
+    manage_staff_accounts: 'Zarządzanie kontami pracowników (ta sekcja)',
+    edit_case: 'Edycja spraw',
+    archive_case: 'Archiwizacja spraw',
+    edit_payment: 'Dodawanie/edycja wpłat',
+    edit_task: 'Zadania (dodaj/edytuj/zakończ)',
+    edit_appointment: 'Terminy (dodaj/edytuj)',
+};
+
+async function loadStaffManage() {
+    const { data: staff, error } = await db.from('gmp_staff')
+        .select('id, full_name, email, phone, role, is_active, last_login_at, login_count, user_id, permission_overrides, color')
+        .order('full_name');
+    const tbody = document.getElementById('staff-manage-body');
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" style="color: #ef4444; padding: 20px">${esc(error.message)}</td></tr>`; return; }
+    if (!staff?.length) { tbody.innerHTML = '<tr><td colspan="8" style="padding: 20px; text-align: center; color: var(--text-tertiary)">Brak pracowników</td></tr>'; return; }
+
+    const ROLE_LABELS = { owner: 'Właściciel', admin: 'Admin', manager: 'Nadzór', lawyer: 'Prawnik', assistant: 'Asystent', staff: 'Pracownik' };
+    tbody.innerHTML = staff.map(s => {
+        const overrideCount = Object.keys(s.permission_overrides || {}).length;
+        const lastLogin = s.last_login_at ? fmtDateTime(s.last_login_at) : '—';
+        return `<tr>
+            <td><div style="display: flex; align-items: center; gap: 10px">
+                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${s.color || '#3b82f6'}"></span>
+                <div>
+                    <div style="font-weight: 600">${esc(s.full_name)}</div>
+                    <div style="font-size: 11px; color: var(--text-tertiary)">${s.phone ? esc(s.phone) : ''}</div>
+                </div>
+            </div></td>
+            <td style="font-size: 12px; color: var(--text-secondary)">${esc(s.email || '—')}</td>
+            <td><span class="badge" style="font-size: 10px; padding: 3px 8px; background: rgba(99,102,241,0.15); border: 1px solid var(--accent-border); border-radius: 999px; color: #c4b5fd">${ROLE_LABELS[s.role] || s.role}</span></td>
+            <td style="text-align: center">${s.user_id
+                ? '<span style="color: #10b981"><i class="ph ph-check-circle"></i> aktywne</span>'
+                : '<span style="color: var(--text-tertiary)"><i class="ph ph-x-circle"></i> brak</span>'}</td>
+            <td style="text-align: center">${s.is_active
+                ? '<span style="color: #10b981"><i class="ph ph-check"></i></span>'
+                : '<span style="color: #ef4444"><i class="ph ph-x"></i></span>'}</td>
+            <td style="text-align: center">${overrideCount > 0
+                ? `<span style="color: #f59e0b"><i class="ph ph-star"></i> ${overrideCount}</span>`
+                : '<span style="color: var(--text-tertiary)">—</span>'}</td>
+            <td style="text-align: right; color: var(--text-tertiary); font-size: 11px">${lastLogin}</td>
+            <td style="text-align: right"><button class="refresh-btn" style="padding: 5px 10px; font-size: 11px" onclick="openStaffManageModal('${s.id}')"><i class="ph ph-pencil-simple"></i> Edytuj</button></td>
+        </tr>`;
+    }).join('');
+}
+
+async function openStaffManageModal(id) {
+    let s = {
+        full_name: '', email: '', phone: '', role: 'staff', is_active: true,
+        color: '#3b82f6', permission_overrides: {}, aliases: [],
+    };
+    if (id) {
+        const { data } = await db.from('gmp_staff').select('*').eq('id', id).maybeSingle();
+        if (data) s = { ...s, ...data };
+    }
+    const overrides = s.permission_overrides || {};
+    const ROLE_OPTS = [
+        ['staff', 'Pracownik'],
+        ['assistant', 'Asystent'],
+        ['lawyer', 'Prawnik'],
+        ['manager', 'Nadzór (Wiktoria/Oleksandr)'],
+        ['admin', 'Admin'],
+        ['owner', 'Właściciel'],
+    ];
+
+    const hasAccount = !!s.user_id;
+    const currentRole = s.role || 'staff';
+
+    const permRows = Object.entries(PERMISSION_LABELS).map(([key, label]) => {
+        const roleDefault = window.gmpAuth.getRoleDefaultForPermission(currentRole, key);
+        const hasOverride = Object.prototype.hasOwnProperty.call(overrides, key);
+        const effective = hasOverride ? !!overrides[key] : roleDefault;
+        return `<tr data-perm="${key}">
+            <td style="padding: 8px 10px; font-size: 12px">${esc(label)}</td>
+            <td style="padding: 8px 10px; text-align: center; font-size: 11px; color: var(--text-tertiary)">${roleDefault ? '✓ tak' : '✗ nie'}</td>
+            <td style="padding: 8px 10px; text-align: center">
+                <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer">
+                    <input type="checkbox" class="perm-override" data-perm="${key}" ${hasOverride ? 'checked' : ''} onchange="toggleOverride('${key}')">
+                    <span>Nadpisz</span>
+                </label>
+            </td>
+            <td style="padding: 8px 10px; text-align: center">
+                <select class="perm-value" data-perm="${key}" ${!hasOverride ? 'disabled' : ''} style="padding: 3px 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 4px; font-size: 11px">
+                    <option value="true" ${effective === true ? 'selected' : ''}>✓ Pozwól</option>
+                    <option value="false" ${effective === false ? 'selected' : ''}>✗ Zabroń</option>
+                </select>
+            </td>
+        </tr>`;
+    }).join('');
+
+    const modalHtml = `
+        <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center">
+            <h3 style="margin: 0; font-size: 16px">${id ? 'Edytuj pracownika' : 'Nowy pracownik'}</h3>
+            <button onclick="gmpModal.close()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 20px"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body" style="padding: 20px; max-height: 70vh; overflow-y: auto">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px">
+                <div><label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px">Imię i nazwisko *</label>
+                    <input id="sm-name" class="input" value="${esc(s.full_name || '')}" autofocus></div>
+                <div><label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px">Email (wymagany do zaproszenia)</label>
+                    <input type="email" id="sm-email" class="input" value="${esc(s.email || '')}"></div>
+                <div><label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px">Telefon</label>
+                    <input id="sm-phone" class="input" value="${esc(s.phone || '')}"></div>
+                <div><label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px">Rola (domyślny profil uprawnień)</label>
+                    <select id="sm-role" class="input" onchange="gmpAdminRoleChanged()">
+                        ${ROLE_OPTS.map(([v, l]) => `<option value="${v}" ${v === currentRole ? 'selected' : ''}>${l}</option>`).join('')}
+                    </select></div>
+                <div><label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px">Kolor</label>
+                    <input type="color" id="sm-color" class="input" value="${s.color || '#3b82f6'}" style="padding: 3px; height: 36px"></div>
+                <div><label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px">Aktywny</label>
+                    <select id="sm-active" class="input">
+                        <option value="true" ${s.is_active !== false ? 'selected' : ''}>Tak</option>
+                        <option value="false" ${s.is_active === false ? 'selected' : ''}>Nie</option>
+                    </select></div>
+                <div style="grid-column: span 2"><label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px">Aliasy (imiona z arkuszy Pawła, po przecinku)</label>
+                    <input id="sm-aliases" class="input" value="${esc((s.aliases || []).join(', '))}"></div>
+            </div>
+
+            <!-- Account -->
+            <div style="padding: 12px; background: rgba(99,102,241,0.05); border: 1px solid var(--accent-border); border-radius: 8px; margin-bottom: 16px">
+                <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #c4b5fd"><i class="ph ph-key"></i> Konto w systemie</div>
+                ${hasAccount
+                    ? `<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px">
+                            <span style="color: #10b981"><i class="ph ph-check-circle"></i> Konto aktywne</span>
+                            <span style="color: var(--text-tertiary); margin: 0 4px">·</span>
+                            <button class="refresh-btn" style="padding: 5px 10px; font-size: 11px" onclick="sendPasswordResetForStaff('${esc(s.email || '')}')"><i class="ph ph-envelope"></i> Wyślij reset hasła</button>
+                        </div>`
+                    : `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px">Brak konta. Po zapisie wyślę link do ustawienia hasła.</div>
+                       <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer">
+                           <input type="checkbox" id="sm-invite" ${s.email ? 'checked' : ''}>
+                           Wyślij zaproszenie na email po zapisie
+                       </label>`}
+            </div>
+
+            <!-- Permissions -->
+            <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px"><i class="ph ph-shield"></i> Uprawnienia — nadpisz indywidualnie</div>
+            <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 10px">Domyślnie pracownik dziedziczy uprawnienia z roli. Możesz nadpisać każdą pozycję (np. dać pracownikowi dostęp do faktur nie zmieniając mu roli).</div>
+            <div style="overflow-x: auto; border: 1px solid var(--border); border-radius: 8px">
+                <table style="width: 100%; font-size: 12px">
+                    <thead style="background: var(--bg-secondary)">
+                        <tr>
+                            <th style="text-align: left; padding: 8px 10px">Uprawnienie</th>
+                            <th style="text-align: center; padding: 8px 10px">Domyślnie (z roli)</th>
+                            <th style="text-align: center; padding: 8px 10px">Nadpisz</th>
+                            <th style="text-align: center; padding: 8px 10px">Wartość</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sm-perm-body">${permRows}</tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: space-between">
+            <div>${id && hasAccount ? `<button class="refresh-btn" style="background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444" onclick="deleteStaffAccount('${id}', '${esc(s.full_name)}')"><i class="ph ph-trash"></i> Dezaktywuj</button>` : ''}</div>
+            <div style="display: flex; gap: 8px">
+                <button class="refresh-btn" onclick="gmpModal.close()">Anuluj</button>
+                <button class="refresh-btn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none" onclick="saveStaffManage('${id || ''}')">${id ? 'Zapisz' : 'Dodaj'}</button>
+            </div>
+        </div>`;
+    gmpModal.openModal(modalHtml);
+}
+
+window.gmpAdminRoleChanged = function() {
+    const role = document.getElementById('sm-role').value;
+    document.querySelectorAll('#sm-perm-body tr').forEach(tr => {
+        const perm = tr.dataset.perm;
+        const def = window.gmpAuth.getRoleDefaultForPermission(role, perm);
+        const defCell = tr.children[1];
+        if (defCell) defCell.textContent = def ? '✓ tak' : '✗ nie';
+    });
+};
+
+function toggleOverride(perm) {
+    const cb = document.querySelector(`.perm-override[data-perm="${perm}"]`);
+    const sel = document.querySelector(`.perm-value[data-perm="${perm}"]`);
+    if (!cb || !sel) return;
+    sel.disabled = !cb.checked;
+    if (!cb.checked) {
+        const role = document.getElementById('sm-role').value;
+        sel.value = window.gmpAuth.getRoleDefaultForPermission(role, perm) ? 'true' : 'false';
+    }
+}
+
+async function saveStaffManage(id) {
+    const name = document.getElementById('sm-name').value.trim();
+    if (!name) { alert('Imię i nazwisko wymagane'); return; }
+    const email = document.getElementById('sm-email').value.trim() || null;
+    const aliases = document.getElementById('sm-aliases').value.split(',').map(s => s.trim()).filter(Boolean);
+    const overrides = {};
+    document.querySelectorAll('.perm-override:checked').forEach(cb => {
+        const perm = cb.dataset.perm;
+        const sel = document.querySelector(`.perm-value[data-perm="${perm}"]`);
+        overrides[perm] = sel?.value === 'true';
+    });
+
+    const payload = {
+        full_name: name,
+        email,
+        phone: document.getElementById('sm-phone').value.trim() || null,
+        role: document.getElementById('sm-role').value,
+        color: document.getElementById('sm-color').value || '#3b82f6',
+        is_active: document.getElementById('sm-active').value === 'true',
+        aliases,
+        permission_overrides: overrides,
+    };
+
+    const result = id
+        ? await db.from('gmp_staff').update(payload).eq('id', id).select().single()
+        : await db.from('gmp_staff').insert(payload).select().single();
+    if (result.error) { alert('Błąd: ' + result.error.message); return; }
+
+    await window.gmpAuth.auditLog(id ? 'staff_update' : 'staff_create', {
+        entityType: 'staff',
+        entityId: result.data.id,
+        entityLabel: `${name} <${email || '-'}>`,
+        severity: 'info',
+        metadata: { role: payload.role, override_count: Object.keys(overrides).length },
+    });
+
+    const inviteCb = document.getElementById('sm-invite');
+    const shouldInvite = !id && inviteCb?.checked && email && !result.data.user_id;
+    if (shouldInvite) {
+        try {
+            const { data, error: fnErr } = await db.functions.invoke('invite-staff', {
+                body: { email, staff_id: result.data.id, full_name: name, role: payload.role },
+            });
+            if (fnErr) throw fnErr;
+            window.toast?.success('Zapisano i wysłano zaproszenie na ' + email);
+        } catch (e) {
+            alert(`Zapisano, ale nie udało się wysłać zaproszenia: ${e.message}.`);
+        }
+    } else {
+        window.toast?.success(id ? 'Zapisano' : 'Dodano');
+    }
+
+    gmpModal.close();
+    loadStaffManage();
+}
+
+async function sendPasswordResetForStaff(email) {
+    if (!email) { alert('Brak emaila'); return; }
+    try {
+        await window.gmpAuth.sendPasswordReset(email);
+        window.toast?.success('Wysłano link resetu hasła na ' + email);
+    } catch (e) {
+        alert('Błąd wysyłki: ' + e.message);
+    }
+}
+
+async function deleteStaffAccount(id, name) {
+    if (!confirm(`Dezaktywować pracownika "${name}"? Konto w systemie (auth.users) pozostanie, rekord zostanie odłączony i oznaczony jako nieaktywny.`)) return;
+    const { error } = await db.from('gmp_staff').update({ is_active: false, user_id: null }).eq('id', id);
+    if (error) { alert('Błąd: ' + error.message); return; }
+    await window.gmpAuth.auditLog('staff_delete', {
+        entityType: 'staff', entityId: id, entityLabel: name, severity: 'critical',
+    });
+    window.toast?.success('Dezaktywowano pracownika');
+    gmpModal.close();
+    loadStaffManage();
 }
