@@ -135,6 +135,10 @@ let allStaff = [];
 document.addEventListener('gmp-auth-ready', init);
 
 async function init() {
+    if (!window.gmpAuth.hasPermission(window.currentStaff, 'view_global_finance')) {
+        alert('Brak uprawnień do globalnych finansów.');
+        window.location.href = 'dashboard.html'; return;
+    }
     // Domyślny okres: YTD
     setPeriod('ytd');
 
@@ -303,12 +307,12 @@ async function renderKPIs() {
         momEl.textContent = '—';
     }
 
-    // Zaległości
+    // Zaległości - tylko wzgledem wynagrodzenia (oplaty admin. sa odrebna kategoria)
     if (overduePlans.data?.length) {
         const caseIds = overduePlans.data.map(p => p.case_id);
-        const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds));
+        const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount, kind').in('case_id', caseIds));
         const paidByCase = {};
-        paid.forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+        paid.filter(p => p.kind !== 'admin_fee').forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
         const outstanding = overduePlans.data.reduce((s, p) => s + Math.max(0, Number(p.total_amount) - (paidByCase[p.case_id] || 0)), 0);
         document.getElementById('k-overdue').textContent = fmt.money(outstanding);
         document.getElementById('k-overdue-count').textContent = `${overduePlans.data.length} spraw`;
@@ -609,9 +613,9 @@ async function renderOverdue() {
     }
 
     const caseIds = plans.map(p => p.case_id);
-    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds));
+    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount, kind').in('case_id', caseIds));
     const paidByCase = {};
-    paid.forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    paid.filter(p => p.kind !== 'admin_fee').forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
 
     const rows = plans.map(p => ({
         ...p,
@@ -676,9 +680,9 @@ async function renderForecast() {
     }
 
     const caseIds = plans.map(p => p.case_id);
-    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds));
+    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount, kind').in('case_id', caseIds));
     const paidByCase = {};
-    paid.forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    paid.filter(p => p.kind !== 'admin_fee').forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
 
     const rows = plans.map(p => ({
         ...p,

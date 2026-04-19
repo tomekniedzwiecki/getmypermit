@@ -21,7 +21,7 @@ H = {"apikey": KEY, "Authorization": f"Bearer {KEY}", "Content-Type": "applicati
 parser = argparse.ArgumentParser()
 parser.add_argument("email")
 parser.add_argument("--name", default=None)
-parser.add_argument("--role", default="staff", choices=["admin", "staff", "partner"])
+parser.add_argument("--role", default="staff", choices=["owner", "admin", "manager", "lawyer", "assistant", "staff"])
 args = parser.parse_args()
 
 email = args.email.strip().lower()

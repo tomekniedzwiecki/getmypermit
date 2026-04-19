@@ -990,10 +990,61 @@ async function exportCSV() {
     toast.success('Pobrano ' + data.length + ' wierszy');
 }
 
+// Req Pawel pkt 10-12: wybor typu sprawy (cudzoziemiec/pracodawca/inna)
 function openNewCaseModal() {
-    // Wybierz klienta lub dodaj nowego
     const html = `
-        <div class="modal-header">Nowa sprawa<button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-header">Nowa sprawa — wybierz typ<button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body">
+            <p class="text-zinc-400 text-sm mb-4">Kim jest klient w tej sprawie?</p>
+            <div class="grid grid-cols-1 gap-2">
+                <button class="btn btn-secondary text-left p-4" onclick="newCaseStep2('individual')">
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-user text-2xl text-cyan-400"></i>
+                        <div>
+                            <div class="text-white font-semibold">Cudzoziemiec (osoba)</div>
+                            <div class="text-xs text-zinc-400">Karty pobytu, zezwolenia indywidualne</div>
+                        </div>
+                    </div>
+                </button>
+                <button class="btn btn-secondary text-left p-4" onclick="newCaseStep2('employer')">
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-buildings text-2xl text-amber-400"></i>
+                        <div>
+                            <div class="text-white font-semibold">Pracodawca</div>
+                            <div class="text-xs text-zinc-400">Zezwolenia na pracę, audyt — wielu pracowników</div>
+                        </div>
+                    </div>
+                </button>
+                <button class="btn btn-secondary text-left p-4" onclick="newCaseStep2('other')">
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-scales text-2xl text-purple-400"></i>
+                        <div>
+                            <div class="text-white font-semibold">Inna sprawa</div>
+                            <div class="text-xs text-zinc-400">Cywilna, karna, gospodarcza, opinia prawna</div>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="gmpModal.close()">Anuluj</button>
+        </div>`;
+    gmpModal.openModal(html);
+}
+
+function newCaseStep2(partyType) {
+    if (partyType === 'individual') {
+        newCaseIndividual();
+    } else if (partyType === 'employer') {
+        newCaseEmployer();
+    } else {
+        newCaseOther();
+    }
+}
+
+function newCaseIndividual() {
+    const html = `
+        <div class="modal-header">Nowa sprawa — cudzoziemiec<button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body">
             <p class="text-zinc-400 text-sm mb-4">Wybierz klienta dla nowej sprawy:</p>
             <div class="flex gap-2 mb-4">
@@ -1001,36 +1052,133 @@ function openNewCaseModal() {
                 <button class="btn btn-secondary flex-1" onclick="newCaseNewClient()"><i class="ph ph-user-plus"></i> Nowy klient</button>
             </div>
             <div class="divider"></div>
-            <button class="btn btn-ghost w-full" onclick="newCaseNoClient()">Utwórz bez klienta (dodasz później)</button>
+            <button class="btn btn-ghost w-full" onclick="createCaseAndGo({ party_type: 'individual' })">Utwórz bez klienta (dodasz później)</button>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="gmpModal.close()">Anuluj</button>
+            <button class="btn btn-secondary" onclick="openNewCaseModal()">← Wstecz</button>
         </div>`;
     gmpModal.openModal(html);
 }
+
+function newCaseEmployer() {
+    const html = `
+        <div class="modal-header">Nowa sprawa — pracodawca<button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body">
+            <div class="mb-4">
+                <label class="text-xs text-zinc-500 uppercase mb-2 block">Typ sprawy</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center gap-2 p-3 border border-zinc-800 rounded cursor-pointer hover:border-zinc-600">
+                        <input type="radio" name="emp-type" value="work_permit" checked>
+                        <div>
+                            <div class="text-white text-sm">Zezwolenia na pracę</div>
+                            <div class="text-xs text-zinc-500">lista pracowników</div>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-2 p-3 border border-zinc-800 rounded cursor-pointer hover:border-zinc-600">
+                        <input type="radio" name="emp-type" value="audit">
+                        <div>
+                            <div class="text-white text-sm">Audyt</div>
+                            <div class="text-xs text-zinc-500">audyt pracodawcy</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <p class="text-zinc-400 text-sm mb-2">Wybierz pracodawcę:</p>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary flex-1" onclick="newCasePickEmployer()"><i class="ph ph-magnifying-glass"></i> Wyszukaj</button>
+                <button class="btn btn-secondary flex-1" onclick="newCaseNewEmployer()"><i class="ph ph-plus"></i> Nowy</button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="openNewCaseModal()">← Wstecz</button>
+        </div>`;
+    gmpModal.openModal(html);
+}
+
+function newCaseOther() {
+    const html = `
+        <div class="modal-header">Nowa sprawa — inna<button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body">
+            <div class="mb-4">
+                <label class="text-xs text-zinc-500 uppercase mb-2 block">Typ sprawy</label>
+                <select id="other-subtype" class="input w-full">
+                    <option value="civil">Cywilna</option>
+                    <option value="criminal">Karna</option>
+                    <option value="commercial">Gospodarcza</option>
+                    <option value="legal_opinion">Opinia prawna</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="text-xs text-zinc-500 uppercase mb-2 block">Klient</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="btn btn-secondary" onclick="newCaseOtherPickClient()"><i class="ph ph-user"></i> Osoba</button>
+                    <button class="btn btn-secondary" onclick="newCaseOtherPickEmployer()"><i class="ph ph-buildings"></i> Firma</button>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <button class="btn btn-ghost w-full" onclick="createCaseAndGo({ party_type: 'other', case_type: document.getElementById('other-subtype').value })">Utwórz bez klienta (dodasz później)</button>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="openNewCaseModal()">← Wstecz</button>
+        </div>`;
+    gmpModal.openModal(html);
+}
+
+// ===== INDYWIDUALNE =====
 async function newCasePickClient() {
     gmpModal.pickClient(async (c) => {
-        await createCaseAndGo(c.id);
+        await createCaseAndGo({ party_type: 'individual', client_id: c.id });
     });
 }
 async function newCaseNewClient() {
     gmpModal.editClient(null, async (c) => {
         if (!c) return;
-        await createCaseAndGo(c.id);
+        await createCaseAndGo({ party_type: 'individual', client_id: c.id });
     });
 }
-async function newCaseNoClient() {
-    await createCaseAndGo(null);
+
+// ===== PRACODAWCA =====
+function getEmployerSubtype() {
+    return document.querySelector('input[name="emp-type"]:checked')?.value || 'work_permit';
 }
-async function createCaseAndGo(clientId) {
-    const { data, error } = await db.from('gmp_cases').insert({
-        client_id: clientId,
+async function newCasePickEmployer() {
+    const subtype = getEmployerSubtype();
+    gmpModal.pickEmployer(async (e) => {
+        await createCaseAndGo({ party_type: 'employer', employer_id: e.id, case_type: subtype });
+    });
+}
+async function newCaseNewEmployer() {
+    const subtype = getEmployerSubtype();
+    gmpModal.editEmployer(null, async (e) => {
+        if (!e) return;
+        await createCaseAndGo({ party_type: 'employer', employer_id: e.id, case_type: subtype });
+    });
+}
+
+// ===== INNE =====
+async function newCaseOtherPickClient() {
+    const subtype = document.getElementById('other-subtype').value;
+    gmpModal.pickClient(async (c) => {
+        await createCaseAndGo({ party_type: 'other', client_id: c.id, case_type: subtype });
+    });
+}
+async function newCaseOtherPickEmployer() {
+    const subtype = document.getElementById('other-subtype').value;
+    gmpModal.pickEmployer(async (e) => {
+        await createCaseAndGo({ party_type: 'other', employer_id: e.id, case_type: subtype });
+    });
+}
+
+async function createCaseAndGo(extras = {}) {
+    const payload = {
         status: 'lead',
         kind: 'nowa_sprawa',
         assigned_to: window.currentStaff?.id,
         date_accepted: new Date().toISOString().slice(0, 10),
         import_source: 'manual',
-    }).select().single();
+        ...extras,
+    };
+    const { data, error } = await db.from('gmp_cases').insert(payload).select().single();
     if (error) { toast.error(error.message); return; }
     toast.success('Utworzono sprawę');
     window.location.href = 'case.html?id=' + data.id;

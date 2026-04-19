@@ -18,6 +18,7 @@
           ]
         },
         { href: 'cases.html', icon: 'ph-folders', color: 'text-white', label: 'Sprawy', id: 'cases' },
+        { href: 'work-permits.html', icon: 'ph-identification-card', color: 'text-amber-400', label: 'Zezwolenia na pracę', id: 'work-permits' },
         { href: 'kanban.html', icon: 'ph-kanban', color: 'text-purple-400', label: 'Kanban', id: 'kanban' },
         { href: 'tasks.html', icon: 'ph-check-square', color: 'text-emerald-400', label: 'Zadania', id: 'tasks' },
         { href: 'alerts.html', icon: 'ph-bell-ringing', color: 'text-red-400', label: 'Alerty', id: 'alerts' },
@@ -35,16 +36,16 @@
       items: [
         { href: 'clients.html', icon: 'ph-users', color: 'text-purple-400', label: 'Klienci', id: 'clients' },
         { href: 'employers.html', icon: 'ph-buildings', color: 'text-indigo-400', label: 'Pracodawcy', id: 'employers' },
-        { href: 'staff.html', icon: 'ph-scales', color: 'text-pink-400', label: 'Prawnicy', id: 'staff' },
+        { href: 'staff.html', icon: 'ph-scales', color: 'text-pink-400', label: 'Prawnicy', id: 'staff', perm: 'view_team_performance' },
       ]
     },
     {
       label: 'FINANSE',
       items: [
-        { href: 'payments.html', icon: 'ph-coins', color: 'text-yellow-400', label: 'Płatności', id: 'payments' },
-        { href: 'receivables.html', icon: 'ph-warning-circle', color: 'text-red-400', label: 'Windykacja', id: 'receivables' },
-        { href: 'invoices.html', icon: 'ph-receipt', color: 'text-orange-400', label: 'Faktury', id: 'invoices' },
-        { href: 'analytics.html', icon: 'ph-chart-line-up', color: 'text-emerald-400', label: 'Analiza', id: 'analytics' },
+        { href: 'payments.html', icon: 'ph-coins', color: 'text-yellow-400', label: 'Płatności', id: 'payments', perm: 'view_global_finance' },
+        { href: 'receivables.html', icon: 'ph-warning-circle', color: 'text-red-400', label: 'Windykacja', id: 'receivables', perm: 'view_global_finance' },
+        { href: 'invoices.html', icon: 'ph-receipt', color: 'text-orange-400', label: 'Faktury', id: 'invoices', perm: 'view_global_finance' },
+        { href: 'analytics.html', icon: 'ph-chart-line-up', color: 'text-emerald-400', label: 'Analiza', id: 'analytics', perm: 'view_analytics' },
       ]
     },
     {
@@ -193,7 +194,7 @@
     });
   });
 
-  // Gdy auth ready - wypelnij info o userze + ukryj SUPER ADMIN jeśli nie-owner
+  // Gdy auth ready - wypelnij info o userze + ukryj linki wymagajace uprawnien (req Pawel pkt 5)
   document.addEventListener('gmp-auth-ready', (e) => {
     const { user, staff } = e.detail;
     const name = staff?.full_name || user?.email || '—';
@@ -201,7 +202,8 @@
     const roleEl = document.getElementById('sidebar-user-role');
     const avatarEl = document.getElementById('sidebar-user-avatar');
     if (nameEl) nameEl.textContent = name;
-    if (roleEl) roleEl.textContent = staff?.role || 'user';
+    const ROLE_LABELS = { owner: 'Właściciel', admin: 'Admin', manager: 'Nadzór', lawyer: 'Prawnik', assistant: 'Asystent', staff: 'Pracownik' };
+    if (roleEl) roleEl.textContent = ROLE_LABELS[staff?.role] || (staff?.role || 'user');
     if (avatarEl && window.avatar) avatarEl.outerHTML = window.avatar(name, 'sm').replace('class="avatar avatar-sm"', 'class="avatar avatar-sm" id="sidebar-user-avatar"');
 
     // Owner-only sekcje — pokaż tylko dla roli 'owner'
@@ -211,6 +213,16 @@
         if (section) section.style.display = 'none';
       });
     }
+
+    // Permission-based: ukryj linki do stron wymagajacych perm ktorych user nie ma
+    const allPages = sections.flatMap(s => s.items).filter(i => i.perm);
+    allPages.forEach(item => {
+      if (!window.gmpAuth?.hasPermission(staff, item.perm)) {
+        document.querySelectorAll(`[data-page="${item.id}"]`).forEach(el => {
+          el.style.display = 'none';
+        });
+      }
+    });
   });
 
   window.GMP_CRM_SIDEBAR = { sections, generate: generateSidebar };

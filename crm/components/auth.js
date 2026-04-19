@@ -82,11 +82,54 @@
   // Role helpers
   function hasRole(staff, minRole) {
     if (!staff?.role) return false;
-    const hierarchy = { owner: 5, admin: 4, lawyer: 3, assistant: 2, staff: 1 };
+    const hierarchy = { owner: 6, admin: 5, manager: 4, lawyer: 3, assistant: 2, staff: 1 };
     return (hierarchy[staff.role] || 0) >= (hierarchy[minRole] || 0);
   }
   function isOwner(staff) { return staff?.role === 'owner'; }
   function isAdminOrOwner(staff) { return staff?.role === 'owner' || staff?.role === 'admin'; }
+
+  // === PERMISSIONS MATRIX (req Pawel pkt 5) ===
+  // Zwraca true jesli staff ma uprawnienie 'perm'.
+  // Matryca opisuje ktora rola ma dostep do czego.
+  const PERMISSIONS = {
+    // Finanse globalne - wylacznie manager/admin/owner
+    view_global_finance: ['owner', 'admin', 'manager'],
+    view_analytics: ['owner', 'admin', 'manager'],
+    view_team_performance: ['owner', 'admin', 'manager'],
+    // Usuwanie - admin/owner only
+    delete_case: ['owner', 'admin'],
+    delete_client: ['owner', 'admin'],
+    delete_staff: ['owner', 'admin'],
+    delete_payment: ['owner', 'admin', 'manager', 'lawyer', 'assistant', 'staff'], // kazdy moze usunac wlasne wpisy
+    // Zarzadzanie kontami
+    manage_staff_accounts: ['owner', 'admin'],
+    // Panel admin (audit log, config)
+    view_admin_panel: ['owner', 'admin'],
+    // Akcje na sprawach - kazdy zalogowany
+    edit_case: ['owner', 'admin', 'manager', 'lawyer', 'assistant', 'staff'],
+    archive_case: ['owner', 'admin', 'manager', 'lawyer', 'assistant', 'staff'],
+    edit_payment: ['owner', 'admin', 'manager', 'lawyer', 'assistant', 'staff'],
+    edit_task: ['owner', 'admin', 'manager', 'lawyer', 'assistant', 'staff'],
+    edit_appointment: ['owner', 'admin', 'manager', 'lawyer', 'assistant', 'staff'],
+  };
+
+  function hasPermission(staff, perm) {
+    if (!staff?.role) return false;
+    const allowed = PERMISSIONS[perm];
+    if (!allowed) return false;
+    return allowed.includes(staff.role);
+  }
+
+  // Redirect jeśli brak uprawnienia
+  async function requirePermission(perm) {
+    const staff = await getCurrentStaff();
+    if (!staff || !hasPermission(staff, perm)) {
+      alert('Brak uprawnień do tej sekcji.');
+      window.location.href = 'dashboard.html';
+      return null;
+    }
+    return staff;
+  }
 
   // Redirect jeśli brak roli (używane w /admin.html)
   async function requireRole(minRole) {
@@ -129,7 +172,8 @@
   window.gmpAuth = {
     getSession, getCurrentUser, getCurrentStaff,
     login, sendMagicLink, sendPasswordReset, updatePassword, logout,
-    enforceAuth, requireRole, hasRole, isOwner, isAdminOrOwner, auditLog,
+    enforceAuth, requireRole, requirePermission, hasRole, hasPermission,
+    isOwner, isAdminOrOwner, auditLog,
   };
 
   // Auto-enforce jesli data-require-auth="true" (default)

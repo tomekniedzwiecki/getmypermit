@@ -36,6 +36,7 @@ window.gmpModal = (function() {
         <div><label>Nazwisko *</label><input id="cl-last" class="input w-full" value="${esc(client.last_name || '')}" autofocus required></div>
         <div><label>Imię *</label><input id="cl-first" class="input w-full" value="${esc(client.first_name || '')}" required></div>
         <div><label>Data urodzenia</label><input type="date" id="cl-birth" class="input w-full" value="${client.birth_date || ''}"></div>
+        <div><label>PESEL</label><input id="cl-pesel" class="input w-full" value="${esc(client.pesel || '')}" pattern="[0-9]{11}" maxlength="11" placeholder="11 cyfr"></div>
         <div><label>Obywatelstwo</label><input id="cl-nat" class="input w-full" value="${esc(client.nationality || '')}" placeholder="np. UKRAINA"></div>
         <div><label>Telefon</label><input id="cl-phone" class="input w-full" value="${esc(client.phone || '')}"></div>
         <div><label>Email</label><input type="email" id="cl-email" class="input w-full" value="${esc(client.email || '')}"></div>
@@ -59,11 +60,16 @@ window.gmpModal = (function() {
     const first = document.getElementById('cl-first').value.trim();
     if (!last || !first) { toast.error('Nazwisko i imię są wymagane'); return; }
 
+    const peselRaw = document.getElementById('cl-pesel').value.trim();
+    const pesel = peselRaw.replace(/\D/g, '');
+    if (pesel && pesel.length !== 11) { toast.error('PESEL musi mieć 11 cyfr'); return; }
+
     const payload = {
       last_name: last,
       first_name: first,
       full_name_normalized: (last + ' ' + first).toLowerCase().trim().replace(/\s+/g, ' '),
       birth_date: document.getElementById('cl-birth').value || null,
+      pesel: pesel || null,
       nationality: document.getElementById('cl-nat').value.trim() || null,
       phone: document.getElementById('cl-phone').value.trim() || null,
       email: document.getElementById('cl-email').value.trim() || null,

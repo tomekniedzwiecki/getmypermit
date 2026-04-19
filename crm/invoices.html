@@ -29,37 +29,20 @@
             </div>
             <div class="flex gap-2">
                 <button class="btn btn-secondary" onclick="exportInvoices()"><i class="ph ph-download-simple"></i> CSV</button>
-                <button class="btn btn-primary" onclick="openNew()"><i class="ph ph-plus"></i> Nowa faktura</button>
+                <button class="btn btn-primary" onclick="openNew()"><i class="ph ph-plus"></i> Dodaj do koszyka</button>
             </div>
         </div>
 
         <div class="flex gap-1 mb-4">
-            <button class="btn btn-secondary tab-btn active" data-status="">Wszystkie</button>
-            <button class="btn btn-secondary tab-btn" data-status="to_issue">Do wystawienia</button>
-            <button class="btn btn-secondary tab-btn" data-status="sent">Wysłane</button>
-            <button class="btn btn-secondary tab-btn" data-status="paid">Opłacone</button>
+            <button class="btn btn-secondary tab-btn active" data-view="basket"><i class="ph ph-basket"></i> Koszyk zbiorczy</button>
+            <button class="btn btn-secondary tab-btn" data-view="all" data-status="">Wszystkie</button>
+            <button class="btn btn-secondary tab-btn" data-view="list" data-status="to_issue">Do wystawienia (lista)</button>
+            <button class="btn btn-secondary tab-btn" data-view="list" data-status="sent">Wysłane</button>
+            <button class="btn btn-secondary tab-btn" data-view="list" data-status="paid">Opłacone</button>
         </div>
 
-        <div class="card overflow-hidden">
-            <div class="overflow-x-auto max-h-[calc(100vh-260px)]">
-                <table class="gmp-table">
-                    <thead>
-                        <tr>
-                            <th>Pracodawca / Klient</th>
-                            <th>Opis</th>
-                            <th>Status</th>
-                            <th>Wysłana do</th>
-                            <th>Data wysłania</th>
-                            <th class="text-right">Kwota</th>
-                            <th></th>
-                            <th class="row-open"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody">
-                        <tr><td colspan="8" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <div id="view-content">
+            <div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>
         </div>
     </main>
 </div>
@@ -67,44 +50,209 @@
 <style>.tab-btn{padding:0.4rem 0.75rem;font-size:0.8rem}.tab-btn.active{background:white;color:black}</style>
 <script src="components/sidebar.js" data-active="invoices"></script>
 <script>
+let currentView = 'basket';
 let statusFilter = '';
 document.addEventListener('gmp-auth-ready', init);
 async function init() {
-    await loadList();
+    if (!window.gmpAuth.hasPermission(window.currentStaff, 'view_global_finance')) {
+        alert('Brak uprawnień do faktur.');
+        window.location.href = 'dashboard.html'; return;
+    }
+    await render();
     document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
-        b.classList.add('active'); statusFilter = b.dataset.status; loadList();
+        b.classList.add('active');
+        currentView = b.dataset.view || 'list';
+        statusFilter = b.dataset.status || '';
+        render();
     }));
 }
-async function loadList() {
+
+async function render() {
+    if (currentView === 'basket') await renderBasket();
+    else await renderList();
+}
+
+async function renderList() {
     let q = db.from('gmp_invoices').select('*, gmp_employers(name, nip), gmp_clients(last_name, first_name), gmp_cases(case_number)', { count: 'exact' });
     if (statusFilter) q = q.eq('status', statusFilter);
     q = q.order('created_at', { ascending: false }).limit(500);
     const { data, error, count } = await q;
-    const tbody = document.getElementById('tbody');
-    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    const el = document.getElementById('view-content');
+    if (error) { el.innerHTML = `<div class="card p-4 text-red-400">${esc(error.message)}</div>`; return; }
     document.getElementById('count').textContent = `${fmt.num(count || 0)} faktur`;
-    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="ph ph-receipt"></i><div>Brak faktur</div></td></tr>'; return; }
+    if (!data?.length) { el.innerHTML = '<div class="card empty-state p-8"><i class="ph ph-receipt"></i><div>Brak faktur</div></div>'; return; }
 
-    tbody.innerHTML = data.map(inv => {
-        const party = inv.gmp_employers ? esc(inv.gmp_employers.name) : (inv.gmp_clients ? `${esc(inv.gmp_clients.last_name)} ${esc(inv.gmp_clients.first_name)}` : '—');
-        const nip = inv.gmp_employers?.nip ? `<span class="text-zinc-500 text-xs">NIP: ${esc(inv.gmp_employers.nip)}</span>` : '';
-        const statusClass = inv.status === 'paid' ? 'badge-aktywna' : inv.status === 'sent' ? 'badge-zlecona' : 'badge-lead';
-        return `
-            <tr class="${inv.case_id ? 'clickable' : ''}" onclick="${inv.case_id ? `location.href='case.html?id=${inv.case_id}'` : ''}">
-                <td><div class="text-sm text-white">${party}</div>${nip}</td>
-                <td class="text-xs text-zinc-400 max-w-md"><div class="truncate">${esc(inv.description || '')}</div></td>
-                <td><span class="badge ${statusClass}">${esc(inv.status)}</span></td>
-                <td class="text-xs text-zinc-400">${esc(inv.sent_to || '')}</td>
-                <td class="text-xs text-zinc-400">${fmt.date(inv.sent_at)}</td>
-                <td class="text-right font-mono font-bold text-emerald-300">${fmt.money(inv.amount)}</td>
-                <td class="text-right" onclick="event.stopPropagation()">
-                    <button class="btn btn-ghost btn-sm" onclick="generatePDF('${inv.id}')" title="PDF"><i class="ph ph-file-pdf text-red-400"></i></button>
-                    <button class="btn btn-ghost btn-sm" onclick="changeStatus('${inv.id}', '${inv.status}')" title="Zmień status"><i class="ph ph-arrows-clockwise"></i></button>
-                </td>
-                <td class="row-open">${inv.case_id ? window.rowOpen() : ''}</td>
-            </tr>`;
-    }).join('');
+    el.innerHTML = `<div class="card overflow-hidden"><div class="overflow-x-auto max-h-[calc(100vh-260px)]">
+        <table class="gmp-table">
+            <thead><tr>
+                <th>Pracodawca / Klient</th><th>Opis</th><th>Status</th>
+                <th>Wysłana do</th><th>Data wysłania</th>
+                <th class="text-right">Kwota</th><th></th><th class="row-open"></th>
+            </tr></thead>
+            <tbody>
+                ${data.map(inv => {
+                    const party = inv.gmp_employers ? esc(inv.gmp_employers.name) : (inv.gmp_clients ? `${esc(inv.gmp_clients.last_name)} ${esc(inv.gmp_clients.first_name)}` : '—');
+                    const nip = inv.gmp_employers?.nip ? `<span class="text-zinc-500 text-xs">NIP: ${esc(inv.gmp_employers.nip)}</span>` : '';
+                    const statusClass = inv.status === 'paid' ? 'badge-aktywna' : inv.status === 'sent' ? 'badge-zlecona' : 'badge-lead';
+                    return `<tr class="${inv.case_id ? 'clickable' : ''}" onclick="${inv.case_id ? `location.href='case.html?id=${inv.case_id}'` : ''}">
+                        <td><div class="text-sm text-white">${party}</div>${nip}</td>
+                        <td class="text-xs text-zinc-400 max-w-md"><div class="truncate">${esc(inv.description || '')}</div></td>
+                        <td><span class="badge ${statusClass}">${esc(inv.status)}</span></td>
+                        <td class="text-xs text-zinc-400">${esc(inv.sent_to || '')}</td>
+                        <td class="text-xs text-zinc-400">${fmt.date(inv.sent_at)}</td>
+                        <td class="text-right font-mono font-bold text-emerald-300">${fmt.money(inv.amount)}</td>
+                        <td class="text-right" onclick="event.stopPropagation()">
+                            <button class="btn btn-ghost btn-sm" onclick="generatePDF('${inv.id}')" title="PDF"><i class="ph ph-file-pdf text-red-400"></i></button>
+                            <button class="btn btn-ghost btn-sm" onclick="changeStatus('${inv.id}', '${inv.status}')" title="Zmień status"><i class="ph ph-arrows-clockwise"></i></button>
+                        </td>
+                        <td class="row-open">${inv.case_id ? window.rowOpen() : ''}</td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+    </div></div>`;
+}
+
+// Koszyk zbiorczy - grupowanie to_issue po (employer, miesiac)
+async function renderBasket() {
+    const { data, error } = await db.from('gmp_invoices')
+        .select('*, gmp_employers(id, name, nip, address, invoice_data), gmp_clients(id, last_name, first_name), gmp_cases(case_number, case_type)')
+        .eq('status', 'to_issue')
+        .order('created_at', { ascending: false })
+        .limit(1000);
+    const el = document.getElementById('view-content');
+    if (error) { el.innerHTML = `<div class="card p-4 text-red-400">${esc(error.message)}</div>`; return; }
+    if (!data?.length) {
+        el.innerHTML = '<div class="card empty-state p-8"><i class="ph ph-basket"></i><div>Koszyk jest pusty</div><div class="text-xs text-zinc-500 mt-2">Dodaj sprawy do koszyka w zakładce Finanse karty sprawy</div></div>';
+        document.getElementById('count').textContent = '0 pozycji w koszyku';
+        return;
+    }
+    document.getElementById('count').textContent = `${data.length} pozycji w koszyku · ${fmt.money(data.reduce((s, i) => s + Number(i.amount || 0), 0))}`;
+
+    // Grupuj po (partyKey, month)
+    const groups = {};
+    data.forEach(i => {
+        const partyKey = i.employer_id ? `emp:${i.employer_id}` : (i.client_id ? `cl:${i.client_id}` : 'unassigned');
+        const monthKey = (i.issue_date || i.created_at || '').slice(0, 7) || 'no-date';
+        const key = `${partyKey}|${monthKey}`;
+        if (!groups[key]) {
+            groups[key] = {
+                partyKey, monthKey, items: [],
+                partyName: i.gmp_employers?.name || (i.gmp_clients ? `${i.gmp_clients.last_name} ${i.gmp_clients.first_name}` : 'Nieprzypisane'),
+                nip: i.gmp_employers?.nip || '',
+                employer: i.gmp_employers,
+                client: i.gmp_clients,
+            };
+        }
+        groups[key].items.push(i);
+    });
+
+    const groupList = Object.values(groups).sort((a, b) => b.monthKey.localeCompare(a.monthKey) || a.partyName.localeCompare(b.partyName));
+
+    el.innerHTML = `<div class="space-y-3">${groupList.map((g, idx) => {
+        const sum = g.items.reduce((s, i) => s + Number(i.amount || 0), 0);
+        const monthLabel = g.monthKey === 'no-date' ? 'Bez daty' : new Date(g.monthKey + '-01').toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' });
+        const isMulti = g.items.length > 1;
+        return `<div class="card overflow-hidden">
+            <div class="flex items-center gap-3 p-4 cursor-pointer hover:bg-zinc-900/30" onclick="toggleGroup('${idx}')">
+                <i class="ph ph-caret-right transition-transform" id="chev-${idx}"></i>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold text-white">${esc(g.partyName)}</span>
+                        ${g.nip ? `<span class="text-xs text-zinc-500 font-mono">NIP: ${esc(g.nip)}</span>` : ''}
+                        <span class="text-xs text-zinc-500">· ${monthLabel}</span>
+                    </div>
+                    <div class="text-xs text-zinc-500 mt-1">${g.items.length} ${g.items.length === 1 ? 'sprawa' : 'spraw'}</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xl font-bold font-mono text-emerald-300">${fmt.money(sum)}</div>
+                </div>
+                ${isMulti ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); issueBatch('${idx}')"><i class="ph ph-file-plus"></i> Wystaw zbiorczą</button>` : `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); issueSingle('${g.items[0].id}')"><i class="ph ph-file"></i> Wystaw</button>`}
+            </div>
+            <div id="items-${idx}" class="hidden border-t border-zinc-900">
+                <table class="gmp-table">
+                    <thead><tr><th>Nr sprawy</th><th>Opis</th><th class="text-right">Kwota</th><th></th></tr></thead>
+                    <tbody>${g.items.map(i => `<tr>
+                        <td class="text-xs font-mono">${esc(i.gmp_cases?.case_number || '—')}</td>
+                        <td class="text-xs text-zinc-400">${esc(i.description || '')}</td>
+                        <td class="text-right font-mono">${fmt.money(i.amount)}</td>
+                        <td class="text-right"><button class="btn btn-ghost btn-sm" onclick="removeFromBasket('${i.id}')"><i class="ph ph-trash text-red-400"></i></button></td>
+                    </tr>`).join('')}</tbody>
+                </table>
+            </div>
+        </div>`;
+    }).join('')}</div>`;
+
+    window._basketGroups = groupList;
+}
+
+function toggleGroup(idx) {
+    const el = document.getElementById(`items-${idx}`);
+    const chev = document.getElementById(`chev-${idx}`);
+    if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        chev.style.transform = 'rotate(90deg)';
+    } else {
+        el.classList.add('hidden');
+        chev.style.transform = '';
+    }
+}
+
+async function removeFromBasket(id) {
+    if (!confirm('Usunąć z koszyka?')) return;
+    const { error } = await db.from('gmp_invoices').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto z koszyka');
+    render();
+}
+
+async function issueSingle(id) {
+    const num = prompt('Numer faktury (np. 2026/01/001):', '');
+    if (!num) return;
+    const { error } = await db.from('gmp_invoices').update({
+        invoice_number: num,
+        status: 'issued',
+        issue_date: new Date().toISOString().slice(0, 10),
+    }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Faktura wystawiona');
+    render();
+}
+
+async function issueBatch(idx) {
+    const group = window._basketGroups[idx];
+    if (!group) return;
+    const num = prompt(`Numer faktury zbiorczej dla ${group.partyName} (np. 2026/01/001):`, '');
+    if (!num) return;
+
+    const sum = group.items.reduce((s, i) => s + Number(i.amount || 0), 0);
+    const caseNumbers = group.items.map(i => i.gmp_cases?.case_number || i.case_id?.slice(0,8)).filter(Boolean);
+    const descriptions = group.items.map(i => `${i.gmp_cases?.case_number || '—'}: ${i.description || '(bez opisu)'} — ${fmt.money(i.amount)}`).join('\n');
+    const summary = `Faktura zbiorcza za ${group.items.length} ${group.items.length === 1 ? 'sprawę' : 'spraw'} (${caseNumbers.join(', ')})\n\n${descriptions}`;
+
+    // Utworz nowa fakture zbiorcza
+    const { data: newInv, error: errIns } = await db.from('gmp_invoices').insert({
+        employer_id: group.employer?.id || null,
+        client_id: group.client?.id || null,
+        invoice_number: num,
+        amount: sum,
+        description: summary,
+        status: 'issued',
+        issue_date: new Date().toISOString().slice(0, 10),
+    }).select().single();
+    if (errIns) { toast.error(errIns.message); return; }
+
+    // Oznacz zrodlowe jako "cancelled" z notka (zachowuje audyt, nie podwaja amount)
+    const ids = group.items.map(i => i.id);
+    const { error: errUpd } = await db.from('gmp_invoices').update({
+        status: 'cancelled',
+        notes: `Ujete w fakturze zbiorczej ${num}`,
+    }).in('id', ids);
+    if (errUpd) { toast.warning('Faktura utworzona ale nie udalo sie oznaczyc zrodlowych'); }
+
+    toast.success(`Wystawiono fakturę zbiorczą ${num} na ${fmt.money(sum)}`);
+    render();
 }
 
 async function exportInvoices() {
@@ -218,7 +366,7 @@ async function changeStatus(id, currentStatus) {
     if (next === 'issued') updates.issue_date = updates.issue_date || new Date().toISOString().slice(0, 10);
     const { error } = await db.from('gmp_invoices').update(updates).eq('id', id);
     if (error) { toast.error(error.message); return; }
-    toast.success('Zmieniono status'); loadList();
+    toast.success('Zmieniono status'); render();
 }
 
 function openNew() {
@@ -263,8 +411,8 @@ async function saveInvoice() {
     });
     if (error) { toast.error(error.message); return; }
     document.getElementById('modals-container').innerHTML = '';
-    toast.success('Faktura dodana');
-    loadList();
+    toast.success('Faktura dodana do koszyka');
+    render();
 }
 </script>
 </body>

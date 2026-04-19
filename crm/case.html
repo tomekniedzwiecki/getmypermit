@@ -425,6 +425,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-3 mb-1 flex-wrap">
                             <h1 class="text-xl font-bold text-white" id="case-client-name">—</h1>
+                            <span class="badge hidden" id="case-party-badge">—</span>
                             <span class="badge badge-lead" id="case-status-badge">—</span>
                             <span class="badge badge-stage hidden" id="case-stage-badge">—</span>
                             <span class="badge badge-category hidden" id="case-category-badge">—</span>
@@ -445,7 +446,7 @@
                         <button class="quick-action" onclick="scrollToComposer()" title="Szybki dodanie (Przegląd)"><i class="ph ph-plus-circle"></i> Dodaj wpis</button>
                         <span class="mx-1 text-zinc-700">|</span>
                         <button class="quick-action" onclick="togglePin()" id="pin-btn" title="Przypnij"><i class="ph ph-push-pin" id="pin-icon"></i></button>
-                        <button class="quick-action" onclick="deleteCase()" title="Usuń"><i class="ph ph-trash text-red-400"></i></button>
+                        <button class="quick-action hidden" id="btn-delete-case" onclick="deleteCase()" title="Usuń"><i class="ph ph-trash text-red-400"></i></button>
                     </div>
                 </div>
 
@@ -523,6 +524,17 @@
                                 </div>
                             </section>
 
+                            <!-- Lista pracownikow - widoczna tylko dla spraw pracodawcy (req Pawel pkt 10) -->
+                            <section class="module-card md:col-span-2 hidden" id="workers-card">
+                                <div class="module-card-header">
+                                    <span><i class="ph ph-users-three text-amber-400 mr-1"></i>Pracownicy w sprawie <span id="workers-count" class="text-xs text-zinc-500 ml-2">0</span></span>
+                                    <button class="btn btn-ghost btn-sm" onclick="openAddWorkerModal()"><i class="ph ph-plus"></i> Dodaj pracownika</button>
+                                </div>
+                                <div id="workers-list" class="p-4">
+                                    <div class="text-zinc-500 text-sm">Ładuję...</div>
+                                </div>
+                            </section>
+
                             <section class="module-card md:col-span-2">
                                 <div class="module-card-header">
                                     <span><i class="ph ph-clock text-zinc-400 mr-1"></i>Ostatnia aktywność</span>
@@ -584,7 +596,10 @@
 
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                             <section class="module-card">
-                                <div class="module-card-header"><span><i class="ph ph-calendar"></i> Plan płatności</span></div>
+                                <div class="module-card-header flex items-center justify-between">
+                                    <span><i class="ph ph-calendar"></i> Plan płatności</span>
+                                    <button class="btn btn-ghost btn-sm" onclick="openPaymentPlanModal()" title="Edytuj plan"><i class="ph ph-pencil-simple"></i></button>
+                                </div>
                                 <div id="finance-plan" class="p-4">
                                     <div class="text-zinc-500 text-sm">Ładuję...</div>
                                 </div>
@@ -938,7 +953,7 @@ let currentIntakeDocs = [];
 
 // Struktura sekcji formularza klienta (spójna z intake.js)
 const INTAKE_SECTIONS = [
-    { key: 'personal', icon: 'ph-user', label: 'Dane osobowe', fields: ['first_name', 'last_name', 'birth_date', 'gender', 'nationality', 'passport_number', 'passport_expiry'] },
+    { key: 'personal', icon: 'ph-user', label: 'Dane osobowe', fields: ['first_name', 'last_name', 'birth_date', 'pesel', 'gender', 'nationality', 'passport_number', 'passport_expiry'] },
     { key: 'contact', icon: 'ph-phone', label: 'Kontakt', fields: ['phone', 'email', 'whatsapp_number', 'preferred_contact'] },
     { key: 'address', icon: 'ph-house-line', label: 'Adres w PL', fields: ['zip', 'city', 'street', 'building', 'flat', 'voivodeship', 'registration_type'] },
     { key: 'employment', icon: 'ph-briefcase', label: 'Zatrudnienie', fields: ['has_job', 'employer_name', 'employer_nip', 'position', 'contract_type', 'salary_gross', 'working_hours'] },
@@ -946,7 +961,7 @@ const INTAKE_SECTIONS = [
     { key: 'purpose', icon: 'ph-target', label: 'Cel wniosku', fields: ['purpose', 'ground', 'situation'] },
 ];
 const FIELD_LABELS = {
-    first_name: 'Imię', last_name: 'Nazwisko', birth_date: 'Data ur.', nationality: 'Obywatelstwo',
+    first_name: 'Imię', last_name: 'Nazwisko', birth_date: 'Data ur.', pesel: 'PESEL', nationality: 'Obywatelstwo',
     gender: 'Płeć', passport_number: 'Nr paszportu', passport_expiry: 'Paszport ważny do',
     phone: 'Telefon', email: 'Email', whatsapp_number: 'WhatsApp', preferred_contact: 'Preferowany kontakt',
     zip: 'Kod pocztowy', city: 'Miasto', street: 'Ulica', building: 'Nr domu', flat: 'Mieszkanie',
@@ -1537,7 +1552,7 @@ async function loadCase() {
     await loadStaffForComposer();
 
     // Load data
-    await Promise.all([loadActivitiesData(), loadTasksData(), loadPaymentsData(), loadAppointmentsData(), loadDocumentsData(), loadTrustedProfileData()]);
+    await Promise.all([loadActivitiesData(), loadTasksData(), loadPaymentsData(), loadAppointmentsData(), loadDocumentsData(), loadTrustedProfileData(), loadWorkersData()]);
 
     // Initialize composers
     initComposer('overview-composer');
@@ -1613,6 +1628,18 @@ function fillForm() {
     sb.className = `badge badge-${d.status || 'lead'}`;
     sb.textContent = d.status || 'lead';
 
+    // Badge typu strony sprawy (individual/employer/other)
+    const pb = document.getElementById('case-party-badge');
+    const PARTY_LABELS = { individual: 'Cudzoziemiec', employer: 'Pracodawca', other: 'Inna' };
+    const PARTY_COLORS = { individual: 'bg-cyan-900/40 text-cyan-300', employer: 'bg-amber-900/40 text-amber-300', other: 'bg-purple-900/40 text-purple-300' };
+    if (d.party_type && PARTY_LABELS[d.party_type]) {
+        pb.textContent = PARTY_LABELS[d.party_type];
+        pb.className = `badge ${PARTY_COLORS[d.party_type]}`;
+        pb.classList.remove('hidden');
+    } else {
+        pb.classList.add('hidden');
+    }
+
     if (d.stage) {
         document.getElementById('case-stage-badge').textContent = d.stage;
         document.getElementById('case-stage-badge').classList.remove('hidden');
@@ -1633,6 +1660,11 @@ function fillForm() {
             entityId: d.id,
             editable: true,
         });
+    }
+
+    // Pokaz przycisk usuwania tylko dla admin/owner (req Pawel pkt 5)
+    if (window.gmpAuth?.hasPermission(window.currentStaff, 'delete_case')) {
+        document.getElementById('btn-delete-case')?.classList.remove('hidden');
     }
 
     // Pin
@@ -1679,6 +1711,7 @@ function fillForm() {
             </div>
             <div class="space-y-1 text-xs">
                 ${c.birth_date ? `<div class="text-zinc-400"><i class="ph ph-cake text-[10px]"></i> ${fmt.date(c.birth_date)}</div>` : ''}
+                ${c.pesel ? `<div class="text-zinc-400 font-mono"><i class="ph ph-identification-card text-[10px]"></i> PESEL: ${esc(c.pesel)}</div>` : ''}
                 ${c.phone ? `<div class="text-zinc-300 font-mono"><i class="ph ph-phone"></i> ${esc(c.phone)}</div>` : ''}
                 ${c.email ? `<div class="text-zinc-300 break-all"><i class="ph ph-envelope"></i> ${esc(c.email)}</div>` : ''}
             </div>
@@ -1825,17 +1858,18 @@ async function loadPaymentsData() {
 
 function renderCaseInvoices() {
     const el = document.getElementById('finance-invoices');
+    const addBtn = `<button class="btn btn-secondary btn-sm" onclick="openAddToInvoiceBasket()"><i class="ph ph-plus"></i> Dodaj do koszyka faktur</button>`;
     if (!allInvoices.length) {
-        el.innerHTML = `<div class="empty-state"><i class="ph ph-receipt"></i><div>Brak faktur</div><a href="invoices.html" class="text-xs text-blue-400 hover:underline mt-2 inline-block">Wystaw fakturę →</a></div>`;
+        el.innerHTML = `<div class="empty-state"><i class="ph ph-receipt"></i><div>Brak faktur w koszyku</div><div class="mt-2">${addBtn}</div></div>`;
         return;
     }
-    const statusLabels = { to_issue: 'do wystawienia', sent: 'wysłana', paid: 'zapłacona', cancelled: 'anulowana' };
-    const statusColors = { to_issue: 'text-amber-300', sent: 'text-blue-300', paid: 'text-emerald-400', cancelled: 'text-zinc-500' };
-    el.innerHTML = allInvoices.map(i => {
+    const statusLabels = { to_issue: 'w koszyku', issued: 'wystawiona', sent: 'wysłana', paid: 'zapłacona', cancelled: 'anulowana' };
+    const statusColors = { to_issue: 'text-amber-300', issued: 'text-cyan-300', sent: 'text-blue-300', paid: 'text-emerald-400', cancelled: 'text-zinc-500' };
+    el.innerHTML = `${allInvoices.map(i => {
         const party = i.gmp_employers ? esc(i.gmp_employers.name) : (i.gmp_clients ? esc(i.gmp_clients.last_name + ' ' + i.gmp_clients.first_name) : '—');
         return `<div class="flex items-center gap-3 py-2 border-b border-zinc-900/50 last:border-0">
             <div class="flex-1 min-w-0">
-                <div class="text-sm font-mono">${esc(i.invoice_number || '(bez numeru)')}</div>
+                <div class="text-sm font-mono">${esc(i.invoice_number || '(w koszyku)')}</div>
                 <div class="text-xs text-zinc-500 truncate">${party}${i.description ? ' · ' + esc(i.description.slice(0, 40)) : ''}</div>
             </div>
             <div class="text-right">
@@ -1843,7 +1877,53 @@ function renderCaseInvoices() {
                 <div class="text-[10px] ${statusColors[i.status] || 'text-zinc-500'}">${statusLabels[i.status] || i.status}</div>
             </div>
         </div>`;
-    }).join('');
+    }).join('')}<div class="pt-3 text-center">${addBtn}</div>`;
+}
+
+function openAddToInvoiceBasket() {
+    const c = caseData;
+    const clientName = c.gmp_clients ? `${c.gmp_clients.last_name} ${c.gmp_clients.first_name}` : '';
+    const party = c.gmp_employers ? c.gmp_employers.name : clientName;
+    const nip = c.gmp_employers?.nip || '';
+    const defaultDesc = `Sprawa ${c.case_number || c.id.slice(0,8)}${clientName ? ' - ' + clientName : ''}${c.case_type ? ' (' + c.case_type + ')' : ''}`;
+    const defaultAmount = c.fee_amount || '';
+    openModal(`
+        <div class="modal-header">Dodaj do koszyka faktur <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body grid grid-cols-2 gap-3">
+            <div class="col-span-2">
+                <label>Klient faktury (auto)</label>
+                <div class="text-sm text-white p-2 bg-zinc-900/50 rounded">${esc(party || '—')}${nip ? ` · NIP: ${esc(nip)}` : ''}</div>
+                <div class="text-xs text-zinc-500 mt-1">${c.gmp_employers ? 'Faktura na pracodawcę' : 'Faktura na klienta indywidualnego'}</div>
+            </div>
+            <div><label>Kwota *</label><input type="number" step="0.01" id="bk-amount" class="input w-full" value="${defaultAmount}" autofocus></div>
+            <div><label>Data (opcjonalnie)</label><input type="date" id="bk-date" class="input w-full"></div>
+            <div class="col-span-2"><label>Opis</label><textarea id="bk-desc" class="input w-full" rows="2">${esc(defaultDesc)}</textarea></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="addToInvoiceBasket()">Dodaj do koszyka</button>
+        </div>`);
+}
+
+async function addToInvoiceBasket() {
+    const amount = Number(document.getElementById('bk-amount').value);
+    if (!amount) { toast.error('Podaj kwotę'); return; }
+    const payload = {
+        case_id: caseId,
+        employer_id: caseData.employer_id || null,
+        client_id: caseData.employer_id ? null : (caseData.client_id || null),
+        amount,
+        issue_date: document.getElementById('bk-date').value || null,
+        description: document.getElementById('bk-desc').value.trim() || null,
+        status: 'to_issue',
+    };
+    const { error } = await db.from('gmp_invoices').insert(payload);
+    if (error) { toast.error(error.message); return; }
+    closeModal();
+    toast.success('Dodano do koszyka faktur');
+    await loadPaymentsData();
+    if (activeTab === 'finance') renderFinanceTab();
+    renderOverview();
 }
 
 function renderCaseCollection() {
@@ -1887,6 +1967,79 @@ async function loadTrustedProfileData() {
     if (data) document.getElementById('trusted-profile-card').classList.remove('hidden');
 }
 
+// Lista pracownikow dla spraw pracodawcy (req Pawel pkt 10)
+let allWorkers = [];
+async function loadWorkersData() {
+    if (caseData?.party_type !== 'employer') return;
+    const { data } = await db.from('gmp_employer_case_workers')
+        .select('client_id, added_at, notes, gmp_clients(id, first_name, last_name, nationality, pesel, phone, email)')
+        .eq('case_id', caseId)
+        .order('added_at', { ascending: false });
+    allWorkers = data || [];
+    renderWorkersCard();
+}
+
+function renderWorkersCard() {
+    const card = document.getElementById('workers-card');
+    if (!card) return;
+    if (caseData?.party_type !== 'employer') {
+        card.classList.add('hidden');
+        return;
+    }
+    card.classList.remove('hidden');
+    document.getElementById('workers-count').textContent = allWorkers.length;
+    const el = document.getElementById('workers-list');
+    if (!allWorkers.length) {
+        el.innerHTML = '<div class="text-zinc-500 text-sm">Brak pracowników — <button class="text-blue-400 hover:underline" onclick="openAddWorkerModal()">dodaj pierwszego</button></div>';
+        return;
+    }
+    el.innerHTML = `<div class="overflow-x-auto"><table class="gmp-table"><thead><tr>
+        <th>Nazwisko i imię</th><th>PESEL</th><th>Obywatelstwo</th><th>Telefon</th><th>Dodano</th><th></th>
+    </tr></thead><tbody>
+        ${allWorkers.map(w => {
+            const c = w.gmp_clients;
+            if (!c) return '';
+            return `<tr>
+                <td class="text-sm"><a href="clients.html?id=${c.id}" class="text-blue-400 hover:underline">${esc(c.last_name)} ${esc(c.first_name)}</a></td>
+                <td class="text-xs font-mono text-zinc-400">${esc(c.pesel || '—')}</td>
+                <td class="text-xs">${esc(c.nationality || '—')}</td>
+                <td class="text-xs font-mono text-zinc-400">${esc(c.phone || '—')}</td>
+                <td class="text-xs text-zinc-500">${fmt.daysAgo(w.added_at)}</td>
+                <td><button class="btn btn-ghost btn-sm" onclick="removeWorker('${c.id}')"><i class="ph ph-trash text-red-400"></i></button></td>
+            </tr>`;
+        }).join('')}
+    </tbody></table></div>`;
+}
+
+function openAddWorkerModal() {
+    gmpModal.pickClient(async (c) => {
+        await addWorkerToCase(c.id);
+    });
+}
+
+async function addWorkerToCase(clientId) {
+    const { error } = await db.from('gmp_employer_case_workers').insert({
+        case_id: caseId,
+        client_id: clientId,
+    });
+    if (error) {
+        if (error.code === '23505') { toast.warning('Ten pracownik jest już dodany'); return; }
+        toast.error(error.message);
+        return;
+    }
+    toast.success('Dodano pracownika');
+    await loadWorkersData();
+}
+
+async function removeWorker(clientId) {
+    if (!confirm('Usunąć pracownika z tej sprawy?')) return;
+    const { error } = await db.from('gmp_employer_case_workers').delete()
+        .eq('case_id', caseId).eq('client_id', clientId);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto');
+    await loadWorkersData();
+}
+
 function updateCounts() {
     document.getElementById('cnt-history').textContent = allActivities.length;
     document.getElementById('cnt-tasks').textContent = allTasks.filter(t => t.status !== 'done').length;
@@ -1898,20 +2051,22 @@ function updateCounts() {
 // ============ TAB RENDERERS ============
 
 function renderOverview() {
-    // Finance summary
-    const totalPaid = allPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+    // Finance summary - wynagrodzenie i oplaty admin. sa osobne kategorie
+    const feePaid = allPayments.filter(p => p.kind !== 'admin_fee').reduce((s, p) => s + Number(p.amount || 0), 0);
+    const adminPaid = allPayments.filter(p => p.kind === 'admin_fee').reduce((s, p) => s + Number(p.amount || 0), 0);
     const planTotal = paymentPlan?.total_amount ? Number(paymentPlan.total_amount) : null;
     const fee = caseData.fee_amount ? Number(caseData.fee_amount) : null;
     const expected = planTotal || fee;
-    const remaining = expected != null ? expected - totalPaid : null;
+    const remaining = expected != null ? expected - feePaid : null;
 
     const fEl = document.getElementById('overview-finance');
     fEl.innerHTML = `
         <div class="space-y-2 text-sm">
             ${expected != null ? `<div class="flex justify-between"><span class="text-zinc-500">Wynagrodzenie</span><span class="font-mono">${fmt.money(expected)}</span></div>` : ''}
-            <div class="flex justify-between"><span class="text-zinc-500">Wpłacono</span><span class="text-emerald-400 font-mono font-semibold">${fmt.money(totalPaid)}</span></div>
+            <div class="flex justify-between"><span class="text-zinc-500">Wpłacono</span><span class="text-emerald-400 font-mono font-semibold">${fmt.money(feePaid)}</span></div>
             ${remaining != null ? `<div class="flex justify-between"><span class="text-zinc-500">Pozostało</span><span class="${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'} font-mono font-semibold">${fmt.money(remaining)}</span></div>` : ''}
-            ${expected ? `<div class="mt-2 h-1.5 bg-zinc-900 rounded overflow-hidden"><div class="h-full bg-emerald-500" style="width: ${Math.min(100, totalPaid / expected * 100)}%"></div></div>` : ''}
+            ${expected ? `<div class="mt-2 h-1.5 bg-zinc-900 rounded overflow-hidden"><div class="h-full bg-emerald-500" style="width: ${Math.min(100, feePaid / expected * 100)}%"></div></div>` : ''}
+            ${adminPaid > 0 ? `<div class="flex justify-between pt-2 border-t border-zinc-900"><span class="text-zinc-500">Opłaty admin.</span><span class="text-sky-300 font-mono font-semibold">${fmt.money(adminPaid)}</span></div>` : ''}
             <div class="text-xs text-zinc-500 text-right">${allPayments.length} wpłat</div>
         </div>`;
 
@@ -2106,37 +2261,35 @@ async function deleteTask(id) {
 }
 
 function renderFinanceTab() {
-    const totalPaid = allPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+    // Wynagrodzenie i oplaty administracyjne sa cakowicie odrebne kategorie (req Pawel pkt 3/6)
+    const feePaid = allPayments.filter(p => p.kind !== 'admin_fee').reduce((s, p) => s + Number(p.amount || 0), 0);
+    const adminPaid = allPayments.filter(p => p.kind === 'admin_fee').reduce((s, p) => s + Number(p.amount || 0), 0);
+    const feeCount = allPayments.filter(p => p.kind !== 'admin_fee').length;
+    const adminCount = allPayments.filter(p => p.kind === 'admin_fee').length;
     const planTotal = paymentPlan?.total_amount ? Number(paymentPlan.total_amount) : null;
     const fee = caseData.fee_amount ? Number(caseData.fee_amount) : null;
     const expected = planTotal || fee || 0;
-    const remaining = Math.max(0, expected - totalPaid);
+    const remaining = Math.max(0, expected - feePaid);
 
-    // KPIs (4 cards teraz: wynagrodzenie / wpłacono / pozostało / faktury)
-    const invoicedTotal = (allInvoices || []).reduce((s, i) => s + Number(i.amount || 0), 0);
-    const invoicesPaid = (allInvoices || []).filter(i => i.status === 'paid').length;
     document.getElementById('finance-kpis').innerHTML = `
         <div class="card p-4">
             <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Wynagrodzenie</div>
             <div class="text-2xl font-bold text-white font-mono">${expected ? fmt.money(expected) : '—'}</div>
         </div>
         <div class="card p-4">
-            <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Wpłacono</div>
-            <div class="text-2xl font-bold text-emerald-400 font-mono">${fmt.money(totalPaid)}</div>
-            <div class="text-xs text-zinc-600 mt-1">${allPayments.length} ${allPayments.length === 1 ? 'wpłata' : 'wpłat'}</div>
+            <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Wpłacono (wynagr.)</div>
+            <div class="text-2xl font-bold text-emerald-400 font-mono">${fmt.money(feePaid)}</div>
+            <div class="text-xs text-zinc-600 mt-1">${feeCount} ${feeCount === 1 ? 'wpłata' : 'wpłat'}</div>
         </div>
         <div class="card p-4">
-            <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Pozostało</div>
+            <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Pozostało (wynagr.)</div>
             <div class="text-2xl font-bold ${remaining > 0 ? 'text-amber-300' : 'text-emerald-400'} font-mono">${fmt.money(remaining)}</div>
-            ${expected ? `<div class="mt-2 h-1 bg-zinc-900 rounded overflow-hidden"><div class="h-full bg-emerald-500" style="width: ${Math.min(100, totalPaid / expected * 100)}%"></div></div>` : ''}
+            ${expected ? `<div class="mt-2 h-1 bg-zinc-900 rounded overflow-hidden"><div class="h-full bg-emerald-500" style="width: ${Math.min(100, feePaid / expected * 100)}%"></div></div>` : ''}
         </div>
-        <div class="card p-4">
-            <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Faktury</div>
-            <div class="text-2xl font-bold text-white font-mono">${(allInvoices || []).length}</div>
-            <div class="text-xs ${invoicesPaid === (allInvoices || []).length && invoicesPaid > 0 ? 'text-emerald-400' : 'text-zinc-500'} mt-1">
-                ${invoicesPaid}/${(allInvoices || []).length} opłaconych
-                ${invoicedTotal ? ` · ${fmt.money(invoicedTotal)}` : ''}
-            </div>
+        <div class="card p-4 border-sky-900/50">
+            <div class="text-xs text-sky-400 mb-1 uppercase tracking-wider">Opłaty administracyjne</div>
+            <div class="text-2xl font-bold text-sky-300 font-mono">${fmt.money(adminPaid)}</div>
+            <div class="text-xs text-zinc-600 mt-1">${adminCount} ${adminCount === 1 ? 'opłata' : 'opłat'} · kategoria odrębna</div>
         </div>`;
 
     renderCaseInvoices();
@@ -2153,7 +2306,7 @@ function renderFinanceTab() {
                 <div><div class="text-zinc-500 text-xs mb-1">Termin</div><div>${fmt.date(paymentPlan.due_date)}</div></div>
             </div>`;
     } else {
-        pEl.innerHTML = `<div class="text-zinc-500 text-sm">Brak planu płatności dla tej sprawy.</div>`;
+        pEl.innerHTML = `<div class="text-zinc-500 text-sm">Brak planu płatności — <button class="text-blue-400 hover:underline" onclick="openPaymentPlanModal()">utwórz plan</button></div>`;
     }
 
     // Lista
@@ -2319,6 +2472,10 @@ async function togglePin() {
 }
 
 async function deleteCase() {
+    if (!window.gmpAuth.hasPermission(window.currentStaff, 'delete_case')) {
+        toast.error('Brak uprawnień do usunięcia sprawy (tylko admin).');
+        return;
+    }
     if (!confirm('Na pewno usunąć sprawę? Tego nie da się cofnąć.')) return;
     // Audit przed destrukcją
     const clientName = caseData?.gmp_clients ? `${caseData.gmp_clients.first_name || ''} ${caseData.gmp_clients.last_name || ''}`.trim() : '';
@@ -2521,6 +2678,65 @@ async function savePayment() {
     renderOverview();
     if (activeTab === 'finance') renderFinanceTab();
     updateCounts();
+}
+
+function openPaymentPlanModal() {
+    const p = paymentPlan || {};
+    const payer = p.payer_type || (caseData.employer_id ? 'employer' : 'client');
+    openModal(`
+        <div class="modal-header">${paymentPlan ? 'Edytuj plan płatności' : 'Nowy plan płatności'} <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ph ph-x"></i></button></div>
+        <div class="modal-body grid grid-cols-2 gap-3">
+            <div><label>Kwota planowana</label><input type="number" step="0.01" id="plan-amount" class="input w-full" value="${p.total_amount ?? ''}" autofocus></div>
+            <div>
+                <label>Płatnik</label>
+                <select id="plan-payer" class="input w-full">
+                    <option value="client" ${payer === 'client' ? 'selected' : ''}>Klient</option>
+                    <option value="employer" ${payer === 'employer' ? 'selected' : ''}>Pracodawca</option>
+                </select>
+            </div>
+            <div><label>Rat zaplanowanych</label><input type="number" min="1" id="plan-inst" class="input w-full" value="${p.installments_planned ?? 1}"></div>
+            <div><label>Termin</label><input type="date" id="plan-due" class="input w-full" value="${p.due_date ?? ''}"></div>
+            <div class="col-span-2"><label>Notatki</label><input id="plan-notes" class="input w-full" value="${esc(p.notes || '')}"></div>
+        </div>
+        <div class="modal-footer">
+            ${paymentPlan ? '<button class="btn btn-ghost text-red-400" onclick="deletePaymentPlan()">Usuń plan</button>' : ''}
+            <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
+            <button class="btn btn-primary" onclick="savePaymentPlan()">Zapisz</button>
+        </div>`);
+}
+
+async function savePaymentPlan() {
+    const amount = Number(document.getElementById('plan-amount').value);
+    if (!amount) { toast.error('Podaj kwotę'); return; }
+    const payer = document.getElementById('plan-payer').value;
+    const payload = {
+        case_id: caseId,
+        total_amount: amount,
+        payer_type: payer,
+        client_id: payer === 'client' ? caseData.client_id : null,
+        employer_id: payer === 'employer' ? caseData.employer_id : null,
+        installments_planned: Number(document.getElementById('plan-inst').value) || 1,
+        due_date: document.getElementById('plan-due').value || null,
+        notes: document.getElementById('plan-notes').value || null,
+    };
+    const { error } = await db.from('gmp_payment_plans').upsert(payload, { onConflict: 'case_id' });
+    if (error) { toast.error(error.message); return; }
+    closeModal();
+    toast.success('Plan zapisany');
+    await loadPaymentsData();
+    renderOverview();
+    if (activeTab === 'finance') renderFinanceTab();
+}
+
+async function deletePaymentPlan() {
+    if (!confirm('Usunąć plan płatności?')) return;
+    const { error } = await db.from('gmp_payment_plans').delete().eq('case_id', caseId);
+    if (error) { toast.error(error.message); return; }
+    closeModal();
+    toast.success('Plan usunięty');
+    await loadPaymentsData();
+    renderOverview();
+    if (activeTab === 'finance') renderFinanceTab();
 }
 
 function openAppointmentModal() {

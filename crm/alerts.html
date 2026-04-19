@@ -196,10 +196,11 @@ async function loadOverduePayments() {
     if (!plans?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak</div></div>'; return; }
 
     // Doliczamy wplacone (paginowane - wiele płatności może być dla tych caseIds)
+    // Zaleglosci sa wylacznie wzgledem wynagrodzenia - oplaty administracyjne sa osobna kategoria
     const caseIds = plans.map(p => p.case_id);
-    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount').in('case_id', caseIds));
+    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount, kind').in('case_id', caseIds));
     const paidByCase = {};
-    paid.forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    paid.filter(p => p.kind !== 'admin_fee').forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
 
     el.innerHTML = plans.map(p => {
         const c = p.gmp_cases;

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zezwolenia na pracę - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="img/favicon-192.png">
+    <link rel="apple-touch-icon" href="img/favicon-192.png">
+    <link rel="shortcut icon" href="img/favicon.ico">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Zezwolenia na pracę</h1>
+                <p class="page-subtitle" id="count">Ładuję...</p>
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="exportWp()"><i class="ph ph-download-simple"></i> CSV</button>
+                <a href="cases.html?new=1" class="btn btn-primary"><i class="ph ph-plus"></i> Nowa sprawa</a>
+            </div>
+        </div>
+
+        <!-- KPI -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">WSZYSTKIE</div>
+                <div class="text-2xl font-bold text-white" id="k-total">—</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">AKTYWNE</div>
+                <div class="text-2xl font-bold text-emerald-400" id="k-active">—</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">ZAKOŃCZONE</div>
+                <div class="text-2xl font-bold text-zinc-400" id="k-done">—</div>
+            </div>
+            <div class="card p-3">
+                <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">PRACODAWCÓW</div>
+                <div class="text-2xl font-bold text-amber-400" id="k-employers">—</div>
+            </div>
+        </div>
+
+        <!-- Zakladki widoku -->
+        <div class="flex gap-1 mb-4">
+            <button class="btn btn-secondary tab-btn active" data-view="table"><i class="ph ph-table"></i> Tabela</button>
+            <button class="btn btn-secondary tab-btn" data-view="timeline"><i class="ph ph-clock"></i> Chronologicznie</button>
+            <button class="btn btn-secondary tab-btn" data-view="analytics"><i class="ph ph-chart-bar"></i> Analiza</button>
+        </div>
+
+        <!-- Filtry -->
+        <div class="card p-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                    <label>Szukaj</label>
+                    <input id="f-search" class="filter-input w-full" placeholder="Nr sprawy, pracodawca, pracownik...">
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select id="f-status" class="filter-input w-full">
+                        <option value="">Wszystkie</option>
+                        <option value="lead">Lead</option>
+                        <option value="zlecona">Zlecona</option>
+                        <option value="aktywna">Aktywna</option>
+                        <option value="zakonczona">Zakończona</option>
+                        <option value="archiwum">Archiwum</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Typ</label>
+                    <select id="f-type" class="filter-input w-full">
+                        <option value="">Wszystkie</option>
+                        <option value="work_permit">Zezwolenie na pracę</option>
+                        <option value="audit">Audyt</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Pracodawca</label>
+                    <select id="f-employer" class="filter-input w-full">
+                        <option value="">Wszyscy</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-content">
+            <div class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</div>
+        </div>
+    </main>
+</div>
+<style>
+.tab-btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+.tab-btn.active { background: white; color: black; }
+</style>
+<script src="components/sidebar.js" data-active="work-permits"></script>
+<script>
+let allCases = [], allWorkers = {}, currentView = 'table';
+
+async function init() {
+    await loadCases();
+    await loadEmployers();
+    render();
+    document.getElementById('f-search').addEventListener('input', render);
+    document.getElementById('f-status').addEventListener('change', render);
+    document.getElementById('f-type').addEventListener('change', render);
+    document.getElementById('f-employer').addEventListener('change', render);
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentView = b.dataset.view;
+        render();
+    }));
+}
+
+async function loadCases() {
+    const { data } = await db.from('gmp_cases')
+        .select('id, case_number, znak_sprawy, status, case_type, date_accepted, date_submitted, date_last_activity, fee_amount, assigned_to, employer_id, gmp_employers(id, name, nip), gmp_staff(full_name)')
+        .eq('party_type', 'employer')
+        .order('date_accepted', { ascending: false, nullsLast: true });
+    allCases = data || [];
+
+    // Pracownicy dla kazdej sprawy
+    if (allCases.length) {
+        const caseIds = allCases.map(c => c.id);
+        const { data: workers } = await db.from('gmp_employer_case_workers')
+            .select('case_id, client_id, gmp_clients(id, first_name, last_name, nationality, pesel)')
+            .in('case_id', caseIds);
+        allWorkers = {};
+        (workers || []).forEach(w => {
+            if (!allWorkers[w.case_id]) allWorkers[w.case_id] = [];
+            allWorkers[w.case_id].push(w);
+        });
+    }
+
+    document.getElementById('k-total').textContent = allCases.length;
+    document.getElementById('k-active').textContent = allCases.filter(c => c.status === 'aktywna' || c.status === 'zlecona').length;
+    document.getElementById('k-done').textContent = allCases.filter(c => c.status === 'zakonczona').length;
+    document.getElementById('k-employers').textContent = new Set(allCases.map(c => c.employer_id).filter(Boolean)).size;
+    document.getElementById('count').textContent = `${allCases.length} spraw pracodawców`;
+}
+
+async function loadEmployers() {
+    const ids = [...new Set(allCases.map(c => c.employer_id).filter(Boolean))];
+    if (!ids.length) return;
+    const { data } = await db.from('gmp_employers').select('id, name').in('id', ids).order('name');
+    const sel = document.getElementById('f-employer');
+    (data || []).forEach(e => {
+        const o = document.createElement('option');
+        o.value = e.id;
+        o.textContent = e.name;
+        sel.appendChild(o);
+    });
+}
+
+function filtered() {
+    const q = document.getElementById('f-search').value.toLowerCase().trim();
+    const status = document.getElementById('f-status').value;
+    const type = document.getElementById('f-type').value;
+    const employer = document.getElementById('f-employer').value;
+    return allCases.filter(c => {
+        if (status && c.status !== status) return false;
+        if (type && c.case_type !== type) return false;
+        if (employer && c.employer_id !== employer) return false;
+        if (q) {
+            const haystack = [
+                c.case_number, c.znak_sprawy,
+                c.gmp_employers?.name, c.gmp_employers?.nip,
+                ...(allWorkers[c.id] || []).map(w => `${w.gmp_clients?.first_name} ${w.gmp_clients?.last_name}`)
+            ].filter(Boolean).join(' ').toLowerCase();
+            if (!haystack.includes(q)) return false;
+        }
+        return true;
+    });
+}
+
+function esc(s) { return (s || '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(s) { return s ? new Date(s).toLocaleDateString('pl-PL') : '—'; }
+function fmtMoney(n) { return n ? Number(n).toLocaleString('pl-PL') + ' zł' : '—'; }
+
+function render() {
+    const rows = filtered();
+    const el = document.getElementById('view-content');
+    if (currentView === 'table') el.innerHTML = renderTable(rows);
+    else if (currentView === 'timeline') el.innerHTML = renderTimeline(rows);
+    else el.innerHTML = renderAnalytics(rows);
+}
+
+function renderTable(rows) {
+    if (!rows.length) return '<div class="card empty-state p-8"><i class="ph ph-files"></i><div>Brak spraw</div></div>';
+    return `<div class="card overflow-hidden"><div class="overflow-x-auto"><table class="gmp-table">
+        <thead><tr>
+            <th>Nr sprawy</th><th>Pracodawca</th><th>NIP</th><th>Typ</th>
+            <th>Pracownicy</th><th>Data przyjęcia</th><th>Status</th><th>Opiekun</th><th>Wynagr.</th>
+            <th class="row-open"></th>
+        </tr></thead><tbody>
+        ${rows.map(c => {
+            const workers = allWorkers[c.id] || [];
+            const typeLabel = c.case_type === 'audit' ? 'Audyt' : 'Zezw. na pracę';
+            return `<tr class="clickable" onclick="location.href='case.html?id=${c.id}'">
+                <td class="font-mono text-xs">${esc(c.case_number || c.id.slice(0,8))}</td>
+                <td class="text-sm">${esc(c.gmp_employers?.name || '—')}</td>
+                <td class="text-xs font-mono text-zinc-400">${esc(c.gmp_employers?.nip || '—')}</td>
+                <td><span class="badge badge-category">${typeLabel}</span></td>
+                <td class="text-sm">${workers.length > 0 ? `<span class="font-semibold text-cyan-300">${workers.length}</span> <span class="text-xs text-zinc-500">os.</span>` : '<span class="text-zinc-600">—</span>'}</td>
+                <td class="text-xs">${fmtDate(c.date_accepted)}</td>
+                <td><span class="badge badge-${c.status || 'lead'}">${esc(c.status || '—')}</span></td>
+                <td class="text-xs text-zinc-400">${esc(c.gmp_staff?.full_name || '—')}</td>
+                <td class="text-right font-mono text-sm">${fmtMoney(c.fee_amount)}</td>
+                <td class="row-open"><i class="ph ph-caret-right"></i></td>
+            </tr>`;
+        }).join('')}
+        </tbody></table></div></div>`;
+}
+
+function renderTimeline(rows) {
+    if (!rows.length) return '<div class="card empty-state p-8"><i class="ph ph-clock"></i><div>Brak spraw</div></div>';
+    const byMonth = {};
+    rows.forEach(c => {
+        const m = c.date_accepted ? c.date_accepted.slice(0, 7) : 'bez daty';
+        if (!byMonth[m]) byMonth[m] = [];
+        byMonth[m].push(c);
+    });
+    const keys = Object.keys(byMonth).sort().reverse();
+    return `<div class="space-y-4">${keys.map(m => `
+        <div class="card p-4">
+            <div class="flex items-baseline justify-between mb-3 border-b border-zinc-900 pb-2">
+                <div class="text-lg font-semibold text-white">${m === 'bez daty' ? 'Bez daty' : new Date(m + '-01').toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })}</div>
+                <div class="text-xs text-zinc-500">${byMonth[m].length} spraw</div>
+            </div>
+            <div class="space-y-2">${byMonth[m].map(c => {
+                const workers = allWorkers[c.id] || [];
+                return `<a href="case.html?id=${c.id}" class="block p-3 rounded hover:bg-zinc-900/50 border border-zinc-900 hover:border-zinc-700">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-white truncate">${esc(c.gmp_employers?.name || '(brak pracodawcy)')}</div>
+                            <div class="text-xs text-zinc-500 flex gap-3 flex-wrap mt-1">
+                                <span>#${esc(c.case_number || c.id.slice(0,8))}</span>
+                                <span>${c.case_type === 'audit' ? 'Audyt' : 'Zezw. na pracę'}</span>
+                                ${workers.length > 0 ? `<span class="text-cyan-300">${workers.length} pracowników</span>` : ''}
+                                <span class="text-zinc-600">${fmtDate(c.date_accepted)}</span>
+                            </div>
+                        </div>
+                        <span class="badge badge-${c.status || 'lead'}">${esc(c.status || '—')}</span>
+                    </div>
+                </a>`;
+            }).join('')}</div>
+        </div>`).join('')}</div>`;
+}
+
+function renderAnalytics(rows) {
+    // Statystyki ilosciowe
+    const byEmployer = {};
+    rows.forEach(c => {
+        const name = c.gmp_employers?.name || '(brak)';
+        if (!byEmployer[name]) byEmployer[name] = { count: 0, workers: 0, revenue: 0 };
+        byEmployer[name].count++;
+        byEmployer[name].workers += (allWorkers[c.id] || []).length;
+        byEmployer[name].revenue += Number(c.fee_amount || 0);
+    });
+    const topEmployers = Object.entries(byEmployer).sort((a, b) => b[1].count - a[1].count).slice(0, 20);
+
+    const byYear = {};
+    rows.forEach(c => {
+        if (!c.date_accepted) return;
+        const y = c.date_accepted.slice(0, 4);
+        byYear[y] = (byYear[y] || 0) + 1;
+    });
+    const years = Object.keys(byYear).sort();
+
+    const totalWorkers = rows.reduce((s, c) => s + (allWorkers[c.id] || []).length, 0);
+    const totalRevenue = rows.reduce((s, c) => s + Number(c.fee_amount || 0), 0);
+
+    return `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 uppercase mb-1">Sumarycznie pracowników</div>
+                <div class="text-3xl font-bold text-cyan-300">${totalWorkers}</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 uppercase mb-1">Suma wynagrodzeń</div>
+                <div class="text-3xl font-bold text-emerald-400">${fmtMoney(totalRevenue)}</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs text-zinc-500 uppercase mb-1">Śr. pracowników / sprawa</div>
+                <div class="text-3xl font-bold text-amber-300">${rows.length ? (totalWorkers / rows.length).toFixed(1) : '0'}</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <section class="module-card">
+                <div class="module-card-header"><span><i class="ph ph-trophy"></i> Top pracodawcy</span></div>
+                <div class="p-2">
+                    <table class="gmp-table w-full">
+                        <thead><tr><th>Pracodawca</th><th class="text-right">Sprawy</th><th class="text-right">Pracowników</th><th class="text-right">Wynagr.</th></tr></thead>
+                        <tbody>${topEmployers.map(([name, s]) => `<tr>
+                            <td class="text-sm truncate max-w-xs">${esc(name)}</td>
+                            <td class="text-right font-mono">${s.count}</td>
+                            <td class="text-right font-mono text-cyan-300">${s.workers}</td>
+                            <td class="text-right font-mono text-xs">${fmtMoney(s.revenue)}</td>
+                        </tr>`).join('')}</tbody>
+                    </table>
+                </div>
+            </section>
+            <section class="module-card">
+                <div class="module-card-header"><span><i class="ph ph-calendar"></i> Per rok</span></div>
+                <div class="p-4 space-y-2">${years.map(y => {
+                    const max = Math.max(...Object.values(byYear));
+                    const pct = max > 0 ? (byYear[y] / max * 100) : 0;
+                    return `<div>
+                        <div class="flex justify-between text-sm mb-1"><span>${y}</span><span class="font-mono">${byYear[y]}</span></div>
+                        <div class="h-2 bg-zinc-900 rounded overflow-hidden"><div class="h-full bg-amber-500" style="width: ${pct}%"></div></div>
+                    </div>`;
+                }).join('') || '<div class="text-zinc-500 text-sm">Brak danych</div>'}</div>
+            </section>
+        </div>
+    `;
+}
+
+function exportWp() {
+    const rows = filtered();
+    const csv = [
+        ['Nr sprawy', 'Pracodawca', 'NIP', 'Typ', 'Pracownicy', 'Data przyjęcia', 'Status', 'Opiekun', 'Wynagrodzenie'].join(';'),
+        ...rows.map(c => [
+            c.case_number || '',
+            c.gmp_employers?.name || '',
+            c.gmp_employers?.nip || '',
+            c.case_type || '',
+            (allWorkers[c.id] || []).length,
+            c.date_accepted || '',
+            c.status || '',
+            c.gmp_staff?.full_name || '',
+            c.fee_amount || '',
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(';'))
+    ].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zezwolenia-na-prace-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+init();
+</script>
+</body>
+</html>

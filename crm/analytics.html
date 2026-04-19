@@ -316,6 +316,10 @@ let charts = {};
 document.addEventListener('gmp-auth-ready', init);
 
 async function init() {
+    if (!window.gmpAuth.hasPermission(window.currentStaff, 'view_analytics')) {
+        alert('Brak uprawnień do modułu analityki.');
+        window.location.href = 'dashboard.html'; return;
+    }
     await loadData();
     populateYearSelector();
     document.getElementById('f-year').addEventListener('change', (e) => { currentYear = parseInt(e.target.value); renderAll(); });
@@ -339,9 +343,10 @@ async function loadData() {
     const { data: staff } = await db.from('gmp_staff').select('id, full_name, color, is_active');
 
     // Sanityzacja: odrzuc platnosci z datami spoza 2020-2030 (literowki, bugi Excela)
+    // Analityka pokazuje przychod (wynagrodzenie) - oplaty administracyjne to odrebna kategoria (req Pawel pkt 3/6)
     const MIN_DATE = '2020-01-01';
     const MAX_DATE = '2030-12-31';
-    allPayments = payments.filter(p => p.payment_date >= MIN_DATE && p.payment_date <= MAX_DATE);
+    allPayments = payments.filter(p => p.payment_date >= MIN_DATE && p.payment_date <= MAX_DATE && p.kind !== 'admin_fee');
 
     const rejected = payments.length - allPayments.length;
     if (rejected > 0) {

@@ -93,6 +93,10 @@
 document.addEventListener('gmp-auth-ready', init);
 
 async function init() {
+    if (!window.gmpAuth.hasPermission(window.currentStaff, 'view_team_performance')) {
+        alert('Brak uprawnień do modułu prawników.');
+        window.location.href = 'dashboard.html'; return;
+    }
     const id = new URLSearchParams(window.location.search).get('id');
     if (id) {
         document.getElementById('list-view').classList.add('hidden');
@@ -108,7 +112,7 @@ async function loadList() {
     const [staffRes, cases, payments, tasks] = await Promise.all([
         db.from('gmp_staff').select('*').order('full_name'),
         fetchAll(() => db.from('gmp_cases').select('id, client_id, status, fee_amount, assigned_to')),
-        fetchAll(() => db.from('gmp_payments').select('amount, case_id')),
+        fetchAll(() => db.from('gmp_payments').select('amount, case_id, kind')),
         fetchAll(() => db.from('gmp_tasks').select('assigned_to, status, due_date')),
     ]);
     const staff = staffRes.data;
@@ -145,7 +149,8 @@ async function loadList() {
         if (c.fee_amount) a.revenue_fee += Number(c.fee_amount);
     });
 
-    payments.forEach(p => {
+    // Przychod prawnika = wynagrodzenie (bez oplat administracyjnych - req Pawel pkt 3/6)
+    payments.filter(p => p.kind !== 'admin_fee').forEach(p => {
         const staffId = caseToStaff[p.case_id];
         if (staffId && agg[staffId]) agg[staffId].revenue_paid += Number(p.amount || 0);
     });
@@ -225,7 +230,7 @@ async function loadDetail(staffId) {
             .select('id, case_number, status, stage, case_type, category, date_accepted, date_last_activity, fee_amount, client_id, employer_id, gmp_clients(last_name, first_name), gmp_employers(name)')
             .eq('assigned_to', staffId)
             .order('date_accepted', { ascending: false, nullsLast: true })),
-        fetchAll(() => db.from('gmp_payments').select('amount, method, payment_date, case_id')),
+        fetchAll(() => db.from('gmp_payments').select('amount, method, payment_date, case_id, kind')),
         fetchAll(() => db.from('gmp_tasks').select('id, title, status, due_date, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))')
             .eq('assigned_to', staffId).order('due_date', { ascending: true, nullsLast: true })),
         db.from('gmp_case_activities').select('id, activity_type, content, created_at, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))')
@@ -236,9 +241,10 @@ async function loadDetail(staffId) {
     const activities = activitiesRes.data || [];
     const appointments = appointmentsRes.data || [];
 
-    // Filtr płatności do tych spraw
+    // Filtr płatności do tych spraw - wynagrodzenie vs oplata admin. sa odrebnymi kategoriami
     const caseIds = new Set((cases || []).map(c => c.id));
     const myPayments = (payments || []).filter(p => caseIds.has(p.case_id));
+    const feePayments = myPayments.filter(p => p.kind !== 'admin_fee');
 
     const today = new Date().toISOString().slice(0, 10);
 
@@ -248,12 +254,12 @@ async function loadDetail(staffId) {
     const done = cases.filter(c => c.status === 'zakonczona').length;
     const leads = cases.filter(c => c.status === 'lead').length;
     const revenue = cases.reduce((s, c) => s + (Number(c.fee_amount) || 0), 0);
-    const paid = myPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+    const paid = feePayments.reduce((s, p) => s + Number(p.amount || 0), 0);
     const outstanding = revenue - paid;
 
-    // Przychód per miesiąc (12 ostatnich)
+    // Przychód per miesiąc (12 ostatnich) - tylko wynagrodzenie
     const byMonth = {};
-    myPayments.forEach(p => {
+    feePayments.forEach(p => {
         if (!p.payment_date) return;
         const m = p.payment_date.slice(0, 7);
         byMonth[m] = (byMonth[m] || 0) + Number(p.amount || 0);
@@ -449,7 +455,7 @@ async function exportStaff() {
     const [staffRes, cases, payments] = await Promise.all([
         db.from('gmp_staff').select('*').order('full_name'),
         fetchAll(() => db.from('gmp_cases').select('id, client_id, status, fee_amount, assigned_to')),
-        fetchAll(() => db.from('gmp_payments').select('amount, case_id')),
+        fetchAll(() => db.from('gmp_payments').select('amount, case_id, kind')),
     ]);
     const staff = staffRes.data;
     const caseToStaff = {};
@@ -489,25 +495,33 @@ function editStaff(id) {
 }
 
 async function openStaffModal(id) {
+    const canManage = window.gmpAuth.hasPermission(window.currentStaff, 'manage_staff_accounts');
     let s = {};
     if (id) {
         const { data } = await db.from('gmp_staff').select('*').eq('id', id).maybeSingle();
         s = data || {};
     }
     const aliases = (s.aliases || []).join(', ');
+    const hasAccount = !!s.user_id;
     gmpModal.openModal(`
         <div class="modal-header">${id ? 'Edytuj pracownika' : 'Nowy pracownik'} <button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body grid grid-cols-2 gap-3">
             <div class="col-span-2"><label>Imię i nazwisko *</label><input id="st-name" class="input w-full" value="${esc(s.full_name || '')}" autofocus></div>
-            <div><label>Email</label><input type="email" id="st-email" class="input w-full" value="${esc(s.email || '')}"></div>
+            <div><label>Email ${canManage ? '(wymagany do zaproszenia)' : ''}</label><input type="email" id="st-email" class="input w-full" value="${esc(s.email || '')}"></div>
             <div><label>Telefon</label><input id="st-phone" class="input w-full" value="${esc(s.phone || '')}"></div>
             <div><label>Rola</label>
-                <select id="st-role" class="input w-full">
-                    <option value="staff" ${s.role === 'staff' ? 'selected' : ''}>Staff</option>
-                    <option value="lawyer" ${s.role === 'lawyer' ? 'selected' : ''}>Prawnik</option>
+                <select id="st-role" class="input w-full" ${!canManage ? 'disabled' : ''}>
+                    <option value="staff" ${s.role === 'staff' ? 'selected' : ''}>Pracownik</option>
                     <option value="assistant" ${s.role === 'assistant' ? 'selected' : ''}>Asystent</option>
+                    <option value="lawyer" ${s.role === 'lawyer' ? 'selected' : ''}>Prawnik</option>
+                    <option value="manager" ${s.role === 'manager' ? 'selected' : ''}>Nadzór (Wiktoria/Oleksandr)</option>
                     <option value="admin" ${s.role === 'admin' ? 'selected' : ''}>Admin</option>
                 </select>
+                <div class="text-[10px] text-zinc-500 mt-1">
+                    Pracownik/Asystent/Prawnik: bez globalnych finansów i analityki.
+                    Nadzór: + analityka zespołu i finanse.
+                    Admin: + usuwanie + zarządzanie kontami.
+                </div>
             </div>
             <div><label>Kolor (HEX)</label><input id="st-color" class="input w-full font-mono" value="${esc(s.color || '#3b82f6')}"></div>
             <div class="col-span-2"><label>Aktywny</label>
@@ -519,6 +533,14 @@ async function openStaffModal(id) {
             <div class="col-span-2"><label>Aliasy (imiona w arkuszach Pawła, oddzielone przecinkami)</label>
                 <input id="st-aliases" class="input w-full" value="${esc(aliases)}" placeholder="Julka, JULIA">
             </div>
+            ${canManage ? `
+            <div class="col-span-2 p-3 bg-zinc-900/50 rounded border border-zinc-800">
+                <div class="text-xs text-zinc-400 uppercase tracking-wider mb-2">Dostęp do systemu</div>
+                ${hasAccount
+                    ? `<div class="text-sm text-emerald-400"><i class="ph ph-check-circle"></i> Konto istnieje — <button class="text-blue-400 hover:underline text-xs" onclick="resendPasswordReset('${s.email || ''}')">Wyślij reset hasła</button></div>`
+                    : `<div class="text-sm text-zinc-300 mb-2">Brak konta w systemie. Po zapisie wyślij zaproszenie.</div>
+                       <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="st-invite" ${s.email ? 'checked' : ''}> Wyślij zaproszenie po zapisie (email z linkiem do ustawienia hasła)</label>`}
+            </div>` : ''}
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="gmpModal.close()">Anuluj</button>
@@ -526,24 +548,55 @@ async function openStaffModal(id) {
         </div>`);
 }
 
+async function resendPasswordReset(email) {
+    if (!email) { toast.error('Brak emaila'); return; }
+    try {
+        await window.gmpAuth.sendPasswordReset(email);
+        toast.success('Wysłano email z linkiem resetu hasła');
+    } catch (e) {
+        toast.error('Błąd wysyłki: ' + e.message);
+    }
+}
+
 async function saveStaff(id) {
+    const canManage = window.gmpAuth.hasPermission(window.currentStaff, 'manage_staff_accounts');
     const name = document.getElementById('st-name').value.trim();
     if (!name) { toast.error('Nazwa jest wymagana'); return; }
     const aliases = document.getElementById('st-aliases').value.split(',').map(s => s.trim()).filter(Boolean);
+    const email = document.getElementById('st-email').value.trim() || null;
     const payload = {
         full_name: name,
-        email: document.getElementById('st-email').value.trim() || null,
+        email,
         phone: document.getElementById('st-phone').value.trim() || null,
-        role: document.getElementById('st-role').value,
         color: document.getElementById('st-color').value.trim() || '#3b82f6',
         is_active: document.getElementById('st-active').value === 'true',
         aliases,
     };
+    if (canManage) {
+        payload.role = document.getElementById('st-role').value;
+    }
     const result = id
         ? await db.from('gmp_staff').update(payload).eq('id', id).select().single()
         : await db.from('gmp_staff').insert(payload).select().single();
     if (result.error) { toast.error(result.error.message); return; }
-    toast.success(id ? 'Zapisano' : 'Dodano');
+
+    // Zaproszenie (invite + password reset) - dostepne tylko dla admin/owner
+    const inviteCheckbox = document.getElementById('st-invite');
+    const shouldInvite = canManage && inviteCheckbox?.checked && email && !result.data?.user_id;
+    if (shouldInvite) {
+        try {
+            const { data: inviteRes, error: inviteErr } = await db.functions.invoke('invite-staff', {
+                body: { email, staff_id: result.data.id, full_name: name, role: payload.role || 'staff' },
+            });
+            if (inviteErr) throw inviteErr;
+            toast.success('Zapisano i wysłano zaproszenie na ' + email);
+        } catch (e) {
+            toast.warning(`Zapisano, ale nie udało się wysłać zaproszenia: ${e.message}. Użyj skryptu 'invite-staff.py' lub 'Wyślij reset hasła' po ponownym otwarciu.`);
+        }
+    } else {
+        toast.success(id ? 'Zapisano' : 'Dodano');
+    }
+
     gmpModal.close();
     setTimeout(() => location.reload(), 300);
 }

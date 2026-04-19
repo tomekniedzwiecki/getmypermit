@@ -398,6 +398,10 @@ const INTEREST_RATE = 0.1125;
 document.addEventListener('gmp-auth-ready', init);
 
 async function init() {
+    if (!window.gmpAuth.hasPermission(window.currentStaff, 'view_global_finance')) {
+        alert('Brak uprawnień do modułu windykacji.');
+        window.location.href = 'dashboard.html'; return;
+    }
     const { data: staff } = await db.from('gmp_staff').select('id, full_name, color').order('full_name');
     staffList = staff || [];
     await loadCollections();
