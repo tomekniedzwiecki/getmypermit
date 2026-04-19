@@ -567,20 +567,11 @@
             }
         });
 
-        $('#forgot-btn').addEventListener('click', async () => {
-            hideMsg();
+        $('#forgot-btn').addEventListener('click', () => {
+            // Przekieruj na dedykowana strone (prefill emaila jesli jest wpisany)
             const email = $('#email').value.trim();
-            if (!email) {
-                showMsg('Wpisz najpierw email powyżej, potem kliknij ponownie.');
-                $('#email').focus();
-                return;
-            }
-            try {
-                await window.gmpAuth.sendPasswordReset(email);
-                showMsg(`Link do resetu hasła wysłany na ${email}. Sprawdź skrzynkę (także SPAM).`, 'success');
-            } catch (err) {
-                showMsg(err.message || 'Błąd wysyłania linku resetu');
-            }
+            const q = email ? '?email=' + encodeURIComponent(email) : '';
+            window.location.href = 'forgot-password.html' + q;
         });
     </script>
 </body>
