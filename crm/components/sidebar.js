@@ -206,8 +206,8 @@
     if (roleEl) roleEl.textContent = ROLE_LABELS[staff?.role] || (staff?.role || 'user');
     if (avatarEl && window.avatar) avatarEl.outerHTML = window.avatar(name, 'sm').replace('class="avatar avatar-sm"', 'class="avatar avatar-sm" id="sidebar-user-avatar"');
 
-    // Owner-only sekcje — pokaż tylko dla roli 'owner'
-    if (staff?.role !== 'owner') {
+    // Super Admin widoczny dla owner i admin (req Pawel pkt 5)
+    if (!window.gmpAuth?.hasPermission(staff, 'view_admin_panel')) {
       document.querySelectorAll('[data-page="admin"]').forEach(el => {
         const section = el.closest('.mb-3');
         if (section) section.style.display = 'none';

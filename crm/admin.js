@@ -11,7 +11,8 @@ let ownerStaff = null;
 // === INIT ===
 document.addEventListener('gmp-auth-ready', async (e) => {
     const staff = e.detail.staff;
-    if (!staff || staff.role !== 'owner') {
+    // Admin panel: owner i admin (req Pawel pkt 5 - admin tez zarzadza kontami)
+    if (!window.gmpAuth.hasPermission(staff, 'view_admin_panel')) {
         document.getElementById('access-denied').classList.remove('hidden');
         return;
     }

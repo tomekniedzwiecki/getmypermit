@@ -673,6 +673,14 @@
                             <div class="module-card-header"><span>Dane podstawowe</span></div>
                             <div class="p-4 grid grid-cols-2 gap-3">
                                 <div>
+                                    <label>Typ strony sprawy</label>
+                                    <select class="input w-full" data-field="party_type">
+                                        <option value="individual">Cudzoziemiec</option>
+                                        <option value="employer">Pracodawca</option>
+                                        <option value="other">Inna</option>
+                                    </select>
+                                </div>
+                                <div>
                                     <label>Status</label>
                                     <select class="input w-full" data-field="status">
                                         <option value="lead">Lead</option>
@@ -773,6 +781,8 @@
                                 </div>
                                 <div><label>Ponaglenie (data)</label><input type="date" class="input w-full" data-field="ponaglenie_date"></div>
                                 <div><label>Skarga (data)</label><input type="date" class="input w-full" data-field="skarga_date"></div>
+                                <div><label>Termin odpowiedzi (sprawy inne)</label><input type="date" class="input w-full" data-field="deadline_response"></div>
+                                <div><label>Termin rozprawy (sprawy inne)</label><input type="date" class="input w-full" data-field="deadline_hearing"></div>
                             </div>
                         </section>
 

@@ -897,6 +897,10 @@ async function bulkAddTag() {
 }
 
 async function bulkDelete() {
+    if (!window.gmpAuth.hasPermission(window.currentStaff, 'delete_case')) {
+        toast.error('Brak uprawnień do usunięcia spraw (tylko admin).');
+        return;
+    }
     const ids = getSelectedIds();
     if (!ids.length) return;
     gmpBulk.open({
