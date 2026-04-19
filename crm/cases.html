@@ -997,36 +997,129 @@ async function exportCSV() {
 // Req Pawel pkt 10-12: wybor typu sprawy (cudzoziemiec/pracodawca/inna)
 function openNewCaseModal() {
     const html = `
+        <style>
+            .party-picker { display: grid; gap: 10px; }
+            .party-card {
+                position: relative;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                width: 100%;
+                padding: 16px 18px;
+                border-radius: 12px;
+                background: linear-gradient(135deg, rgba(255,255,255,0.015), rgba(255,255,255,0.04));
+                border: 1px solid rgba(255,255,255,0.07);
+                text-align: left;
+                cursor: pointer;
+                transition: border-color 180ms, background 180ms, transform 180ms, box-shadow 200ms;
+                overflow: hidden;
+            }
+            .party-card:hover { transform: translateY(-1px); }
+            .party-card::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                border-radius: inherit;
+                background: linear-gradient(135deg, var(--party-glow), transparent 60%);
+                opacity: 0;
+                transition: opacity 200ms;
+                pointer-events: none;
+            }
+            .party-card:hover::before { opacity: 1; }
+            .party-card > * { position: relative; z-index: 1; }
+
+            .party-icon {
+                flex-shrink: 0;
+                width: 48px; height: 48px;
+                border-radius: 12px;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 24px;
+                background: var(--party-icon-bg);
+                color: var(--party-color);
+                border: 1px solid var(--party-border);
+                transition: transform 200ms;
+            }
+            .party-card:hover .party-icon { transform: scale(1.06); }
+
+            .party-body { flex: 1; min-width: 0; }
+            .party-title {
+                font-size: 15px;
+                font-weight: 600;
+                color: white;
+                margin-bottom: 4px;
+                letter-spacing: -0.01em;
+            }
+            .party-desc {
+                font-size: 12px;
+                color: rgba(255,255,255,0.5);
+                line-height: 1.45;
+            }
+            .party-arrow {
+                flex-shrink: 0;
+                color: rgba(255,255,255,0.2);
+                font-size: 18px;
+                transition: transform 180ms, color 180ms;
+            }
+            .party-card:hover .party-arrow { color: var(--party-color); transform: translateX(3px); }
+
+            .party-individual {
+                --party-color: #67e8f9;
+                --party-glow: rgba(6,182,212,0.08);
+                --party-border: rgba(6,182,212,0.35);
+                --party-icon-bg: rgba(6,182,212,0.1);
+            }
+            .party-individual:hover { border-color: rgba(6,182,212,0.4); box-shadow: 0 8px 24px -10px rgba(6,182,212,0.35); }
+
+            .party-employer {
+                --party-color: #fbbf24;
+                --party-glow: rgba(245,158,11,0.08);
+                --party-border: rgba(245,158,11,0.35);
+                --party-icon-bg: rgba(245,158,11,0.1);
+            }
+            .party-employer:hover { border-color: rgba(245,158,11,0.4); box-shadow: 0 8px 24px -10px rgba(245,158,11,0.35); }
+
+            .party-other {
+                --party-color: #c4b5fd;
+                --party-glow: rgba(168,85,247,0.08);
+                --party-border: rgba(168,85,247,0.35);
+                --party-icon-bg: rgba(168,85,247,0.1);
+            }
+            .party-other:hover { border-color: rgba(168,85,247,0.4); box-shadow: 0 8px 24px -10px rgba(168,85,247,0.35); }
+
+            .party-picker-hint {
+                font-size: 12px;
+                color: rgba(255,255,255,0.45);
+                margin-bottom: 16px;
+                display: flex; align-items: center; gap: 6px;
+            }
+        </style>
         <div class="modal-header">Nowa sprawa — wybierz typ<button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body">
-            <p class="text-zinc-400 text-sm mb-4">Kim jest klient w tej sprawie?</p>
-            <div class="grid grid-cols-1 gap-2">
-                <button class="btn btn-secondary text-left p-4" onclick="newCaseStep2('individual')">
-                    <div class="flex items-center gap-3">
-                        <i class="ph ph-user text-2xl text-cyan-400"></i>
-                        <div>
-                            <div class="text-white font-semibold">Cudzoziemiec (osoba)</div>
-                            <div class="text-xs text-zinc-400">Karty pobytu, zezwolenia indywidualne</div>
-                        </div>
+            <div class="party-picker-hint"><i class="ph ph-hand-pointing"></i> Kim jest klient w tej sprawie?</div>
+            <div class="party-picker">
+                <button class="party-card party-individual" onclick="newCaseStep2('individual')">
+                    <div class="party-icon"><i class="ph ph-user"></i></div>
+                    <div class="party-body">
+                        <div class="party-title">Cudzoziemiec</div>
+                        <div class="party-desc">Sprawy indywidualne — karty pobytu, zezwolenia, rezydent długoterminowy</div>
                     </div>
+                    <i class="ph ph-arrow-right party-arrow"></i>
                 </button>
-                <button class="btn btn-secondary text-left p-4" onclick="newCaseStep2('employer')">
-                    <div class="flex items-center gap-3">
-                        <i class="ph ph-buildings text-2xl text-amber-400"></i>
-                        <div>
-                            <div class="text-white font-semibold">Pracodawca</div>
-                            <div class="text-xs text-zinc-400">Zezwolenia na pracę, audyt — wielu pracowników</div>
-                        </div>
+                <button class="party-card party-employer" onclick="newCaseStep2('employer')">
+                    <div class="party-icon"><i class="ph ph-buildings"></i></div>
+                    <div class="party-body">
+                        <div class="party-title">Pracodawca</div>
+                        <div class="party-desc">Zezwolenia na pracę lub audyt pracodawcy — możesz przypisać wielu pracowników</div>
                     </div>
+                    <i class="ph ph-arrow-right party-arrow"></i>
                 </button>
-                <button class="btn btn-secondary text-left p-4" onclick="newCaseStep2('other')">
-                    <div class="flex items-center gap-3">
-                        <i class="ph ph-scales text-2xl text-purple-400"></i>
-                        <div>
-                            <div class="text-white font-semibold">Inna sprawa</div>
-                            <div class="text-xs text-zinc-400">Cywilna, karna, gospodarcza, opinia prawna</div>
-                        </div>
+                <button class="party-card party-other" onclick="newCaseStep2('other')">
+                    <div class="party-icon"><i class="ph ph-scales"></i></div>
+                    <div class="party-body">
+                        <div class="party-title">Inna sprawa</div>
+                        <div class="party-desc">Cywilna, karna, gospodarcza, opinia prawna — klient: osoba lub firma</div>
                     </div>
+                    <i class="ph ph-arrow-right party-arrow"></i>
                 </button>
             </div>
         </div>
