@@ -1,9 +1,14 @@
-// Edge function: zaproszenie pracownika do CRM z poziomu UI (req Pawel pkt 5)
-// Tylko admin/owner moze wywolac. Tworzy konto w auth + powiazanie z gmp_staff + wysyla link resetu hasla.
+// Edge function: zaproszenie pracownika - generuje link do skopiowania
+// (zamiast wysylac email, ktory nie zawsze dochodzi).
+//
+// Tylko admin/owner moze wywolac. Tworzy (lub znajduje) konto auth, powiazuje
+// z gmp_staff, generuje link do ustawienia hasla i zwraca go w response.
+// Admin kopiuje link i przekazuje go pracownikowi (Slack/Telegram/WhatsApp).
 //
 // Invoke: POST /functions/v1/invite-staff
-// Headers: Authorization: Bearer <user_jwt>   (wymagane — sprawdzamy czy to admin/owner)
+// Headers: Authorization: Bearer <user_jwt>
 // Body: { email: string, staff_id?: uuid, full_name?: string, role?: string }
+// Response: { ok, user_id, email, action_link, existed }
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -27,25 +32,21 @@ Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
     if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
-    // Autoryzacja: token uzytkownika z naglowka
     const authHeader = req.headers.get('Authorization') || '';
     const token = authHeader.replace(/^Bearer\s+/i, '');
     if (!token) return json({ error: 'Missing auth token' }, 401);
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
-    // Sprawdz tozsamosc wolajacego
     const { data: userRes, error: userErr } = await admin.auth.getUser(token);
     if (userErr || !userRes?.user) return json({ error: 'Invalid token' }, 401);
     const caller = userRes.user;
 
-    // Caller musi byc adminem lub ownerem
-    const { data: callerStaff } = await admin.from('gmp_staff').select('role').eq('user_id', caller.id).maybeSingle();
+    const { data: callerStaff } = await admin.from('gmp_staff').select('id, role').eq('user_id', caller.id).maybeSingle();
     if (!callerStaff || !['owner', 'admin'].includes(callerStaff.role)) {
         return json({ error: 'Brak uprawnien: wymagana rola admin lub owner' }, 403);
     }
 
-    // Parsuj body
     let body: { email?: string; staff_id?: string; full_name?: string; role?: string };
     try {
         body = await req.json();
@@ -57,15 +58,16 @@ Deno.serve(async (req) => {
     const role = body.role || 'staff';
     const fullName = body.full_name || email.split('@')[0];
 
-    // 1. Sprawdz czy auth user istnieje
+    // 1. Znajdz lub utworz konto auth
     const { data: existing } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
     const authUser = existing?.users?.find((u) => u.email?.toLowerCase() === email);
     let userId: string;
+    let existed = false;
 
     if (authUser) {
         userId = authUser.id;
+        existed = true;
     } else {
-        // 2. Invite (utworz z email_confirm + user_metadata)
         const { data: newUser, error: createErr } = await admin.auth.admin.createUser({
             email,
             email_confirm: true,
@@ -77,11 +79,10 @@ Deno.serve(async (req) => {
         userId = newUser.user.id;
     }
 
-    // 3. Powiazanie z gmp_staff
+    // 2. Powiaz z gmp_staff
     if (body.staff_id) {
         await admin.from('gmp_staff').update({ user_id: userId, email, role }).eq('id', body.staff_id);
     } else {
-        // Sprobuj znalezc po emailu lub imieniu
         const { data: match } = await admin.from('gmp_staff')
             .select('id')
             .or(`email.eq.${email},full_name.ilike.${fullName}`)
@@ -93,32 +94,45 @@ Deno.serve(async (req) => {
         }
     }
 
-    // 4. Wyslij password reset (user kliknie link i ustawi haslo)
-    const redirectTo = req.headers.get('origin') + '/reset-password.html';
-    const { error: resetErr } = await admin.auth.admin.generateLink({
+    // 3. Wygeneruj link do ustawienia hasla (typ 'recovery' dziala dla nowych i istniejacych)
+    const origin = req.headers.get('origin') || 'https://crm.getmypermit.pl';
+    const redirectTo = `${origin}/reset-password.html`;
+
+    const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
         type: 'recovery',
         email,
         options: { redirectTo },
     });
-    if (resetErr) {
-        // Nie przerywamy — konto utworzone, tylko email sie nie wyslal
+
+    if (linkErr || !linkData) {
         return json({
-            ok: true,
+            ok: false,
             user_id: userId,
-            warning: `Konto utworzone, ale nie udalo sie wyslac emaila: ${resetErr.message}. Uzytkownik moze uzyc 'Nie pamietam hasla' na stronie logowania.`,
-        });
+            existed,
+            error: `Konto utworzone, ale nie udalo sie wygenerowac linku: ${linkErr?.message || 'unknown'}`,
+        }, 500);
     }
+
+    const actionLink = (linkData as any)?.properties?.action_link
+        || (linkData as any)?.action_link
+        || null;
 
     // Audit
     await admin.from('gmp_audit_log').insert({
-        staff_id: callerStaff?.id || null,
-        action: 'staff_invite',
+        staff_id: callerStaff.id,
+        action: existed ? 'staff_relink' : 'staff_invite',
         entity_type: 'staff',
         entity_id: body.staff_id || null,
         entity_label: `${fullName} <${email}>`,
         severity: 'info',
-        metadata: { role },
+        metadata: { role, existed },
     });
 
-    return json({ ok: true, user_id: userId, email });
+    return json({
+        ok: true,
+        user_id: userId,
+        email,
+        existed,
+        action_link: actionLink,
+    });
 });

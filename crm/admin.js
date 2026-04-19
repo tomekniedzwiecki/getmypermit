@@ -726,12 +726,13 @@ async function openStaffManageModal(id) {
                     ? `<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px">
                             <span style="color: #10b981"><i class="ph ph-check-circle"></i> Konto aktywne</span>
                             <span style="color: var(--text-tertiary); margin: 0 4px">·</span>
-                            <button class="refresh-btn" style="padding: 5px 10px; font-size: 11px" onclick="sendPasswordResetForStaff('${esc(s.email || '')}')"><i class="ph ph-envelope"></i> Wyślij reset hasła</button>
-                        </div>`
-                    : `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px">Brak konta. Po zapisie wyślę link do ustawienia hasła.</div>
+                            <button class="refresh-btn" style="padding: 5px 10px; font-size: 11px" onclick="regenerateAccessLink('${id}', '${esc(s.email || '')}', '${esc(s.full_name || '')}', '${esc(s.role || 'staff')}')"><i class="ph ph-link"></i> Wygeneruj nowy link dostępowy</button>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px">Link pozwala ustawić hasło ponownie (np. gdy pracownik zapomniał).</div>`
+                    : `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px">Brak konta. Po zapisie wygeneruję link dostępowy do skopiowania.</div>
                        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer">
                            <input type="checkbox" id="sm-invite" ${s.email ? 'checked' : ''}>
-                           Wyślij zaproszenie na email po zapisie
+                           Utwórz konto i wygeneruj link dostępowy po zapisie
                        </label>`}
             </div>
 
@@ -822,22 +823,84 @@ async function saveStaffManage(id) {
     const inviteCb = document.getElementById('sm-invite');
     const shouldInvite = !id && inviteCb?.checked && email && !result.data.user_id;
     if (shouldInvite) {
-        try {
-            const { data, error: fnErr } = await db.functions.invoke('invite-staff', {
-                body: { email, staff_id: result.data.id, full_name: name, role: payload.role },
-            });
-            if (fnErr) throw fnErr;
-            window.toast?.success('Zapisano i wysłano zaproszenie na ' + email);
-        } catch (e) {
-            alert(`Zapisano, ale nie udało się wysłać zaproszenia: ${e.message}.`);
-        }
+        gmpModal.close();
+        await generateAccessLinkAndShow(email, result.data.id, name, payload.role);
     } else {
         window.toast?.success(id ? 'Zapisano' : 'Dodano');
+        gmpModal.close();
     }
 
-    gmpModal.close();
     loadStaffManage();
 }
+
+// Generuj link dostepowy i pokaz go w modalu z 'Kopiuj'
+async function generateAccessLinkAndShow(email, staffId, fullName, role) {
+    window.toast?.info('Generuję link dostępowy...');
+    try {
+        const { data, error } = await db.functions.invoke('invite-staff', {
+            body: { email, staff_id: staffId, full_name: fullName, role: role || 'staff' },
+        });
+        if (error) throw error;
+        if (!data?.action_link) {
+            alert('Nie udało się wygenerować linku: ' + (data?.error || 'brak action_link w odpowiedzi'));
+            return;
+        }
+        showAccessLinkModal(data.action_link, email, data.existed);
+    } catch (e) {
+        alert('Błąd generowania linku: ' + (e.message || e));
+    }
+}
+
+function showAccessLinkModal(link, email, existed) {
+    const safeLink = esc(link);
+    const safeEmail = esc(email);
+    const html = `
+        <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center">
+            <h3 style="margin: 0; font-size: 16px"><i class="ph ph-link"></i> Link dostępowy gotowy</h3>
+            <button onclick="gmpModal.close()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 20px"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body" style="padding: 20px">
+            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px">
+                ${existed ? 'Konto już istniało — link odświeża dostęp.' : 'Konto utworzone.'} Wyślij ten link pracownikowi (Slack/WhatsApp/SMS/email). Po kliknięciu ustawi hasło i zaloguje się do CRM.
+            </div>
+            <div style="padding: 12px; background: rgba(99,102,241,0.08); border: 1px solid var(--accent-border); border-radius: 8px; margin-bottom: 14px">
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em">Dla: ${safeEmail}</div>
+                <textarea id="access-link-box" readonly style="width: 100%; min-height: 90px; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; word-break: break-all; resize: vertical">${safeLink}</textarea>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center">
+                <button class="refresh-btn" onclick="copyAccessLink()" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; flex: 0 0 auto"><i class="ph ph-copy"></i> Kopiuj link</button>
+                <a href="mailto:${safeEmail}?subject=${encodeURIComponent('Dostęp do CRM GetMyPermit')}&body=${encodeURIComponent('Cześć,\n\nOto link do ustawienia hasła i zalogowania się do CRM:\n\n' + link + '\n\nLink jest jednorazowy i wygasa po krótkim czasie.\n')}" class="refresh-btn" style="flex: 0 0 auto"><i class="ph ph-envelope"></i> Wyślij mailem</a>
+                <a href="https://wa.me/?text=${encodeURIComponent('Dostęp do CRM GetMyPermit: ' + link)}" target="_blank" class="refresh-btn" style="flex: 0 0 auto"><i class="ph ph-whatsapp-logo"></i> WhatsApp</a>
+                <span id="copy-feedback" style="font-size: 12px; color: #10b981; opacity: 0; transition: opacity 200ms">✓ skopiowano</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 12px">
+                <i class="ph ph-warning-circle"></i> Link wygasa po 1h. Jeśli pracownik nie zdąży — wygeneruj nowy z "Edytuj pracownika → Wygeneruj nowy link".
+            </div>
+        </div>`;
+    gmpModal.openModal(html);
+}
+
+window.copyAccessLink = async function() {
+    const box = document.getElementById('access-link-box');
+    if (!box) return;
+    try {
+        await navigator.clipboard.writeText(box.value);
+    } catch {
+        box.select();
+        document.execCommand('copy');
+    }
+    const fb = document.getElementById('copy-feedback');
+    if (fb) {
+        fb.style.opacity = '1';
+        setTimeout(() => { fb.style.opacity = '0'; }, 2000);
+    }
+};
+
+// Dla istniejacych kont — regeneracja linku (zamiast 'wyslij reset hasla')
+window.regenerateAccessLink = async function(staffId, email, fullName, role) {
+    if (!email) { alert('Brak emaila'); return; }
+    await generateAccessLinkAndShow(email, staffId, fullName, role);
+};
 
 async function sendPasswordResetForStaff(email) {
     if (!email) { alert('Brak emaila'); return; }
