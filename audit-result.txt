@@ -1,0 +1,207 @@
+=== PŁATNOŚCI ===
+=== ETAPY ===
+=== TAGI ===
+=== KATEGORIE ===
+=== OPIEKUNOWIE ===
+=== ODDZIAŁY ===
+=== KARTA SPRAWY ===
+=== TERMINY I KALENDARZ ===
+=== ZESTAWIENIA + ALERTY ===
+=== ANKIETA ===
+=== REST API SMOKE TEST ===
+=== POSTGREST EMBEDS ===
+
+================================================================================
+WYNIK: 145 OK / 0 FAIL
+================================================================================
+
+[OK] 1.1 Plan rat
+    [ OK ] tabela gmp_payment_installments
+    [ OK ] kolumna installment_id na gmp_payments
+    [ OK ] trigger markuje ratę jako paid
+    [ OK ] RPC gmp_generate_installment_tasks
+    [ OK ] UI plan rat w case.html
+    [ OK ] UI edytor rat w case.html
+    [ OK ] UI markInstallmentPaid
+
+[OK] 1.1 Cron
+    [ OK ] pg_cron zadania (gmp_daily_installment_tasks + gmp_daily_mark_overdue)
+
+[OK] 1.2 Typy opłat
+    [ OK ] enum stamp_fee
+    [ OK ] enum client_advance
+    [ OK ] enum client_advance_repayment
+    [ OK ] kolumna admin_fee_amount
+    [ OK ] kolumna stamp_fee_amount
+    [ OK ] kolumna client_advances_amount
+    [ OK ] UI 4 pola planowanych kwot w case.html
+    [ OK ] UI 4 kafelki finansów w case.html
+
+[OK] 1.3 Opłaty za klienta
+    [ OK ] tabela gmp_case_client_advances
+    [ OK ] trigger synchronizacji sumy
+    [ OK ] UI sekcja w case.html
+    [ OK ] UI addClientAdvance
+    [ OK ] UI markAdvanceRepaid
+
+[OK] 1.5 Zaległości
+    [ OK ] view gmp_case_balance
+    [ OK ] UI kolumna Zaległość w cases.html
+    [ OK ] UI czerwona kropka dla overdue
+
+[OK] 3 Etapy
+    [ OK ] enum value: wezwanie
+    [ OK ] UI cases.html etap: wezwanie
+    [ OK ] UI case.html etap: wezwanie
+    [ OK ] enum value: uzupelnienie_dokumentow
+    [ OK ] UI cases.html etap: uzupelnienie_dokumentow
+    [ OK ] UI case.html etap: uzupelnienie_dokumentow
+    [ OK ] enum value: przyspieszenie
+    [ OK ] UI cases.html etap: przyspieszenie
+    [ OK ] UI case.html etap: przyspieszenie
+    [ OK ] enum value: wydluzenie_terminu
+    [ OK ] UI cases.html etap: wydluzenie_terminu
+    [ OK ] UI case.html etap: wydluzenie_terminu
+    [ OK ] enum value: przeniesienie_z_innego_wojewodztwa
+    [ OK ] UI cases.html etap: przeniesienie_z_innego_wojewodztwa
+    [ OK ] UI case.html etap: przeniesienie_z_innego_wojewodztwa
+    [ OK ] enum value: wniosek_przeniesiony
+    [ OK ] UI cases.html etap: wniosek_przeniesiony
+    [ OK ] UI case.html etap: wniosek_przeniesiony
+
+[OK] 4 Tagi
+    [ OK ] tag: czeka-na-przeniesienie
+    [ OK ] tag: czeka-na-dok-pracodawcy
+    [ OK ] tag: APT
+    [ OK ] tag: OUTSOURCING
+    [ OK ] tag: problematyczny
+    [ OK ] tag: pretensje
+    [ OK ] tag: brak-reakcji-urzedu
+    [ OK ] tag: zaleglosci-finansowe
+
+[OK] 5 Kategorie
+    [ OK ] tabela gmp_case_categories
+    [ OK ] 25 aktywnych kategorii
+    [ OK ] kod pobyt_praca
+    [ OK ] kod pobyt_staly_malzenstwo
+    [ OK ] kod rezydent
+    [ OK ] kod obywatelstwo_nadanie
+    [ OK ] kod deportacja
+    [ OK ] kod transkrypcja
+    [ OK ] UI ładowanie dynamiczne cases.html
+    [ OK ] UI select z DB w case.html
+
+[OK] 6 Opiekunowie
+    [ OK ] zdezaktywowany: mateusz lis
+    [ OK ] zdezaktywowany: olha kovalova
+    [ OK ] zdezaktywowany: konto testowe
+    [ OK ] zdezaktywowany: michał
+    [ OK ] zdezaktywowany: natalia
+
+[OK] 7 Oddziały
+    [ OK ] usunięty: OCII
+    [ OK ] usunięty: OC II
+    [ OK ] usunięty: OCI
+    [ OK ] usunięty: OBYWATELSTWO
+    [ OK ] usunięty: DUE
+    [ OK ] obecny: PC 1
+    [ OK ] obecny: PC 2
+    [ OK ] obecny: PC 3
+    [ OK ] obecny: PC 4
+    [ OK ] obecny: OP — OBYWATELSTWO
+
+[OK] 8 Pola
+    [ OK ] legal_stay_end_date
+    [ OK ] document_location
+    [ OK ] accepted_by
+    [ OK ] assigned_at
+
+[OK] 8 Multi-opiekun
+    [ OK ] tabela gmp_case_assignees
+    [ OK ] max 3 trigger
+    [ OK ] single primary trigger
+    [ OK ] sync primary → cases.assigned_to
+    [ OK ] backfill primary
+    [ OK ] UI loadAdditionalAssignees
+    [ OK ] UI addAssignee
+    [ OK ] UI removeAssignee
+
+[OK] 8 Lista
+    [ OK ] UI data złożenia wniosku (Złożony)
+    [ OK ] UI sortowanie po legal_stay_end_date
+    [ OK ] UI dni od przystąpienia (kolumna)
+
+[OK] 9 Zadania
+    [ OK ] gmp_tasks.task_type
+    [ OK ] gmp_tasks.show_in_calendar
+    [ OK ] gmp_tasks.visibility
+    [ OK ] słownik gmp_task_types
+    [ OK ] 9 typów terminów
+
+[OK] 9 UI tasks.html
+    [ OK ] filtr typu terminu
+    [ OK ] kolumna W kal.
+    [ OK ] ikona kłódki private
+
+[OK] 9 Kalendarz
+    [ OK ] toggle Tylko moje
+    [ OK ] zadania w kalendarzu
+    [ OK ] respekt private
+
+[OK] 10 Staff stats
+    [ OK ] view gmp_staff_effectiveness
+    [ OK ] view gmp_staff_tasks_monthly
+    [ OK ] UI kolumna Zal. fin. w staff.html
+
+[OK] 11 Alert pracodawca
+    [ OK ] view gmp_employer_inaction_alerts
+    [ OK ] UI sekcja w alerts.html
+    [ OK ] UI loadEmployerInaction
+
+[OK] 12 Ankieta pola
+    [ OK ] previous_first_names
+    [ OK ] maiden_name
+    [ OK ] father_first_name
+    [ OK ] mother_first_name
+    [ OK ] mother_maiden_name
+    [ OK ] birth_place
+    [ OK ] country_of_origin
+    [ OK ] marital_status
+    [ OK ] height_cm
+    [ OK ] eye_color
+    [ OK ] distinguishing_marks
+    [ OK ] trusted_profile
+    [ OK ] family_in_pl
+    [ OK ] stays_outside_pl_5y
+    [ OK ] arrival_document_type
+    [ OK ] arrival_visa_eu_purpose
+    [ OK ] employer_phone
+    [ OK ] employer_email
+
+[OK] 12 Ankieta
+    [ OK ] openManualIntakeEditor w case.html
+    [ OK ] przycisk Wypełnij z palca
+
+[OK] 12 Zatwierdzanie dok.
+    [ OK ] RPC gmp_approve_intake_document
+    [ OK ] kolumna approved_at
+    [ OK ] kolumna gmp_document_id
+    [ OK ] kolumna source w gmp_documents
+    [ OK ] UI approveIntakeDoc
+    [ OK ] UI sekcja Do zatwierdzenia
+
+[OK] REST
+    [ OK ] gmp_case_categories — select=*
+    [ OK ] gmp_case_balance — select=case_id,balance_due
+    [ OK ] gmp_case_client_advances — select=*
+    [ OK ] gmp_payment_installments — select=*
+    [ OK ] gmp_case_assignees — select=*
+    [ OK ] gmp_task_types — select=*
+    [ OK ] gmp_staff_effectiveness — select=*
+    [ OK ] gmp_employer_inaction_alerts — select=*
+
+[OK] REST embed
+    [ OK ] cases.html list
+    [ OK ] case.html detail
+    [ OK ] Staff activities
+    [ OK ] Tasks assigned
