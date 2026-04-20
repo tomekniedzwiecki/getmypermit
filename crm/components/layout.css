@@ -146,7 +146,25 @@ select.input, select.filter-input {
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'><path d='M3 5L6 8L9 5' stroke='%23a1a1aa' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
     background-repeat: no-repeat; background-position: right 8px center;
     padding-right: 28px; appearance: none;
+    color-scheme: dark; /* przeglądarka używa ciemnej palety dla options */
 }
+
+/* Opcje w dropdownach — wymuszamy ciemne tło (inaczej OS daje białe tło przy dark theme) */
+select.input option,
+select.filter-input option,
+select option {
+    background-color: var(--bg-elevated, #0f0f10);
+    color: var(--text-primary, #fafafa);
+}
+select.input optgroup,
+select.filter-input optgroup,
+select optgroup {
+    background-color: var(--bg-elevated, #0f0f10);
+    color: var(--text-tertiary, #a1a1aa);
+    font-weight: 600;
+}
+/* Globalny color-scheme — Chrome/Firefox respektują w większości select'ów */
+select { color-scheme: dark; }
 
 label {
     display: block;
