@@ -2889,12 +2889,15 @@ window.genInstallments = function() {
     const firstDate = document.getElementById('ins-first-date').value;
     const spacing = parseInt(document.getElementById('ins-spacing').value) || 30;
     const per = Math.round((total / count) * 100) / 100;
+    // Ostatnia rata = total - suma poprzednich (unika niedopłaty 999.99 vs 1000 przy 3×333.33)
+    const perLast = count > 1 ? Math.round((total - per * (count - 1)) * 100) / 100 : per;
     const rows = [];
     const start = firstDate ? new Date(firstDate) : new Date();
     for (let i = 0; i < count; i++) {
         const d = new Date(start);
         d.setDate(d.getDate() + (i * spacing));
-        rows.push({ amount: per, due_date: d.toISOString().split('T')[0] });
+        const amount = (i === count - 1) ? perLast : per;
+        rows.push({ amount, due_date: d.toISOString().split('T')[0] });
     }
     renderInsRows(rows);
 };

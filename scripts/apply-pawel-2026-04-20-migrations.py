@@ -29,6 +29,7 @@ MIGRATIONS = [
     "20260422_pawel_pg_cron_installments.sql",
     "20260423_pawel_intake_docs_approval.sql",
     "20260423_pawel_fixes_from_audit.sql",
+    "20260423_pawel_hardening.sql",
 ]
 
 # Force skip (juz zaaplikowane na bazie — skipujemy idempotentnie)

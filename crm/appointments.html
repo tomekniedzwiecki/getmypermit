@@ -215,7 +215,8 @@ async function renderWeek() {
             byDay[day].push({
                 type: 'task',
                 time: '',
-                title: (t.visibility === 'private' ? '🔒 ' : '') + t.title,
+                title: t.title,
+                isPrivate: t.visibility === 'private',
                 subtitle: [client, t.gmp_staff?.full_name].filter(Boolean).join(' · '),
                 href: t.case_id ? `case.html?id=${t.case_id}` : '#',
             });
@@ -239,7 +240,7 @@ async function renderWeek() {
             ${events.map(e => `
                 <a href="${e.href}" class="block">
                     <div class="cal-event ${e.type}">
-                        ${e.time ? `<span class="font-mono text-zinc-300">${e.time}</span> ` : ''}<span>${esc(e.title)}</span>
+                        ${e.time ? `<span class="font-mono text-zinc-300">${e.time}</span> ` : ''}${e.isPrivate ? '<i class="ph ph-lock text-zinc-500 mr-0.5" title="Prywatne"></i>' : ''}<span>${esc(e.title)}</span>
                         ${e.subtitle ? `<div class="text-zinc-500 text-[10px] mt-0.5">${esc(e.subtitle)}</div>` : ''}
                     </div>
                 </a>`).join('')}`;
