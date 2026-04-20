@@ -871,8 +871,8 @@ async function saveStaffManage(id) {
 async function generateAccessLinkAndShow(email, staffId, fullName, role) {
     window.toast?.info('Generuję link dostępowy...');
     try {
-        const { data, error } = await db.functions.invoke('invite-staff', {
-            body: { email, staff_id: staffId, full_name: fullName, role: role || 'staff' },
+        const { data, error } = await invokeEdgeWithAuth('invite-staff', {
+            email, staff_id: staffId, full_name: fullName, role: role || 'staff',
         });
         if (error) throw error;
         if (!data?.action_link) {
@@ -958,6 +958,24 @@ async function deleteStaffAccount(id, name) {
     loadStaffManage();
 }
 
+// === Wywołanie edge function z explicit user JWT (omija problem z autoRefresh) ===
+async function invokeEdgeWithAuth(fnName, body) {
+    let session = (await db.auth.getSession())?.data?.session;
+    // Jeśli session istnieje ale token jest expired - wymuś refresh
+    if (session?.expires_at && session.expires_at * 1000 < Date.now() + 5000) {
+        const { data: refreshed } = await db.auth.refreshSession();
+        session = refreshed?.session || session;
+    }
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+        return { data: null, error: { message: 'Sesja wygasła. Zaloguj się ponownie (Ctrl+F5).' } };
+    }
+    return await db.functions.invoke(fnName, {
+        body,
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+}
+
 // === Obsługa ustawiania hasła przez admina ===
 // Bez ambiguous znaków (0/O, 1/l/I), z klasą specjalną dla siły.
 const GMP_PWD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
@@ -988,8 +1006,8 @@ window.gmpToggleAccessMode = function() {
 async function setPasswordAndShow(email, staffId, fullName, role, password) {
     window.toast?.info('Ustawiam hasło...');
     try {
-        const { data, error } = await db.functions.invoke('invite-staff', {
-            body: { email, staff_id: staffId, full_name: fullName, role: role || 'staff', password },
+        const { data, error } = await invokeEdgeWithAuth('invite-staff', {
+            email, staff_id: staffId, full_name: fullName, role: role || 'staff', password,
         });
         if (error) throw error;
         if (!data?.ok) {
@@ -1131,8 +1149,8 @@ window.hardDeleteStaff = async function(staffId, fullName, hasAccount) {
 
     window.toast?.info('Usuwam pracownika...');
     try {
-        const { data, error } = await db.functions.invoke('delete-staff', {
-            body: { staff_id: staffId },
+        const { data, error } = await invokeEdgeWithAuth('delete-staff', {
+            staff_id: staffId,
         });
         if (error) throw error;
         if (!data?.ok) {
