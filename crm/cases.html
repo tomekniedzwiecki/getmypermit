@@ -87,19 +87,19 @@
                         <option value="odwolanie">Odwołanie</option>
                         <option value="umorzenie">Umorzenie</option>
                         <option value="przystapienie">Przystąpienie</option>
+                        <option value="wezwanie">Wezwanie</option>
+                        <option value="uzupelnienie_dokumentow">Uzupełnienie dokumentów</option>
+                        <option value="przyspieszenie">Przyspieszenie</option>
+                        <option value="wydluzenie_terminu">Wydłużenie terminu</option>
+                        <option value="przeniesienie_z_innego_wojewodztwa">Przeniesienie z innego województwa</option>
+                        <option value="wniosek_przeniesiony">Wniosek przeniesiony</option>
                     </select>
                 </div>
                 <div>
                     <label>Kategoria</label>
                     <select id="f-category" class="filter-input w-full">
                         <option value="">Wszystkie</option>
-                        <option value="pobyt">Pobyt</option>
-                        <option value="pozostale">Pozostałe</option>
-                        <option value="rezydent">Rezydent</option>
-                        <option value="zezwolenie_a">Zezwolenie typ A</option>
-                        <option value="smart_work">Smart Work</option>
-                        <option value="lead_ewidencja">Z ewidencji spotkań</option>
-                        <option value="rozliczenie_historyczne">Historyczne (rozliczenia)</option>
+                        <!-- opcje ładowane dynamicznie z gmp_case_categories -->
                     </select>
                 </div>
                 <div>
@@ -189,13 +189,15 @@
                             <th data-sort="staff">Opiekun</th>
                             <th>Tagi</th>
                             <th data-sort="date_accepted">Przyjęta</th>
-                            <th class="text-right" data-sort="fee_amount">Kwota</th>
+                            <th data-sort="date_submitted">Złożony</th>
+                            <th data-sort="legal_stay_end_date">Koniec legalu</th>
+                            <th class="text-right" data-sort="balance_due">Zaległość</th>
                             <th class="text-right" data-sort="date_last_activity">Ostatnia akt.</th>
                             <th class="row-open"></th>
                         </tr>
                     </thead>
                     <tbody id="cases-tbody">
-                        <tr><td colspan="15" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        <tr><td colspan="17" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -332,6 +334,9 @@ async function init() {
                 stage: r => r.stage || '',
                 staff: r => r.gmp_staff?.full_name || '',
                 date_accepted: r => r.date_accepted || '',
+                date_submitted: r => r.date_submitted || '',
+                legal_stay_end_date: r => r.legal_stay_end_date || '',
+                balance_due: r => Number(balanceByCase[r.id]?.balance_due || 0),
                 fee_amount: r => Number(r.fee_amount) || 0,
                 date_last_activity: r => r.date_last_activity || '',
             };
@@ -353,10 +358,11 @@ async function init() {
 }
 
 async function loadFilters() {
-    const [{ data: staff }, { data: depts }, { data: emps }] = await Promise.all([
-        db.from('gmp_staff').select('id, full_name').order('full_name'),
+    const [{ data: staff }, { data: depts }, { data: emps }, { data: cats }] = await Promise.all([
+        db.from('gmp_staff').select('id, full_name').eq('is_active', true).order('full_name'),
         db.from('gmp_office_departments').select('id, code, name').order('code'),
         db.from('gmp_employers').select('id, name').order('name').limit(1000),
+        db.from('gmp_case_categories').select('code, label, group_label').eq('is_active', true).order('sort_order'),
     ]);
     staffList = staff || [];
     deptList = depts || [];
@@ -378,12 +384,29 @@ async function loadFilters() {
         o.value = e.id; o.textContent = e.name;
         empSel.appendChild(o);
     });
+    // Kategorie z DB (grupowane po group_label)
+    const catSel = document.getElementById('f-category');
+    const catsByGroup = {};
+    (cats || []).forEach(c => {
+        (catsByGroup[c.group_label] = catsByGroup[c.group_label] || []).push(c);
+    });
+    Object.entries(catsByGroup).forEach(([group, items]) => {
+        const og = document.createElement('optgroup');
+        og.label = group;
+        items.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.code; o.textContent = c.label;
+            og.appendChild(o);
+        });
+        catSel.appendChild(og);
+    });
+    window.CATEGORIES_LIST = cats || [];
 }
 
 function buildQuery() {
     let q = db.from('gmp_cases').select(
-        'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, is_pinned, ' +
-        'gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name), gmp_office_departments(code)',
+        'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_submitted, date_joined, legal_stay_end_date, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, is_pinned, ' +
+        'gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name), gmp_office_departments(code)',
         { count: 'exact' }
     );
 
@@ -428,7 +451,7 @@ function buildQuery() {
 
 async function loadCases() {
     const tbody = document.getElementById('cases-tbody');
-    tbody.innerHTML = '<tr><td colspan="15" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="17" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>';
 
     const search = document.getElementById('f-search').value.trim();
 
@@ -447,7 +470,7 @@ async function loadCases() {
         if (!tagCaseIds.length) {
             totalRows = 0;
             document.getElementById('page-count').textContent = '0 spraw (brak z wybranymi tagami)';
-            tbody.innerHTML = '<tr><td colspan="15" class="empty-state"><i class="ph ph-tag"></i><div>Brak spraw z wybranymi tagami</div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="17" class="empty-state"><i class="ph ph-tag"></i><div>Brak spraw z wybranymi tagami</div></td></tr>';
             renderPagination();
             return;
         }
@@ -474,7 +497,7 @@ async function loadCases() {
         // Re-build query - tym razem rozszerzamy .or()
         q = db.from('gmp_cases').select(
             'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, ' +
-            'gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name), gmp_office_departments(code)',
+            'gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name), gmp_office_departments(code)',
             { count: 'exact' }
         );
         const s = `%${search}%`;
@@ -511,7 +534,7 @@ async function loadCases() {
 
     const { data, error, count } = await q;
     if (error) {
-        tbody.innerHTML = `<tr><td colspan="15" class="p-6 text-center text-red-400">Błąd: ${esc(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="17" class="p-6 text-center text-red-400">Błąd: ${esc(error.message)}</td></tr>`;
         return;
     }
 
@@ -519,7 +542,7 @@ async function loadCases() {
     document.getElementById('page-count').textContent = `${fmt.num(totalRows)} spraw`;
 
     if (!data?.length) {
-        tbody.innerHTML = '<tr><td colspan="15" class="empty-state"><i class="ph ph-folder-open"></i><div>Brak spraw dla tych filtrów</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="17" class="empty-state"><i class="ph ph-folder-open"></i><div>Brak spraw dla tych filtrów</div></td></tr>';
         renderPagination();
         return;
     }
@@ -527,12 +550,21 @@ async function loadCases() {
     currentData = data;
     // Fetch tagów dla wszystkich spraw na stronie
     tagsByCase = window.gmpTags ? await gmpTags.fetchForEntities('case', data.map(r => r.id)) : {};
+    // Fetch saldo z gmp_case_balance
+    balanceByCase = {};
+    if (data.length) {
+        const { data: balances } = await db.from('gmp_case_balance')
+            .select('case_id, balance_due, overdue_installments_amount, overdue_installments_count')
+            .in('case_id', data.map(r => r.id));
+        (balances || []).forEach(b => { balanceByCase[b.case_id] = b; });
+    }
     renderRows();
     renderPagination();
 }
 
 let currentData = [];
 let tagsByCase = {};
+let balanceByCase = {};
 let activeTagFilters = []; // tag IDs
 
 function renderRows() {
@@ -557,13 +589,26 @@ function renderRows() {
                 <td>${client}</td>
                 <td class="text-zinc-300 text-xs">${employer}</td>
                 <td class="text-zinc-400 text-xs">${esc(row.case_type || '—')}</td>
-                <td class="text-xs">${row.category ? `<span class="badge badge-category">${esc(row.category)}</span>` : ''}</td>
+                <td class="text-xs">${row.category ? `<span class="badge badge-category" title="${esc(row.category)}">${esc((window.CATEGORIES_LIST || []).find(c => c.code === row.category)?.label || row.category)}</span>` : ''}</td>
                 <td data-edit-status="${row.id}" data-val="${esc(row.status || '')}" onclick="event.stopPropagation()"><span class="badge badge-${row.status}">${esc(row.status || '—')}</span></td>
                 <td class="text-xs" data-edit-stage="${row.id}" data-val="${esc(row.stage || '')}" onclick="event.stopPropagation()">${row.stage ? `<span class="badge badge-stage">${esc(row.stage)}</span>` : '<span class="text-zinc-600">—</span>'}</td>
                 <td class="text-zinc-300 text-xs" data-edit-staff="${row.id}" data-val="${esc(row.assigned_to || '')}" onclick="event.stopPropagation()"><div class="flex items-center gap-2">${staffAva}<span>${staff}</span></div></td>
                 <td>${tagsHTML}</td>
                 <td class="text-zinc-500 text-xs">${fmt.date(row.date_accepted)}</td>
-                <td class="text-right font-mono text-xs ${row.fee_amount ? 'text-emerald-300' : 'text-zinc-600'}">${row.fee_amount ? fmt.money(row.fee_amount) : '—'}</td>
+                <td class="text-zinc-500 text-xs">${fmt.date(row.date_submitted)}</td>
+                <td class="text-xs ${row.legal_stay_end_date && new Date(row.legal_stay_end_date) < new Date() ? 'text-red-400 font-semibold' : 'text-zinc-400'}">${fmt.date(row.legal_stay_end_date)}</td>
+                ${(() => {
+                    const bal = balanceByCase[row.id] || {};
+                    const due = Number(bal.balance_due || 0);
+                    const overdue = Number(bal.overdue_installments_amount || 0);
+                    if (due <= 0.009 && overdue <= 0.009) {
+                        return `<td class="text-right text-zinc-600 text-xs">—</td>`;
+                    }
+                    const isOverdue = overdue > 0.009;
+                    const color = isOverdue ? 'text-red-400' : 'text-amber-300';
+                    const dot = isOverdue ? '<span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1" title="Przeterminowana rata"></span>' : '';
+                    return `<td class="text-right font-mono text-xs ${color}" title="${isOverdue ? 'Przeterminowane raty: ' + fmt.money(overdue) : 'Saldo: ' + fmt.money(due)}">${dot}${fmt.money(due)}</td>`;
+                })()}
                 <td class="text-right text-zinc-500 text-xs">${fmt.daysAgo(row.date_last_activity)}</td>
                 <td class="row-open">${window.rowOpen()}</td>
             </tr>`;

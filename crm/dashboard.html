@@ -758,7 +758,7 @@ async function loadAlertsList() {
     if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check text-emerald-400"></i><div>Brak alertów bezczynności</div></div>'; return; }
 
     const caseIds = data.map(r => r.case_id);
-    const { data: cases } = await db.from('gmp_cases').select('id, case_number, gmp_clients(last_name, first_name), gmp_staff(full_name)').in('id', caseIds);
+    const { data: cases } = await db.from('gmp_cases').select('id, case_number, gmp_clients(last_name, first_name), gmp_staff!assigned_to(full_name)').in('id', caseIds);
     const byId = Object.fromEntries((cases || []).map(c => [c.id, c]));
 
     el.innerHTML = data.map(a => {
@@ -1052,7 +1052,7 @@ async function loadFreshLeads() {
 async function loadActivityFeed() {
     const el = document.getElementById('activity-feed');
     const { data } = await db.from('gmp_case_activities')
-        .select('id, activity_type, content, created_at, case_id, created_by, gmp_cases(case_number, gmp_clients(last_name, first_name)), gmp_staff(full_name)')
+        .select('id, activity_type, content, created_at, case_id, created_by, gmp_cases(case_number, gmp_clients(last_name, first_name)), gmp_staff!created_by(full_name)')
         .order('created_at', { ascending: false }).limit(15);
 
     if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-clock-counter-clockwise"></i><div>Brak aktywności</div></div>'; return; }

@@ -35,6 +35,7 @@
             <button class="btn btn-secondary tab-btn" data-view="overdue">Po terminie</button>
             <button class="btn btn-secondary tab-btn" data-view="done">Ukończone</button>
             <div class="flex-1"></div>
+            <select id="f-task-type" class="filter-input" style="width: 240px"><option value="">Wszystkie typy terminów</option></select>
             <select id="f-staff" class="filter-input" style="width: 200px"><option value="">Wszyscy staff</option></select>
         </div>
 
@@ -45,9 +46,11 @@
                         <tr>
                             <th>✓</th>
                             <th>Tytuł</th>
+                            <th>Typ</th>
                             <th>Sprawa</th>
                             <th>Przypisane do</th>
                             <th>Termin</th>
+                            <th>W kal.</th>
                             <th>Utworzone</th>
                             <th>Status</th>
                             <th class="row-open"></th>
@@ -66,13 +69,26 @@
 <script>
 let view = 'mine';
 let staffFilter = '';
+let taskTypeFilter = '';
+let TASK_TYPE_LABELS = {};
 
 document.addEventListener('gmp-auth-ready', init);
 async function init() {
-    // Load staff
-    const { data: staff } = await db.from('gmp_staff').select('id, full_name').order('full_name');
+    // Load staff + task types
+    const [{ data: staff }, { data: types }] = await Promise.all([
+        db.from('gmp_staff').select('id, full_name').eq('is_active', true).order('full_name'),
+        db.from('gmp_task_types').select('code, label').eq('is_active', true).order('sort_order'),
+    ]);
     const sel = document.getElementById('f-staff');
     (staff || []).forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.full_name; sel.appendChild(o); });
+
+    const typeSel = document.getElementById('f-task-type');
+    (types || []).forEach(t => {
+        TASK_TYPE_LABELS[t.code] = t.label;
+        const o = document.createElement('option');
+        o.value = t.code; o.textContent = t.label;
+        typeSel.appendChild(o);
+    });
 
     await loadList();
     document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
@@ -80,6 +96,7 @@ async function init() {
         b.classList.add('active'); view = b.dataset.view; loadList();
     }));
     document.getElementById('f-staff').addEventListener('change', (e) => { staffFilter = e.target.value; loadList(); });
+    document.getElementById('f-task-type').addEventListener('change', (e) => { taskTypeFilter = e.target.value; loadList(); });
 }
 
 async function loadList() {
@@ -98,25 +115,30 @@ async function loadList() {
     }
 
     if (staffFilter) q = q.eq('assigned_to', staffFilter);
+    if (taskTypeFilter) q = q.eq('task_type', taskTypeFilter);
     q = q.order('due_date', { ascending: true, nullsLast: true }).limit(500);
 
     const { data, error } = await q;
     const tbody = document.getElementById('tbody');
-    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="ph ph-check-circle"></i><div>Brak zadań</div></td></tr>'; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-red-400">${esc(error.message)}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><i class="ph ph-check-circle"></i><div>Brak zadań</div></td></tr>'; return; }
 
     tbody.innerHTML = data.map(t => {
         const c = t.gmp_cases;
         const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
         const overdue = t.due_date && t.status !== 'done' && new Date(t.due_date) < new Date();
         const done = t.status === 'done';
+        const typeLabel = TASK_TYPE_LABELS[t.task_type] || (t.task_type ? t.task_type : '—');
+        const isPrivate = t.visibility === 'private';
         return `
             <tr class="${t.case_id ? 'clickable' : ''}" onclick="${t.case_id ? `if(!event.target.matches('input')) location.href='case.html?id=${t.case_id}'` : ''}">
                 <td><input type="checkbox" ${done ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)"></td>
-                <td><div class="text-sm ${done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${esc(t.title)}</div>${t.description ? `<div class="text-xs text-zinc-500 mt-0.5">${esc(t.description.slice(0,80))}</div>` : ''}</td>
+                <td><div class="text-sm ${done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${isPrivate ? '<i class="ph ph-lock text-zinc-500 mr-1" title="Prywatne"></i>' : ''}${esc(t.title)}</div>${t.description ? `<div class="text-xs text-zinc-500 mt-0.5">${esc(t.description.slice(0,80))}</div>` : ''}</td>
+                <td class="text-xs text-zinc-400">${esc(typeLabel)}</td>
                 <td class="text-xs">${c ? `<div class="text-zinc-400">${client}</div><div class="text-zinc-600 font-mono">${esc(c.case_number || '')}</div>` : '—'}</td>
                 <td class="text-xs text-zinc-400">${esc(t.gmp_staff?.full_name || '—')}</td>
                 <td class="text-xs ${overdue ? 'text-red-400 font-medium' : 'text-zinc-400'}">${t.due_date ? fmt.date(t.due_date) : '—'}</td>
+                <td class="text-center text-xs">${t.show_in_calendar ? '<i class="ph ph-calendar-check text-emerald-400" title="Widoczne w kalendarzu"></i>' : '<i class="ph ph-calendar-x text-zinc-700" title="Niewidoczne w kalendarzu"></i>'}</td>
                 <td class="text-xs text-zinc-500">${fmt.daysAgo(t.created_at)}</td>
                 <td><span class="badge ${done ? 'badge-zakonczona' : 'badge-zlecona'}">${esc(t.status)}</span></td>
                 <td class="row-open">${t.case_id ? window.rowOpen() : ''}</td>

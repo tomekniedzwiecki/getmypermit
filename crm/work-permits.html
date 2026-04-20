@@ -125,7 +125,7 @@ async function init() {
 
 async function loadCases() {
     const { data } = await db.from('gmp_cases')
-        .select('id, case_number, znak_sprawy, status, case_type, date_accepted, date_submitted, date_last_activity, fee_amount, assigned_to, employer_id, gmp_employers(id, name, nip), gmp_staff(full_name)')
+        .select('id, case_number, znak_sprawy, status, case_type, date_accepted, date_submitted, date_last_activity, fee_amount, assigned_to, employer_id, gmp_employers(id, name, nip), gmp_staff!assigned_to(full_name)')
         .eq('party_type', 'employer')
         .order('date_accepted', { ascending: false, nullsLast: true });
     allCases = data || [];

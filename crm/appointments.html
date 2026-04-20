@@ -33,11 +33,15 @@
             </div>
         </div>
 
-        <div class="flex gap-1 mb-4">
+        <div class="flex gap-1 mb-4 items-center flex-wrap">
             <button class="btn btn-secondary tab-btn active" data-type="">Wszystkie</button>
             <button class="btn btn-secondary tab-btn" data-type="konsultacja">Konsultacje</button>
             <button class="btn btn-secondary tab-btn" data-type="osobiste_odciski">Odciski</button>
             <button class="btn btn-secondary tab-btn" data-type="osobiste_inne">Inne stawiennictwa</button>
+            <div class="flex-1"></div>
+            <label class="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
+                <input type="checkbox" id="only-mine-toggle"> Tylko moje
+            </label>
         </div>
 
         <!-- Widok kalendarzowy tygodniowy -->
@@ -72,6 +76,7 @@
 .cal-event:hover { background: rgba(59, 130, 246, 0.2); }
 .cal-event.odciski { background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.3); }
 .cal-event.konsultacja { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
+.cal-event.task { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); }
 
 /* === MOBILE calendar === */
 @media (max-width: 600px) {
@@ -91,6 +96,7 @@ currentWeekStart.setHours(0,0,0,0);
 while (currentWeekStart.getDay() !== 1) currentWeekStart.setDate(currentWeekStart.getDate() - 1);
 
 let typeFilter = '';
+let onlyMine = false;
 
 document.addEventListener('gmp-auth-ready', init);
 
@@ -110,6 +116,14 @@ async function init() {
             renderWeek();
         });
     });
+    // Persist "tylko moje" w localStorage
+    onlyMine = localStorage.getItem('gmp_cal_only_mine') === '1';
+    document.getElementById('only-mine-toggle').checked = onlyMine;
+    document.getElementById('only-mine-toggle').addEventListener('change', (e) => {
+        onlyMine = e.target.checked;
+        localStorage.setItem('gmp_cal_only_mine', onlyMine ? '1' : '0');
+        renderWeek();
+    });
 
     renderWeek();
     loadOdciski();
@@ -126,21 +140,39 @@ async function renderWeek() {
     document.getElementById('week-header').textContent =
         `${fmtLong(currentWeekStart)} - ${fmtLong(new Date(end.getTime() - 86400000))} ${end.getFullYear()}`;
 
-    // Pobierz eventy z gmp_crm_appointments + submissions_queue (ze scheduled_at)
+    // Pobierz eventy z gmp_crm_appointments + submissions_queue + gmp_tasks (show_in_calendar)
+    const myStaffId = window.currentStaff?.id;
     let appointmentsQuery = db.from('gmp_crm_appointments')
         .select('id, appointment_type, scheduled_date, scheduled_time, client_id, case_id, staff_id, title, notes, transport_type, contact_name, gmp_clients(last_name, first_name), gmp_staff!staff_id(full_name)')
         .gte('scheduled_date', currentWeekStart.toISOString().slice(0,10))
         .lt('scheduled_date', end.toISOString().slice(0,10));
     if (typeFilter) appointmentsQuery = appointmentsQuery.eq('appointment_type', typeFilter);
+    if (onlyMine && myStaffId) appointmentsQuery = appointmentsQuery.eq('staff_id', myStaffId);
 
-    const [{ data: appts }, { data: subs }] = await Promise.all([
+    // Zadania z show_in_calendar = true + respekt visibility (private widoczne tylko dla created_by)
+    let tasksQuery = db.from('gmp_tasks')
+        .select('id, title, description, due_date, task_type, visibility, show_in_calendar, assigned_to, case_id, created_by, gmp_cases(case_number, gmp_clients(last_name, first_name)), gmp_staff!assigned_to(full_name)')
+        .eq('show_in_calendar', true)
+        .not('due_date', 'is', null)
+        .gte('due_date', currentWeekStart.toISOString().slice(0,10))
+        .lt('due_date', end.toISOString().slice(0,10))
+        .neq('status', 'done');
+    if (onlyMine && myStaffId) tasksQuery = tasksQuery.eq('assigned_to', myStaffId);
+
+    const [{ data: appts }, { data: subs }, { data: tasks }] = await Promise.all([
         appointmentsQuery,
         db.from('gmp_submissions_queue')
             .select('id, scheduled_at, client_id, office_id, mos_number, gmp_clients(last_name, first_name), gmp_offices(city, code)')
             .gte('scheduled_at', currentWeekStart.toISOString())
             .lt('scheduled_at', end.toISOString())
             .not('scheduled_at', 'is', null),
+        tasksQuery,
     ]);
+
+    // Filtr widoczności: private tylko dla created_by
+    const visibleTasks = (tasks || []).filter(t =>
+        t.visibility !== 'private' || t.created_by === myStaffId
+    );
 
     // Grupuj po dniu
     const byDay = {};
@@ -173,6 +205,19 @@ async function renderWeek() {
                 title: client,
                 subtitle: s.gmp_offices?.city || s.gmp_offices?.code || 'Wniosek',
                 href: s.client_id ? `clients.html?id=${s.client_id}` : '#',
+            });
+        }
+    });
+    visibleTasks.forEach(t => {
+        const day = t.due_date;
+        if (byDay[day] !== undefined) {
+            const client = t.gmp_cases?.gmp_clients ? `${t.gmp_cases.gmp_clients.last_name} ${t.gmp_cases.gmp_clients.first_name}` : '';
+            byDay[day].push({
+                type: 'task',
+                time: '',
+                title: (t.visibility === 'private' ? '🔒 ' : '') + t.title,
+                subtitle: [client, t.gmp_staff?.full_name].filter(Boolean).join(' · '),
+                href: t.case_id ? `case.html?id=${t.case_id}` : '#',
             });
         }
     });

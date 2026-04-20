@@ -197,7 +197,7 @@ async function openClientDetail(id) {
 
     const [{ data: client, error }, { data: cases }, { data: creds }] = await Promise.all([
         db.from('gmp_clients').select('*, gmp_employers(id, name)').eq('id', id).maybeSingle(),
-        db.from('gmp_cases').select('id, case_number, case_type, status, stage, category, date_accepted, fee_amount, gmp_staff(full_name)').eq('client_id', id).order('date_accepted', { ascending: false, nullsLast: true }),
+        db.from('gmp_cases').select('id, case_number, case_type, status, stage, category, date_accepted, fee_amount, gmp_staff!assigned_to(full_name)').eq('client_id', id).order('date_accepted', { ascending: false, nullsLast: true }),
         db.from('gmp_trusted_profile_credentials').select('id, notes, created_at').eq('client_id', id).maybeSingle(),
     ]);
 

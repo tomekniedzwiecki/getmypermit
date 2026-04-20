@@ -64,10 +64,13 @@
                     <option value="client">Tylko klienci</option>
                     <option value="employer">Tylko pracodawcy</option>
                 </select>
-                <select id="f-kind" class="filter-input text-xs" style="width: 180px">
-                    <option value="">Wynagrodzenie + admin.</option>
-                    <option value="fee">Tylko wynagrodzenie</option>
-                    <option value="admin_fee">Tylko opłaty admin.</option>
+                <select id="f-kind" class="filter-input text-xs" style="width: 220px">
+                    <option value="">Wszystkie typy opłat</option>
+                    <option value="fee">Wynagrodzenie</option>
+                    <option value="admin_fee">Opłata administracyjna</option>
+                    <option value="stamp_fee">Opłata skarbowa</option>
+                    <option value="client_advance">Założone za klienta (koszt)</option>
+                    <option value="client_advance_repayment">Założone za klienta (zwrot)</option>
                 </select>
                 <button class="btn btn-ghost btn-sm" onclick="resetFilters()"><i class="ph ph-eraser"></i> Reset</button>
             </div>
@@ -552,7 +555,7 @@ async function renderPayments() {
                                         ${emp ? `<div class="text-xs text-zinc-500">${esc(emp)}</div>` : ''}
                                     </td>
                                     <td class="font-mono text-xs text-zinc-500">${esc(c?.case_number || '')}</td>
-                                    <td class="text-xs">${p.kind === 'admin_fee' ? 'Admin.' : 'Wynagrodz.'}</td>
+                                    <td class="text-xs">${({fee:'Wynagrodz.', admin_fee:'Admin.', stamp_fee:'Skarbowa', client_advance:'Za klienta (koszt)', client_advance_repayment:'Za klienta (zwrot)'}[p.kind]) || p.kind || '—'}</td>
                                     <td class="text-xs">${esc(p.method || '—')}</td>
                                     <td class="text-xs text-zinc-400">${p.installment_number ? `${p.installment_number}/${p.total_installments || '?'}` : '—'}</td>
                                     <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(p.notes || '')}</td>
@@ -604,7 +607,7 @@ async function renderOverdue() {
     const el = document.getElementById('view-content');
     const today = new Date().toISOString().slice(0, 10);
     const plans = await fetchAll(() => db.from('gmp_payment_plans')
-        .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, status, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name))')
+        .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, status, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name))')
         .lt('due_date', today).order('due_date'));
 
     if (!plans?.length) {
@@ -670,7 +673,7 @@ async function renderForecast() {
     const in90 = new Date(Date.now() + 90*86400000).toISOString().slice(0, 10);
 
     const plans = await fetchAll(() => db.from('gmp_payment_plans')
-        .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, status, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff(full_name))')
+        .select('id, case_id, total_amount, due_date, payer_type, gmp_cases(case_number, status, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name))')
         .gte('due_date', now).lte('due_date', in90)
         .order('due_date'));
 

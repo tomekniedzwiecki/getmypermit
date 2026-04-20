@@ -140,7 +140,7 @@ async function openDetail(id) {
 
     const [{ data: emp }, { data: cases }, { data: clients }, { data: invoices }] = await Promise.all([
         db.from('gmp_employers').select('*').eq('id', id).maybeSingle(),
-        db.from('gmp_cases').select('id, case_number, case_type, status, date_accepted, fee_amount, gmp_clients(last_name, first_name), gmp_staff(full_name)').eq('employer_id', id).order('date_accepted', { ascending: false, nullsLast: true }),
+        db.from('gmp_cases').select('id, case_number, case_type, status, date_accepted, fee_amount, gmp_clients(last_name, first_name), gmp_staff!assigned_to(full_name)').eq('employer_id', id).order('date_accepted', { ascending: false, nullsLast: true }),
         db.from('gmp_clients').select('id, last_name, first_name, phone').eq('employer_id', id).order('last_name'),
         db.from('gmp_invoices').select('id, amount, description, status, issue_date, sent_at').eq('employer_id', id).order('created_at', { ascending: false }),
     ]);

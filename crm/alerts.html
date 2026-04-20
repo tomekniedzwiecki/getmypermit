@@ -28,8 +28,8 @@
             </div>
         </div>
 
-        <!-- 3 kolumny alertow -->
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <!-- 4 kolumny alertow -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-4 gap-4">
             <!-- Sprawy bez aktywnosci -->
             <section class="card">
                 <div class="card-header flex items-center gap-2">
@@ -78,6 +78,18 @@
                     <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
                 </div>
             </section>
+
+            <!-- Brak reakcji pracodawcy (pomysł Julki, pkt 11 uwag Pawła) -->
+            <section class="card">
+                <div class="card-header flex items-center gap-2">
+                    <i class="ph ph-buildings text-orange-400"></i>
+                    <span>Brak reakcji pracodawcy</span>
+                    <span class="ml-auto text-xs text-zinc-500" id="employer-count">0</span>
+                </div>
+                <div id="employer-inaction" class="divide-y divide-zinc-900/50 max-h-[660px] overflow-y-auto">
+                    <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                </div>
+            </section>
         </div>
     </main>
 </div>
@@ -94,7 +106,7 @@ let alertReason = '';
 
 document.addEventListener('gmp-auth-ready', init);
 async function init() {
-    await Promise.all([loadAlerts(), loadOverdueTasks(), loadOverduePayments()]);
+    await Promise.all([loadAlerts(), loadOverdueTasks(), loadOverduePayments(), loadEmployerInaction()]);
     document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
         b.classList.add('active'); alertLevel = b.dataset.level; loadAlerts();
@@ -120,7 +132,7 @@ async function loadAlerts() {
     if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak</div></div>'; return; }
 
     const caseIds = data.map(r => r.case_id);
-    const { data: cases } = await db.from('gmp_cases').select('id, case_number, gmp_clients(last_name, first_name), gmp_staff(full_name)').in('id', caseIds);
+    const { data: cases } = await db.from('gmp_cases').select('id, case_number, gmp_clients(last_name, first_name), gmp_staff!assigned_to(full_name)').in('id', caseIds);
     const byId = Object.fromEntries((cases || []).map(c => [c.id, c]));
 
     const reasonLabels = {
@@ -178,6 +190,41 @@ async function loadOverdueTasks() {
                         <div class="text-xs text-zinc-500 truncate">${esc(t.gmp_staff?.full_name || '—')} • ${client}</div>
                     </div>
                     <div class="text-xs text-red-400 whitespace-nowrap">${days} dni po</div>
+                </div>
+            </a>`;
+    }).join('');
+}
+
+async function loadEmployerInaction() {
+    const { data, error } = await db.from('gmp_employer_inaction_alerts')
+        .select('*')
+        .order('days_since_activity', { ascending: false })
+        .limit(100);
+    const el = document.getElementById('employer-inaction');
+    if (error) { el.innerHTML = `<div class="p-4 text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    document.getElementById('employer-count').textContent = data?.length || 0;
+    if (!data?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak</div></div>'; return; }
+
+    const caseIds = data.map(r => r.case_id);
+    const { data: cases } = await db.from('gmp_cases')
+        .select('id, case_number, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name)')
+        .in('id', caseIds);
+    const byId = Object.fromEntries((cases || []).map(c => [c.id, c]));
+
+    el.innerHTML = data.map(a => {
+        const c = byId[a.case_id] || {};
+        const client = c.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+        const employer = c.gmp_employers?.name ? esc(c.gmp_employers.name) : '<span class="text-zinc-600">brak pracodawcy</span>';
+        const level = a.alert_level === 'no_response_30' ? 'text-red-400' : 'text-amber-400';
+        return `
+            <a href="case.html?id=${a.case_id}" class="block p-3 hover:bg-zinc-900/50">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white">${client}</div>
+                        <div class="text-xs text-orange-300 truncate">🏢 ${employer}</div>
+                        <div class="text-xs text-zinc-500">#${esc(c.case_number || '')} · ${esc(c.gmp_staff?.full_name || 'brak opiekuna')}</div>
+                    </div>
+                    <div class="text-xs ${level} whitespace-nowrap">${a.days_since_activity} dni</div>
                 </div>
             </a>`;
     }).join('');

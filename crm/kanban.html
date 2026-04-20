@@ -300,7 +300,7 @@ async function load() {
     const statusFilter = document.getElementById('f-status').value;
     const pinnedOnly = document.getElementById('f-pinned-only').checked;
 
-    let q = db.from('gmp_cases').select('id, case_number, znak_sprawy, status, stage, case_type, category, fee_amount, date_last_activity, is_pinned, inactivity_reason, assigned_to, client_id, gmp_clients(last_name, first_name), gmp_staff(full_name), gmp_employers(name)');
+    let q = db.from('gmp_cases').select('id, case_number, znak_sprawy, status, stage, case_type, category, fee_amount, date_last_activity, is_pinned, inactivity_reason, assigned_to, client_id, gmp_clients(last_name, first_name), gmp_staff!assigned_to(full_name), gmp_employers(name)');
 
     if (statusFilter === 'aktywna') q = q.eq('status', 'aktywna');
     else if (statusFilter === 'zlecona') q = q.eq('status', 'zlecona');

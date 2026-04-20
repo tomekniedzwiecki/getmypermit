@@ -617,6 +617,12 @@
                             <div id="finance-collection" class="p-4"></div>
                         </section>
 
+                        <!-- Założone za klienta (uwagi Pawła pkt 1.3) -->
+                        <section class="module-card mb-4">
+                            <div class="module-card-header"><span class="text-rose-300"><i class="ph ph-hand-coins"></i> Opłaty do zwrotu (założone za klienta)</span></div>
+                            <div id="finance-client-advances" class="p-4"></div>
+                        </section>
+
                         <section class="module-card">
                             <div class="module-card-header"><span><i class="ph ph-coins"></i> Historia wpłat</span></div>
                             <div id="payments-list">
@@ -704,6 +710,12 @@
                                         <option value="odwolanie">Odwołanie</option>
                                         <option value="umorzenie">Umorzenie</option>
                                         <option value="przystapienie">Przystąpienie</option>
+                                        <option value="wezwanie">Wezwanie</option>
+                                        <option value="uzupelnienie_dokumentow">Uzupełnienie dokumentów</option>
+                                        <option value="przyspieszenie">Przyspieszenie</option>
+                                        <option value="wydluzenie_terminu">Wydłużenie terminu</option>
+                                        <option value="przeniesienie_z_innego_wojewodztwa">Przeniesienie z innego woj.</option>
+                                        <option value="wniosek_przeniesiony">Wniosek przeniesiony</option>
                                     </select>
                                 </div>
                                 <div class="col-span-2">
@@ -729,13 +741,29 @@
                                         <option value="przeniesienie">Przeniesienie</option>
                                     </select>
                                 </div>
-                                <div><label>Kategoria</label><input type="text" class="input w-full" data-field="category"></div>
                                 <div>
-                                    <label>Opiekun</label>
+                                    <label>Kategoria</label>
+                                    <select class="input w-full" data-field="category" id="category-select"><option value="">—</option></select>
+                                </div>
+                                <div>
+                                    <label>Opiekun (główny) <span class="text-zinc-500 text-xs">— primary</span></label>
                                     <select class="input w-full" data-field="assigned_to" id="staff-select"><option value="">—</option></select>
                                 </div>
+                                <div class="col-span-2">
+                                    <label>Dodatkowi opiekunowie <span class="text-zinc-500 text-xs">— max 2 (system 2-kowy)</span></label>
+                                    <div id="additional-assignees" class="flex gap-2 flex-wrap items-center">
+                                        <span class="text-zinc-600 text-sm">Ładuję…</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label>Sprawę przyjął(a) <span class="text-zinc-500 text-xs">— inna osoba niż opiekun</span></label>
+                                    <select class="input w-full" data-field="accepted_by" id="accepted-by-select"><option value="">—</option></select>
+                                </div>
+                                <div><label>Data przekazania opiekunowi</label><input type="datetime-local" class="input w-full" data-field="assigned_at" disabled title="Ustawiana automatycznie przy zmianie opiekuna"></div>
                                 <div><label>Znak sprawy</label><input type="text" class="input w-full" data-field="znak_sprawy"></div>
                                 <div><label>Nr sprawy (wewn.)</label><input type="text" class="input w-full" data-field="case_number"></div>
+                                <div><label>Data końca legalnego pobytu</label><input type="date" class="input w-full" data-field="legal_stay_end_date"></div>
+                                <div><label>Gdzie to leży (lokalizacja w kancelarii)</label><input type="text" class="input w-full" data-field="document_location" placeholder="np. szafa B półka 3"></div>
                                 <div>
                                     <label>Oddział</label>
                                     <select class="input w-full" data-field="department_id" id="dept-select"><option value="">—</option></select>
@@ -787,7 +815,7 @@
                         </section>
 
                         <section class="module-card">
-                            <div class="module-card-header"><span>Finanse</span></div>
+                            <div class="module-card-header"><span>Finanse — planowane kwoty</span></div>
                             <div class="p-4 grid grid-cols-2 gap-3">
                                 <div><label>Wynagrodzenie</label><input type="number" step="0.01" class="input w-full" data-field="fee_amount"></div>
                                 <div>
@@ -798,6 +826,15 @@
                                     </select>
                                 </div>
                                 <div class="col-span-2"><label>Uwagi do wynagrodzenia</label><textarea class="input w-full" rows="2" data-field="fee_notes"></textarea></div>
+
+                                <div><label>Opłata administracyjna (planowana)</label><input type="number" step="0.01" class="input w-full" data-field="admin_fee_amount"></div>
+                                <div><label>Uwagi — opł. administracyjna</label><input type="text" class="input w-full" data-field="admin_fee_notes"></div>
+
+                                <div><label>Opłata skarbowa (planowana)</label><input type="number" step="0.01" class="input w-full" data-field="stamp_fee_amount"></div>
+                                <div><label>Uwagi — opł. skarbowa</label><input type="text" class="input w-full" data-field="stamp_fee_notes"></div>
+
+                                <div><label>Założone za klienta (planowane)</label><input type="number" step="0.01" class="input w-full" data-field="client_advances_amount" title="Suma wyliczana automatycznie z wpisów w zakładce Finanse."></div>
+                                <div><label>Uwagi — założone za klienta</label><input type="text" class="input w-full" data-field="client_advances_notes"></div>
                             </div>
                         </section>
                     </div>
@@ -963,22 +1000,34 @@ let currentIntakeDocs = [];
 
 // Struktura sekcji formularza klienta (spójna z intake.js)
 const INTAKE_SECTIONS = [
-    { key: 'personal', icon: 'ph-user', label: 'Dane osobowe', fields: ['first_name', 'last_name', 'birth_date', 'pesel', 'gender', 'nationality', 'passport_number', 'passport_expiry'] },
-    { key: 'contact', icon: 'ph-phone', label: 'Kontakt', fields: ['phone', 'email', 'whatsapp_number', 'preferred_contact'] },
+    { key: 'personal', icon: 'ph-user', label: 'Dane osobowe', fields: ['first_name', 'previous_first_names', 'last_name', 'maiden_name', 'father_first_name', 'mother_first_name', 'mother_maiden_name', 'birth_date', 'birth_place', 'country_of_origin', 'nationality', 'pesel', 'gender', 'marital_status', 'passport_number', 'passport_expiry', 'height_cm', 'eye_color', 'distinguishing_marks'] },
+    { key: 'contact', icon: 'ph-phone', label: 'Kontakt', fields: ['phone', 'email', 'whatsapp_number', 'preferred_contact', 'trusted_profile'] },
     { key: 'address', icon: 'ph-house-line', label: 'Adres w PL', fields: ['zip', 'city', 'street', 'building', 'flat', 'voivodeship', 'registration_type'] },
-    { key: 'employment', icon: 'ph-briefcase', label: 'Zatrudnienie', fields: ['has_job', 'employer_name', 'employer_nip', 'position', 'contract_type', 'salary_gross', 'working_hours'] },
-    { key: 'history', icon: 'ph-globe', label: 'Historia', fields: ['arrival_date', 'current_visa', 'had_previous', 'had_refusal'] },
+    { key: 'family', icon: 'ph-users', label: 'Rodzina w PL', fields: ['family_in_pl'] },
+    { key: 'employment', icon: 'ph-briefcase', label: 'Zatrudnienie', fields: ['has_job', 'employer_name', 'employer_nip', 'employer_phone', 'employer_email', 'position', 'contract_type', 'salary_gross', 'working_hours'] },
+    { key: 'history', icon: 'ph-globe', label: 'Historia pobytu', fields: ['arrival_date', 'arrival_document_type', 'arrival_document_other', 'arrival_visa_eu_purpose', 'current_visa', 'had_previous', 'had_refusal', 'stays_outside_pl_5y'] },
     { key: 'purpose', icon: 'ph-target', label: 'Cel wniosku', fields: ['purpose', 'ground', 'situation'] },
 ];
 const FIELD_LABELS = {
-    first_name: 'Imię', last_name: 'Nazwisko', birth_date: 'Data ur.', pesel: 'PESEL', nationality: 'Obywatelstwo',
-    gender: 'Płeć', passport_number: 'Nr paszportu', passport_expiry: 'Paszport ważny do',
+    first_name: 'Imię', previous_first_names: 'Imiona poprzednie', last_name: 'Nazwisko', maiden_name: 'Nazwisko panieńskie',
+    father_first_name: 'Imię ojca', mother_first_name: 'Imię matki', mother_maiden_name: 'Nazwisko panieńskie matki',
+    birth_date: 'Data ur.', birth_place: 'Miejsce ur.', country_of_origin: 'Kraj pochodzenia',
+    nationality: 'Obywatelstwo', pesel: 'PESEL', gender: 'Płeć', marital_status: 'Stan cywilny',
+    passport_number: 'Nr paszportu', passport_expiry: 'Paszport ważny do',
+    height_cm: 'Wzrost (cm)', eye_color: 'Kolor oczu', distinguishing_marks: 'Znaki szczególne / tatuaże',
     phone: 'Telefon', email: 'Email', whatsapp_number: 'WhatsApp', preferred_contact: 'Preferowany kontakt',
+    trusted_profile: 'Profil zaufany',
     zip: 'Kod pocztowy', city: 'Miasto', street: 'Ulica', building: 'Nr domu', flat: 'Mieszkanie',
     voivodeship: 'Województwo', registration_type: 'Zameldowanie',
-    has_job: 'Pracuje', employer_name: 'Pracodawca', employer_nip: 'NIP', position: 'Stanowisko',
-    contract_type: 'Umowa', salary_gross: 'Wynagrodzenie', working_hours: 'Wymiar',
-    arrival_date: 'Przyjazd', current_visa: 'Obecny dokument', had_previous: 'Poprzednie karty', had_refusal: 'Odmowy',
+    family_in_pl: 'Członkowie rodziny w PL',
+    has_job: 'Pracuje', employer_name: 'Pracodawca', employer_nip: 'NIP',
+    employer_phone: 'Tel. pracodawcy', employer_email: 'Email pracodawcy',
+    position: 'Stanowisko', contract_type: 'Umowa', salary_gross: 'Wynagrodzenie', working_hours: 'Wymiar',
+    arrival_date: 'Data ostatniego wjazdu',
+    arrival_document_type: 'Dokument wjazdu', arrival_document_other: 'Inny dokument (jaki)',
+    arrival_visa_eu_purpose: 'Cel wizy EU',
+    current_visa: 'Obecny dokument', had_previous: 'Poprzednie karty', had_refusal: 'Odmowy',
+    stays_outside_pl_5y: 'Pobyty poza PL (ostatnie 5 lat)',
     purpose: 'Cel wniosku', ground: 'Podstawa', situation: 'Sytuacja',
 };
 
@@ -1085,7 +1134,10 @@ async function renderIntakeTab() {
                     <span><i class="ph ph-check-circle"></i> Auto-zapis co pole</span>
                     <span><i class="ph ph-check-circle"></i> Link ważny 30 dni</span>
                 </div>
-                <button class="btn btn-primary" onclick="createIntake()" style="padding: 12px 24px; font-weight: 600"><i class="ph ph-paper-plane-tilt"></i> Wygeneruj link do ankiety</button>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="createIntake()" style="padding: 12px 24px; font-weight: 600"><i class="ph ph-paper-plane-tilt"></i> Wygeneruj link do ankiety</button>
+                    <button class="btn btn-secondary" onclick="openManualIntakeEditor()" style="padding: 12px 24px"><i class="ph ph-pencil-line"></i> Wypełnij z palca</button>
+                </div>
             </div>`;
         return;
     }
@@ -1123,6 +1175,7 @@ async function renderIntakeTab() {
     const canResend = intake.status === 'invited' || intake.status === 'in_progress';
     actions.innerHTML = `
         <div class="intake-head-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openManualIntakeEditor()" title="Wypełnij z palca"><i class="ph ph-pencil-line"></i> Z palca</button>
             <button class="btn btn-ghost btn-sm" onclick="previewIntakeAsClient()" title="Podgląd jak widzi klient"><i class="ph ph-eye"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="regenerateIntake()" title="Wygeneruj nowy link (unieważnia stary)"><i class="ph ph-arrow-clockwise"></i></button>
         </div>
@@ -1343,6 +1396,224 @@ window.createIntake = async function() {
     renderIntakeTab();
 };
 
+// Wypełnij ankietę z palca (uwagi Pawła pkt 12.1)
+// Otwiera pełnoekranowy edytor z wszystkimi polami wg listy Pawła.
+// Zapisuje do gmp_intake_tokens.data JSONB — ta sama struktura co ankieta elektroniczna,
+// więc jeśli klient później wypełni link elektroniczny, dane się nałożą naturalnie.
+window.openManualIntakeEditor = async function() {
+    // Znajdź lub utwórz intake record
+    let intake = currentIntake;
+    if (!intake) {
+        const token = Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(36).padStart(2, '0')).join('').slice(0, 32);
+        const nat = (caseData?.gmp_clients?.nationality || '').toLowerCase();
+        let lang = 'pl';
+        if (/ukrain|україн/.test(nat)) lang = 'uk';
+        else if (/russ|росси/.test(nat)) lang = 'ru';
+        else if (/hindi|india/.test(nat)) lang = 'hi';
+        else if (/english/.test(nat)) lang = 'en';
+        const { data, error } = await db.from('gmp_intake_tokens').insert({
+            token, case_id: caseId,
+            client_id: caseData?.client_id || null,
+            language: lang,
+            created_by: window.currentStaff?.id,
+            data: { _manual_created: true },
+        }).select().single();
+        if (error) { toast.error('Nie udało się utworzyć ankiety: ' + error.message); return; }
+        intake = data;
+        currentIntake = intake;
+    }
+
+    const data = intake.data || {};
+
+    // Preselect z klienta (gmp_clients) — jeśli puste
+    const cl = caseData?.gmp_clients || {};
+    if (!data.first_name && cl.first_name) data.first_name = cl.first_name;
+    if (!data.last_name && cl.last_name) data.last_name = cl.last_name;
+    if (!data.birth_date && cl.birth_date) data.birth_date = cl.birth_date;
+    if (!data.nationality && cl.nationality) data.nationality = cl.nationality;
+    if (!data.phone && cl.phone) data.phone = cl.phone;
+    if (!data.email && cl.email) data.email = cl.email;
+
+    const familyMembers = Array.isArray(data.family_in_pl) ? data.family_in_pl : [];
+    const staysOutside = Array.isArray(data.stays_outside_pl_5y) ? data.stays_outside_pl_5y : [];
+
+    const inputField = (key, type = 'text', placeholder = '') => `
+        <div>
+            <label class="text-xs text-zinc-400">${FIELD_LABELS[key] || key}</label>
+            <input type="${type}" id="mi-${key}" class="input w-full" placeholder="${placeholder}" value="${(data[key] ?? '').toString().replace(/"/g, '&quot;')}">
+        </div>`;
+
+    const selectField = (key, opts) => `
+        <div>
+            <label class="text-xs text-zinc-400">${FIELD_LABELS[key] || key}</label>
+            <select id="mi-${key}" class="input w-full">
+                <option value="">—</option>
+                ${opts.map(o => `<option value="${o.value}" ${data[key] === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+            </select>
+        </div>`;
+
+    const html = `
+    <div style="min-width: min(900px, 95vw); max-width: 95vw; max-height: 75vh; overflow-y: auto; padding-right: 10px">
+        <p class="text-xs text-zinc-500 mb-3">Ankieta wypełniana z palca. Dane zapisują się do tej samej ankiety co wersja elektroniczna — jeśli klient później wypełni link, odpowiedzi się nałożą.</p>
+
+        <h3 class="text-sm font-semibold mt-4 mb-2 text-zinc-300"><i class="ph ph-user mr-1"></i>Dane osobowe</h3>
+        <div class="grid grid-cols-2 gap-3">
+            ${inputField('first_name')}
+            ${inputField('previous_first_names', 'text', 'oddzielone przecinkami')}
+            ${inputField('last_name')}
+            ${inputField('maiden_name')}
+            ${inputField('father_first_name')}
+            ${inputField('mother_first_name')}
+            ${inputField('mother_maiden_name')}
+            ${inputField('birth_date', 'date')}
+            ${inputField('birth_place')}
+            ${inputField('country_of_origin')}
+            ${inputField('nationality')}
+            ${inputField('pesel')}
+            ${selectField('gender', [{value: 'M', label: 'Mężczyzna'}, {value: 'F', label: 'Kobieta'}])}
+            ${selectField('marital_status', [
+                {value: 'single', label: 'Wolny/a'}, {value: 'married', label: 'Żonaty/zamężna'},
+                {value: 'divorced', label: 'Rozwiedzion(a)'}, {value: 'widowed', label: 'Wdowiec/Wdowa'},
+                {value: 'separated', label: 'Separacja'}
+            ])}
+            ${inputField('passport_number')}
+            ${inputField('passport_expiry', 'date')}
+            ${inputField('height_cm', 'number', 'np. 175')}
+            ${inputField('eye_color', 'text', 'np. brązowe')}
+            <div class="col-span-2">
+                <label class="text-xs text-zinc-400">Znaki szczególne / tatuaże (gdzie?)</label>
+                <textarea id="mi-distinguishing_marks" class="input w-full" rows="2">${(data.distinguishing_marks || '').replace(/</g, '&lt;')}</textarea>
+            </div>
+        </div>
+
+        <h3 class="text-sm font-semibold mt-4 mb-2 text-zinc-300"><i class="ph ph-phone mr-1"></i>Kontakt</h3>
+        <div class="grid grid-cols-2 gap-3">
+            ${inputField('phone', 'tel')}
+            ${inputField('whatsapp_number', 'tel')}
+            ${inputField('email', 'email')}
+            ${selectField('trusted_profile', [{value: 'yes', label: 'Tak'}, {value: 'no', label: 'Nie'}, {value: 'unknown', label: 'Nie wiem'}])}
+        </div>
+
+        <h3 class="text-sm font-semibold mt-4 mb-2 text-zinc-300"><i class="ph ph-house-line mr-1"></i>Adres w Polsce</h3>
+        <div class="grid grid-cols-2 gap-3">
+            ${inputField('zip')}
+            ${inputField('city')}
+            ${inputField('street')}
+            ${inputField('building')}
+            ${inputField('flat')}
+            ${inputField('voivodeship')}
+        </div>
+
+        <h3 class="text-sm font-semibold mt-4 mb-2 text-zinc-300"><i class="ph ph-users mr-1"></i>Członkowie rodziny w Polsce</h3>
+        <div id="mi-family-list" class="space-y-2">
+            ${familyMembers.map((m, i) => `
+                <div class="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center fam-row">
+                    <input type="text" class="input fam-name" placeholder="Imię i nazwisko" value="${(m.full_name || '').replace(/"/g, '&quot;')}">
+                    <input type="date" class="input fam-birth" value="${m.birth_date || ''}">
+                    <input type="text" class="input fam-city" placeholder="Miejscowość" value="${(m.city || '').replace(/"/g, '&quot;')}">
+                    <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()"><i class="ph ph-x text-red-400"></i></button>
+                </div>
+            `).join('')}
+        </div>
+        <button class="btn btn-secondary btn-sm mt-2" onclick="addFamilyRow()"><i class="ph ph-plus"></i> Dodaj członka rodziny</button>
+
+        <h3 class="text-sm font-semibold mt-4 mb-2 text-zinc-300"><i class="ph ph-briefcase mr-1"></i>Zatrudnienie</h3>
+        <div class="grid grid-cols-2 gap-3">
+            ${inputField('employer_name')}
+            ${inputField('employer_nip')}
+            ${inputField('employer_phone', 'tel')}
+            ${inputField('employer_email', 'email')}
+            ${inputField('position')}
+            ${inputField('contract_type')}
+        </div>
+
+        <h3 class="text-sm font-semibold mt-4 mb-2 text-zinc-300"><i class="ph ph-globe mr-1"></i>Historia pobytu</h3>
+        <div class="grid grid-cols-2 gap-3">
+            ${inputField('arrival_date', 'date')}
+            ${selectField('arrival_document_type', [
+                {value: 'karta_pobytu', label: 'Karta pobytu'},
+                {value: 'wiza', label: 'Wiza polska'},
+                {value: 'ruch_bezwizowy', label: 'Ruch bezwizowy'},
+                {value: 'karta_pobytu_ue', label: 'Karta pobytu z innego kraju UE'},
+                {value: 'wiza_ue', label: 'Wiza z innego kraju UE'},
+                {value: 'inny', label: 'Inny'},
+            ])}
+            ${inputField('arrival_document_other', 'text', 'jeśli inny — jaki')}
+            ${inputField('arrival_visa_eu_purpose', 'text', 'cel pobytu (jeśli wiza UE)')}
+        </div>
+        <div class="mt-3">
+            <label class="text-xs text-zinc-400">Pobyty poza Polską w ostatnich 5 latach (kraj, okres)</label>
+            <div id="mi-stays-list" class="space-y-2">
+                ${staysOutside.map(s => `
+                    <div class="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center stay-row">
+                        <input type="text" class="input stay-country" placeholder="Kraj" value="${(s.country || '').replace(/"/g, '&quot;')}">
+                        <input type="date" class="input stay-from" value="${s.from_date || ''}">
+                        <input type="date" class="input stay-to" value="${s.to_date || ''}">
+                        <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()"><i class="ph ph-x text-red-400"></i></button>
+                    </div>
+                `).join('')}
+            </div>
+            <button class="btn btn-secondary btn-sm mt-2" onclick="addStayRow()"><i class="ph ph-plus"></i> Dodaj pobyt</button>
+        </div>
+    </div>
+    `;
+    window.addFamilyRow = function() {
+        const host = document.getElementById('mi-family-list');
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center fam-row';
+        row.innerHTML = `
+            <input type="text" class="input fam-name" placeholder="Imię i nazwisko">
+            <input type="date" class="input fam-birth">
+            <input type="text" class="input fam-city" placeholder="Miejscowość">
+            <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()"><i class="ph ph-x text-red-400"></i></button>
+        `;
+        host.appendChild(row);
+    };
+    window.addStayRow = function() {
+        const host = document.getElementById('mi-stays-list');
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center stay-row';
+        row.innerHTML = `
+            <input type="text" class="input stay-country" placeholder="Kraj">
+            <input type="date" class="input stay-from">
+            <input type="date" class="input stay-to">
+            <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()"><i class="ph ph-x text-red-400"></i></button>
+        `;
+        host.appendChild(row);
+    };
+
+    const ok = await gmpModal.confirm('Ankieta — wypełnij z palca', html, { confirmLabel: 'Zapisz', confirmClass: 'btn-primary' });
+    if (!ok) return;
+
+    // Zbierz
+    const patch = {};
+    const simpleFields = ['first_name','previous_first_names','last_name','maiden_name','father_first_name','mother_first_name','mother_maiden_name','birth_date','birth_place','country_of_origin','nationality','pesel','gender','marital_status','passport_number','passport_expiry','height_cm','eye_color','distinguishing_marks','phone','whatsapp_number','email','trusted_profile','zip','city','street','building','flat','voivodeship','employer_name','employer_nip','employer_phone','employer_email','position','contract_type','arrival_date','arrival_document_type','arrival_document_other','arrival_visa_eu_purpose'];
+    simpleFields.forEach(k => {
+        const el = document.getElementById('mi-' + k);
+        if (el && el.value !== '') patch[k] = el.value;
+    });
+    // family_in_pl
+    patch.family_in_pl = Array.from(document.querySelectorAll('.fam-row')).map(r => ({
+        full_name: r.querySelector('.fam-name').value,
+        birth_date: r.querySelector('.fam-birth').value || null,
+        city: r.querySelector('.fam-city').value,
+    })).filter(m => m.full_name);
+    // stays_outside_pl_5y
+    patch.stays_outside_pl_5y = Array.from(document.querySelectorAll('.stay-row')).map(r => ({
+        country: r.querySelector('.stay-country').value,
+        from_date: r.querySelector('.stay-from').value || null,
+        to_date: r.querySelector('.stay-to').value || null,
+    })).filter(s => s.country);
+
+    const merged = { ...data, ...patch };
+    const { error } = await db.from('gmp_intake_tokens')
+        .update({ data: merged, status: intake.status === 'invited' ? 'in_progress' : intake.status })
+        .eq('id', intake.id);
+    if (error) { toast.error('Błąd zapisu: ' + error.message); return; }
+    toast.success('Ankietę zapisano');
+    renderIntakeTab();
+};
+
 window.copyIntakeLink = function(btn) {
     if (!currentIntake) return;
     const url = `${location.origin}/intake/?t=${currentIntake.token}`;
@@ -1534,22 +1805,104 @@ window.rejectIntake = async function() {
 };
 
 async function loadStaffAndDepts() {
-    const [{ data: staff }, { data: depts }, { data: inspectors }] = await Promise.all([
-        db.from('gmp_staff').select('id, full_name').order('full_name'),
+    const [{ data: staff }, { data: depts }, { data: inspectors }, { data: cats }] = await Promise.all([
+        db.from('gmp_staff').select('id, full_name, color').eq('is_active', true).order('full_name'),
         db.from('gmp_office_departments').select('id, code, name').order('code'),
         db.from('gmp_inspectors').select('id, full_name').order('full_name').limit(500),
+        db.from('gmp_case_categories').select('code, label, group_label, is_active').order('sort_order'),
     ]);
+    window.STAFF_LIST = staff || [];
     const staffSel = document.getElementById('staff-select');
     (staff || []).forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.full_name; staffSel.appendChild(o); });
+    const acceptedSel = document.getElementById('accepted-by-select');
+    if (acceptedSel) (staff || []).forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.full_name; acceptedSel.appendChild(o); });
     const deptSel = document.getElementById('dept-select');
     (depts || []).forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.code + (d.name ? ` — ${d.name}` : ''); deptSel.appendChild(o); });
     const inspSel = document.getElementById('inspector-select');
     (inspectors || []).forEach(i => { const o = document.createElement('option'); o.value = i.id; o.textContent = i.full_name; inspSel.appendChild(o); });
+
+    // Kategorie — grupowane
+    const catSel = document.getElementById('category-select');
+    if (catSel) {
+        const catsByGroup = {};
+        (cats || []).forEach(c => { (catsByGroup[c.group_label] = catsByGroup[c.group_label] || []).push(c); });
+        Object.entries(catsByGroup).forEach(([group, items]) => {
+            const hasActive = items.some(i => i.is_active);
+            if (!hasActive) return;
+            const og = document.createElement('optgroup');
+            og.label = group;
+            items.filter(i => i.is_active).forEach(c => {
+                const o = document.createElement('option');
+                o.value = c.code; o.textContent = c.label;
+                og.appendChild(o);
+            });
+            catSel.appendChild(og);
+        });
+        window.CATEGORIES_LIST = cats || [];
+    }
 }
+
+// Dodatkowi opiekunowie (secondary/backup) — multi-opiekun (max 3 łącznie)
+async function loadAdditionalAssignees() {
+    const host = document.getElementById('additional-assignees');
+    if (!host || !caseId) return;
+    const { data: rows } = await db.from('gmp_case_assignees')
+        .select('staff_id, role_type, assigned_at, gmp_staff!staff_id(full_name, color)')
+        .eq('case_id', caseId);
+    const nonPrimary = (rows || []).filter(r => r.role_type !== 'primary');
+    const chips = nonPrimary.map(r => `
+        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs" style="background: ${r.gmp_staff?.color || '#3b82f6'}20; color: ${r.gmp_staff?.color || '#3b82f6'}">
+            <i class="ph ph-user"></i>
+            ${esc(r.gmp_staff?.full_name || '—')}
+            <span class="text-zinc-500">· ${r.role_type === 'secondary' ? 'zastępca' : 'backup'}</span>
+            <button class="ml-1 text-red-400 hover:text-red-300" onclick="removeAssignee('${r.staff_id}')" title="Usuń"><i class="ph ph-x"></i></button>
+        </span>
+    `).join('');
+    const canAdd = nonPrimary.length < 2; // primary + 2 additional = max 3
+    host.innerHTML = chips + (canAdd ? `
+        <button class="btn btn-secondary btn-sm" onclick="addAssignee()"><i class="ph ph-plus"></i> Dodaj opiekuna</button>
+    ` : '<span class="text-zinc-500 text-xs">Limit 3 opiekunów osiągnięty.</span>');
+}
+
+async function addAssignee() {
+    const options = (window.STAFF_LIST || []).map(s => `<option value="${s.id}">${esc(s.full_name)}</option>`).join('');
+    const html = `
+        <div style="min-width: 320px">
+            <label class="block text-sm mb-1">Pracownik</label>
+            <select id="new-assignee" class="input w-full">${options}</select>
+            <label class="block text-sm mb-1 mt-3">Rola</label>
+            <select id="new-assignee-role" class="input w-full">
+                <option value="secondary">Zastępca (secondary)</option>
+                <option value="backup">Backup</option>
+            </select>
+        </div>
+    `;
+    const ok = await gmpModal.confirm('Dodaj opiekuna', html, { confirmLabel: 'Dodaj', confirmClass: 'btn-primary' });
+    if (!ok) return;
+    const staff_id = document.getElementById('new-assignee').value;
+    const role_type = document.getElementById('new-assignee-role').value;
+    if (!staff_id) return;
+    const { error } = await db.from('gmp_case_assignees')
+        .insert({ case_id: caseId, staff_id, role_type, assigned_by: window.currentStaff?.id });
+    if (error) { toast.error('Błąd: ' + error.message); return; }
+    toast.success('Dodano opiekuna');
+    await loadAdditionalAssignees();
+}
+
+async function removeAssignee(staffId) {
+    if (!confirm('Usunąć tego opiekuna ze sprawy?')) return;
+    const { error } = await db.from('gmp_case_assignees')
+        .delete().eq('case_id', caseId).eq('staff_id', staffId);
+    if (error) { toast.error('Błąd: ' + error.message); return; }
+    toast.success('Usunięto opiekuna');
+    await loadAdditionalAssignees();
+}
+window.addAssignee = addAssignee;
+window.removeAssignee = removeAssignee;
 
 async function loadCase() {
     const { data, error } = await db.from('gmp_cases')
-        .select('*, gmp_clients(*), gmp_employers(*), gmp_staff(full_name), gmp_office_departments(code, name), gmp_inspectors(full_name), gmp_offices(name, city)')
+        .select('*, gmp_clients(*), gmp_employers(*), gmp_staff!assigned_to(full_name), gmp_office_departments(code, name), gmp_inspectors(full_name), gmp_offices(name, city)')
         .eq('id', caseId).maybeSingle();
     if (error || !data) { showError(error?.message || 'Nie znaleziono sprawy'); return; }
     caseData = data;
@@ -1562,7 +1915,7 @@ async function loadCase() {
     await loadStaffForComposer();
 
     // Load data
-    await Promise.all([loadActivitiesData(), loadTasksData(), loadPaymentsData(), loadAppointmentsData(), loadDocumentsData(), loadTrustedProfileData(), loadWorkersData()]);
+    await Promise.all([loadActivitiesData(), loadTasksData(), loadPaymentsData(), loadAppointmentsData(), loadDocumentsData(), loadTrustedProfileData(), loadWorkersData(), loadAdditionalAssignees(), loadClientAdvancesData(), loadInstallmentsData()]);
 
     // Initialize composers
     initComposer('overview-composer');
@@ -2270,56 +2623,61 @@ async function deleteTask(id) {
     updateCounts();
 }
 
+const KIND_LABELS = {
+    fee: 'Wynagrodzenie',
+    admin_fee: 'Administracyjna',
+    stamp_fee: 'Skarbowa',
+    client_advance: 'Za klienta (koszt)',
+    client_advance_repayment: 'Za klienta (zwrot)',
+};
+const KIND_COLORS = {
+    fee: 'text-emerald-300',
+    admin_fee: 'text-sky-300',
+    stamp_fee: 'text-violet-300',
+    client_advance: 'text-rose-300',
+    client_advance_repayment: 'text-amber-300',
+};
+
 function renderFinanceTab() {
-    // Wynagrodzenie i oplaty administracyjne sa cakowicie odrebne kategorie (req Pawel pkt 3/6)
-    const feePaid = allPayments.filter(p => p.kind !== 'admin_fee').reduce((s, p) => s + Number(p.amount || 0), 0);
-    const adminPaid = allPayments.filter(p => p.kind === 'admin_fee').reduce((s, p) => s + Number(p.amount || 0), 0);
-    const feeCount = allPayments.filter(p => p.kind !== 'admin_fee').length;
-    const adminCount = allPayments.filter(p => p.kind === 'admin_fee').length;
-    const planTotal = paymentPlan?.total_amount ? Number(paymentPlan.total_amount) : null;
-    const fee = caseData.fee_amount ? Number(caseData.fee_amount) : null;
-    const expected = planTotal || fee || 0;
-    const remaining = Math.max(0, expected - feePaid);
+    // 4 kategorie opłat wg uwag Pawła pkt 1.2/1.3
+    const paidByKind = {};
+    allPayments.forEach(p => {
+        paidByKind[p.kind] = (paidByKind[p.kind] || 0) + Number(p.amount || 0);
+    });
+
+    const plannedFee = Number(caseData.fee_amount || 0);
+    const plannedAdmin = Number(caseData.admin_fee_amount || 0);
+    const plannedStamp = Number(caseData.stamp_fee_amount || 0);
+    const plannedAdv = Number(caseData.client_advances_amount || 0);
+    const paidFee = paidByKind.fee || 0;
+    const paidAdmin = paidByKind.admin_fee || 0;
+    const paidStamp = paidByKind.stamp_fee || 0;
+    const advRepaid = paidByKind.client_advance_repayment || 0;
+
+    const kpiCard = (label, paid, planned, color) => {
+        const remain = Math.max(0, planned - paid);
+        const pct = planned ? Math.min(100, paid / planned * 100) : 0;
+        return `<div class="card p-4 border-${color}-900/40">
+            <div class="text-xs text-${color}-400 mb-1 uppercase tracking-wider">${label}</div>
+            <div class="text-2xl font-bold text-${color}-300 font-mono">${fmt.money(paid)}</div>
+            <div class="text-xs text-zinc-500 mt-1">z ${fmt.money(planned)} planu${remain > 0.009 ? ` · <span class="text-amber-300">zalega ${fmt.money(remain)}</span>` : ''}</div>
+            ${planned ? `<div class="mt-2 h-1 bg-zinc-900 rounded overflow-hidden"><div class="h-full bg-${color}-500" style="width: ${pct}%"></div></div>` : ''}
+        </div>`;
+    };
 
     document.getElementById('finance-kpis').innerHTML = `
-        <div class="card p-4">
-            <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Wynagrodzenie</div>
-            <div class="text-2xl font-bold text-white font-mono">${expected ? fmt.money(expected) : '—'}</div>
-        </div>
-        <div class="card p-4">
-            <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Wpłacono (wynagr.)</div>
-            <div class="text-2xl font-bold text-emerald-400 font-mono">${fmt.money(feePaid)}</div>
-            <div class="text-xs text-zinc-600 mt-1">${feeCount} ${feeCount === 1 ? 'wpłata' : 'wpłat'}</div>
-        </div>
-        <div class="card p-4">
-            <div class="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Pozostało (wynagr.)</div>
-            <div class="text-2xl font-bold ${remaining > 0 ? 'text-amber-300' : 'text-emerald-400'} font-mono">${fmt.money(remaining)}</div>
-            ${expected ? `<div class="mt-2 h-1 bg-zinc-900 rounded overflow-hidden"><div class="h-full bg-emerald-500" style="width: ${Math.min(100, feePaid / expected * 100)}%"></div></div>` : ''}
-        </div>
-        <div class="card p-4 border-sky-900/50">
-            <div class="text-xs text-sky-400 mb-1 uppercase tracking-wider">Opłaty administracyjne</div>
-            <div class="text-2xl font-bold text-sky-300 font-mono">${fmt.money(adminPaid)}</div>
-            <div class="text-xs text-zinc-600 mt-1">${adminCount} ${adminCount === 1 ? 'opłata' : 'opłat'} · kategoria odrębna</div>
-        </div>`;
+        ${kpiCard('Wynagrodzenie', paidFee, plannedFee, 'emerald')}
+        ${kpiCard('Opł. administracyjna', paidAdmin, plannedAdmin, 'sky')}
+        ${kpiCard('Opł. skarbowa', paidStamp, plannedStamp, 'violet')}
+        ${kpiCard('Założone za klienta', advRepaid, plannedAdv, 'rose')}
+    `;
 
     renderCaseInvoices();
     renderCaseCollection();
+    renderInstallmentsPlan();
+    renderClientAdvances();
 
-    // Plan
-    const pEl = document.getElementById('finance-plan');
-    if (paymentPlan) {
-        pEl.innerHTML = `
-            <div class="grid grid-cols-2 gap-4 text-sm">
-                <div><div class="text-zinc-500 text-xs mb-1">Kwota planowana</div><div class="font-mono">${fmt.money(paymentPlan.total_amount)}</div></div>
-                <div><div class="text-zinc-500 text-xs mb-1">Płatnik</div><div>${paymentPlan.payer_type === 'employer' ? 'Pracodawca' : 'Klient'}</div></div>
-                <div><div class="text-zinc-500 text-xs mb-1">Rat zaplanowanych</div><div>${paymentPlan.installments_planned || 1}</div></div>
-                <div><div class="text-zinc-500 text-xs mb-1">Termin</div><div>${fmt.date(paymentPlan.due_date)}</div></div>
-            </div>`;
-    } else {
-        pEl.innerHTML = `<div class="text-zinc-500 text-sm">Brak planu płatności — <button class="text-blue-400 hover:underline" onclick="openPaymentPlanModal()">utwórz plan</button></div>`;
-    }
-
-    // Lista
+    // Lista wpłat
     const el = document.getElementById('payments-list');
     if (!allPayments.length) {
         el.innerHTML = '<div class="p-4 text-zinc-500 text-sm">Brak wpłat — <button class="text-blue-400 hover:underline" onclick="openPaymentModal()">dodaj pierwszą</button></div>';
@@ -2330,15 +2688,291 @@ function renderFinanceTab() {
     </tr></thead><tbody>
         ${allPayments.map(p => `<tr>
             <td class="text-xs">${fmt.date(p.payment_date)}</td>
-            <td class="font-mono text-emerald-300 font-semibold">${fmt.money(p.amount)}</td>
+            <td class="font-mono ${KIND_COLORS[p.kind] || 'text-zinc-300'} font-semibold">${fmt.money(p.amount)}</td>
             <td class="text-xs">${esc(p.method || '—')}</td>
-            <td class="text-xs">${p.kind === 'admin_fee' ? 'Admin.' : 'Wynagrodz.'}</td>
+            <td class="text-xs">${KIND_LABELS[p.kind] || p.kind}</td>
             <td class="text-xs">${p.installment_number ? p.installment_number + '/' + (p.total_installments || '?') : '—'}</td>
             <td class="text-xs text-zinc-400 max-w-xs truncate">${esc(p.notes || '')}</td>
             <td><button class="btn btn-ghost btn-sm" onclick="deletePayment('${p.id}')"><i class="ph ph-trash text-red-400"></i></button></td>
         </tr>`).join('')}
     </tbody></table></div>`;
 }
+
+// === PLAN RAT (per-installment) — uwagi Pawła pkt 1.1 ===
+let allInstallments = [];
+async function loadInstallmentsData() {
+    if (!caseId) return;
+    const { data } = await db.from('gmp_payment_installments')
+        .select('*').eq('case_id', caseId)
+        .order('installment_number');
+    allInstallments = data || [];
+}
+
+function renderInstallmentsPlan() {
+    const pEl = document.getElementById('finance-plan');
+    if (!pEl) return;
+    if (!allInstallments.length) {
+        pEl.innerHTML = `<div class="text-zinc-500 text-sm">Brak planu rat —
+            <button class="text-blue-400 hover:underline" onclick="openInstallmentsEditor()">utwórz plan rat</button>
+        </div>`;
+        return;
+    }
+    const STATUS_LABEL = { pending: 'Oczekuje', reminder_sent: 'Przypomnienie', paid: 'Zapłacona', overdue: 'Przeterminowana', cancelled: 'Anulowana' };
+    const STATUS_COLOR = { pending: 'text-zinc-300', reminder_sent: 'text-amber-300', paid: 'text-emerald-400', overdue: 'text-red-400', cancelled: 'text-zinc-500' };
+    pEl.innerHTML = `
+        <div class="mb-3 flex items-center justify-between">
+            <div class="text-sm text-zinc-400">${allInstallments.length} rat · <span class="text-emerald-400">${allInstallments.filter(i => i.status === 'paid').length} zapł.</span> · <span class="text-red-400">${allInstallments.filter(i => i.status === 'overdue' || (i.status !== 'paid' && new Date(i.due_date) < new Date())).length} przeterm.</span></div>
+            <button class="btn btn-secondary btn-sm" onclick="openInstallmentsEditor()"><i class="ph ph-pencil-simple"></i> Edytuj plan</button>
+        </div>
+        <div class="space-y-1">
+            ${allInstallments.map(i => {
+                const dueDate = new Date(i.due_date);
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const isOverdue = i.status !== 'paid' && dueDate < today;
+                const status = isOverdue ? 'overdue' : i.status;
+                return `<div class="flex items-center gap-3 p-2 rounded border border-zinc-900 hover:border-zinc-800 transition">
+                    <div class="text-xs text-zinc-500 w-8">#${i.installment_number}</div>
+                    <div class="flex-1">
+                        <div class="font-mono text-sm">${fmt.money(i.amount)}</div>
+                        <div class="text-xs text-zinc-500">do ${fmt.date(i.due_date)}${i.paid_at ? ' · zapł. ' + fmt.date(i.paid_at) : ''}</div>
+                    </div>
+                    <div class="text-xs ${STATUS_COLOR[status]}">${STATUS_LABEL[status]}</div>
+                    ${i.status !== 'paid' ? `<button class="btn btn-ghost btn-sm" onclick="markInstallmentPaid('${i.id}', ${i.amount})" title="Oznacz zapłaconą"><i class="ph ph-check text-emerald-400"></i></button>` : ''}
+                </div>`;
+            }).join('')}
+        </div>`;
+}
+
+async function markInstallmentPaid(installmentId, amount) {
+    if (!confirm(`Oznaczyć ratę jako zapłaconą (${fmt.money(amount)})? Utworzy to wpłatę w Historii wpłat.`)) return;
+    // Utwórz wpłatę z FK do raty — trigger auto-oznaczy ratę jako paid
+    const { error } = await db.from('gmp_payments').insert({
+        case_id: caseId,
+        kind: 'fee',
+        amount: amount,
+        payment_date: new Date().toISOString().split('T')[0],
+        installment_id: installmentId,
+        payer_type: paymentPlan?.payer_type || 'client',
+        client_id: caseData?.client_id,
+        employer_id: paymentPlan?.payer_type === 'employer' ? caseData?.employer_id : null,
+    });
+    if (error) { toast.error('Błąd: ' + error.message); return; }
+    toast.success('Rata zapłacona');
+    await Promise.all([loadPaymentsData(), loadInstallmentsData()]);
+    renderFinanceTab();
+}
+window.markInstallmentPaid = markInstallmentPaid;
+
+async function openInstallmentsEditor() {
+    const html = `
+        <div style="min-width: 500px; max-width: 700px">
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div><label class="text-xs text-zinc-400">Liczba rat</label>
+                    <input type="number" id="ins-count" value="${allInstallments.length || 1}" min="1" max="24" class="input w-full"></div>
+                <div><label class="text-xs text-zinc-400">Łączna kwota</label>
+                    <input type="number" id="ins-total" value="${allInstallments.reduce((s, i) => s + Number(i.amount), 0) || (caseData.fee_amount || '')}" step="0.01" class="input w-full"></div>
+                <div><label class="text-xs text-zinc-400">Pierwsza rata — data</label>
+                    <input type="date" id="ins-first-date" value="${new Date().toISOString().split('T')[0]}" class="input w-full"></div>
+                <div><label class="text-xs text-zinc-400">Rozstaw (dni)</label>
+                    <input type="number" id="ins-spacing" value="30" min="1" class="input w-full"></div>
+            </div>
+            <button class="btn btn-secondary btn-sm mb-3" onclick="genInstallments()"><i class="ph ph-magic-wand"></i> Generuj równomiernie</button>
+            <div id="ins-editor" class="space-y-1 max-h-96 overflow-y-auto"></div>
+            <button class="btn btn-ghost btn-sm mt-2" onclick="addInsRow()"><i class="ph ph-plus"></i> Dodaj ratę</button>
+        </div>
+    `;
+    const ok = await gmpModal.confirm('Plan rat', html, { confirmLabel: 'Zapisz', confirmClass: 'btn-primary' });
+    if (ok === null || ok === false) return;
+    // Zbierz raty z UI
+    const rows = document.querySelectorAll('#ins-editor .ins-row');
+    const payload = [];
+    rows.forEach((r, idx) => {
+        const amount = parseFloat(r.querySelector('.ins-amount').value) || 0;
+        const due_date = r.querySelector('.ins-date').value;
+        if (amount > 0 && due_date) {
+            payload.push({
+                case_id: caseId,
+                installment_number: idx + 1,
+                amount, due_date,
+                status: 'pending',
+            });
+        }
+    });
+    if (!payload.length) return;
+    // Zapisz: usuń wszystkie istniejące niezapłacone, wstaw nowe
+    await db.from('gmp_payment_installments').delete().eq('case_id', caseId).neq('status', 'paid');
+    const { error } = await db.from('gmp_payment_installments').insert(payload);
+    if (error) { toast.error('Błąd: ' + error.message); return; }
+    toast.success(`Zapisano ${payload.length} rat`);
+    await loadInstallmentsData();
+    renderFinanceTab();
+}
+window.openInstallmentsEditor = openInstallmentsEditor;
+
+function renderInsRows(rows) {
+    document.getElementById('ins-editor').innerHTML = rows.map((r, idx) => `
+        <div class="ins-row grid grid-cols-[40px_1fr_1fr_40px] gap-2 items-center">
+            <div class="text-xs text-zinc-500">#${idx + 1}</div>
+            <input type="number" step="0.01" class="input ins-amount" placeholder="Kwota" value="${r.amount || ''}">
+            <input type="date" class="input ins-date" value="${r.due_date || ''}">
+            <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()"><i class="ph ph-x text-red-400"></i></button>
+        </div>
+    `).join('');
+}
+
+window.genInstallments = function() {
+    const count = parseInt(document.getElementById('ins-count').value) || 1;
+    const total = parseFloat(document.getElementById('ins-total').value) || 0;
+    const firstDate = document.getElementById('ins-first-date').value;
+    const spacing = parseInt(document.getElementById('ins-spacing').value) || 30;
+    const per = Math.round((total / count) * 100) / 100;
+    const rows = [];
+    const start = firstDate ? new Date(firstDate) : new Date();
+    for (let i = 0; i < count; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + (i * spacing));
+        rows.push({ amount: per, due_date: d.toISOString().split('T')[0] });
+    }
+    renderInsRows(rows);
+};
+
+window.addInsRow = function() {
+    const editor = document.getElementById('ins-editor');
+    const idx = editor.querySelectorAll('.ins-row').length;
+    const row = document.createElement('div');
+    row.className = 'ins-row grid grid-cols-[40px_1fr_1fr_40px] gap-2 items-center';
+    row.innerHTML = `
+        <div class="text-xs text-zinc-500">#${idx + 1}</div>
+        <input type="number" step="0.01" class="input ins-amount" placeholder="Kwota">
+        <input type="date" class="input ins-date">
+        <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()"><i class="ph ph-x text-red-400"></i></button>
+    `;
+    editor.appendChild(row);
+};
+
+// Pre-populate po otwarciu modala (onShow — realizowane przez MutationObserver)
+document.addEventListener('DOMContentLoaded', () => {
+    const obs = new MutationObserver(() => {
+        const editor = document.getElementById('ins-editor');
+        if (editor && !editor.dataset.populated) {
+            editor.dataset.populated = '1';
+            if (allInstallments.length) {
+                renderInsRows(allInstallments.map(i => ({ amount: i.amount, due_date: i.due_date })));
+            } else {
+                window.genInstallments && window.genInstallments();
+            }
+        }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+});
+
+
+// === "ZAŁOŻONE ZA KLIENTA" (opłaty do zwrotu) — uwagi Pawła pkt 1.3 ===
+let allClientAdvances = [];
+async function loadClientAdvancesData() {
+    if (!caseId) return;
+    const { data } = await db.from('gmp_case_client_advances')
+        .select('*').eq('case_id', caseId)
+        .order('incurred_date', { ascending: false });
+    allClientAdvances = data || [];
+}
+
+function renderClientAdvances() {
+    const host = document.getElementById('finance-client-advances');
+    if (!host) return;
+    const totalAdv = allClientAdvances.reduce((s, a) => s + Number(a.amount || 0), 0);
+    const totalRepaid = allClientAdvances.reduce((s, a) => s + Number(a.repaid_amount || 0), 0);
+    host.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+            <div class="text-sm text-zinc-400">
+                Łącznie założono: <span class="text-rose-300 font-mono font-semibold">${fmt.money(totalAdv)}</span>
+                · Zwrócone: <span class="text-emerald-300 font-mono">${fmt.money(totalRepaid)}</span>
+                · Do zwrotu: <span class="text-amber-300 font-mono font-semibold">${fmt.money(totalAdv - totalRepaid)}</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="addClientAdvance()"><i class="ph ph-plus"></i> Dodaj pozycję</button>
+        </div>
+        ${allClientAdvances.length === 0
+            ? '<div class="text-zinc-500 text-sm p-4">Brak pozycji — kliknij "Dodaj pozycję" aby wpisać koszt poniesiony za klienta (np. notariusz, polisa).</div>'
+            : `<table class="gmp-table"><thead><tr>
+                    <th>Data</th><th>Opis</th><th class="text-right">Kwota</th><th class="text-right">Zwrócono</th><th>Status</th><th></th>
+                </tr></thead><tbody>
+                ${allClientAdvances.map(a => `<tr>
+                    <td class="text-xs">${fmt.date(a.incurred_date)}</td>
+                    <td>${esc(a.description)}</td>
+                    <td class="text-right font-mono text-rose-300">${fmt.money(a.amount)}</td>
+                    <td class="text-right font-mono text-emerald-300">${a.repaid_amount ? fmt.money(a.repaid_amount) : '—'}</td>
+                    <td><span class="badge badge-${a.is_repaid ? 'ok' : 'pending'}">${a.is_repaid ? 'Zwrócona' : 'Do zwrotu'}</span></td>
+                    <td>
+                        ${!a.is_repaid ? `<button class="btn btn-ghost btn-sm" onclick="markAdvanceRepaid('${a.id}', ${a.amount})" title="Oznacz zwróconą"><i class="ph ph-check text-emerald-400"></i></button>` : ''}
+                        <button class="btn btn-ghost btn-sm" onclick="deleteAdvance('${a.id}')"><i class="ph ph-trash text-red-400"></i></button>
+                    </td>
+                </tr>`).join('')}
+            </tbody></table>`}
+    `;
+}
+
+async function addClientAdvance() {
+    const html = `
+        <div style="min-width: 400px">
+            <label class="block text-sm mb-1">Opis (np. notariusz, polisa)</label>
+            <input type="text" id="adv-desc" class="input w-full" placeholder="Notariusz — pełnomocnictwo">
+            <label class="block text-sm mb-1 mt-3">Kwota</label>
+            <input type="number" id="adv-amount" step="0.01" class="input w-full">
+            <label class="block text-sm mb-1 mt-3">Data poniesienia kosztu</label>
+            <input type="date" id="adv-date" value="${new Date().toISOString().split('T')[0]}" class="input w-full">
+        </div>
+    `;
+    const ok = await gmpModal.confirm('Dodaj opłatę "założone za klienta"', html, { confirmLabel: 'Dodaj', confirmClass: 'btn-primary' });
+    if (!ok) return;
+    const description = document.getElementById('adv-desc').value;
+    const amount = parseFloat(document.getElementById('adv-amount').value);
+    const incurred_date = document.getElementById('adv-date').value;
+    if (!description || !amount) { toast.error('Uzupełnij opis i kwotę'); return; }
+    const { error } = await db.from('gmp_case_client_advances').insert({
+        case_id: caseId, description, amount, incurred_date,
+        created_by: window.currentStaff?.id,
+    });
+    if (error) { toast.error('Błąd: ' + error.message); return; }
+    toast.success('Dodano pozycję');
+    await Promise.all([loadClientAdvancesData(), loadCase()]);
+    renderFinanceTab();
+}
+window.addClientAdvance = addClientAdvance;
+
+async function markAdvanceRepaid(advId, amount) {
+    if (!confirm(`Oznaczyć pozycję jako zwróconą? Utworzy to wpłatę (${fmt.money(amount)}) typu "klient zwrócił".`)) return;
+    const { error: e1 } = await db.from('gmp_case_client_advances').update({
+        is_repaid: true,
+        repaid_date: new Date().toISOString().split('T')[0],
+        repaid_amount: amount,
+    }).eq('id', advId);
+    if (e1) { toast.error('Błąd: ' + e1.message); return; }
+    // Utwórz wpłatę zwrotu
+    const { error: e2 } = await db.from('gmp_payments').insert({
+        case_id: caseId,
+        kind: 'client_advance_repayment',
+        amount: amount,
+        payment_date: new Date().toISOString().split('T')[0],
+        payer_type: 'client',
+        client_id: caseData?.client_id,
+        notes: 'Zwrot opłaty założonej za klienta',
+    });
+    if (e2) toast.warning('Pozycja oznaczona ale nie utworzono wpłaty: ' + e2.message);
+    await Promise.all([loadClientAdvancesData(), loadPaymentsData()]);
+    renderFinanceTab();
+    toast.success('Oznaczono zwrot');
+}
+window.markAdvanceRepaid = markAdvanceRepaid;
+
+async function deleteAdvance(advId) {
+    if (!confirm('Usunąć tę pozycję?')) return;
+    const { error } = await db.from('gmp_case_client_advances').delete().eq('id', advId);
+    if (error) { toast.error('Błąd: ' + error.message); return; }
+    await loadClientAdvancesData();
+    renderFinanceTab();
+    toast.success('Usunięto');
+}
+window.deleteAdvance = deleteAdvance;
 
 async function deletePayment(id) {
     if (!confirm('Usunąć płatność?')) return;
