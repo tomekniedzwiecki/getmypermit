@@ -68,18 +68,33 @@ Deno.serve(async (req) => {
         return json({ error: `Nie znaleziono pracownika: ${fetchErr?.message || 'brak'}` }, 404);
     }
 
-    // 1. Usun z auth.users (jesli powiazane)
+    // 1. Usun z auth.users
+    // Najpierw user_id z gmp_staff. Jezeli null (np. po dezaktywacji) - szukaj po email,
+    // zeby nie zostawic sieroty w auth.users blokujacej re-utworzenie konta.
     let authDeleteResult: string = 'no_auth_user';
-    if (staff.user_id) {
-        const { error: authErr } = await admin.auth.admin.deleteUser(staff.user_id);
+    let authUserIdToDelete: string | null = staff.user_id;
+
+    if (!authUserIdToDelete && staff.email) {
+        const emailLc = staff.email.trim().toLowerCase();
+        const { data: existing } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        const found = existing?.users?.find((u) => u.email?.toLowerCase() === emailLc);
+        if (found) {
+            authUserIdToDelete = found.id;
+            authDeleteResult = 'orphan_found_by_email';
+        }
+    }
+
+    if (authUserIdToDelete) {
+        const { error: authErr } = await admin.auth.admin.deleteUser(authUserIdToDelete);
         if (authErr) {
-            // Jezeli user juz nie istnieje w auth - kontynuuj
             if (!authErr.message?.toLowerCase().includes('not found')) {
                 return json({ error: `Blad usuwania z auth: ${authErr.message}` }, 500);
             }
             authDeleteResult = 'auth_user_already_gone';
         } else {
-            authDeleteResult = 'auth_user_deleted';
+            authDeleteResult = authDeleteResult === 'orphan_found_by_email'
+                ? 'orphan_deleted'
+                : 'auth_user_deleted';
         }
     }
 
