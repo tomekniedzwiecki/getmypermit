@@ -727,14 +727,36 @@ async function openStaffManageModal(id) {
                     ? `<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px">
                             <span style="color: #10b981"><i class="ph ph-check-circle"></i> Konto aktywne</span>
                             <span style="color: var(--text-tertiary); margin: 0 4px">·</span>
-                            <button class="refresh-btn" style="padding: 5px 10px; font-size: 11px" onclick="regenerateAccessLink('${id}', '${esc(s.email || '')}', '${esc(s.full_name || '')}', '${esc(s.role || 'staff')}')"><i class="ph ph-link"></i> Wygeneruj nowy link dostępowy</button>
+                            <button class="refresh-btn" style="padding: 5px 10px; font-size: 11px" onclick="regenerateAccessLink('${id}', '${esc(s.email || '')}', '${esc(s.full_name || '')}', '${esc(s.role || 'staff')}')"><i class="ph ph-link"></i> Wygeneruj link</button>
+                            <button class="refresh-btn" style="padding: 5px 10px; font-size: 11px" onclick="gmpSetPasswordForExisting('${id}', '${esc(s.email || '')}', '${esc(s.full_name || '')}', '${esc(s.role || 'staff')}')"><i class="ph ph-key"></i> Ustaw nowe hasło</button>
                         </div>
-                        <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px">Link pozwala ustawić hasło ponownie (np. gdy pracownik zapomniał).</div>`
-                    : `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px">Brak konta. Po zapisie wygeneruję link dostępowy do skopiowania.</div>
-                       <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer">
-                           <input type="checkbox" id="sm-invite" ${s.email ? 'checked' : ''}>
-                           Utwórz konto i wygeneruj link dostępowy po zapisie
-                       </label>`}
+                        <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px">Link = pracownik sam ustawi hasło. Hasło = ustawiasz i przekazujesz kanałem zaufanym.</div>`
+                    : `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px">Brak konta. Po zapisie utworzę konto w systemie.</div>
+                       <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; margin-bottom: 8px">
+                           <input type="checkbox" id="sm-invite" ${s.email ? 'checked' : ''} onchange="gmpToggleInviteOpts()">
+                           Utwórz konto po zapisie
+                       </label>
+                       <div id="sm-invite-opts" style="margin-left: 22px; display: ${s.email ? 'block' : 'none'}">
+                           <div style="display: flex; gap: 14px; font-size: 12px; margin-bottom: 8px">
+                               <label style="display: flex; align-items: center; gap: 5px; cursor: pointer">
+                                   <input type="radio" name="sm-access-mode" value="link" checked onchange="gmpToggleAccessMode()">
+                                   Link resetujący (pracownik sam ustawi hasło)
+                               </label>
+                               <label style="display: flex; align-items: center; gap: 5px; cursor: pointer">
+                                   <input type="radio" name="sm-access-mode" value="password" onchange="gmpToggleAccessMode()">
+                                   Ustaw hasło teraz
+                               </label>
+                           </div>
+                           <div id="sm-password-row" style="display: none">
+                               <div style="display: flex; gap: 6px; align-items: center">
+                                   <input id="sm-password" class="input" type="text" placeholder="min. 12 znaków" style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px" autocomplete="new-password">
+                                   <button type="button" class="refresh-btn" style="padding: 6px 10px; font-size: 11px" onclick="gmpGenPasswordInto('sm-password')"><i class="ph ph-arrows-clockwise"></i> Generuj 16</button>
+                               </div>
+                               <div style="font-size: 11px; color: #f59e0b; margin-top: 6px">
+                                   <i class="ph ph-warning-circle"></i> Hasło pokaże się raz po zapisie. Przekaż pracownikowi kanałem zaufanym (Signal/WhatsApp), nie emailem razem z loginem.
+                               </div>
+                           </div>
+                       </div>`}
             </div>
 
             <!-- Permissions -->
@@ -824,8 +846,16 @@ async function saveStaffManage(id) {
     const inviteCb = document.getElementById('sm-invite');
     const shouldInvite = !id && inviteCb?.checked && email && !result.data.user_id;
     if (shouldInvite) {
-        gmpModal.close();
-        await generateAccessLinkAndShow(email, result.data.id, name, payload.role);
+        const mode = document.querySelector('input[name="sm-access-mode"]:checked')?.value || 'link';
+        if (mode === 'password') {
+            const pwd = document.getElementById('sm-password')?.value || '';
+            if (pwd.length < 12) { alert('Hasło musi mieć minimum 12 znaków'); return; }
+            gmpModal.close();
+            await setPasswordAndShow(email, result.data.id, name, payload.role, pwd);
+        } else {
+            gmpModal.close();
+            await generateAccessLinkAndShow(email, result.data.id, name, payload.role);
+        }
     } else {
         window.toast?.success(id ? 'Zapisano' : 'Dodano');
         gmpModal.close();
@@ -924,3 +954,158 @@ async function deleteStaffAccount(id, name) {
     gmpModal.close();
     loadStaffManage();
 }
+
+// === Obsługa ustawiania hasła przez admina ===
+// Bez ambiguous znaków (0/O, 1/l/I), z klasą specjalną dla siły.
+const GMP_PWD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+
+function gmpGenPasswordValue(len = 16) {
+    const arr = new Uint32Array(len);
+    crypto.getRandomValues(arr);
+    return Array.from(arr, n => GMP_PWD_CHARS[n % GMP_PWD_CHARS.length]).join('');
+}
+
+window.gmpGenPasswordInto = function(inputId) {
+    const el = document.getElementById(inputId);
+    if (el) el.value = gmpGenPasswordValue(16);
+};
+
+window.gmpToggleInviteOpts = function() {
+    const cb = document.getElementById('sm-invite');
+    const opts = document.getElementById('sm-invite-opts');
+    if (opts) opts.style.display = cb?.checked ? 'block' : 'none';
+};
+
+window.gmpToggleAccessMode = function() {
+    const mode = document.querySelector('input[name="sm-access-mode"]:checked')?.value;
+    const row = document.getElementById('sm-password-row');
+    if (row) row.style.display = mode === 'password' ? 'block' : 'none';
+};
+
+async function setPasswordAndShow(email, staffId, fullName, role, password) {
+    window.toast?.info('Ustawiam hasło...');
+    try {
+        const { data, error } = await db.functions.invoke('invite-staff', {
+            body: { email, staff_id: staffId, full_name: fullName, role: role || 'staff', password },
+        });
+        if (error) throw error;
+        if (!data?.ok) {
+            alert('Błąd: ' + (data?.error || 'nieznany'));
+            return;
+        }
+        showCredentialsModal(email, password, data.existed);
+    } catch (e) {
+        alert('Błąd: ' + (e.message || e));
+    } finally {
+        // Wyczyść pole hasła w modalu edycji (jeśli jeszcze istnieje w DOM)
+        const f = document.getElementById('sm-password');
+        if (f) f.value = '';
+    }
+}
+
+function showCredentialsModal(email, password, existed) {
+    const safeEmail = esc(email);
+    const safePwd = esc(password);
+    const html = `
+        <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center">
+            <h3 style="margin: 0; font-size: 16px"><i class="ph ph-key"></i> Dane dostępowe gotowe</h3>
+            <button onclick="gmpCredModalClose()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 20px"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body" style="padding: 20px">
+            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px">
+                ${existed ? 'Hasło zaktualizowane.' : 'Konto utworzone.'} Skopiuj dane i przekaż pracownikowi.
+            </div>
+            <div style="padding: 12px; background: rgba(99,102,241,0.08); border: 1px solid var(--accent-border); border-radius: 8px; margin-bottom: 14px">
+                <label style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 4px">Login (email)</label>
+                <div style="display: flex; gap: 6px; align-items: center">
+                    <input id="cred-email" readonly value="${safeEmail}" style="flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px">
+                    <button class="refresh-btn" style="padding: 7px 10px" onclick="gmpCopyFromInput('cred-email','cred-email-fb')"><i class="ph ph-copy"></i></button>
+                    <span id="cred-email-fb" style="font-size: 11px; color: #10b981; opacity: 0; transition: opacity 200ms; min-width: 22px">✓</span>
+                </div>
+                <label style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-top: 12px; margin-bottom: 4px">Hasło</label>
+                <div style="display: flex; gap: 6px; align-items: center">
+                    <input id="cred-pwd" readonly value="${safePwd}" type="password" style="flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px">
+                    <button class="refresh-btn" style="padding: 7px 10px" onclick="gmpTogglePwdVisibility()" title="Pokaż/ukryj"><i class="ph ph-eye" id="cred-pwd-eye"></i></button>
+                    <button class="refresh-btn" style="padding: 7px 10px" onclick="gmpCopyFromInput('cred-pwd','cred-pwd-fb')"><i class="ph ph-copy"></i></button>
+                    <span id="cred-pwd-fb" style="font-size: 11px; color: #10b981; opacity: 0; transition: opacity 200ms; min-width: 22px">✓</span>
+                </div>
+            </div>
+            <div style="padding: 10px 12px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; font-size: 11px; color: #f59e0b; line-height: 1.5">
+                <i class="ph ph-warning-circle"></i> <strong>Bezpieczeństwo:</strong> hasło nie jest nigdzie zapisane — po zamknięciu tego okna nie odzyskasz go. Przekaż pracownikowi kanałem zaufanym (Signal / WhatsApp / telefon), NIE emailem razem z loginem. Poproś o zmianę hasła po pierwszym logowaniu.
+            </div>
+        </div>
+        <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end">
+            <button class="refresh-btn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none" onclick="gmpCredModalClose()"><i class="ph ph-check"></i> Zamknij</button>
+        </div>`;
+    gmpModal.openModal(html);
+}
+
+window.gmpCopyFromInput = async function(inputId, fbId) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    try {
+        await navigator.clipboard.writeText(el.value);
+    } catch {
+        el.select();
+        document.execCommand('copy');
+    }
+    const fb = document.getElementById(fbId);
+    if (fb) {
+        fb.style.opacity = '1';
+        setTimeout(() => { fb.style.opacity = '0'; }, 2000);
+    }
+};
+
+window.gmpTogglePwdVisibility = function() {
+    const el = document.getElementById('cred-pwd');
+    const eye = document.getElementById('cred-pwd-eye');
+    if (!el) return;
+    const show = el.type === 'password';
+    el.type = show ? 'text' : 'password';
+    if (eye) eye.className = show ? 'ph ph-eye-slash' : 'ph ph-eye';
+};
+
+// Wyczysc wartosci credentials przed zamknieciem (nie zostawiaj hasla w DOM)
+window.gmpCredModalClose = function() {
+    const pwd = document.getElementById('cred-pwd');
+    const eml = document.getElementById('cred-email');
+    if (pwd) pwd.value = '';
+    if (eml) eml.value = '';
+    gmpModal.close();
+};
+
+// Dla istniejacych kont — ustaw nowe haslo
+window.gmpSetPasswordForExisting = function(staffId, email, fullName, role) {
+    if (!email) { alert('Brak emaila'); return; }
+    const html = `
+        <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center">
+            <h3 style="margin: 0; font-size: 16px"><i class="ph ph-key"></i> Ustaw nowe hasło</h3>
+            <button onclick="gmpModal.close()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 20px"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body" style="padding: 20px">
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px">${esc(fullName)}</div>
+            <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 14px">${esc(email)}</div>
+            <label style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 4px">Nowe hasło (min. 12 znaków)</label>
+            <div style="display: flex; gap: 6px; align-items: center">
+                <input id="spass-input" class="input" type="text" placeholder="min. 12 znaków" style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px" autocomplete="new-password">
+                <button type="button" class="refresh-btn" style="padding: 6px 10px; font-size: 11px" onclick="gmpGenPasswordInto('spass-input')"><i class="ph ph-arrows-clockwise"></i> Generuj 16</button>
+            </div>
+            <div style="padding: 10px 12px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 6px; font-size: 11px; color: #ef4444; line-height: 1.5; margin-top: 12px">
+                <i class="ph ph-warning-circle"></i> Zastąpi obecne hasło pracownika. Wszystkie aktywne sesje zostaną unieważnione po następnym odświeżeniu.
+            </div>
+        </div>
+        <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end">
+            <button class="refresh-btn" onclick="gmpModal.close()">Anuluj</button>
+            <button class="refresh-btn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none" onclick="gmpSubmitNewPassword('${staffId}', '${esc(email)}', '${esc(fullName)}', '${esc(role)}')"><i class="ph ph-check"></i> Ustaw hasło</button>
+        </div>`;
+    gmpModal.openModal(html);
+};
+
+window.gmpSubmitNewPassword = async function(staffId, email, fullName, role) {
+    const input = document.getElementById('spass-input');
+    const pwd = (input?.value || '').trim();
+    if (pwd.length < 12) { alert('Hasło musi mieć minimum 12 znaków'); return; }
+    if (input) input.value = '';
+    gmpModal.close();
+    await setPasswordAndShow(email, staffId, fullName, role, pwd);
+};

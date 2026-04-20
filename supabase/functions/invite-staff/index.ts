@@ -1,14 +1,15 @@
-// Edge function: zaproszenie pracownika - generuje link do skopiowania
-// (zamiast wysylac email, ktory nie zawsze dochodzi).
+// Edge function: zaproszenie pracownika.
 //
 // Tylko admin/owner moze wywolac. Tworzy (lub znajduje) konto auth, powiazuje
-// z gmp_staff, generuje link do ustawienia hasla i zwraca go w response.
-// Admin kopiuje link i przekazuje go pracownikowi (Slack/Telegram/WhatsApp).
+// z gmp_staff. Dwa tryby:
+//   - "link"     (domyslny): generuje recovery link do ustawienia hasla
+//   - "password"           : ustawia hasło podane przez admina (min. 12 znaków)
 //
 // Invoke: POST /functions/v1/invite-staff
 // Headers: Authorization: Bearer <user_jwt>
-// Body: { email: string, staff_id?: uuid, full_name?: string, role?: string }
-// Response: { ok, user_id, email, action_link, existed }
+// Body: { email: string, staff_id?: uuid, full_name?: string, role?: string, password?: string }
+// Response (link):     { ok, user_id, email, existed, mode: 'link', action_link }
+// Response (password): { ok, user_id, email, existed, mode: 'password' }
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -47,7 +48,7 @@ Deno.serve(async (req) => {
         return json({ error: 'Brak uprawnien: wymagana rola admin lub owner' }, 403);
     }
 
-    let body: { email?: string; staff_id?: string; full_name?: string; role?: string };
+    let body: { email?: string; staff_id?: string; full_name?: string; role?: string; password?: string };
     try {
         body = await req.json();
     } catch {
@@ -57,6 +58,11 @@ Deno.serve(async (req) => {
     if (!email) return json({ error: 'email wymagany' }, 400);
     const role = body.role || 'staff';
     const fullName = body.full_name || email.split('@')[0];
+    const password = typeof body.password === 'string' && body.password.length > 0 ? body.password : null;
+    if (password !== null && password.length < 12) {
+        return json({ error: 'Hasło musi mieć minimum 12 znaków' }, 400);
+    }
+    const mode: 'link' | 'password' = password ? 'password' : 'link';
 
     // 1. Znajdz lub utworz konto auth
     const { data: existing } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -67,9 +73,14 @@ Deno.serve(async (req) => {
     if (authUser) {
         userId = authUser.id;
         existed = true;
+        if (password) {
+            const { error: updErr } = await admin.auth.admin.updateUserById(userId, { password });
+            if (updErr) return json({ error: `Blad ustawiania hasla: ${updErr.message}` }, 500);
+        }
     } else {
         const { data: newUser, error: createErr } = await admin.auth.admin.createUser({
             email,
+            ...(password ? { password } : {}),
             email_confirm: true,
             user_metadata: { role, full_name: fullName },
         });
@@ -94,7 +105,29 @@ Deno.serve(async (req) => {
         }
     }
 
-    // 3. Wygeneruj link do ustawienia hasla (typ 'recovery' dziala dla nowych i istniejacych)
+    // 3a. Tryb 'password' — nic wiecej nie robimy, hasło już ustawione w kroku 1.
+    if (mode === 'password') {
+        await admin.from('gmp_audit_log').insert({
+            staff_id: callerStaff.id,
+            action: existed ? 'staff_password_set' : 'staff_invite_password',
+            entity_type: 'staff',
+            entity_id: body.staff_id || null,
+            entity_label: `${fullName} <${email}>`,
+            severity: 'warning',
+            metadata: { role, existed, mode: 'password' },
+            // UWAGA: hasło NIE trafia do audit log ani do żadnego innego logu.
+        });
+
+        return json({
+            ok: true,
+            user_id: userId,
+            email,
+            existed,
+            mode: 'password',
+        });
+    }
+
+    // 3b. Tryb 'link' — wygeneruj link do ustawienia hasla
     const origin = req.headers.get('origin') || 'https://crm.getmypermit.pl';
     const redirectTo = `${origin}/reset-password.html`;
 
@@ -125,7 +158,7 @@ Deno.serve(async (req) => {
         entity_id: body.staff_id || null,
         entity_label: `${fullName} <${email}>`,
         severity: 'info',
-        metadata: { role, existed },
+        metadata: { role, existed, mode: 'link' },
     });
 
     return json({
@@ -133,6 +166,7 @@ Deno.serve(async (req) => {
         user_id: userId,
         email,
         existed,
+        mode: 'link',
         action_link: actionLink,
     });
 });
