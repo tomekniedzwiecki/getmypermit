@@ -488,6 +488,8 @@
     #mod-analiza h2 i      { background: rgba(16, 185, 129, 0.10);  border-color: rgba(16, 185, 129, 0.25);  color: #6ee7b7; }
     #mod-biblioteka h2 i   { background: rgba(161, 161, 170, 0.10); border-color: rgba(161, 161, 170, 0.20); color: #d4d4d8; }
     #mod-admin h2 i        { background: rgba(99, 102, 241, 0.10);  border-color: rgba(99, 102, 241, 0.25);  color: #a5b4fc; }
+    #mod-ankieta h2 i      { background: rgba(59, 130, 246, 0.10);  border-color: rgba(59, 130, 246, 0.25);  color: #60a5fa; }
+    #mod-dokumenty h2 i    { background: rgba(161, 161, 170, 0.10); border-color: rgba(161, 161, 170, 0.20); color: #d4d4d8; }
 
     /* === FAQ Q-MARKER === */
     .faq-item {
@@ -593,6 +595,10 @@
                 <a href="#mod-kalendarz">Kalendarz spotkań</a>
                 <a href="#mod-wnioski">Kolejka wniosków</a>
 
+                <div class="group-label">Karta sprawy</div>
+                <a href="#mod-ankieta">Ankieta klienta</a>
+                <a href="#mod-dokumenty">Dokumenty sprawy</a>
+
                 <div class="group-label">Kartoteki</div>
                 <a href="#mod-klienci">Klienci</a>
                 <a href="#mod-pracodawcy">Pracodawcy</a>
@@ -638,8 +644,8 @@
 
                     <div class="hero-meta">
                         <span class="meta-item"><i class="ph ph-clock"></i> ~15 min czytania</span>
-                        <span class="meta-item"><i class="ph ph-stack"></i> 17 modułów</span>
-                        <span class="meta-item"><i class="ph ph-arrow-clockwise"></i> Ostatnia aktualizacja: <span id="last-update">2026-04-19</span></span>
+                        <span class="meta-item"><i class="ph ph-stack"></i> 19 modułów</span>
+                        <span class="meta-item"><i class="ph ph-arrow-clockwise"></i> Ostatnia aktualizacja: <span id="last-update">2026-04-20</span></span>
                     </div>
                 </header>
 
@@ -688,9 +694,73 @@
                     <h2><i class="ph ph-sparkle"></i>Ostatnie zmiany w systemie</h2>
                     <p class="lede">Co doszło / co się zmieniło — od najnowszego. Aktualizowane przy każdym wdrożeniu.</p>
 
+                    <div class="callout">
+                        <i class="ph ph-calendar"></i>
+                        <div><strong>2026-04-20 — druga runda uwag Pawła (start produkcyjny 2026-04-27)</strong></div>
+                    </div>
+
+                    <h3>Finanse v2 — plan rat, opłata skarbowa, założone za klienta</h3>
+                    <ul>
+                        <li>Plan płatności jako <strong>lista rat z osobnymi datami</strong> i statusami (oczekuje / przypomnienie / zapłacona / przeterminowana). Przycisk <strong>„Generuj równomiernie"</strong> liczy daty rat za Ciebie.</li>
+                        <li>Cztery rozdzielne pozycje finansowe na karcie sprawy: <strong>Wynagrodzenie kancelarii, Opłata administracyjna, Opłata skarbowa, Założone za klienta</strong> — każda z własnym KPI.</li>
+                        <li>Sekcja <strong>„Opłaty do zwrotu"</strong> — ewidencja rzeczy zapłaconych z naszej kieszeni (notariusz, tłumacz, polisa) i oznaczanie ich jako zwrócone.</li>
+                        <li>Codziennie rano system <strong>automatycznie tworzy opiekunowi zadanie</strong> o ratach przypadających danego dnia.</li>
+                    </ul>
+
+                    <h3>Lista spraw — nowe kolumny</h3>
+                    <ul>
+                        <li><strong>Zaległość</strong> (zastępuje wcześniejszą „Kwotę") z czerwoną kropką gdy są przeterminowane raty.</li>
+                        <li><strong>Data złożenia wniosku</strong> — widzisz na pierwszy rzut oka, którą sprawę już wnieśliśmy.</li>
+                        <li><strong>Koniec legalu</strong> — data końca legalnego pobytu klienta, sortowalna.</li>
+                    </ul>
+
+                    <h3>Multi-opiekun (zasada 2 osób na sprawie)</h3>
+                    <p>Każda sprawa może mieć do <strong>3 opiekunów</strong>: <em>główny</em> + <em>zastępca</em> + <em>backup</em>. Celem jest żeby <strong>zawsze przynajmniej dwie osoby</strong> znały sprawę — na wypadek urlopu czy choroby.</p>
+
+                    <h3>Nowe pola karty sprawy</h3>
+                    <ul>
+                        <li><strong>Data końca legalnego pobytu</strong> — widoczna w liście i alertach.</li>
+                        <li><strong>„Gdzie to leży"</strong> — krótka notatka gdzie fizycznie jest teczka papierowa (szafa A, szuflada Pawła itp.).</li>
+                        <li><strong>„Sprawę przyjął(a)"</strong> — osoba która przyjęła sprawę od klienta (często <em>inna</em> niż opiekun prowadzący).</li>
+                        <li><strong>Data przekazania opiekunowi</strong> — ustawia się automatycznie przy zmianie opiekuna.</li>
+                    </ul>
+
+                    <h3>Kategorie, etapy, tagi — rozszerzone słowniki</h3>
+                    <ul>
+                        <li><strong>25 kategorii</strong> pogrupowanych w dropdownie: Pobyt czasowy / Pobyt stały / Inne.</li>
+                        <li><strong>6 nowych etapów</strong>: wezwanie, uzupełnienie dokumentów, przyspieszenie, wydłużenie terminu, przeniesienie z innego województwa, wniosek przeniesiony.</li>
+                        <li><strong>8 nowych tagów</strong>: <code>czeka-na-przeniesienie</code>, <code>czeka-na-dok-pracodawcy</code>, <code>APT</code>, <code>OUTSOURCING</code>, <code>problematyczny</code>, <code>pretensje</code>, <code>brak-reakcji-urzedu</code>, <code>zaleglosci-finansowe</code>.</li>
+                    </ul>
+
+                    <h3>Zadania i kalendarz</h3>
+                    <ul>
+                        <li>Na zadaniu wybierasz <strong>typ terminu</strong> (dropdown: uzupełnienie braków formalnych / merytorycznych, osobiste stawiennictwo, płatność — rata, odbiór decyzji itd.).</li>
+                        <li>Toggle <strong>„Pokaż w kalendarzu"</strong> — zadanie z tym przełącznikiem pojawi się w kalendarzu jako żółty kafelek.</li>
+                        <li>Flaga <strong>„Prywatne"</strong> — takie zadanie widzi tylko osoba, która je utworzyła.</li>
+                        <li>Kalendarz ma toggle <strong>„Tylko moje"</strong> (pamiętany między wizytami) — zostawiasz go włączonym i masz czysty widok własnych spraw.</li>
+                    </ul>
+
+                    <h3>Alerty — nowa sekcja „Brak reakcji pracodawcy"</h3>
+                    <p>Czwarta kolumna modułu Alerty — łapie sprawy z tagiem <code>czeka-na-dok-pracodawcy</code> bez aktywności powyżej 14 dni. Podświetla po 14 i po 30 dniach.</p>
+
+                    <h3>Ankieta klienta — 18 dodatkowych pól + „Wypełnij z palca"</h3>
+                    <ul>
+                        <li>Dodane pola: imiona poprzednie, nazwisko panieńskie, imiona rodziców, miejsce urodzenia, stan cywilny, wzrost, kolor oczu, znaki szczególne, członkowie rodziny w PL, pobyty poza PL w ostatnich 5 latach, profil zaufany, dane pracodawcy itd.</li>
+                        <li>Nowy przycisk <strong>„Wypełnij z palca"</strong> w zakładce Ankieta — modal z wszystkimi polami do wpisania na konsultacji. Struktura danych ta sama co ankiety elektronicznej.</li>
+                    </ul>
+
+                    <h3>Zatwierdzanie dokumentów z ankiety</h3>
+                    <p>Klient podczas ankiety elektronicznej wgrywa załączniki. <strong>Nie wpadają automatycznie do teczki</strong> — w zakładce <em>Dokumenty</em> karty sprawy pojawia się lista „Do zatwierdzenia", gdzie pracownik klika <strong>„Zatwierdź"</strong> przy każdym pliku, który ma trafić do właściwej sprawy.</p>
+
+                    <h3>Uprawnienia — pracownicy bez globalnych finansów</h3>
+                    <p>Role <em>staff / lawyer / assistant</em> nie widzą już na Dashboard kafelków „Przychód" i „Do odzyskania" i nie mają w menu <em>Płatności / Faktury / Windykacja / Analityka</em>. Te ekrany zostały zarezerwowane dla ról <em>manager / admin / owner</em>.</p>
+
+                    <h3>Staff — kolumna „Zal. fin."</h3>
+                    <p>W module Prawnicy dodana kolumna <strong>„Zal. fin."</strong> (zaległości finansowe) — pokazuje sumę nierozliczonych należności po klientach danego opiekuna.</p>
+
                     <div class="callout note">
                         <i class="ph ph-calendar"></i>
-                        <div><strong>2026-04-19 — duża aktualizacja po uwagach Pawła</strong></div>
+                        <div><strong>2026-04-19 — pierwsza duża aktualizacja po uwagach Pawła</strong></div>
                     </div>
 
                     <h3>Nowy model spraw: typ strony</h3>
@@ -801,7 +871,8 @@
                     <p class="lede">Strona startowa po zalogowaniu — syntetyczny obraz tego, co się dzieje w kancelarii dziś i w tym miesiącu.</p>
                     <h3>Co tu znajdziesz</h3>
                     <ul>
-                        <li><strong>Karty KPI</strong>: przychód roku, średnio miesięcznie, nowe sprawy (30 dni), konwersja leadów.</li>
+                        <li><strong>Karty KPI</strong>: nowe sprawy (30 dni), konwersja leadów, zadania na dziś, bezczynność.</li>
+                        <li><strong>Karty finansowe</strong>: przychód roku, średnio miesięcznie, do odzyskania. <em>Widoczne tylko dla ról manager / admin / owner</em> — pracownicy (staff / lawyer / assistant) nie widzą kwot finansowych.</li>
                         <li><strong>Pipeline leadów</strong> w formie lejka: od <code>nowych</code> do <code>wygranych / straconych</code>.</li>
                         <li><strong>Widok „dziś"</strong> — zadania, spotkania i alerty na bieżący dzień.</li>
                         <li><strong>Świeże leady z getmypermit.pl</strong> — najnowsze wpisy z formularza.</li>
@@ -857,6 +928,36 @@
                     </ul>
                     <p>Każdy wiersz to jedna sprawa. Kliknij, aby otworzyć <strong>kartę sprawy</strong>.</p>
 
+                    <h3>Kluczowe kolumny listy</h3>
+                    <ul>
+                        <li><strong>Dni od przyst.</strong> — ile dni minęło od przystąpienia sprawy; szybki sygnał czy sprawa się nie „zasiedziała".</li>
+                        <li><strong>Złożony</strong> — data wysyłki wniosku do urzędu (pusta = jeszcze nie złożyliśmy).</li>
+                        <li><strong>Koniec legalu</strong> — data końca legalnego pobytu klienta. Kliknij nagłówek, żeby posortować; świetne do planowania priorytetów.</li>
+                        <li><strong>Zaległość</strong> — aktualne saldo klienta. <strong>Czerwona kropka</strong> oznacza przeterminowane raty. Tooltip pokazuje rozbicie.</li>
+                    </ul>
+
+                    <h3>Kategorie — 25 pozycji w 3 grupach</h3>
+                    <p>Dropdown kategorii jest pogrupowany: <strong>Pobyt czasowy</strong> (11 typów), <strong>Pobyt stały</strong> (4 typy), <strong>Inne</strong> (10 typów — m.in. rezydent, obywatelstwo, zaproszenie, wymiana karty, ochrona międzynarodowa, odwołanie). Stare kategorie z zanim dostępne historycznie, ale nowe sprawy korzystają z tej listy.</p>
+
+                    <h3>Etapy — 11 standardowych + 6 wyjątkowych</h3>
+                    <p>Oprócz standardowej ścieżki postępowania (weryfikacja → złożenie → oczekiwanie → decyzja) masz 6 etapów wyjątkowych do oznaczenia nietypowych sytuacji:</p>
+                    <ul>
+                        <li><strong>Wezwanie</strong> — urząd wystosował wezwanie.</li>
+                        <li><strong>Uzupełnienie dokumentów</strong> — zbieramy brakujące papiery.</li>
+                        <li><strong>Przyspieszenie</strong> — wniosek o przyspieszenie postępowania.</li>
+                        <li><strong>Wydłużenie terminu</strong> — wniosek o przedłużenie terminu na odpowiedź.</li>
+                        <li><strong>Przeniesienie z innego województwa</strong> — sprawa trafiła do nas z innego woj.</li>
+                        <li><strong>Wniosek przeniesiony</strong> — sprawa poszła do innego woj.</li>
+                    </ul>
+
+                    <h3>Tagi — nowe oznaczenia operacyjne</h3>
+                    <p>Oprócz własnych tagów masz gotowe oznaczenia pomagające filtrować sprawy wymagające uwagi:</p>
+                    <ul>
+                        <li><code>czeka-na-przeniesienie</code>, <code>czeka-na-dok-pracodawcy</code> — sprawy zablokowane po stronie zewnętrznej.</li>
+                        <li><code>APT</code>, <code>OUTSOURCING</code> — typ klienta / źródła.</li>
+                        <li><code>problematyczny</code>, <code>pretensje</code>, <code>brak-reakcji-urzedu</code>, <code>zaleglosci-finansowe</code> — flagi ryzyka do codziennego przeglądu.</li>
+                    </ul>
+
                     <h3>Inline edycja</h3>
                     <p>Nie musisz otwierać sprawy, żeby zmienić podstawowe pola. Wystarczy kliknąć na:</p>
                     <ul>
@@ -882,18 +983,30 @@
                         <dt>Historia</dt>
                         <dd>Chronologiczny feed wszystkich wydarzeń: notatki, zmiany statusu/etapu, płatności, emaile, zadania. Tu dodajesz nową notatkę (z szablonu lub od zera).</dd>
                         <dt>Zadania</dt>
-                        <dd>Lista zadań dla tej sprawy, checkbox oznaczający ukończone, przypisanie do osoby, termin.</dd>
+                        <dd>Lista zadań dla tej sprawy, checkbox oznaczający ukończone, przypisanie do osoby, termin, <strong>typ terminu</strong>, pokazywanie w kalendarzu, prywatność.</dd>
                         <dt>Finanse</dt>
-                        <dd>Wszystko o pieniądzach: kwota sprawy, wpłaty, faktury. Tu odnotujesz nową płatność.</dd>
+                        <dd>Wszystko o pieniądzach: plan rat, 4 kafelki KPI (wynagrodzenie / opłata adm. / opłata skarbowa / założone za klienta), „Opłaty do zwrotu", historia wpłat.</dd>
                         <dt>Dokumenty</dt>
-                        <dd>Upload plików (drag & drop), kategoria (pełnomocnictwo, wniosek, dowód tożsamości itp.), wersjonowanie.</dd>
+                        <dd>Upload plików + lista „Do zatwierdzenia" z załącznikami ankiety, które musisz zaakceptować ręcznie zanim trafią do teczki.</dd>
                         <dt>Terminy</dt>
                         <dd>Spotkania i wizyty urzędowe związane z tą sprawą. Synchronizacja z Kalendarzem.</dd>
                         <dt>Ankieta klienta</dt>
-                        <dd>Formularz intake, który wysyłasz klientowi do wypełnienia. Widzisz postęp i status (zaproszony / w toku / przesłany / zatwierdzony).</dd>
+                        <dd>Formularz intake do wysłania klientowi linkiem albo wypełnienia „z palca" podczas konsultacji. Widzisz postęp (zaproszony / w toku / przesłany / zatwierdzony).</dd>
                         <dt>Dane szczegółowe</dt>
-                        <dd>Szczegółowe pola sprawy do edycji: typ, kategoria, metoda złożenia, pracodawca, znak sprawy w urzędzie, numery identyfikacyjne itd.</dd>
+                        <dd>Pełna edycja sprawy: typ, kategoria, metoda złożenia, pracodawca, <strong>data końca legalnego pobytu</strong>, <strong>„gdzie to leży"</strong>, <strong>„sprawę przyjął(a)"</strong>, znak sprawy w urzędzie, planowane kwoty finansowe z uwagami.</dd>
                     </div>
+
+                    <h3>Opiekunowie sprawy (max 3)</h3>
+                    <p>Każda sprawa powinna mieć co najmniej <strong>dwie osoby</strong> znające temat — w razie urlopu czy choroby druga ją podnosi bez rozbiegu.</p>
+                    <ul>
+                        <li><strong>Opiekun główny</strong> (primary) — prowadzi sprawę, pokazuje się na liście w kolumnie „Opiekun".</li>
+                        <li><strong>Zastępca</strong> (secondary) — druga osoba na temacie, zna kontekst.</li>
+                        <li><strong>Backup</strong> — trzecia osoba „w zanadrzu", najczęściej manager / partner.</li>
+                    </ul>
+                    <p>Pod polem „Opiekun (główny)" masz blok <em>Dodatkowi opiekunowie</em> z chipami + przycisk <strong>„Dodaj opiekuna"</strong>. Przy zmianie głównego opiekuna system automatycznie zapisuje datę przekazania.</p>
+
+                    <h3>Pole „Sprawę przyjął(a)"</h3>
+                    <p>W praktyce często <em>inny pracownik przyjmuje sprawę</em> (np. podczas konsultacji wstępnej), a prowadzi ją potem opiekun. To pole zachowuje tę informację — osoba która przyjęła pozostaje w historii, nawet gdy opiekun się zmieni. W raporcie efektywności (Prawnicy) masz dwie kolumny: ile ktoś <em>przyjął</em> i ile <em>prowadzi</em>.</p>
 
                     <div class="callout note">
                         <i class="ph ph-info"></i>
@@ -948,16 +1061,43 @@
                         <li>Kliknij zadanie powiązane ze sprawą → skok do karty sprawy.</li>
                         <li>Dodaj nowe zadanie z karty sprawy (zakładka <em>Zadania</em>) albo globalnie.</li>
                     </ul>
+
+                    <h3>Typ terminu</h3>
+                    <p>Każde zadanie ma <strong>typ terminu</strong> (dropdown ze słownika) — pomaga filtrować i raportować:</p>
+                    <ul>
+                        <li>Uzupełnienie braków formalnych / dok. merytorycznych</li>
+                        <li>Osobiste stawiennictwo</li>
+                        <li>Płatność — rata (taki typ tworzy się automatycznie z planu rat — patrz Finanse)</li>
+                        <li>Rozmowa z klientem / rozmowa z pracodawcą / kontakt z urzędem</li>
+                        <li>Odbiór decyzji, Inne</li>
+                    </ul>
+                    <p>W liście zadań kolumna <strong>„Typ"</strong> pokazuje etykietę, a filtr u góry „Wszystkie typy terminów" wybiera jeden typ.</p>
+
+                    <h3>„Pokaż w kalendarzu"</h3>
+                    <p>Toggle przy zadaniu — włączony oznacza, że zadanie pojawi się w module <a href="#mod-kalendarz">Kalendarz</a> jako żółty kafelek w swoim dniu. Wyłącznik przydaje się gdy nie chcesz zaśmiecać kalendarza wewnętrznymi taskami typu „napisz email do klienta". Kolumna <strong>„W kal."</strong> (zielona ikonka) w liście zadań pokazuje które zadania są w kalendarzu.</p>
+
+                    <h3>Zadania prywatne</h3>
+                    <p>Flaga <strong>„Prywatne"</strong> — zadanie widzi tylko osoba, która je utworzyła. Reszta zespołu go nie widzi ani w liście, ani w kalendarzu. Przy prywatnych zadaniach pokazuje się ikonka <i class="ph ph-lock"></i>. Używaj do osobistych przypomnień („przeczytaj mail Pawła", „oddzwonić o 14").</p>
+
+                    <div class="callout tip">
+                        <i class="ph ph-lightbulb"></i>
+                        <div><strong>Zadania z raty</strong> powstają automatycznie rano — każdego dnia sprawdzamy plan rat we wszystkich aktywnych sprawach i opiekun dostaje zadanie „Płatność dziś: rata #X z dnia …" z typem <em>Płatność — rata</em>. Pojawia się też w kalendarzu.</div>
+                    </div>
                 </section>
 
                 <section class="help-section" id="mod-alerty">
                     <h2><i class="ph ph-bell-ringing"></i>Alerty bezczynności</h2>
-                    <p class="lede">3 kolumny = 3 typy alarmów. Wchodź tu rano — to pokazuje, co może nam umknąć.</p>
+                    <p class="lede">4 kolumny = 4 typy alarmów. Wchodź tu rano — to pokazuje, co może nam umknąć.</p>
                     <ul>
                         <li><strong>Sprawy bez aktywności</strong> — nie dotykane > 30 / 14–30 dni / nigdy. Przyczyna: pracownik / urząd / klient / dokumenty.</li>
                         <li><strong>Zaległe zadania</strong> — przekroczony termin.</li>
                         <li><strong>Zaległe płatności</strong> — powiązane z Windykacją.</li>
+                        <li><strong>Brak reakcji pracodawcy</strong> — sprawy z tagiem <code>czeka-na-dok-pracodawcy</code> lub <code>brak-reakcji-urzedu</code>, na których od ponad 14 dni nie ma żadnej aktywności. Dwie warstwy: <span class="badge badge-warn" style="padding:2px 8px;border-radius:999px;font-size:11px">14–30 dni</span> (warto pingnąć) i <span class="badge badge-danger" style="padding:2px 8px;border-radius:999px;font-size:11px">30+ dni</span> (eskalacja).</li>
                     </ul>
+                    <div class="callout note">
+                        <i class="ph ph-info"></i>
+                        <div>Jeśli chcesz żeby sprawa znalazła się w 4. sekcji — oznacz ją tagiem <code>czeka-na-dok-pracodawcy</code> w momencie gdy wysyłasz pracodawcy prośbę o dokumenty. Po otrzymaniu — zdejmij tag i sprawa znika z alertów.</div>
+                    </div>
                 </section>
 
                 <!-- ============ GRUPA: KALENDARZ ============ -->
@@ -968,13 +1108,24 @@
 
                 <section class="help-section" id="mod-kalendarz">
                     <h2><i class="ph ph-calendar-check"></i>Kalendarz spotkań</h2>
-                    <p class="lede">Widok tygodniowy z wizytami — konsultacje, odciski biometryczne, osobiste stawiennictwa.</p>
+                    <p class="lede">Widok tygodniowy z wizytami — konsultacje, odciski biometryczne, osobiste stawiennictwa, plus wybrane zadania.</p>
                     <ul>
                         <li>Widok: 7 dni obok siebie, każdy jako kolumna z wydarzeniami.</li>
                         <li>Kliknij dzień → lista szczegółów (klient, czas, notatki, transport).</li>
                         <li>Przyciski nawigacji: poprzedni / następny tydzień / dziś.</li>
                         <li>Sekcja <strong>Nadchodzące odciski (14 dni)</strong> — szybkie łącze do Kolejki wniosków.</li>
                     </ul>
+
+                    <h3>Toggle „Tylko moje"</h3>
+                    <p>U góry kalendarza przełącznik <strong>„Tylko moje"</strong>. Włączony — widzisz wyłącznie spotkania, w których jesteś prowadzącym, i zadania, które masz przypisane. Ustawienie <strong>zapamiętuje się między wizytami</strong> w przeglądarce, więc raz włączysz i tak zostanie.</p>
+
+                    <h3>Zadania w kalendarzu</h3>
+                    <p>Zadania oznaczone flagą <strong>„Pokaż w kalendarzu"</strong> (patrz <a href="#mod-zadania">Zadania</a>) pojawiają się jako <strong>żółte kafelki</strong> obok zielonych konsultacji i niebieskich odcisków. Zadania prywatne widzi tylko ich twórca.</p>
+
+                    <div class="callout tip">
+                        <i class="ph ph-lightbulb"></i>
+                        <div>Kalendarz to dobre narzędzie do planowania tygodnia. Rano <strong>„Tylko moje"</strong> włączone + zerknięcie na niedzielne podsumowanie = wiesz co Cię czeka.</div>
+                    </div>
                 </section>
 
                 <section class="help-section" id="mod-wnioski">
@@ -990,6 +1141,63 @@
                         <li>Filtry: szukaj, status, data stawiennictwa.</li>
                         <li>CSV export + paginacja (100 na stronę).</li>
                     </ul>
+                </section>
+
+                <!-- ============ GRUPA: KARTA SPRAWY ============ -->
+                <div class="group-divider">
+                    <span class="label">Karta sprawy — zakładki</span>
+                    <span class="line"></span>
+                </div>
+
+                <section class="help-section" id="mod-ankieta">
+                    <h2><i class="ph ph-clipboard-text"></i>Ankieta klienta</h2>
+                    <p class="lede">Kwestionariusz z pełnym zestawem danych osobowych i historycznych klienta. Dwie ścieżki wypełnienia: linkiem dla klienta albo „z palca" podczas konsultacji.</p>
+
+                    <h3>Zakres ankiety</h3>
+                    <p>Oprócz podstawowych danych (imię, nazwisko, kontakt, obywatelstwo) zbierasz teraz też:</p>
+                    <ul>
+                        <li><strong>Dane osobowe</strong>: imiona poprzednie, nazwisko panieńskie, imię ojca i matki, nazwisko panieńskie matki, miejsce urodzenia, kraj pochodzenia, stan cywilny, wzrost, kolor oczu, znaki szczególne / tatuaże.</li>
+                        <li><strong>Kontakt</strong>: profil zaufany (tak / nie / nie wiem).</li>
+                        <li><strong>Zatrudnienie</strong>: telefon i email pracodawcy.</li>
+                        <li><strong>Historia pobytów</strong>: rodzaj dokumentu wjazdu, cel wizy UE (jeśli dotyczy), lista pobytów poza Polską w ostatnich 5 latach (dodajesz wiele wpisów).</li>
+                        <li><strong>Rodzina w PL</strong>: lista członków (imię, data urodzenia, miejscowość).</li>
+                    </ul>
+
+                    <h3>Dwa sposoby wypełnienia</h3>
+                    <ol class="steps">
+                        <li><span class="step-title">Link dla klienta (ankieta elektroniczna)</span><span class="step-desc">Generujesz jednorazowy link, wysyłasz klientowi. Klient wypełnia we własnym tempie, dołącza skany dokumentów. Widzisz status: <em>zaproszony / w toku / przesłany / zatwierdzony</em>.</span></li>
+                        <li><span class="step-title">„Wypełnij z palca" (podczas konsultacji)</span><span class="step-desc">Przycisk w zakładce Ankieta. Otwiera modal ze wszystkimi polami — wypełniasz z klientem twarzą w twarz. Pola podstawowe (imię, data ur., obywatelstwo, tel, email) pobierają się z karty klienta jeśli są już wpisane.</span></li>
+                    </ol>
+
+                    <div class="callout tip">
+                        <i class="ph ph-lightbulb"></i>
+                        <div>Obie ścieżki zapisują dane do <strong>tej samej struktury</strong>. Jeśli najpierw wypełnisz „z palca", a potem klient i tak klinie link — dane się <strong>nałożą</strong> (klient tylko uzupełni brakujące pola).</div>
+                    </div>
+                </section>
+
+                <section class="help-section" id="mod-dokumenty">
+                    <h2><i class="ph ph-files"></i>Dokumenty sprawy</h2>
+                    <p class="lede">Teczka elektroniczna sprawy — wszystkie pliki w jednym miejscu, z kategoryzacją i wersjonowaniem.</p>
+
+                    <h3>Dodawanie plików</h3>
+                    <ul>
+                        <li>Drag &amp; drop albo przycisk „Dodaj plik" — wgrywasz skany, decyzje, pełnomocnictwa.</li>
+                        <li>Każdy plik przypisujesz do <strong>kategorii</strong> (pełnomocnictwo, wniosek, dowód tożsamości, decyzja, inne) — ułatwia późniejsze odnalezienie.</li>
+                        <li>Wersjonowanie — wgrywając plik o tej samej nazwie tworzysz nową wersję, stara zostaje w historii.</li>
+                    </ul>
+
+                    <h3>Zatwierdzanie dokumentów z ankiety</h3>
+                    <p>Gdy klient wgrywa załączniki w ankiecie elektronicznej, <strong>nie trafiają od razu do teczki</strong> — czekają na Twoją akceptację. W zakładce Dokumenty pojawia się lista <strong>„Do zatwierdzenia"</strong> z plikami od klienta.</p>
+                    <ol class="steps">
+                        <li><span class="step-title">Obejrzyj podgląd</span><span class="step-desc">Kliknij plik → podgląd w nowej karcie. Sprawdź, czy skan jest czytelny i czy dotyczy właściwej sprawy.</span></li>
+                        <li><span class="step-title">Kliknij „Zatwierdź"</span><span class="step-desc">Plik zostaje przeniesiony z ankiety do właściwej teczki sprawy. Kategoryzujesz go standardowo.</span></li>
+                        <li><span class="step-title">Jeśli coś jest nie tak — „Odrzuć"</span><span class="step-desc">Odrzucony plik nie trafia do teczki. Możesz poprosić klienta o ponowne wgranie.</span></li>
+                    </ol>
+
+                    <div class="callout note">
+                        <i class="ph ph-info"></i>
+                        <div>Taki ręczny krok jest celowy — chroni teczkę sprawy przed przypadkowymi lub niezwiązanymi załącznikami od klienta. Plik bez zatwierdzenia nie pojawi się w eksportach ani raportach.</div>
+                    </div>
                 </section>
 
                 <!-- ============ GRUPA: KARTOTEKI ============ -->
@@ -1027,9 +1235,16 @@
                     <p class="lede">Zespół kancelarii — kto kim jest i jaką ma produktywność.</p>
                     <ul>
                         <li>KPI: aktywni pracownicy, spraw przydzielonych, średnio spraw/opiekun, top przychód.</li>
-                        <li>Kolumny: imię, rola, klientów, spraw razem / aktywnych / zakończonych, leadów, przychód, zadań otwartych, zaległych.</li>
+                        <li>Kolumny: imię, rola, klientów, <strong>spraw przyjętych</strong> (kto przyjmuje od klienta), spraw prowadzonych (razem / aktywnych / zakończonych), leadów, przychód, zadań otwartych, zaległych, <strong>Zal. fin.</strong>.</li>
                         <li>Kliknij wiersz → panel z wykresem przychodu, listą klientów i spraw, zadaniami.</li>
                     </ul>
+
+                    <h3>Kolumna „Zal. fin." (zaległości finansowe)</h3>
+                    <p>Pokazuje sumę <strong>nierozliczonych należności</strong> na sprawach, których dana osoba jest głównym opiekunem. To szybki sygnał, kto ma najwięcej „wiszących" płatności do wyegzekwowania — z tego wynika dyskusja na cotygodniowym spotkaniu zespołu.</p>
+
+                    <h3>„Przyjął" vs „Prowadzi"</h3>
+                    <p>Dwie osobne kolumny, bo to nie zawsze ta sama osoba. Pole <em>„Sprawę przyjął(a)"</em> na karcie sprawy zostaje bez zmian nawet gdy opiekun się zmieni — dzięki temu raport „kto ile pozyskał" nie kłamie w dłuższym okresie.</p>
+
                     <div class="callout note">
                         <i class="ph ph-info"></i>
                         <div>Dodawanie nowych pracowników z ich rolami → patrz sekcja <a href="#role">Role i uprawnienia</a>.</div>
@@ -1044,21 +1259,42 @@
 
                 <section class="help-section" id="mod-platnosci">
                     <h2><i class="ph ph-coins"></i>Płatności</h2>
-                    <p class="lede">Rejestr wpłat od klientów i pracodawców — gotówka, przelew, karta, faktura, inne. <strong>Wymaga roli <code>manager</code>, <code>admin</code> lub <code>owner</code>.</strong></p>
+                    <p class="lede">Rejestr wpłat od klientów i pracodawców — gotówka, przelew, karta, faktura, inne. <strong>Widok globalny wymaga roli <code>manager</code>, <code>admin</code> lub <code>owner</code>.</strong> Pracownik odnotowuje wpłaty wyłącznie w karcie sprawy (zakładka Finanse).</p>
 
-                    <h3>Wynagrodzenie vs opłata administracyjna (ważne!)</h3>
+                    <h3>Cztery kategorie pieniędzy (ważne!)</h3>
                     <div class="callout warn">
                         <i class="ph ph-warning"></i>
-                        <div>Przy dodawaniu wpłaty wybieraj poprawny <strong>Rodzaj</strong>. Opłata administracyjna (urzędowa, za wniosek itp.) <strong>nie</strong> pomniejsza wynagrodzenia kancelarii — jest liczona osobno w KPI i zestawieniach.</div>
+                        <div>Przy dodawaniu wpłaty <strong>zawsze wybierz właściwy Rodzaj</strong>. Każdy rodzaj liczony jest osobno, raporty i windykacja pilnują tylko wynagrodzenia kancelarii.</div>
                     </div>
-                    <p>W karcie sprawy w zakładce <em>Finanse</em> widzisz 4 KPI:</p>
+                    <p>W karcie sprawy zakładka <em>Finanse</em> pokazuje <strong>4 kafelki KPI</strong>, każdy z osobnym saldem:</p>
                     <ul>
-                        <li><strong>Wynagrodzenie</strong> — kwota planowana (fee_amount lub z planu)</li>
-                        <li><strong>Wpłacono (wynagr.)</strong> — suma wpłat typu <em>fee</em></li>
-                        <li><strong>Pozostało (wynagr.)</strong> — różnica</li>
-                        <li><strong>Opłaty administracyjne</strong> — suma wpłat typu <em>admin_fee</em> (osobna kategoria, nie wpływa na 3 powyżej)</li>
+                        <li><strong>Wynagrodzenie kancelarii</strong> — nasze honorarium. To liczy się do MRR, windykacji i analityki.</li>
+                        <li><strong>Opłata administracyjna</strong> — opłata za wniosek do urzędu (płaci klient, my ją ewidencjonujemy).</li>
+                        <li><strong>Opłata skarbowa</strong> — np. za pełnomocnictwo. Osobna kategoria dla czystości rozliczeń.</li>
+                        <li><strong>Założone za klienta</strong> — suma pozycji z sekcji „Opłaty do zwrotu" (patrz niżej).</li>
                     </ul>
-                    <p>Windykacja, analityka i MRR również liczą tylko wynagrodzenie (bez opłat admin).</p>
+                    <p>W danych szczegółowych sprawy („Finanse — planowane kwoty") możesz wpisać <strong>kwotę planowaną</strong> każdej z 4 kategorii osobno, plus notatki do każdej pozycji.</p>
+
+                    <h3>Plan płatności — raty z osobnymi datami</h3>
+                    <p>Pod kafelkami KPI jest sekcja <strong>„Plan płatności"</strong> — lista rat, każda z własną datą wymagalności i statusem (<em>oczekuje / przypomnienie / zapłacona / przeterminowana</em>). Kolory statusów pomagają zobaczyć na jednej liście co pilne.</p>
+                    <ol class="steps">
+                        <li><span class="step-title">Kliknij ikonę ołówka przy „Plan płatności"</span><span class="step-desc">Edytor rat.</span></li>
+                        <li><span class="step-title">Generuj równomiernie</span><span class="step-desc">Wpisz liczbę rat, kwotę jednostkową, datę pierwszej raty i rozstaw dni (np. 30) → system rozpisze daty kolejnych.</span></li>
+                        <li><span class="step-title">Dostosuj ręcznie</span><span class="step-desc">Każdą ratę możesz poprawić (inna kwota, inna data) albo dodać/usunąć pozycję.</span></li>
+                        <li><span class="step-title">Oznacz zapłaconą</span><span class="step-desc">Gdy klient wpłacił — przycisk „Oznacz zapłaconą" na racie. Jednym klikiem tworzy wpłatę w historii i oznacza ratę jako opłaconą.</span></li>
+                    </ol>
+                    <div class="callout tip">
+                        <i class="ph ph-lightbulb"></i>
+                        <div><strong>Auto-zadanie w dniu raty</strong> — codziennie rano (około 7:00) system przegląda wszystkie raty przypadające tego dnia i <strong>automatycznie tworzy zadanie</strong> dla opiekuna sprawy („Płatność dziś: rata #X"). Przeterminowane raty oznacza statusem <em>overdue</em>.</div>
+                    </div>
+
+                    <h3>Opłaty do zwrotu (założone za klienta)</h3>
+                    <p>Osobna sekcja w zakładce <em>Finanse</em>, między Planem płatności a Historią wpłat. Tu ewidencjonujesz rzeczy <strong>zapłacone z naszej kieszeni</strong> (notariusz, tłumacz, polisa, kurier), które klient nam zwróci.</p>
+                    <ul>
+                        <li><strong>Dodaj pozycję</strong> — modal: opis, kwota, data poniesienia.</li>
+                        <li>Lista pozycji z podsumowaniem: <strong>założono / zwrócono / do zwrotu</strong>.</li>
+                        <li>Gdy klient zwróci — przycisk <strong>„Oznacz zwróconą"</strong> na pozycji. Automatycznie tworzy się wpłata typu <em>zwrot</em>, a pozycja dostaje flagę „zwrócona".</li>
+                    </ul>
 
                     <h3>Globalny widok /payments.html</h3>
                     <ul>
@@ -1067,6 +1303,11 @@
                         <li>Zakładki: Wpłaty, <em>Opłaty administracyjne</em> (osobna), Zaległości, Prognoza, Miesiące.</li>
                         <li>Wykresy: przychody w czasie, porównanie YoY, wolumen spraw.</li>
                     </ul>
+
+                    <div class="callout note">
+                        <i class="ph ph-info"></i>
+                        <div>Wszystkie wpłaty wprowadzasz <strong>ręcznie</strong> — żadnej synchronizacji z bankiem. KPI i podsumowania aktualizują się od razu po zapisie.</div>
+                    </div>
                 </section>
 
                 <section class="help-section" id="mod-windykacja">
@@ -1431,7 +1672,7 @@
 
                 <!-- Footer -->
                 <div style="padding: 24px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; display:flex; gap: 10px; align-items:center; justify-content: space-between; flex-wrap: wrap;">
-                    <span>Podręcznik użytkownika GetMyPermit CRM · v1.0</span>
+                    <span>Podręcznik użytkownika GetMyPermit CRM · v1.1 (2026-04-20)</span>
                     <span>Brakuje czegoś? Zgłoś Tomkowi.</span>
                 </div>
 
