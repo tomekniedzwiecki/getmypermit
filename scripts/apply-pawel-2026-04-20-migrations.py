@@ -28,7 +28,18 @@ MIGRATIONS = [
     "20260422_pawel_staff_stats_and_alerts.sql",
     "20260422_pawel_pg_cron_installments.sql",
     "20260423_pawel_intake_docs_approval.sql",
+    "20260423_pawel_fixes_from_audit.sql",
 ]
+
+# Force skip (juz zaaplikowane na bazie — skipujemy idempotentnie)
+# PowodL schema_migrations ma PK tylko na version, nie version+name, wiec nie mozemy zapisac wielu w tej samej dacie
+FORCE_SKIP = {
+    "20260420_pawel_finanse_enums.sql",
+    "20260420_pawel_finanse_v2.sql",
+    "20260420_pawel_case_fields_v2.sql",
+    "20260421_pawel_tasks_visibility.sql",
+    "20260422_pawel_pg_cron_installments.sql",
+}
 
 migrations_dir = Path(__file__).parent.parent / "supabase" / "migrations"
 
@@ -44,6 +55,9 @@ conn.autocommit = False
 
 try:
     for fname in MIGRATIONS:
+        if fname in FORCE_SKIP:
+            print(f"SKIP (force): {fname}")
+            continue
         path = migrations_dir / fname
         sql = path.read_text(encoding="utf-8")
         version = fname.split("_")[0]

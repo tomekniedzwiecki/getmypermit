@@ -16,6 +16,7 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/payment-kinds.js"></script>
     <script src="components/modals.js" defer></script>
     <script src="components/template-picker.js"></script>
     <script src="components/composer.js"></script>
@@ -1585,25 +1586,40 @@ window.openManualIntakeEditor = async function() {
     const ok = await gmpModal.confirm('Ankieta — wypełnij z palca', html, { confirmLabel: 'Zapisz', confirmClass: 'btn-primary' });
     if (!ok) return;
 
-    // Zbierz
+    // Zbierz wartości PRZED zamknięciem modala (DOM jeszcze istnieje)
     const patch = {};
     const simpleFields = ['first_name','previous_first_names','last_name','maiden_name','father_first_name','mother_first_name','mother_maiden_name','birth_date','birth_place','country_of_origin','nationality','pesel','gender','marital_status','passport_number','passport_expiry','height_cm','eye_color','distinguishing_marks','phone','whatsapp_number','email','trusted_profile','zip','city','street','building','flat','voivodeship','employer_name','employer_nip','employer_phone','employer_email','position','contract_type','arrival_date','arrival_document_type','arrival_document_other','arrival_visa_eu_purpose'];
     simpleFields.forEach(k => {
         const el = document.getElementById('mi-' + k);
         if (el && el.value !== '') patch[k] = el.value;
     });
-    // family_in_pl
-    patch.family_in_pl = Array.from(document.querySelectorAll('.fam-row')).map(r => ({
-        full_name: r.querySelector('.fam-name').value,
-        birth_date: r.querySelector('.fam-birth').value || null,
-        city: r.querySelector('.fam-city').value,
-    })).filter(m => m.full_name);
-    // stays_outside_pl_5y
-    patch.stays_outside_pl_5y = Array.from(document.querySelectorAll('.stay-row')).map(r => ({
-        country: r.querySelector('.stay-country').value,
-        from_date: r.querySelector('.stay-from').value || null,
-        to_date: r.querySelector('.stay-to').value || null,
-    })).filter(s => s.country);
+    // family_in_pl — TYLKO gdy user dotknął sekcji (jest co najmniej 1 wiersz w DOM)
+    const famRows = document.querySelectorAll('.fam-row');
+    if (famRows.length) {
+        const fam = Array.from(famRows).map(r => ({
+            full_name: r.querySelector('.fam-name').value,
+            birth_date: r.querySelector('.fam-birth').value || null,
+            city: r.querySelector('.fam-city').value,
+        })).filter(m => m.full_name);
+        patch.family_in_pl = fam;
+    }
+    // stays_outside_pl_5y — analogicznie
+    const stayRows = document.querySelectorAll('.stay-row');
+    if (stayRows.length) {
+        const stays = Array.from(stayRows).map(r => ({
+            country: r.querySelector('.stay-country').value,
+            from_date: r.querySelector('.stay-from').value || null,
+            to_date: r.querySelector('.stay-to').value || null,
+        })).filter(s => s.country);
+        patch.stays_outside_pl_5y = stays;
+    }
+    gmpModal.close();
+
+    // Walidacja minimum — co najmniej imię LUB nazwisko wypełnione
+    if (!patch.first_name && !patch.last_name && Object.keys(patch).length === 0) {
+        toast.warning('Ankieta pusta — nie zapisano.');
+        return;
+    }
 
     const merged = { ...data, ...patch };
     const { error } = await db.from('gmp_intake_tokens')
@@ -1881,6 +1897,7 @@ async function addAssignee() {
     if (!ok) return;
     const staff_id = document.getElementById('new-assignee').value;
     const role_type = document.getElementById('new-assignee-role').value;
+    gmpModal.close();
     if (!staff_id) return;
     const { error } = await db.from('gmp_case_assignees')
         .insert({ case_id: caseId, staff_id, role_type, assigned_by: window.currentStaff?.id });
@@ -2429,7 +2446,7 @@ function updateCounts() {
 
 function renderOverview() {
     // Finance summary - wynagrodzenie i oplaty admin. sa osobne kategorie
-    const feePaid = allPayments.filter(p => p.kind !== 'admin_fee').reduce((s, p) => s + Number(p.amount || 0), 0);
+    const feePaid = allPayments.filter(p => window.isFeeKind(p.kind)).reduce((s, p) => s + Number(p.amount || 0), 0);
     const adminPaid = allPayments.filter(p => p.kind === 'admin_fee').reduce((s, p) => s + Number(p.amount || 0), 0);
     const planTotal = paymentPlan?.total_amount ? Number(paymentPlan.total_amount) : null;
     const fee = caseData.fee_amount ? Number(caseData.fee_amount) : null;
@@ -2795,29 +2812,61 @@ async function openInstallmentsEditor() {
             <button class="btn btn-ghost btn-sm mt-2" onclick="addInsRow()"><i class="ph ph-plus"></i> Dodaj ratę</button>
         </div>
     `;
-    const ok = await gmpModal.confirm('Plan rat', html, { confirmLabel: 'Zapisz', confirmClass: 'btn-primary' });
+    const ok = await gmpModal.confirm('Plan rat', html, {
+        confirmLabel: 'Zapisz',
+        confirmClass: 'btn-primary',
+        onOpen: () => {
+            if (allInstallments.length) {
+                renderInsRows(allInstallments.filter(i => i.status !== 'paid').map(i => ({ amount: i.amount, due_date: i.due_date })));
+            } else {
+                window.genInstallments && window.genInstallments();
+            }
+        },
+    });
     if (ok === null || ok === false) return;
     // Zbierz raty z UI
     const rows = document.querySelectorAll('#ins-editor .ins-row');
-    const payload = [];
-    rows.forEach((r, idx) => {
+    const newRows = [];
+    rows.forEach((r) => {
         const amount = parseFloat(r.querySelector('.ins-amount').value) || 0;
         const due_date = r.querySelector('.ins-date').value;
         if (amount > 0 && due_date) {
-            payload.push({
-                case_id: caseId,
-                installment_number: idx + 1,
-                amount, due_date,
-                status: 'pending',
-            });
+            newRows.push({ amount, due_date });
         }
     });
-    if (!payload.length) return;
-    // Zapisz: usuń wszystkie istniejące niezapłacone, wstaw nowe
-    await db.from('gmp_payment_installments').delete().eq('case_id', caseId).neq('status', 'paid');
-    const { error } = await db.from('gmp_payment_installments').insert(payload);
-    if (error) { toast.error('Błąd: ' + error.message); return; }
-    toast.success(`Zapisano ${payload.length} rat`);
+    gmpModal.close();
+    if (!newRows.length) return;
+
+    // Strategia: nie usuwamy zapłaconych rat, edytujemy niezapłacone w miejscu (po installment_number)
+    // aby nie gubić UUID-ów i nie łamać FK na gmp_payments.installment_id.
+    const paid = allInstallments.filter(i => i.status === 'paid');
+    const paidNumbers = new Set(paid.map(i => i.installment_number));
+    // Nowe raty otrzymują numery kontynuacyjne pomijając paid
+    let nextNum = 1;
+    const payload = [];
+    for (const row of newRows) {
+        while (paidNumbers.has(nextNum)) nextNum++;
+        payload.push({
+            case_id: caseId,
+            installment_number: nextNum,
+            amount: row.amount,
+            due_date: row.due_date,
+            status: 'pending',
+        });
+        nextNum++;
+    }
+
+    // Usuń obecne NIEZAPŁACONE (zostawiamy paid nietknięte)
+    const { error: eDel } = await db.from('gmp_payment_installments')
+        .delete().eq('case_id', caseId).neq('status', 'paid');
+    if (eDel) { toast.error('Błąd usuwania starych rat: ' + eDel.message); return; }
+
+    // Upsert nowych — onConflict na (case_id, installment_number)
+    const { error: eIns } = await db.from('gmp_payment_installments')
+        .upsert(payload, { onConflict: 'case_id,installment_number' });
+    if (eIns) { toast.error('Błąd zapisu: ' + eIns.message); return; }
+
+    toast.success(`Zapisano ${payload.length} rat` + (paid.length ? ` (${paid.length} zapł. nietkniętych)` : ''));
     await loadInstallmentsData();
     renderFinanceTab();
 }
@@ -2863,23 +2912,6 @@ window.addInsRow = function() {
     `;
     editor.appendChild(row);
 };
-
-// Pre-populate po otwarciu modala (onShow — realizowane przez MutationObserver)
-document.addEventListener('DOMContentLoaded', () => {
-    const obs = new MutationObserver(() => {
-        const editor = document.getElementById('ins-editor');
-        if (editor && !editor.dataset.populated) {
-            editor.dataset.populated = '1';
-            if (allInstallments.length) {
-                renderInsRows(allInstallments.map(i => ({ amount: i.amount, due_date: i.due_date })));
-            } else {
-                window.genInstallments && window.genInstallments();
-            }
-        }
-    });
-    obs.observe(document.body, { childList: true, subtree: true });
-});
-
 
 // === "ZAŁOŻONE ZA KLIENTA" (opłaty do zwrotu) — uwagi Pawła pkt 1.3 ===
 let allClientAdvances = [];
@@ -2941,6 +2973,7 @@ async function addClientAdvance() {
     const description = document.getElementById('adv-desc').value;
     const amount = parseFloat(document.getElementById('adv-amount').value);
     const incurred_date = document.getElementById('adv-date').value;
+    gmpModal.close();
     if (!description || !amount) { toast.error('Uzupełnij opis i kwotę'); return; }
     const { error } = await db.from('gmp_case_client_advances').insert({
         case_id: caseId, description, amount, incurred_date,

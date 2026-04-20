@@ -16,6 +16,7 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/payment-kinds.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -247,7 +248,7 @@ async function loadOverduePayments() {
     const caseIds = plans.map(p => p.case_id);
     const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount, kind').in('case_id', caseIds));
     const paidByCase = {};
-    paid.filter(p => p.kind !== 'admin_fee').forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    paid.filter(p => window.isFeeKind(p.kind)).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
 
     el.innerHTML = plans.map(p => {
         const c = p.gmp_cases;

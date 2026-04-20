@@ -17,6 +17,7 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/payment-kinds.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -315,7 +316,7 @@ async function renderKPIs() {
         const caseIds = overduePlans.data.map(p => p.case_id);
         const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount, kind').in('case_id', caseIds));
         const paidByCase = {};
-        paid.filter(p => p.kind !== 'admin_fee').forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+        paid.filter(p => window.isFeeKind(p.kind)).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
         const outstanding = overduePlans.data.reduce((s, p) => s + Math.max(0, Number(p.total_amount) - (paidByCase[p.case_id] || 0)), 0);
         document.getElementById('k-overdue').textContent = fmt.money(outstanding);
         document.getElementById('k-overdue-count').textContent = `${overduePlans.data.length} spraw`;
@@ -618,7 +619,7 @@ async function renderOverdue() {
     const caseIds = plans.map(p => p.case_id);
     const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount, kind').in('case_id', caseIds));
     const paidByCase = {};
-    paid.filter(p => p.kind !== 'admin_fee').forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    paid.filter(p => window.isFeeKind(p.kind)).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
 
     const rows = plans.map(p => ({
         ...p,
@@ -685,7 +686,7 @@ async function renderForecast() {
     const caseIds = plans.map(p => p.case_id);
     const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount, kind').in('case_id', caseIds));
     const paidByCase = {};
-    paid.filter(p => p.kind !== 'admin_fee').forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    paid.filter(p => window.isFeeKind(p.kind)).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
 
     const rows = plans.map(p => ({
         ...p,
@@ -775,10 +776,12 @@ async function renderMonthly() {
     const byMonth = {};
     data.forEach(p => {
         const m = p.payment_date.slice(0, 7);
-        if (!byMonth[m]) byMonth[m] = { gotowka: 0, przelew: 0, faktura: 0, karta: 0, inne: 0, admin: 0, fee: 0, client: 0, employer: 0, total: 0, count: 0 };
+        if (!byMonth[m]) byMonth[m] = { gotowka: 0, przelew: 0, faktura: 0, karta: 0, inne: 0, admin_fee: 0, stamp_fee: 0, fee: 0, client_advance: 0, client_advance_repayment: 0, client: 0, employer: 0, total: 0, count: 0 };
         const amount = Number(p.amount) || 0;
         byMonth[m][p.method || 'inne'] = (byMonth[m][p.method || 'inne'] || 0) + amount;
-        byMonth[m][p.kind || 'fee'] = (byMonth[m][p.kind || 'fee'] || 0) + amount;
+        // Rozbij na 5 typów opłat (było: tylko fee vs admin_fee)
+        const k = p.kind || 'fee';
+        byMonth[m][k] = (byMonth[m][k] || 0) + amount;
         byMonth[m][p.payer_type || 'client'] = (byMonth[m][p.payer_type || 'client'] || 0) + amount;
         byMonth[m].total += amount;
         byMonth[m].count++;
@@ -792,7 +795,7 @@ async function renderMonthly() {
                     <thead><tr>
                         <th>Miesiąc</th><th>Wpłat</th>
                         <th>Gotówka</th><th>Przelew</th><th>Faktura</th>
-                        <th>Admin.</th><th>Wynagr.</th>
+                        <th>Wynagr.</th><th>Admin.</th><th>Skarb.</th><th>Za klienta (zwrot)</th>
                         <th>Klienci</th><th>Pracodawcy</th>
                         <th class="text-right">Razem</th>
                     </tr></thead>
@@ -803,8 +806,10 @@ async function renderMonthly() {
                             <td class="font-mono text-xs">${fmt.money(d.gotowka)}</td>
                             <td class="font-mono text-xs">${fmt.money(d.przelew)}</td>
                             <td class="font-mono text-xs">${fmt.money(d.faktura)}</td>
-                            <td class="font-mono text-xs text-amber-300">${fmt.money(d.admin)}</td>
                             <td class="font-mono text-xs text-emerald-300">${fmt.money(d.fee)}</td>
+                            <td class="font-mono text-xs text-sky-300">${fmt.money(d.admin_fee)}</td>
+                            <td class="font-mono text-xs text-violet-300">${fmt.money(d.stamp_fee)}</td>
+                            <td class="font-mono text-xs text-amber-300">${fmt.money(d.client_advance_repayment)}</td>
                             <td class="font-mono text-xs">${fmt.money(d.client)}</td>
                             <td class="font-mono text-xs">${fmt.money(d.employer)}</td>
                             <td class="text-right font-mono text-emerald-300 font-bold">${fmt.money(d.total)}</td>
@@ -825,7 +830,7 @@ async function exportData() {
         }],
         ['Pracodawca', r => r.gmp_cases?.gmp_employers?.name || r.gmp_employers?.name || ''],
         ['Nr sprawy', r => r.gmp_cases?.case_number || ''],
-        ['Rodzaj', r => r.kind === 'admin_fee' ? 'Admin.' : 'Wynagrodzenie'],
+        ['Rodzaj', r => window.kindLabel ? window.kindLabel(r.kind) : (r.kind || 'Wynagrodzenie')],
         ['Forma', 'method'],
         ['Płaci', r => r.payer_type === 'employer' ? 'Pracodawca' : 'Klient'],
         ['Rata', r => r.installment_number ? `${r.installment_number}/${r.total_installments || '?'}` : ''],

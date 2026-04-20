@@ -335,7 +335,7 @@ async function init() {
                 stage: r => r.stage || '',
                 staff: r => r.gmp_staff?.full_name || '',
                 date_accepted: r => r.date_accepted || '',
-                date_joined: r => r.date_joined ? -new Date(r.date_joined).getTime() : 0,
+                date_joined: r => r.date_joined ? -new Date(r.date_joined).getTime() : Number.POSITIVE_INFINITY,
                 date_submitted: r => r.date_submitted || '',
                 legal_stay_end_date: r => r.legal_stay_end_date || '',
                 balance_due: r => Number(balanceByCase[r.id]?.balance_due || 0),
@@ -364,7 +364,9 @@ async function loadFilters() {
         db.from('gmp_staff').select('id, full_name').eq('is_active', true).order('full_name'),
         db.from('gmp_office_departments').select('id, code, name').order('code'),
         db.from('gmp_employers').select('id, name').order('name').limit(1000),
-        db.from('gmp_case_categories').select('code, label, group_label').eq('is_active', true).order('sort_order'),
+        // Ładujemy WSZYSTKIE kategorie (łącznie z legacy) — dropdown pokazuje tylko aktywne,
+        // ale lista labelek potrzebuje też legacy (żeby stare sprawy miały ładną etykietę zamiast raw code)
+        db.from('gmp_case_categories').select('code, label, group_label, is_active').order('sort_order'),
     ]);
     staffList = staff || [];
     deptList = depts || [];
@@ -386,10 +388,11 @@ async function loadFilters() {
         o.value = e.id; o.textContent = e.name;
         empSel.appendChild(o);
     });
-    // Kategorie z DB (grupowane po group_label)
+    // Kategorie z DB (grupowane po group_label) — tylko aktywne w dropdown
     const catSel = document.getElementById('f-category');
+    const activeCats = (cats || []).filter(c => c.is_active);
     const catsByGroup = {};
-    (cats || []).forEach(c => {
+    activeCats.forEach(c => {
         (catsByGroup[c.group_label] = catsByGroup[c.group_label] || []).push(c);
     });
     Object.entries(catsByGroup).forEach(([group, items]) => {
@@ -402,13 +405,16 @@ async function loadFilters() {
         });
         catSel.appendChild(og);
     });
+    // Lista WSZYSTKICH (łącznie z legacy) — potrzebna do renderowania etykiet w liście
     window.CATEGORIES_LIST = cats || [];
 }
 
+// Wspólna lista pól SELECT dla cases.html — używana w buildQuery i rebuild-after-search
+const CASES_SELECT_COLUMNS = 'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_submitted, date_joined, legal_stay_end_date, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, is_pinned, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name), gmp_office_departments(code)';
+
 function buildQuery() {
     let q = db.from('gmp_cases').select(
-        'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_submitted, date_joined, legal_stay_end_date, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, is_pinned, ' +
-        'gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name), gmp_office_departments(code)',
+        CASES_SELECT_COLUMNS,
         { count: 'exact' }
     );
 
@@ -496,12 +502,8 @@ async function loadCases() {
 
     // Jesli search znalazl klientow, rozszerz filter
     if (clientIdFilter?.length) {
-        // Re-build query - tym razem rozszerzamy .or()
-        q = db.from('gmp_cases').select(
-            'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, ' +
-            'gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name), gmp_office_departments(code)',
-            { count: 'exact' }
-        );
+        // Re-build query - używamy tej samej listy pól co buildQuery
+        q = db.from('gmp_cases').select(CASES_SELECT_COLUMNS, { count: 'exact' });
         const s = `%${search}%`;
         const inList = `(${clientIdFilter.join(',')})`;
         q = q.or(`case_number.ilike.${s},znak_sprawy.ilike.${s},client_id.in.${inList}`);
@@ -1021,21 +1023,40 @@ async function exportCSV() {
     if (error) { toast.error(error.message); return; }
     if (!data?.length) { toast.warning('Brak danych do eksportu'); return; }
 
-    const headers = ['nr_sprawy', 'znak_sprawy', 'klient', 'pracodawca', 'typ', 'kategoria', 'status', 'etap', 'opiekun', 'data_przyjecia', 'kwota', 'ostatnia_akt'];
-    const rows = data.map(r => [
-        r.case_number || '',
-        r.znak_sprawy || '',
-        r.gmp_clients ? `${r.gmp_clients.last_name} ${r.gmp_clients.first_name}` : '',
-        r.gmp_employers?.name || '',
-        r.case_type || '',
-        r.category || '',
-        r.status || '',
-        r.stage || '',
-        r.gmp_staff?.full_name || '',
-        r.date_accepted || '',
-        r.fee_amount || '',
-        r.date_last_activity || '',
-    ]);
+    // Dołącz saldo z view gmp_case_balance dla każdej sprawy
+    const balMap = {};
+    if (data.length) {
+        const caseIds = data.map(r => r.id);
+        const { data: balances } = await db.from('gmp_case_balance')
+            .select('case_id, balance_due, overdue_installments_amount, total_paid')
+            .in('case_id', caseIds);
+        (balances || []).forEach(b => { balMap[b.case_id] = b; });
+    }
+
+    const headers = ['nr_sprawy', 'znak_sprawy', 'klient', 'pracodawca', 'typ', 'kategoria', 'status', 'etap', 'opiekun', 'data_przyjecia', 'data_zlozenia', 'data_przystapienia', 'koniec_legalu', 'wynagrodzenie', 'wplacono', 'zaleglosc', 'przeterm_raty', 'ostatnia_akt'];
+    const rows = data.map(r => {
+        const b = balMap[r.id] || {};
+        return [
+            r.case_number || '',
+            r.znak_sprawy || '',
+            r.gmp_clients ? `${r.gmp_clients.last_name} ${r.gmp_clients.first_name}` : '',
+            r.gmp_employers?.name || '',
+            r.case_type || '',
+            (window.CATEGORIES_LIST || []).find(c => c.code === r.category)?.label || r.category || '',
+            r.status || '',
+            r.stage || '',
+            r.gmp_staff?.full_name || '',
+            r.date_accepted || '',
+            r.date_submitted || '',
+            r.date_joined || '',
+            r.legal_stay_end_date || '',
+            r.fee_amount || '',
+            b.total_paid || '',
+            b.balance_due || '',
+            b.overdue_installments_amount || '',
+            r.date_last_activity || '',
+        ];
+    });
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

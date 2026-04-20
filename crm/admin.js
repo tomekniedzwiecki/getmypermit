@@ -381,9 +381,9 @@ async function loadFinance() {
 
     const [activeCasesR, paymentsThisMonthR, paymentsLastMonthR, overdueR, collectionsR, paymentsHistoryR, staffR] = await Promise.all([
         db.from('gmp_cases').select('fee_amount').in('status', ['zlecona', 'aktywna']),
-        // MRR = wynagrodzenie (bez oplat administracyjnych)
-        db.from('gmp_payments').select('amount').neq('kind', 'admin_fee').gte('payment_date', monthStart.toISOString().slice(0, 10)),
-        db.from('gmp_payments').select('amount').neq('kind', 'admin_fee').gte('payment_date', prevMonthStart.toISOString().slice(0, 10)).lt('payment_date', prevMonthEnd.toISOString().slice(0, 10)),
+        // MRR = wynagrodzenie (tylko kind='fee' lub null — nie liczymy opłat administracyjnych, skarbowych ani zwrotów "za klienta")
+        db.from('gmp_payments').select('amount').or('kind.eq.fee,kind.is.null').gte('payment_date', monthStart.toISOString().slice(0, 10)),
+        db.from('gmp_payments').select('amount').or('kind.eq.fee,kind.is.null').gte('payment_date', prevMonthStart.toISOString().slice(0, 10)).lt('payment_date', prevMonthEnd.toISOString().slice(0, 10)),
         db.from('gmp_invoices').select(`
             id, invoice_number, amount, issue_date, status, case_id,
             gmp_cases(case_number, assigned_to, gmp_clients(first_name, last_name), gmp_staff:assigned_to(full_name))

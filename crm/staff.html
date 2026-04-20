@@ -16,6 +16,7 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/payment-kinds.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -157,7 +158,7 @@ async function loadList() {
     });
 
     // Przychod prawnika = wynagrodzenie (bez oplat administracyjnych - req Pawel pkt 3/6)
-    payments.filter(p => p.kind !== 'admin_fee').forEach(p => {
+    payments.filter(p => window.isFeeKind(p.kind)).forEach(p => {
         const staffId = caseToStaff[p.case_id];
         if (staffId && agg[staffId]) agg[staffId].revenue_paid += Number(p.amount || 0);
     });
@@ -252,7 +253,7 @@ async function loadDetail(staffId) {
     // Filtr płatności do tych spraw - wynagrodzenie vs oplata admin. sa odrebnymi kategoriami
     const caseIds = new Set((cases || []).map(c => c.id));
     const myPayments = (payments || []).filter(p => caseIds.has(p.case_id));
-    const feePayments = myPayments.filter(p => p.kind !== 'admin_fee');
+    const feePayments = myPayments.filter(p => window.isFeeKind(p.kind));
 
     const today = new Date().toISOString().slice(0, 10);
 

@@ -217,5 +217,57 @@ window.gmpModal = (function() {
     );
   }
 
-  return { openModal, close, editClient, saveClient, editEmployer, saveEmployer, picker, pickClient, pickEmployer };
+  // ========== CONFIRM MODAL ==========
+  // Wspólny modal "OK / Anuluj" z dowolnym HTML body.
+  // Zwraca Promise<boolean> — true gdy użytkownik kliknął confirm, false gdy anuluj/zamknął.
+  // Nie zamyka modala automatycznie gdy confirm — używaj `gmpModal.close()` po zakończeniu
+  //   (robimy to sami w handlerze: wywołujący widzi DOM formularza, czyta wartości, potem close).
+  function confirm(title, bodyHtml, opts = {}) {
+    const confirmLabel = opts.confirmLabel || 'OK';
+    const cancelLabel = opts.cancelLabel || 'Anuluj';
+    const confirmClass = opts.confirmClass || 'btn-primary';
+    const size = opts.size || 'auto'; // 'auto' | 'full'
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = (result) => {
+        if (settled) return;
+        settled = true;
+        window.__gmpConfirmResolve = null;
+        if (!result) close();
+        // Na true: NIE zamykamy modala — caller odczyta DOM, wykona save i sam wywoła gmpModal.close().
+        resolve(result);
+      };
+      window.__gmpConfirmResolve = done;
+      openModal(`
+        <div class="modal-header">
+          ${esc(title)}
+          <button class="btn btn-ghost btn-sm" onclick="window.__gmpConfirmResolve && window.__gmpConfirmResolve(false)"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body">${bodyHtml}</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="window.__gmpConfirmResolve && window.__gmpConfirmResolve(false)">${esc(cancelLabel)}</button>
+          <button class="btn ${confirmClass}" onclick="window.__gmpConfirmResolve && window.__gmpConfirmResolve(true)">${esc(confirmLabel)}</button>
+        </div>
+      `);
+      // Pozwól callerowi wstrzyknąć logikę po otwarciu modala (pre-populate, setup listenerów)
+      if (typeof opts.onOpen === 'function') {
+        queueMicrotask(() => opts.onOpen());
+      }
+    });
+  }
+
+  // Wrapper: confirm + automatyczny close po kliknięciu confirm.
+  // Używany gdy wywołujący NIE czyta DOM body (prosta potwierdzająca kwestia tak/nie).
+  async function confirmAndClose(title, bodyHtml, opts = {}) {
+    const ok = await confirm(title, bodyHtml, opts);
+    close();
+    return ok;
+  }
+
+  return {
+    openModal, close,
+    editClient, saveClient, editEmployer, saveEmployer,
+    picker, pickClient, pickEmployer,
+    confirm, confirmAndClose,
+  };
 })();

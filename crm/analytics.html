@@ -17,6 +17,7 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/payment-kinds.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -346,7 +347,7 @@ async function loadData() {
     // Analityka pokazuje przychod (wynagrodzenie) - oplaty administracyjne to odrebna kategoria (req Pawel pkt 3/6)
     const MIN_DATE = '2020-01-01';
     const MAX_DATE = '2030-12-31';
-    allPayments = payments.filter(p => p.payment_date >= MIN_DATE && p.payment_date <= MAX_DATE && p.kind !== 'admin_fee');
+    allPayments = payments.filter(p => p.payment_date >= MIN_DATE && p.payment_date <= MAX_DATE && window.isFeeKind(p.kind));
 
     const rejected = payments.length - allPayments.length;
     if (rejected > 0) {

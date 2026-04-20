@@ -17,6 +17,7 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/payment-kinds.js"></script>
 </head>
 <body>
 
@@ -283,6 +284,8 @@
         </div>
 
         <!-- ============ HERO KPI ============ -->
+        <!-- UWAGA: kafelki finansowe (Do odzyskania, Przychód miesiąca) są ukrywane dla pracowników -->
+        <!-- bez uprawnienia view_global_finance (uwagi Pawła pkt 16 — "pracownicy w ogóle nie widzą finansów globalnych") -->
         <div class="kpi-grid">
             <a href="cases.html?preset=aktywne" class="kpi kpi--indigo">
                 <div class="kpi-glow"></div>
@@ -291,14 +294,14 @@
                 <div class="kpi-value" id="k-active">—</div>
                 <div class="kpi-sub"><span id="k-active-trend">—</span></div>
             </a>
-            <a href="receivables.html" class="kpi kpi--rose">
+            <a href="receivables.html" class="kpi kpi--rose gated-finance" style="display: none">
                 <div class="kpi-glow"></div>
                 <div class="kpi-icon"><i class="ph ph-scales"></i></div>
                 <div class="kpi-label">Do odzyskania</div>
                 <div class="kpi-value" id="k-debt">—</div>
                 <div class="kpi-sub" id="k-debt-sub">—</div>
             </a>
-            <a href="payments.html" class="kpi kpi--emerald">
+            <a href="payments.html" class="kpi kpi--emerald gated-finance" style="display: none">
                 <div class="kpi-glow"></div>
                 <div class="kpi-icon"><i class="ph ph-trend-up"></i></div>
                 <div class="kpi-label">Przychód miesiąca</div>
@@ -557,6 +560,13 @@ const REASON_LABELS = {
 };
 
 async function loadDashboard() {
+    // Pokaż kafelki finansowe tylko dla ról z uprawnieniem view_global_finance (owner/admin/manager)
+    // Pracownicy (staff/lawyer/assistant) NIE widzą globalnych przychodów ani zaległości.
+    const canSeeFinance = window.gmpAuth?.hasPermission?.(window.currentStaff, 'view_global_finance');
+    if (canSeeFinance) {
+        document.querySelectorAll('.gated-finance').forEach(el => { el.style.display = ''; });
+    }
+
     // Greeting
     const h = new Date().getHours();
     const greet = h < 12 ? 'Dzień dobry' : (h < 18 ? 'Miłej pracy' : 'Dobry wieczór');
@@ -874,7 +884,10 @@ async function loadFinanceStructure() {
     let cash = 0, transfer = 0, invoice = 0, other = 0, admin = 0;
     pays.forEach(p => {
         const a = Number(p.amount) || 0;
-        if (p.kind === 'admin_fee') admin += a;
+        // admin = opłaty administracyjne + skarbowe (dla urzędu, nie przychód kancelarii)
+        if (window.isAdminFeeKind(p.kind)) admin += a;
+        // Pomijamy client_advance (wydatek kancelarii) i client_advance_repayment (zwrot) — to nie cashflow
+        if (window.isClientAdvanceKind(p.kind) || window.isClientAdvanceRepaymentKind(p.kind)) return;
         if (p.method === 'gotowka') cash += a;
         else if (p.method === 'przelew') transfer += a;
         else if (p.method === 'faktura') invoice += a;
