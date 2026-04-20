@@ -1,5 +1,9 @@
 /* GetMyPermit CRM - Design System v2 */
 
+/* Force dark mode dla natywnych kontrolek przeglądarki (select option, date picker, scrollbar).
+   Bez tego Chrome na Windows rysuje <option> na białym tle systemowym. */
+:root, html, body { color-scheme: dark; }
+
 :root {
     /* Typography scale */
     --fs-xs: 11px;
