@@ -2322,7 +2322,21 @@ async function loadAppointmentsData() {
 async function loadDocumentsData() {
     const { data } = await db.from('gmp_documents').select('*').eq('case_id', caseId).order('created_at', { ascending: false });
     allDocuments = data || [];
+
+    // Niezatwierdzone dokumenty z ankiety klienta — tej sprawy
+    intakePendingDocs = [];
+    const { data: intakes } = await db.from('gmp_intake_tokens')
+        .select('id').eq('case_id', caseId);
+    if (intakes && intakes.length) {
+        const intakeIds = intakes.map(i => i.id);
+        const { data: idocs } = await db.from('gmp_intake_documents')
+            .select('id, doc_type, file_name, file_size, mime_type, storage_path, uploaded_at, approved_at, gmp_document_id')
+            .in('intake_id', intakeIds)
+            .is('approved_at', null);
+        intakePendingDocs = idocs || [];
+    }
 }
+let intakePendingDocs = [];
 
 async function loadTrustedProfileData() {
     if (!caseData?.client_id) return;
@@ -2407,7 +2421,7 @@ function updateCounts() {
     document.getElementById('cnt-history').textContent = allActivities.length;
     document.getElementById('cnt-tasks').textContent = allTasks.filter(t => t.status !== 'done').length;
     document.getElementById('cnt-finance').textContent = allPayments.length;
-    document.getElementById('cnt-docs').textContent = allDocuments.length;
+    document.getElementById('cnt-docs').textContent = allDocuments.length + (intakePendingDocs.length ? ` (+${intakePendingDocs.length})` : '');
     document.getElementById('cnt-appts').textContent = allAppointments.filter(a => !a.scheduled_date || a.scheduled_date >= new Date().toISOString().slice(0,10)).length;
 }
 
@@ -2985,18 +2999,56 @@ async function deletePayment(id) {
     toast.success('Usunięto');
 }
 
+const INTAKE_DOC_TYPE_LABELS = {
+    passport: 'Paszport',
+    contract: 'Umowa',
+    payslip: 'Pasek płacowy',
+    biometric_photo: 'Zdjęcie biometryczne',
+    photo_bio: 'Zdjęcie biometryczne',
+    registration: 'Zameldowanie',
+    birth_certificate: 'Akt urodzenia',
+    other: 'Inny',
+};
+
 function renderDocumentsTab() {
     const el = document.getElementById('documents-list');
-    if (!allDocuments.length) {
+
+    // Sekcja niezatwierdzonych dokumentów z ankiety (pkt 12 uwag Pawła — "zatwierdź dokument")
+    const pendingSection = intakePendingDocs.length ? `
+        <div class="border-b border-zinc-900 mb-4">
+            <div class="px-4 py-2 bg-amber-900/20 border-b border-amber-900/40 flex items-center gap-2">
+                <i class="ph ph-clipboard-text text-amber-300"></i>
+                <span class="text-sm font-medium text-amber-300">Do zatwierdzenia z ankiety klienta (${intakePendingDocs.length})</span>
+                <span class="text-xs text-zinc-500 ml-auto">Pliki dodane przez klienta w ankiecie. Zatwierdź żeby dodać do dokumentów sprawy.</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-4">
+                ${intakePendingDocs.map(d => `
+                    <div class="flex items-center gap-3 p-3 rounded-lg border border-amber-900/40 bg-amber-900/5">
+                        <i class="ph ph-file-dashed text-2xl text-amber-400"></i>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm text-zinc-200 truncate">${esc(d.file_name || INTAKE_DOC_TYPE_LABELS[d.doc_type] || d.doc_type || 'plik')}</div>
+                            <div class="text-xs text-zinc-500">${INTAKE_DOC_TYPE_LABELS[d.doc_type] || d.doc_type || ''} · ${d.file_size ? Math.round(d.file_size / 1024) + ' KB · ' : ''}${fmt.daysAgo(d.uploaded_at)}</div>
+                        </div>
+                        <div class="flex gap-1">
+                            <button class="btn btn-ghost btn-sm" onclick="previewIntakeDoc('${d.storage_path}')" title="Podgląd"><i class="ph ph-eye"></i></button>
+                            <button class="btn btn-primary btn-sm" onclick="approveIntakeDoc('${d.id}')" title="Zatwierdź"><i class="ph ph-check"></i> Zatwierdź</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    ` : '';
+
+    if (!allDocuments.length && !intakePendingDocs.length) {
         el.innerHTML = '<div class="p-6 empty-state"><i class="ph ph-file-plus"></i><div>Brak dokumentów</div><div class="text-xs text-zinc-600 mt-2">Kliknij "Dodaj plik" powyżej lub przeciągnij pliki</div></div>';
         return;
     }
-    el.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-4">
+    el.innerHTML = pendingSection + (allDocuments.length ? `<div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-4">
         ${allDocuments.map(d => `
             <div class="flex items-center gap-3 p-3 rounded-lg border border-zinc-900 hover:border-zinc-700 transition-colors">
-                <i class="ph ph-file text-2xl text-zinc-500"></i>
+                <i class="ph ${d.source === 'intake_approved' ? 'ph-clipboard-text text-indigo-400' : 'ph-file text-zinc-500'} text-2xl"></i>
                 <div class="flex-1 min-w-0">
-                    <div class="text-sm text-zinc-200 truncate">${esc(d.name)}</div>
+                    <div class="text-sm text-zinc-200 truncate">${esc(d.name)}${d.source === 'intake_approved' ? '<span class="ml-1 text-[10px] text-indigo-400 uppercase">z ankiety</span>' : ''}</div>
                     <div class="text-xs text-zinc-500">${d.file_size ? Math.round(d.file_size / 1024) + ' KB • ' : ''}${fmt.daysAgo(d.created_at)}</div>
                 </div>
                 <div class="flex gap-1">
@@ -3005,14 +3057,31 @@ function renderDocumentsTab() {
                 </div>
             </div>
         `).join('')}
-    </div>`;
+    </div>` : '<div class="p-4 text-zinc-500 text-sm">Brak zatwierdzonych dokumentów sprawy.</div>');
 }
+
+window.approveIntakeDoc = async function(intakeDocId) {
+    const { data, error } = await db.rpc('gmp_approve_intake_document', { p_intake_doc_id: intakeDocId });
+    if (error) { toast.error('Błąd zatwierdzania: ' + error.message); return; }
+    toast.success('Dokument zatwierdzony i dodany do sprawy');
+    await loadDocumentsData();
+    renderDocumentsTab();
+    updateCounts();
+};
 
 async function deleteDoc(docId) {
     if (!confirm('Usunąć dokument?')) return;
     const doc = allDocuments.find(d => d.id === docId);
-    if (doc?.storage_path) {
+    // Dokumenty z ankiety (source='intake_approved') — NIE usuwamy pliku z intake-docs.
+    // Zostaje oryginał. Usuwamy tylko rekord gmp_documents (dokument wróci na listę "do zatwierdzenia").
+    if (doc?.storage_path && doc.source !== 'intake_approved') {
         await window.supabaseClient.storage.from('documents').remove([doc.storage_path]);
+    }
+    // Dla intake_approved: cofnij też approval na gmp_intake_documents żeby wrócił do sekcji "Do zatwierdzenia"
+    if (doc?.source === 'intake_approved' && doc.intake_document_id) {
+        await db.from('gmp_intake_documents').update({
+            approved_at: null, approved_by: null, gmp_document_id: null
+        }).eq('id', doc.intake_document_id);
     }
     await db.from('gmp_documents').delete().eq('id', docId);
     await loadDocumentsData();
@@ -3471,7 +3540,9 @@ async function uploadDocuments(e) {
 async function downloadDoc(docId) {
     const doc = allDocuments.find(d => d.id === docId);
     if (!doc?.storage_path) { toast.error('Brak pliku'); return; }
-    const { data, error } = await window.supabaseClient.storage.from('documents').createSignedUrl(doc.storage_path, 60);
+    // Dokumenty z ankiety klienta (source='intake_approved') są w buckecie intake-docs — nie kopiujemy plików
+    const bucket = doc.source === 'intake_approved' ? 'intake-docs' : 'documents';
+    const { data, error } = await window.supabaseClient.storage.from(bucket).createSignedUrl(doc.storage_path, 60);
     if (error) { toast.error(error.message); return; }
     window.open(data.signedUrl, '_blank');
 }

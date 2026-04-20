@@ -189,6 +189,7 @@
                             <th data-sort="staff">Opiekun</th>
                             <th>Tagi</th>
                             <th data-sort="date_accepted">Przyjęta</th>
+                            <th data-sort="date_joined" title="Dni od przystąpienia do sprawy">Dni od przyst.</th>
                             <th data-sort="date_submitted">Złożony</th>
                             <th data-sort="legal_stay_end_date">Koniec legalu</th>
                             <th class="text-right" data-sort="balance_due">Zaległość</th>
@@ -197,7 +198,7 @@
                         </tr>
                     </thead>
                     <tbody id="cases-tbody">
-                        <tr><td colspan="17" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        <tr><td colspan="18" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -334,6 +335,7 @@ async function init() {
                 stage: r => r.stage || '',
                 staff: r => r.gmp_staff?.full_name || '',
                 date_accepted: r => r.date_accepted || '',
+                date_joined: r => r.date_joined ? -new Date(r.date_joined).getTime() : 0,
                 date_submitted: r => r.date_submitted || '',
                 legal_stay_end_date: r => r.legal_stay_end_date || '',
                 balance_due: r => Number(balanceByCase[r.id]?.balance_due || 0),
@@ -451,7 +453,7 @@ function buildQuery() {
 
 async function loadCases() {
     const tbody = document.getElementById('cases-tbody');
-    tbody.innerHTML = '<tr><td colspan="17" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="18" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Ładuję...</td></tr>';
 
     const search = document.getElementById('f-search').value.trim();
 
@@ -470,7 +472,7 @@ async function loadCases() {
         if (!tagCaseIds.length) {
             totalRows = 0;
             document.getElementById('page-count').textContent = '0 spraw (brak z wybranymi tagami)';
-            tbody.innerHTML = '<tr><td colspan="17" class="empty-state"><i class="ph ph-tag"></i><div>Brak spraw z wybranymi tagami</div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="18" class="empty-state"><i class="ph ph-tag"></i><div>Brak spraw z wybranymi tagami</div></td></tr>';
             renderPagination();
             return;
         }
@@ -534,7 +536,7 @@ async function loadCases() {
 
     const { data, error, count } = await q;
     if (error) {
-        tbody.innerHTML = `<tr><td colspan="17" class="p-6 text-center text-red-400">Błąd: ${esc(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="18" class="p-6 text-center text-red-400">Błąd: ${esc(error.message)}</td></tr>`;
         return;
     }
 
@@ -542,7 +544,7 @@ async function loadCases() {
     document.getElementById('page-count').textContent = `${fmt.num(totalRows)} spraw`;
 
     if (!data?.length) {
-        tbody.innerHTML = '<tr><td colspan="17" class="empty-state"><i class="ph ph-folder-open"></i><div>Brak spraw dla tych filtrów</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="18" class="empty-state"><i class="ph ph-folder-open"></i><div>Brak spraw dla tych filtrów</div></td></tr>';
         renderPagination();
         return;
     }
@@ -595,6 +597,12 @@ function renderRows() {
                 <td class="text-zinc-300 text-xs" data-edit-staff="${row.id}" data-val="${esc(row.assigned_to || '')}" onclick="event.stopPropagation()"><div class="flex items-center gap-2">${staffAva}<span>${staff}</span></div></td>
                 <td>${tagsHTML}</td>
                 <td class="text-zinc-500 text-xs">${fmt.date(row.date_accepted)}</td>
+                ${(() => {
+                    if (!row.date_joined) return '<td class="text-zinc-700 text-xs">—</td>';
+                    const days = Math.floor((Date.now() - new Date(row.date_joined).getTime()) / 86400000);
+                    const color = days > 180 ? 'text-red-400' : days > 90 ? 'text-amber-300' : 'text-zinc-400';
+                    return `<td class="${color} text-xs font-mono" title="Przystąpienie: ${fmt.date(row.date_joined)}">${days}d</td>`;
+                })()}
                 <td class="text-zinc-500 text-xs">${fmt.date(row.date_submitted)}</td>
                 <td class="text-xs ${row.legal_stay_end_date && new Date(row.legal_stay_end_date) < new Date() ? 'text-red-400 font-semibold' : 'text-zinc-400'}">${fmt.date(row.legal_stay_end_date)}</td>
                 ${(() => {

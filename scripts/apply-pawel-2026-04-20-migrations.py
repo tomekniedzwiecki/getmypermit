@@ -26,6 +26,8 @@ MIGRATIONS = [
     "20260421_pawel_multi_assignees.sql",
     "20260421_pawel_tasks_visibility.sql",
     "20260422_pawel_staff_stats_and_alerts.sql",
+    "20260422_pawel_pg_cron_installments.sql",
+    "20260423_pawel_intake_docs_approval.sql",
 ]
 
 migrations_dir = Path(__file__).parent.parent / "supabase" / "migrations"
