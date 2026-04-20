@@ -777,7 +777,10 @@ async function openStaffManageModal(id) {
             </div>
         </div>
         <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: space-between">
-            <div>${id && hasAccount ? `<button class="refresh-btn" style="background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444" onclick="deleteStaffAccount('${id}', '${esc(s.full_name)}')"><i class="ph ph-trash"></i> Dezaktywuj</button>` : ''}</div>
+            <div style="display: flex; gap: 6px">${id ? `
+                ${hasAccount ? `<button class="refresh-btn" style="background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444" onclick="deleteStaffAccount('${id}', '${esc(s.full_name)}')"><i class="ph ph-power"></i> Dezaktywuj</button>` : ''}
+                <button class="refresh-btn" style="background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); color: #ef4444; font-weight: 600" onclick="hardDeleteStaff('${id}', '${esc(s.full_name)}', ${hasAccount})"><i class="ph ph-trash"></i> Usuń całkowicie</button>
+            ` : ''}</div>
             <div style="display: flex; gap: 8px">
                 <button class="refresh-btn" onclick="gmpModal.close()">Anuluj</button>
                 <button class="refresh-btn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none" onclick="saveStaffManage('${id || ''}')">${id ? 'Zapisz' : 'Dodaj'}</button>
@@ -1108,4 +1111,38 @@ window.gmpSubmitNewPassword = async function(staffId, email, fullName, role) {
     if (input) input.value = '';
     gmpModal.close();
     await setPasswordAndShow(email, staffId, fullName, role, pwd);
+};
+
+// === USUWANIE PEŁNE — kasuje auth.users + gmp_staff (NIEODWRACALNE) ===
+window.hardDeleteStaff = async function(staffId, fullName, hasAccount) {
+    const accountInfo = hasAccount
+        ? '\n\nTo CAŁKOWICIE usunie konto pracownika z systemu:\n  • rekord w gmp_staff\n  • konto w auth.users (login + hasło)\n\nOperacja jest NIEODWRACALNA.'
+        : '\n\nTo usunie rekord pracownika z gmp_staff. Konto w auth (jeśli było) też zostanie usunięte.';
+
+    if (!confirm(`Usunąć pracownika "${fullName}" CAŁKOWICIE?${accountInfo}\n\nKliknij OK aby kontynuować.`)) return;
+
+    // Drugi confirm — wpisanie nazwy
+    const typed = prompt(`Aby potwierdzić, wpisz dokładnie imię i nazwisko pracownika:\n\n${fullName}`);
+    if (typed === null) return;
+    if (typed.trim() !== fullName.trim()) {
+        alert('Wpisana nazwa nie pasuje. Anulowano.');
+        return;
+    }
+
+    window.toast?.info('Usuwam pracownika...');
+    try {
+        const { data, error } = await db.functions.invoke('delete-staff', {
+            body: { staff_id: staffId },
+        });
+        if (error) throw error;
+        if (!data?.ok) {
+            alert('Błąd: ' + (data?.error || 'nieznany'));
+            return;
+        }
+        window.toast?.success(`Usunięto "${fullName}" całkowicie`);
+        gmpModal.close();
+        loadStaffManage();
+    } catch (e) {
+        alert('Błąd: ' + (e.message || e));
+    }
 };
