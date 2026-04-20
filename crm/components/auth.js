@@ -205,6 +205,16 @@
         document.dispatchEvent(new CustomEvent('gmp-auth-ready', {
           detail: { user: window.currentUser, staff: window.currentStaff }
         }));
+
+        // Obsługuj wygaśnięcie sesji: Supabase automatycznie odświeża JWT (1h expiry),
+        // ale jeśli refresh zawiedzie (np. user był offline >1h), przekieruj na login.
+        // Bez tego user widzi "zepsuty" CRM — wszystkie queries zwracają RLS fail.
+        window.supabaseClient.auth.onAuthStateChange((event) => {
+          if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED_FAILED') {
+            console.info('[auth] Sesja wygasła, przekierowanie do logowania');
+            window.location.href = 'index.html?expired=1';
+          }
+        });
       }
     });
   }

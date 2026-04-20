@@ -1786,6 +1786,8 @@ window.approveIntake = async function() {
     if (!confirm('Zatwierdzić ankietę? Dane zostaną przeniesione do sprawy i wygenerowany zostanie Playbook MOS 2.0.')) return;
     // Sync dane do klienta
     const d = currentIntake.data || {};
+    const beforeClient = caseData?.gmp_clients ? { ...caseData.gmp_clients } : null;
+    let clientUpdates = {};
     if (caseData?.client_id && (d.first_name || d.last_name)) {
         const updates = {};
         if (d.first_name) updates.first_name = d.first_name;
@@ -1795,6 +1797,7 @@ window.approveIntake = async function() {
         if (d.phone) updates.phone = d.phone;
         if (d.email) updates.email = d.email;
         if (Object.keys(updates).length) {
+            clientUpdates = updates;
             await db.from('gmp_clients').update(updates).eq('id', caseData.client_id);
         }
     }
@@ -1803,6 +1806,21 @@ window.approveIntake = async function() {
         reviewed_by: window.currentStaff?.id,
         reviewed_at: new Date().toISOString(),
     }).eq('id', currentIntake.id);
+
+    // Audit log — krytyczne z RODO (modyfikacja danych osobowych klienta)
+    const clientLabel = caseData?.gmp_clients
+        ? `${caseData.gmp_clients.last_name || ''} ${caseData.gmp_clients.first_name || ''}`.trim()
+        : '';
+    await window.gmpAuth?.auditLog?.('intake_approve', {
+        entityType: 'case',
+        entityId: caseId,
+        entityLabel: `Sprawa — ${clientLabel}`,
+        severity: 'info',
+        before: beforeClient,
+        after: clientUpdates,
+        metadata: { intake_id: currentIntake.id, intake_token: currentIntake.token },
+    });
+
     toast.success('Ankieta zatwierdzona');
     window.open(`/playbook/?t=${currentIntake.token}`, '_blank');
     renderIntakeTab();
@@ -2171,6 +2189,7 @@ async function saveCase() {
 
     const oldStatus = caseData.status;
     const oldStage = caseData.stage;
+    const oldAssignedTo = caseData.assigned_to;
 
     const { data, error } = await db.from('gmp_cases').update(updates).eq('id', caseId).select().maybeSingle();
     if (error) {
@@ -2204,6 +2223,12 @@ async function saveCase() {
     txt.textContent = 'Zapisz zmiany (Ctrl+S)';
     toast.success('Zapisano');
     loadActivitiesData().then(renderOverview);
+
+    // Gdy zmienił się primary opiekun, trigger SQL zsynchronizował gmp_case_assignees;
+    // odśwież chipy dodatkowych opiekunów (M7 z review)
+    if (updates.assigned_to !== oldAssignedTo) {
+        loadAdditionalAssignees();
+    }
 }
 
 // ============ DATA LOADERS ============

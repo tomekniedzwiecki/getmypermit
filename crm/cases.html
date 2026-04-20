@@ -412,6 +412,29 @@ async function loadFilters() {
 // Wspólna lista pól SELECT dla cases.html — używana w buildQuery i rebuild-after-search
 const CASES_SELECT_COLUMNS = 'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_submitted, date_joined, legal_stay_end_date, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, is_pinned, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name), gmp_office_departments(code)';
 
+// Zwraca pre-filtry (clientIdFilter, tagCaseIds) — używane w loadCases i exportCSV
+async function resolvePreFilters() {
+    const search = document.getElementById('f-search').value.trim();
+    let clientIdFilter = null;
+    if (search && search.length >= 2) {
+        const s = `%${search}%`;
+        const { data: matchedClients } = await db.from('gmp_clients')
+            .select('id').or(`last_name.ilike.${s},first_name.ilike.${s}`).limit(500);
+        if (matchedClients?.length) clientIdFilter = matchedClients.map(c => c.id);
+    }
+    let tagCaseIds = null;
+    if (activeTagFilters.length) {
+        const { data: tagRows } = await db.from('gmp_entity_tags')
+            .select('entity_id, tag_id').eq('entity_type', 'case').in('tag_id', activeTagFilters);
+        const counts = {};
+        (tagRows || []).forEach(r => counts[r.entity_id] = (counts[r.entity_id] || 0) + 1);
+        tagCaseIds = Object.entries(counts)
+            .filter(([_, cnt]) => cnt === activeTagFilters.length).map(([id]) => id);
+        if (!tagCaseIds.length) tagCaseIds = ['00000000-0000-0000-0000-000000000000']; // wymuś pusty wynik
+    }
+    return { search, clientIdFilter, tagCaseIds };
+}
+
 function buildQuery() {
     let q = db.from('gmp_cases').select(
         CASES_SELECT_COLUMNS,
@@ -1017,7 +1040,27 @@ function resetFilters() {
 
 async function exportCSV() {
     toast.info('Eksport do CSV... (max 5000 wierszy)');
+    // Respektuj filtr search (client name) i tagi — przed review H3 eksport je ignorował
+    const { clientIdFilter, tagCaseIds } = await resolvePreFilters();
     let q = buildQuery();
+    if (clientIdFilter?.length) {
+        const s = `%${document.getElementById('f-search').value.trim()}%`;
+        const inList = `(${clientIdFilter.join(',')})`;
+        q = db.from('gmp_cases').select(CASES_SELECT_COLUMNS, { count: 'exact' });
+        q = q.or(`case_number.ilike.${s},znak_sprawy.ilike.${s},client_id.in.${inList}`);
+        // Re-apply standardowe filtry (ten sam wzorzec co w loadCases)
+        const f = (id) => document.getElementById(id).value;
+        if (f('f-status')) q = q.eq('status', f('f-status'));
+        if (f('f-stage')) q = q.eq('stage', f('f-stage'));
+        if (f('f-category')) q = q.eq('category', f('f-category'));
+        if (f('f-staff')) q = q.eq('assigned_to', f('f-staff'));
+        if (f('f-department')) q = q.eq('department_id', f('f-department'));
+        if (f('f-employer')) q = q.eq('employer_id', f('f-employer'));
+        if (f('f-method')) q = q.eq('submission_method', f('f-method'));
+        if (f('f-date-from')) q = q.gte('date_accepted', f('f-date-from'));
+        if (f('f-date-to')) q = q.lte('date_accepted', f('f-date-to'));
+    }
+    if (tagCaseIds) q = q.in('id', tagCaseIds);
     q = q.limit(5000).order('date_accepted', { ascending: false, nullsFirst: false });
     const { data, error } = await q;
     if (error) { toast.error(error.message); return; }

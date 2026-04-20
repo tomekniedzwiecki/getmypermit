@@ -480,7 +480,8 @@ async function exportStaff() {
             if (c.fee_amount) agg[c.assigned_to].revenue_fee += Number(c.fee_amount);
         }
     });
-    payments.forEach(p => {
+    // Przychód = tylko wynagrodzenie (fee), bez opłat administracyjnych/skarbowych/advance (isFeeKind)
+    payments.filter(p => window.isFeeKind(p.kind)).forEach(p => {
         const sid = caseToStaff[p.case_id];
         if (agg[sid]) agg[sid].revenue_paid += Number(p.amount || 0);
     });
@@ -584,7 +585,17 @@ async function saveStaff(id) {
         aliases,
     };
     if (canManage) {
-        payload.role = document.getElementById('st-role').value;
+        const newRole = document.getElementById('st-role').value;
+        payload.role = newRole;
+        // UWAGA BEZPIECZEŃSTWA: gdy zmieniamy rolę, czyścimy permission_overrides
+        // (zapobiegamy sytuacji gdy demotowany lawyer nadal ma view_global_finance z przeszłości)
+        if (id) {
+            const { data: oldStaff } = await db.from('gmp_staff').select('role').eq('id', id).maybeSingle();
+            if (oldStaff && oldStaff.role !== newRole) {
+                payload.permission_overrides = null;
+                console.info(`[auth] Zmiana roli ${oldStaff.role} → ${newRole} dla staff ${id} — overrides wyczyszczone`);
+            }
+        }
     }
     const result = id
         ? await db.from('gmp_staff').update(payload).eq('id', id).select().single()

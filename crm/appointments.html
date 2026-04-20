@@ -116,12 +116,13 @@ async function init() {
             renderWeek();
         });
     });
-    // Persist "tylko moje" w localStorage
-    onlyMine = localStorage.getItem('gmp_cal_only_mine') === '1';
+    // Persist "tylko moje" w localStorage (prefix user_id — zapobiega wyciekom między użytkownikami tego samego urządzenia)
+    const lsKey = `gmp_cal_only_mine_${window.currentStaff?.id || 'anon'}`;
+    onlyMine = localStorage.getItem(lsKey) === '1';
     document.getElementById('only-mine-toggle').checked = onlyMine;
     document.getElementById('only-mine-toggle').addEventListener('change', (e) => {
         onlyMine = e.target.checked;
-        localStorage.setItem('gmp_cal_only_mine', onlyMine ? '1' : '0');
+        localStorage.setItem(lsKey, onlyMine ? '1' : '0');
         renderWeek();
     });
 

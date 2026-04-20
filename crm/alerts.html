@@ -232,39 +232,52 @@ async function loadEmployerInaction() {
 }
 
 async function loadOverduePayments() {
+    // Po dodaniu gmp_payment_installments (2026-04-20) plan ma wiele rat z różnymi datami.
+    // Zaległości liczymy z installments (status nie paid + due_date < dziś), nie z `gmp_payment_plans.due_date` (to data finalna planu).
     const today = new Date().toISOString().slice(0, 10);
-    const { data: plans } = await db.from('gmp_payment_plans')
-        .select('id, case_id, total_amount, due_date, gmp_cases(case_number, gmp_clients(last_name, first_name), gmp_employers(name))')
+    const { data: installments } = await db.from('gmp_payment_installments')
+        .select('id, case_id, amount, due_date, status')
+        .in('status', ['pending', 'reminder_sent', 'overdue'])
         .lt('due_date', today)
         .order('due_date')
-        .limit(100);
+        .limit(200);
 
     const el = document.getElementById('overdue-payments');
-    document.getElementById('payments-count').textContent = plans?.length || 0;
-    if (!plans?.length) { el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak</div></div>'; return; }
+    if (!installments?.length) {
+        document.getElementById('payments-count').textContent = 0;
+        el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check"></i><div>Brak</div></div>';
+        return;
+    }
+    // Agreguj per case (jedna sprawa może mieć wiele zaległych rat)
+    const byCase = {};
+    installments.forEach(i => {
+        if (!byCase[i.case_id]) byCase[i.case_id] = { case_id: i.case_id, total: 0, earliestDue: i.due_date, count: 0 };
+        byCase[i.case_id].total += Number(i.amount || 0);
+        byCase[i.case_id].count++;
+        if (i.due_date < byCase[i.case_id].earliestDue) byCase[i.case_id].earliestDue = i.due_date;
+    });
+    const rows = Object.values(byCase).sort((a, b) => a.earliestDue.localeCompare(b.earliestDue));
+    document.getElementById('payments-count').textContent = rows.length;
 
-    // Doliczamy wplacone (paginowane - wiele płatności może być dla tych caseIds)
-    // Zaleglosci sa wylacznie wzgledem wynagrodzenia - oplaty administracyjne sa osobna kategoria
-    const caseIds = plans.map(p => p.case_id);
-    const paid = await fetchAll(() => db.from('gmp_payments').select('case_id, amount, kind').in('case_id', caseIds));
-    const paidByCase = {};
-    paid.filter(p => window.isFeeKind(p.kind)).forEach(p => paidByCase[p.case_id] = (paidByCase[p.case_id] || 0) + Number(p.amount || 0));
+    const caseIds = rows.map(r => r.case_id);
+    const { data: cases } = await db.from('gmp_cases')
+        .select('id, case_number, gmp_clients(last_name, first_name), gmp_employers(name)').in('id', caseIds);
+    const byId = Object.fromEntries((cases || []).map(c => [c.id, c]));
 
-    el.innerHTML = plans.map(p => {
-        const c = p.gmp_cases;
-        const client = c?.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
-        const employer = c?.gmp_employers?.name || '';
-        const remain = Math.max(0, Number(p.total_amount) - (paidByCase[p.case_id] || 0));
-        const days = Math.floor((Date.now() - new Date(p.due_date).getTime()) / 86400000);
+    el.innerHTML = rows.map(r => {
+        const c = byId[r.case_id] || {};
+        const client = c.gmp_clients ? `${esc(c.gmp_clients.last_name)} ${esc(c.gmp_clients.first_name)}` : '—';
+        const employer = c.gmp_employers?.name || '';
+        const days = Math.floor((Date.now() - new Date(r.earliestDue).getTime()) / 86400000);
         return `
-            <a href="case.html?id=${p.case_id}" class="block p-3 hover:bg-zinc-900/50">
+            <a href="case.html?id=${r.case_id}" class="block p-3 hover:bg-zinc-900/50">
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex-1 min-w-0">
                         <div class="text-sm text-white">${client}</div>
-                        <div class="text-xs text-zinc-500 truncate">${esc(employer)}</div>
+                        <div class="text-xs text-zinc-500 truncate">${esc(employer)}${r.count > 1 ? ` · ${r.count} rat` : ''}</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-red-400 font-mono text-sm">${fmt.money(remain)}</div>
+                        <div class="text-red-400 font-mono text-sm">${fmt.money(r.total)}</div>
                         <div class="text-xs text-zinc-500">${days} dni po</div>
                     </div>
                 </div>

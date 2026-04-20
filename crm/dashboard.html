@@ -434,12 +434,13 @@
         </section>
 
         <!-- ============ FINANSE ============ -->
-        <div class="section-h">
+        <!-- CAŁA sekcja ukrywana dla pracowników bez view_global_finance (uwagi Pawła pkt 16) -->
+        <div class="section-h gated-finance" style="display: none">
             <h2><i class="ph ph-chart-line"></i>Finanse</h2>
             <a href="payments.html">Szczegóły <i class="ph ph-arrow-right"></i></a>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 gated-finance" style="display: none">
             <section class="card lg:col-span-2">
                 <div class="card-header flex items-center justify-between">
                     <span><i class="ph ph-currency-circle-dollar"></i> Przychody — 12 miesięcy</span>
@@ -579,23 +580,24 @@ async function loadDashboard() {
     document.getElementById('greeting-sub').textContent = subtitle;
     document.getElementById('today-date').textContent = `${today.getDate()} ${msc[today.getMonth()]}`;
 
-    // Ładuj sekwencyjnie od najważniejszych - wizualnie przyjemniej
-    await Promise.all([
+    // Ładuj. Loadery finansowe pomijamy gdy user nie ma view_global_finance (staff/lawyer/assistant)
+    const loaders = [
         loadKPIs(),
         loadToday(),
         loadPipeline(),
         loadAlertsByReason(),
         loadAlertsList(),
-        loadDebtTop(),
-        loadRevenueChart(),
-        loadFinanceStructure(),
         loadTeam(),
         loadNewCasesChart(),
         loadActivityFeed(),
         loadMyTasks(),
         loadPlan(),
         loadFreshLeads(),
-    ]);
+    ];
+    if (canSeeFinance) {
+        loaders.push(loadDebtTop(), loadRevenueChart(), loadFinanceStructure());
+    }
+    await Promise.all(loaders);
 }
 
 // ============ HERO KPI ============
@@ -606,39 +608,48 @@ async function loadKPIs() {
     const today = now.toISOString().slice(0, 10);
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
 
-    const [activeCnt, debtOv, revCur, revPrev, alertsCnt, weekNew] = await Promise.all([
+    // Podstawowe queries (dla wszystkich ról)
+    const basicPromises = [
         db.from('gmp_cases').select('id', { count: 'exact', head: true }).in('status', ['aktywna', 'zlecona']),
-        db.from('gmp_collection_overview').select('remaining_amount').eq('status', 'active').gt('remaining_amount', 0),
-        // Przychod = wynagrodzenie (bez oplat administracyjnych - to odrebna kategoria)
-        db.from('gmp_payments').select('amount').neq('kind', 'admin_fee').gte('payment_date', firstOfMonth).lt('payment_date', today),
-        db.from('gmp_payments').select('amount').neq('kind', 'admin_fee').gte('payment_date', firstOfLastMonth).lt('payment_date', firstOfMonth),
         db.from('gmp_case_alerts').select('id', { count: 'exact', head: true }).eq('inactivity_level', 'inactive_30'),
         db.from('gmp_cases').select('id', { count: 'exact', head: true }).gte('date_accepted', weekAgo),
-    ]);
+    ];
+    // Finansowe queries — tylko dla ról z view_global_finance (performance + RODO)
+    const canSeeFinanceLocal = window.gmpAuth?.hasPermission?.(window.currentStaff, 'view_global_finance');
+    const financePromises = canSeeFinanceLocal ? [
+        db.from('gmp_collection_overview').select('remaining_amount').eq('status', 'active').gt('remaining_amount', 0),
+        // Przychód = tylko wynagrodzenie (fee) — nie administracyjna, skarbowa ani advance
+        db.from('gmp_payments').select('amount').or('kind.eq.fee,kind.is.null').gte('payment_date', firstOfMonth).lt('payment_date', today),
+        db.from('gmp_payments').select('amount').or('kind.eq.fee,kind.is.null').gte('payment_date', firstOfLastMonth).lt('payment_date', firstOfMonth),
+    ] : [];
+
+    const allResults = await Promise.all([...basicPromises, ...financePromises]);
+    const [activeCnt, alertsCnt, weekNew, ...financeResults] = allResults;
 
     // Aktywne sprawy
     document.getElementById('k-active').textContent = fmt.num(activeCnt.count || 0);
     document.getElementById('k-active-trend').innerHTML = `<span class="kpi-trend-up"><i class="ph ph-trend-up"></i> +${weekNew.count || 0}</span> <span class="muted">w ostatnim tygodniu</span>`;
 
-    // Windykacja
-    const debtTotal = (debtOv.data || []).reduce((s, r) => s + Number(r.remaining_amount || 0), 0);
-    document.getElementById('k-debt').textContent = fmt.money(debtTotal).replace(/\s?zł$/, '');
-    document.getElementById('k-debt-sub').innerHTML = `<i class="ph ph-currency-circle-dollar"></i> ${(debtOv.data || []).length} aktywnych windykacji`;
-
-    // Przychód
-    const revNow = (revCur.data || []).reduce((s, p) => s + Number(p.amount || 0), 0);
-    const revOld = (revPrev.data || []).reduce((s, p) => s + Number(p.amount || 0), 0);
-    document.getElementById('k-rev').textContent = fmt.money(revNow).replace(/\s?zł$/, '');
-    const pct = revOld > 0 ? Math.round((revNow - revOld) / revOld * 100) : null;
-    const trendHTML = pct === null
-        ? `<span class="muted">brak danych ubiegły miesiąc</span>`
-        : (pct >= 0
-            ? `<span class="kpi-trend-up"><i class="ph ph-trend-up"></i> +${pct}%</span> <span class="muted">vs poprzedni</span>`
-            : `<span class="kpi-trend-down"><i class="ph ph-trend-down"></i> ${pct}%</span> <span class="muted">vs poprzedni</span>`);
-    document.getElementById('k-rev-trend').innerHTML = trendHTML;
-
     // Alerty
     document.getElementById('k-alerts').textContent = fmt.num(alertsCnt.count || 0);
+
+    // Finanse — tylko gdy user ma uprawnienia
+    if (canSeeFinanceLocal && financeResults.length === 3) {
+        const [debtOv, revCur, revPrev] = financeResults;
+        const debtTotal = (debtOv.data || []).reduce((s, r) => s + Number(r.remaining_amount || 0), 0);
+        document.getElementById('k-debt').textContent = fmt.money(debtTotal).replace(/\s?zł$/, '');
+        document.getElementById('k-debt-sub').innerHTML = `<i class="ph ph-currency-circle-dollar"></i> ${(debtOv.data || []).length} aktywnych windykacji`;
+        const revNow = (revCur.data || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+        const revOld = (revPrev.data || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+        document.getElementById('k-rev').textContent = fmt.money(revNow).replace(/\s?zł$/, '');
+        const pct = revOld > 0 ? Math.round((revNow - revOld) / revOld * 100) : null;
+        const trendHTML = pct === null
+            ? `<span class="muted">brak danych ubiegły miesiąc</span>`
+            : (pct >= 0
+                ? `<span class="kpi-trend-up"><i class="ph ph-trend-up"></i> +${pct}%</span> <span class="muted">vs poprzedni</span>`
+                : `<span class="kpi-trend-down"><i class="ph ph-trend-down"></i> ${pct}%</span> <span class="muted">vs poprzedni</span>`);
+        document.getElementById('k-rev-trend').innerHTML = trendHTML;
+    }
 }
 
 // ============ DZIS BAR + TIMELINE ============
