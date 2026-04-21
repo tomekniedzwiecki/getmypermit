@@ -599,7 +599,7 @@ function renderDashboard() {
         <section class="card mb-4">
             <div class="card-header">Aging - szczegóły i prognoza odzysku</div>
             <div class="overflow-x-auto">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr><th>Bucket</th><th class="text-right">Spraw</th><th class="text-right">Kwota</th><th class="text-right">Z kontaktem</th><th class="text-right">Recovery rate</th><th class="text-right">Prognoza odzysku</th></tr></thead>
                     <tbody>${Object.entries(byBucket).map(([name, b]) => {
                         if (b.count === 0) return '';
@@ -705,7 +705,7 @@ function renderAll() {
 
         <div class="card">
             <div class="overflow-x-auto" style="max-height: calc(100vh - 420px)">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr>
                         <th data-sort="client">Klient</th>
                         <th>Pracodawca</th>
@@ -832,7 +832,7 @@ function renderNoContact() {
 
         <div class="card">
             <div class="overflow-x-auto">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr><th>Klient</th><th>Pracodawca</th><th>Nr sprawy</th><th class="text-right">Wiek</th><th class="text-right">Kwota</th><th>Opiekun</th><th></th><th class="row-open"></th></tr></thead>
                     <tbody>${noContact.map(c => {
                         const client = (c.last_name || '—') + ' ' + (c.first_name || '');
@@ -900,7 +900,7 @@ function renderOld() {
 
         <div class="card">
             <div class="overflow-x-auto">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr><th>Klient</th><th class="text-right">Kwota</th><th class="text-right">Wiek</th><th>Kontakt</th><th>Opiekun</th><th class="text-right">Prob.</th><th></th><th class="row-open"></th></tr></thead>
                     <tbody>${old.map(c => {
                         const client = (c.last_name || '—') + ' ' + (c.first_name || '');

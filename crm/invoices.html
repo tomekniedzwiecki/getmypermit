@@ -84,7 +84,7 @@ async function renderList() {
     if (!data?.length) { el.innerHTML = '<div class="card empty-state p-8"><i class="ph ph-receipt"></i><div>Brak faktur</div></div>'; return; }
 
     el.innerHTML = `<div class="card overflow-hidden"><div class="overflow-x-auto max-h-[calc(100vh-260px)]">
-        <table class="gmp-table">
+        <table class="gmp-table gmp-table-mobile-cards">
             <thead><tr>
                 <th>Pracodawca / Klient</th><th>Opis</th><th>Status</th>
                 <th>Wysłana do</th><th>Data wysłania</th>
@@ -171,7 +171,7 @@ async function renderBasket() {
                 ${isMulti ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); issueBatch('${idx}')"><i class="ph ph-file-plus"></i> Wystaw zbiorczą</button>` : `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); issueSingle('${g.items[0].id}')"><i class="ph ph-file"></i> Wystaw</button>`}
             </div>
             <div id="items-${idx}" class="hidden border-t border-zinc-900">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr><th>Nr sprawy</th><th>Opis</th><th class="text-right">Kwota</th><th></th></tr></thead>
                     <tbody>${g.items.map(i => `<tr>
                         <td class="text-xs font-mono">${esc(i.gmp_cases?.case_number || '—')}</td>

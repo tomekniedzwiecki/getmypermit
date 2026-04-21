@@ -78,13 +78,90 @@
 .cal-event.konsultacja { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
 .cal-event.task { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); }
 
-/* === MOBILE calendar === */
+/* Day header labels — desktop pokazuje krótką, mobile pokazuje pełną nazwę dnia */
+.cal-lbl-desktop { display: inline; }
+.cal-lbl-mobile { display: none; }
 @media (max-width: 600px) {
-    #calendar-grid { display: flex !important; flex-direction: column !important; }
-    .cal-day { min-height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 10px 12px; }
-    .cal-day-header { text-align: left; font-size: 11px; margin-bottom: 6px; padding-bottom: 4px; }
-    .cal-day-header.today { padding: 4px 10px; border-radius: 4px; background: rgba(59,130,246,0.1); display: inline-block; }
-    .cal-event { font-size: 12px; padding: 8px 10px; }
+    .cal-lbl-desktop { display: none; }
+    .cal-lbl-mobile { display: inline; }
+}
+
+/* === MOBILE calendar === */
+@media (max-width: 900px) {
+    /* Navigacja prev/next/today — większe touch targets */
+    .page-header .btn { min-height: 44px; min-width: 44px; }
+}
+@media (max-width: 600px) {
+    #calendar-grid {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    .cal-day {
+        min-height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 12px 14px;
+        /* Ukryj puste dni żeby nie zasłaniały wizji */
+    }
+    .cal-day.empty-mobile {
+        padding: 8px 14px;
+        min-height: 0;
+    }
+    .cal-day.empty-mobile .cal-day-header { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .cal-day.empty-mobile > div:not(.cal-day-header) { display: none; }
+    /* Nagłówek dnia — sticky żeby user zawsze widział którego dnia patrzy scroll */
+    .cal-day-header {
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        color: var(--text);
+        position: sticky;
+        top: 52px;
+        background: var(--bg-elevated);
+        z-index: 2;
+        margin-left: -14px; margin-right: -14px;
+        padding-left: 14px; padding-right: 14px; padding-top: 8px;
+    }
+    .cal-day-header.today {
+        color: var(--accent);
+        border-left: 3px solid var(--accent);
+        padding-left: 11px;
+    }
+    /* Event — większy, touch-friendly */
+    .cal-event {
+        font-size: 13px;
+        padding: 12px 12px;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: var(--r-md);
+        margin-bottom: 8px;
+    }
+    .cal-event > span:first-child { flex-shrink: 0; font-weight: 600; }
+    /* Filtr tabs (Wszystkie/Konsultacje/Odciski) — overflow horizontal */
+    .flex.gap-1.mb-4 {
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+    }
+    .flex.gap-1.mb-4::-webkit-scrollbar { display: none; }
+    .flex.gap-1.mb-4 .tab-btn { flex-shrink: 0; min-height: 40px; padding: 8px 14px; }
+    /* "Tylko moje" checkbox — w osobnym wierszu żeby nie ściskać przycisków */
+    label.flex.items-center.gap-2.text-xs {
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        margin-top: 8px;
+        font-size: 13px !important;
+    }
+    /* Nadchodzące odciski — lepsza czytelność na mobile */
+    #odciski-list a { min-height: 60px; padding: 14px 14px !important; }
 }
 </style>
 
@@ -228,15 +305,21 @@ async function renderWeek() {
     const weekdays = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'];
     const grid = document.getElementById('calendar-grid');
     grid.innerHTML = '';
+    const monthNames = ['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'];
+    const fullDays = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
     for (let i = 0; i < 7; i++) {
         const d = new Date(currentWeekStart); d.setDate(d.getDate() + i);
         const key = d.toISOString().slice(0,10);
         const isToday = d.getTime() === today.getTime();
         const events = byDay[key].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
         const cell = document.createElement('div');
-        cell.className = 'cal-day';
+        // Oznacz puste dni klasą 'empty-mobile' — na mobile CSS je zwinie do samej etykiety
+        cell.className = 'cal-day' + (events.length === 0 ? ' empty-mobile' : '');
+        // Tytuł: "Pn 21.4" na desktop, "Poniedziałek 21 kwietnia" na mobile — renderuję oba
+        const desktopLabel = `${weekdays[i]} ${d.getDate()}.${d.getMonth()+1}`;
+        const mobileLabel = `<span class="cal-lbl-desktop">${desktopLabel}</span><span class="cal-lbl-mobile">${fullDays[i]} ${d.getDate()} ${monthNames[d.getMonth()]}${isToday ? ' · DZIŚ' : ''}</span>`;
         cell.innerHTML = `
-            <div class="cal-day-header ${isToday ? 'today' : ''}">${weekdays[i]} ${d.getDate()}.${d.getMonth()+1}</div>
+            <div class="cal-day-header ${isToday ? 'today' : ''}">${mobileLabel}</div>
             ${events.length === 0 ? '<div class="text-zinc-700 text-xs text-center pt-8">—</div>' : ''}
             ${events.map(e => `
                 <a href="${e.href}" class="block">

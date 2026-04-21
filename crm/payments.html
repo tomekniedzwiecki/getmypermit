@@ -128,7 +128,59 @@
 .period-btn { padding: 0.25rem 0.6rem; font-size: 0.7rem; }
 .period-btn.active { background: white; color: black; }
 .chart-container { position: relative; height: 280px; width: 100%; }
-</style>
+
+/* === MOBILE payments === */
+@media (max-width: 900px) {
+    .chart-container { height: 240px; }
+}
+@media (max-width: 600px) {
+    /* KPI strip — 5 kafelków — horizontal scroll-snap */
+    .grid.grid-cols-2.md\:grid-cols-5 {
+        display: flex !important;
+        grid-template-columns: none !important;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 10px !important;
+        padding: 0 16px 8px;
+        margin: 0 -16px 16px;
+        -webkit-overflow-scrolling: touch;
+        mask-image: none !important;
+        -webkit-mask-image: none !important;
+    }
+    .grid.grid-cols-2.md\:grid-cols-5::-webkit-scrollbar { display: none; }
+    .grid.grid-cols-2.md\:grid-cols-5 > .card {
+        flex: 0 0 70%;
+        scroll-snap-align: start;
+        min-width: 0;
+    }
+    /* Period + filter bars — stack */
+    .card.p-3.mb-4 > .flex.gap-2.items-center {
+        flex-wrap: wrap;
+        gap: 6px !important;
+    }
+    .card.p-3.mb-4 .period-btn {
+        min-height: 36px;
+        padding: 8px 12px;
+        font-size: 13px;
+        flex: 1 1 calc(33% - 4px);
+    }
+    .card.p-3.mb-4 .filter-input {
+        min-height: 40px;
+        font-size: 14px;
+    }
+    /* Tabs — horizontal scroll */
+    .flex.gap-1.mb-4.flex-wrap {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .flex.gap-1.mb-4.flex-wrap::-webkit-scrollbar { display: none; }
+    .flex.gap-1.mb-4.flex-wrap .tab-btn { flex-shrink: 0; min-height: 44px; padding: 10px 14px; }
+    /* Chart container niższy */
+    .chart-container { height: 220px; }
+    /* Tabele wpłat / zaległości / rat — mobile cards */
+    #view-content table.gmp-table { /* Applied via JS too */ }
+}</style>
 <script src="components/sidebar.js" data-active="payments"></script>
 <script>
 let currentView = 'overview';
@@ -535,7 +587,7 @@ async function renderPayments() {
     el.innerHTML = `
         <div class="card overflow-hidden">
             <div class="overflow-x-auto max-h-[calc(100vh-500px)]">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr>
                         <th>Data</th><th>Klient / Pracodawca</th><th>Nr sprawy</th>
                         <th>Rodzaj</th><th>Forma</th><th>Rata</th><th>Notatka</th>
@@ -550,17 +602,17 @@ async function renderPayments() {
                             const emp = c?.gmp_employers?.name || p.gmp_employers?.name || '';
                             return `
                                 <tr class="clickable" onclick="location.href='case.html?id=${p.case_id}'">
-                                    <td class="text-xs text-zinc-400 whitespace-nowrap">${fmt.date(p.payment_date)}</td>
-                                    <td>
+                                    <td data-label="Data" class="text-xs text-zinc-400 whitespace-nowrap">${fmt.date(p.payment_date)}</td>
+                                    <td data-label="Klient">
                                         <div class="text-sm">${client}</div>
                                         ${emp ? `<div class="text-xs text-zinc-500">${esc(emp)}</div>` : ''}
                                     </td>
-                                    <td class="font-mono text-xs text-zinc-500">${esc(c?.case_number || '')}</td>
-                                    <td class="text-xs">${({fee:'Wynagrodz.', admin_fee:'Admin.', stamp_fee:'Skarbowa', client_advance:'Za klienta (koszt)', client_advance_repayment:'Za klienta (zwrot)'}[p.kind]) || p.kind || '—'}</td>
-                                    <td class="text-xs">${esc(p.method || '—')}</td>
-                                    <td class="text-xs text-zinc-400">${p.installment_number ? `${p.installment_number}/${p.total_installments || '?'}` : '—'}</td>
-                                    <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(p.notes || '')}</td>
-                                    <td class="text-right font-mono text-emerald-300 font-semibold">${fmt.money(p.amount)}</td>
+                                    <td data-label="Nr sprawy" class="font-mono text-xs text-zinc-500">${esc(c?.case_number || '')}</td>
+                                    <td data-label="Rodzaj" class="text-xs">${({fee:'Wynagrodz.', admin_fee:'Admin.', stamp_fee:'Skarbowa', client_advance:'Za klienta (koszt)', client_advance_repayment:'Za klienta (zwrot)'}[p.kind]) || p.kind || '—'}</td>
+                                    <td data-label="Forma" class="text-xs">${esc(p.method || '—')}</td>
+                                    <td data-label="Rata" class="text-xs text-zinc-400">${p.installment_number ? `${p.installment_number}/${p.total_installments || '?'}` : '—'}</td>
+                                    <td data-label="Notatka" class="text-xs text-zinc-400 truncate max-w-xs">${esc(p.notes || '')}</td>
+                                    <td data-label="Kwota" class="text-right font-mono text-emerald-300 font-semibold">${fmt.money(p.amount)}</td>
                                     <td class="row-open">${window.rowOpen()}</td>
                                 </tr>`;
                         }).join('')}
@@ -588,7 +640,7 @@ async function renderAdmin() {
         <div class="card overflow-hidden">
             ${(data || []).length === 0 ? '<div class="empty-state"><i class="ph ph-bank"></i><div>Brak opłat administracyjnych w tym okresie</div><div class="text-xs text-zinc-600 mt-2">Oznacz płatność jako "Opłata administracyjna" w karcie sprawy</div></div>' : `
             <div class="overflow-x-auto">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr><th>Data</th><th>Klient</th><th>Sprawa</th><th>Notatka</th><th class="text-right">Kwota</th><th class="row-open"></th></tr></thead>
                     <tbody>${data.map(p => `
                         <tr class="clickable" onclick="location.href='case.html?id=${p.case_id}'">
@@ -638,7 +690,7 @@ async function renderOverdue() {
         </div>
         <div class="card overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr>
                         <th>Klient / Pracodawca</th><th>Opiekun</th><th>Status</th>
                         <th>Termin</th><th>Dni po</th>
@@ -721,7 +773,7 @@ async function renderForecast() {
         </div>
         <div class="card overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr>
                         <th>Termin</th><th>Dni</th><th>Klient / Pracodawca</th><th>Opiekun</th>
                         <th>Płaci</th><th class="text-right">Plan</th><th class="text-right">Zapłacono</th>
@@ -791,7 +843,7 @@ async function renderMonthly() {
     el.innerHTML = `
         <div class="card overflow-hidden">
             <div class="overflow-x-auto max-h-[calc(100vh-400px)]">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead><tr>
                         <th>Miesiąc</th><th>Wpłat</th>
                         <th>Gotówka</th><th>Przelew</th><th>Faktura</th>
