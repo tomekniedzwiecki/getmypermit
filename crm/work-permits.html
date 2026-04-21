@@ -198,7 +198,7 @@ function render() {
 
 function renderTable(rows) {
     if (!rows.length) return '<div class="card empty-state p-8"><i class="ph ph-files"></i><div>Brak spraw</div></div>';
-    return `<div class="card overflow-hidden"><div class="overflow-x-auto"><table class="gmp-table">
+    return `<div class="card overflow-hidden"><div class="overflow-x-auto"><table class="gmp-table gmp-table-mobile-cards">
         <thead><tr>
             <th>Nr sprawy</th><th>Pracodawca</th><th>NIP</th><th>Typ</th>
             <th>Pracownicy</th><th>Data przyjęcia</th><th>Status</th><th>Opiekun</th><th>Wynagr.</th>
@@ -208,15 +208,15 @@ function renderTable(rows) {
             const workers = allWorkers[c.id] || [];
             const typeLabel = c.case_type === 'audit' ? 'Audyt' : 'Zezw. na pracę';
             return `<tr class="clickable" onclick="location.href='case.html?id=${c.id}'">
-                <td class="font-mono text-xs">${esc(c.case_number || c.id.slice(0,8))}</td>
-                <td class="text-sm">${esc(c.gmp_employers?.name || '—')}</td>
-                <td class="text-xs font-mono text-zinc-400">${esc(c.gmp_employers?.nip || '—')}</td>
-                <td><span class="badge badge-category">${typeLabel}</span></td>
-                <td class="text-sm">${workers.length > 0 ? `<span class="font-semibold text-cyan-300">${workers.length}</span> <span class="text-xs text-zinc-500">os.</span>` : '<span class="text-zinc-600">—</span>'}</td>
-                <td class="text-xs">${fmtDate(c.date_accepted)}</td>
-                <td><span class="badge badge-${c.status || 'lead'}">${esc(c.status || '—')}</span></td>
-                <td class="text-xs text-zinc-400">${esc(c.gmp_staff?.full_name || '—')}</td>
-                <td class="text-right font-mono text-sm">${fmtMoney(c.fee_amount)}</td>
+                <td data-label="Nr sprawy" class="font-mono text-xs">${esc(c.case_number || c.id.slice(0,8))}</td>
+                <td data-label="Pracodawca" class="text-sm">${esc(c.gmp_employers?.name || '—')}</td>
+                <td data-label="NIP" class="text-xs font-mono text-zinc-400">${esc(c.gmp_employers?.nip || '—')}</td>
+                <td data-label="Typ"><span class="badge badge-category">${typeLabel}</span></td>
+                <td data-label="Pracownicy" class="text-sm">${workers.length > 0 ? `<span class="font-semibold text-cyan-300">${workers.length}</span> <span class="text-xs text-zinc-500">os.</span>` : '<span class="text-zinc-600">—</span>'}</td>
+                <td data-label="Data przyjęcia" class="text-xs">${fmtDate(c.date_accepted)}</td>
+                <td data-label="Status"><span class="badge badge-${c.status || 'lead'}">${esc(c.status || '—')}</span></td>
+                <td data-label="Opiekun" class="text-xs text-zinc-400">${esc(c.gmp_staff?.full_name || '—')}</td>
+                <td data-label="Wynagrodzenie" class="text-right font-mono text-sm">${fmtMoney(c.fee_amount)}</td>
                 <td class="row-open"><i class="ph ph-caret-right"></i></td>
             </tr>`;
         }).join('')}

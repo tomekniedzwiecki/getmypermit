@@ -67,7 +67,7 @@
 
         <div class="card overflow-hidden">
             <div class="overflow-x-auto max-h-[calc(100vh-280px)]">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead>
                         <tr>
                             <th>Nazwa</th>
@@ -107,7 +107,7 @@
             </div>
             <div class="card">
                 <div class="overflow-x-auto">
-                    <table class="gmp-table">
+                    <table class="gmp-table gmp-table-mobile-cards">
                         <thead>
                             <tr>
                                 <th>Nazwa</th>
@@ -200,11 +200,11 @@ function renderNoteTemplates() {
     const iconByCat = { note: 'ph-note', email: 'ph-envelope', sms: 'ph-chat', whatsapp: 'ph-whatsapp-logo' };
     tbody.innerHTML = filtered.map(t => `
         <tr>
-            <td><strong>${esc(t.name)}</strong></td>
-            <td><span class="badge badge-neutral"><i class="ph ${iconByCat[t.category] || 'ph-note'}"></i> ${esc(t.category)}</span></td>
-            <td class="text-xs text-zinc-400">${esc(t.description || '')}</td>
-            <td class="text-xs text-zinc-500 max-w-md truncate" title="${esc(t.body_template)}">${esc(t.body_template.slice(0, 80))}${t.body_template.length > 80 ? '…' : ''}</td>
-            <td>
+            <td data-label="Nazwa"><strong>${esc(t.name)}</strong></td>
+            <td data-label="Typ"><span class="badge badge-neutral"><i class="ph ${iconByCat[t.category] || 'ph-note'}"></i> ${esc(t.category)}</span></td>
+            <td data-label="Opis" class="text-xs text-zinc-400">${esc(t.description || '')}</td>
+            <td data-label="Treść" class="text-xs text-zinc-500 max-w-md truncate" title="${esc(t.body_template)}">${esc(t.body_template.slice(0, 80))}${t.body_template.length > 80 ? '…' : ''}</td>
+            <td data-label="Akcje">
                 <button class="btn btn-ghost btn-sm" onclick="openNoteTplModal('${t.id}')" title="Edytuj"><i class="ph ph-pencil"></i></button>
                 <button class="btn btn-ghost btn-sm text-red-400" onclick="deleteNoteTpl('${t.id}')" title="Usuń"><i class="ph ph-trash"></i></button>
             </td>
@@ -303,12 +303,12 @@ async function loadList() {
 
     tbody.innerHTML = templates.map(t => `
         <tr>
-            <td><div class="text-white">${esc(t.name)}</div></td>
-            <td class="text-xs"><span class="badge badge-category">${esc(t.category || '—')}</span></td>
-            <td class="text-xs text-zinc-400 max-w-md truncate">${esc(t.description || '')}</td>
-            <td class="text-xs text-zinc-500">${fmt.date(t.created_at)}</td>
-            <td>${t.is_active ? '<span class="badge badge-aktywna">aktywny</span>' : '<span class="badge badge-archiwum">nieaktywny</span>'}</td>
-            <td>
+            <td data-label="Nazwa"><div class="text-white">${esc(t.name)}</div></td>
+            <td data-label="Kategoria" class="text-xs"><span class="badge badge-category">${esc(t.category || '—')}</span></td>
+            <td data-label="Opis" class="text-xs text-zinc-400 max-w-md truncate">${esc(t.description || '')}</td>
+            <td data-label="Dodano" class="text-xs text-zinc-500">${fmt.date(t.created_at)}</td>
+            <td data-label="Status">${t.is_active ? '<span class="badge badge-aktywna">aktywny</span>' : '<span class="badge badge-archiwum">nieaktywny</span>'}</td>
+            <td data-label="Akcje">
                 <button class="btn btn-ghost btn-sm" onclick="downloadTemplate('${t.id}')" title="Pobierz"><i class="ph ph-download-simple"></i></button>
                 <button class="btn btn-ghost btn-sm" onclick="editTemplate('${t.id}')" title="Edytuj"><i class="ph ph-pencil-simple"></i></button>
                 <button class="btn btn-ghost btn-sm" onclick="deleteTemplate('${t.id}')" title="Usuń"><i class="ph ph-trash text-red-400"></i></button>

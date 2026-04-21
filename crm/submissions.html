@@ -65,7 +65,7 @@
 
         <div class="card overflow-hidden">
             <div class="overflow-x-auto max-h-[calc(100vh-320px)]">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead>
                         <tr>
                             <th>Klient</th>
@@ -176,15 +176,15 @@ async function loadList() {
         const electronic = r.import_source === 'skladane_wnioski_elektroniczne';
         return `
             <tr class="${r.client_id ? 'clickable' : ''}" onclick="${r.client_id ? `location.href='clients.html?id=${r.client_id}'` : ''}">
-                <td>${client}${nat}</td>
-                <td class="text-xs text-zinc-400">${electronic ? '<span class="badge badge-stage">elektronicznie</span>' : office}</td>
-                <td class="font-mono text-xs text-zinc-400">${esc(r.mos_number || '')} / ${esc(r.pio_number || '')}</td>
-                <td class="font-mono text-xs text-zinc-400">${esc(r.ticket_number || '')}</td>
-                <td class="text-xs text-zinc-400">${fmt.date(r.date_notification_sent)}</td>
-                <td class="text-xs text-zinc-300">${fmt.datetime(r.scheduled_at)}</td>
-                <td class="text-xs text-zinc-400">${esc(r.transport_type || '')}</td>
-                <td><span class="badge badge-${r.status === 'done' ? 'zakonczona' : 'zlecona'}">${esc(r.status)}</span></td>
-                <td class="text-xs text-zinc-400 truncate max-w-md">${esc(r.notes || '')}</td>
+                <td data-label="Klient">${client}${nat}</td>
+                <td data-label="Urząd" class="text-xs text-zinc-400">${electronic ? '<span class="badge badge-stage">elektronicznie</span>' : office}</td>
+                <td data-label="MOS / PIO" class="font-mono text-xs text-zinc-400">${esc(r.mos_number || '')} / ${esc(r.pio_number || '')}</td>
+                <td data-label="Nr biletu" class="font-mono text-xs text-zinc-400">${esc(r.ticket_number || '')}</td>
+                <td data-label="Data wysłania" class="text-xs text-zinc-400">${fmt.date(r.date_notification_sent)}</td>
+                <td data-label="Stawiennictwo" class="text-xs text-zinc-300">${fmt.datetime(r.scheduled_at)}</td>
+                <td data-label="Transport" class="text-xs text-zinc-400">${esc(r.transport_type || '')}</td>
+                <td data-label="Status"><span class="badge badge-${r.status === 'done' ? 'zakonczona' : 'zlecona'}">${esc(r.status)}</span></td>
+                <td data-label="Uwagi" class="text-xs text-zinc-400 truncate max-w-md">${esc(r.notes || '')}</td>
                 <td class="row-open">${r.client_id ? window.rowOpen() : ''}</td>
             </tr>`;
     }).join('');
