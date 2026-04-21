@@ -16,6 +16,8 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/haptic.js" defer></script>
+    <script src="components/pull-to-refresh.js" defer></script>
     <script src="components/modals.js" defer></script>
     <script src="components/bulk-modal.js" defer></script>
     <script src="components/tags.js" defer></script>
@@ -205,6 +207,10 @@
             <div class="pagination" id="pagination"></div>
         </div>
     </main>
+    <!-- FAB mobile: nowa sprawa -->
+    <button class="gmp-fab" onclick="openNewCaseModal()" aria-label="Nowa sprawa" title="Nowa sprawa">
+        <i class="ph ph-plus"></i>
+    </button>
 </div>
 
 <style>.tab-btn{padding:0.4rem 0.75rem;font-size:0.8rem}.tab-btn.active{background:white;color:black}</style>
@@ -230,6 +236,7 @@ let staffList = [];
 let deptList = [];
 
 document.addEventListener('gmp-auth-ready', init);
+window.addEventListener('load', () => window.gmpPullRefresh?.init(() => loadCases()));
 
 async function init() {
     // Ustaw filtry z URL query

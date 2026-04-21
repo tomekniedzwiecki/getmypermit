@@ -16,6 +16,8 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/haptic.js" defer></script>
+    <script src="components/pull-to-refresh.js" defer></script>
     <script src="components/modals.js" defer></script>
 </head>
 <body>
@@ -73,6 +75,9 @@
             <div class="pagination" id="pagination"></div>
         </div>
     </main>
+    <button class="gmp-fab" onclick="openNewClient()" aria-label="Nowy klient" title="Nowy klient">
+        <i class="ph ph-plus"></i>
+    </button>
 </div>
 <div id="modals-container"></div>
 <script src="components/sidebar.js" data-active="clients"></script>
@@ -82,6 +87,7 @@ let currentPage = 1;
 let totalRows = 0;
 
 document.addEventListener('gmp-auth-ready', init);
+window.addEventListener('load', () => window.gmpPullRefresh?.init(() => loadList()));
 
 async function init() {
     const params = new URLSearchParams(window.location.search);

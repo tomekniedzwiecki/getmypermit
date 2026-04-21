@@ -90,6 +90,31 @@
       </div>`;
   }
 
+  // 4 główne pozycje w bottom-nav + "Więcej" = hamburger drawer
+  const BOTTOM_NAV = [
+    { href: 'dashboard.html', icon: 'ph-house', label: 'Start', id: 'dashboard' },
+    { href: 'cases.html', icon: 'ph-folder', label: 'Sprawy', id: 'cases' },
+    { href: 'tasks.html', icon: 'ph-check-square', label: 'Zadania', id: 'tasks' },
+    { href: 'appointments.html', icon: 'ph-calendar', label: 'Kalendarz', id: 'appointments' },
+  ];
+  function renderBottomNav(activePage) {
+    return `
+      <nav class="bottom-nav" aria-label="Nawigacja mobilna">
+        ${BOTTOM_NAV.map(item => {
+          const isActive = activePage === item.id;
+          return `<a href="${item.href}" class="bn-item ${isActive ? 'active' : ''}">
+            <i class="ph ${isActive ? 'ph-fill' : ''} ${item.icon}"></i>
+            <span>${item.label}</span>
+          </a>`;
+        }).join('')}
+        <button class="bn-item" id="bottom-nav-more" aria-label="Więcej">
+          <i class="ph ph-dots-three-outline"></i>
+          <span>Więcej</span>
+        </button>
+      </nav>
+    `;
+  }
+
   function generateSidebar() {
     return `
       <div class="mobile-topbar" id="mobile-topbar">
@@ -100,6 +125,7 @@
         </a>
       </div>
       <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+      ${renderBottomNav(activePage)}
       <aside id="main-sidebar" class="w-60 bg-zinc-950 border-r border-zinc-900 flex flex-col flex-shrink-0 h-screen sticky top-0">
         <!-- Logo -->
         <div class="h-14 flex items-center px-5 border-b border-zinc-900">
@@ -182,6 +208,9 @@
     function closeSidebar() { sidebar?.classList.remove('open'); backdrop?.classList.remove('open'); }
     if (hamburger) hamburger.addEventListener('click', openSidebar);
     if (backdrop) backdrop.addEventListener('click', closeSidebar);
+    // Bottom nav "Więcej" = otwarcie drawera (to samo menu co hamburger)
+    const moreBtn = document.getElementById('bottom-nav-more');
+    if (moreBtn) moreBtn.addEventListener('click', openSidebar);
     // Close drawer when clicking a link inside sidebar (mobile UX)
     sidebar?.addEventListener('click', (e) => {
       if (e.target.closest('a') && window.innerWidth <= 900) {

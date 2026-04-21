@@ -17,6 +17,8 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/haptic.js" defer></script>
+    <script src="components/pull-to-refresh.js" defer></script>
     <script src="components/payment-kinds.js"></script>
 </head>
 <body>
@@ -579,11 +581,15 @@
         </section>
 
     </main>
+    <a href="cases.html?new=1" class="gmp-fab" aria-label="Nowa sprawa" title="Nowa sprawa">
+        <i class="ph ph-plus"></i>
+    </a>
 </div>
 
 <script src="components/sidebar.js" data-active="dashboard"></script>
 <script>
 document.addEventListener('gmp-auth-ready', loadDashboard);
+window.addEventListener('load', () => window.gmpPullRefresh?.init(() => loadDashboard()));
 
 const REASON_LABELS = {
     brak_pracownika: 'pracownik',

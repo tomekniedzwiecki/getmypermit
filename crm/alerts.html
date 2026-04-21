@@ -16,6 +16,8 @@
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
+    <script src="components/haptic.js" defer></script>
+    <script src="components/pull-to-refresh.js" defer></script>
     <script src="components/payment-kinds.js"></script>
 </head>
 <body>
@@ -107,6 +109,9 @@ let alertLevel = 'inactive_30';
 let alertReason = '';
 
 document.addEventListener('gmp-auth-ready', init);
+window.addEventListener('load', () => window.gmpPullRefresh?.init(async () => {
+    await Promise.all([loadAlerts(), loadOverdueTasks(), loadOverduePayments(), loadEmployerInaction()]);
+}));
 async function init() {
     await Promise.all([loadAlerts(), loadOverdueTasks(), loadOverduePayments(), loadEmployerInaction()]);
     document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {

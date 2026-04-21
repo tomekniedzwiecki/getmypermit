@@ -46,6 +46,12 @@ window.toast = (function() {
       `;
       document.body.appendChild(container);
     }
+    // Haptic feedback na mobile (Android vibrate, iOS nie wspiera ale nie przeszkadza)
+    if (window.gmpHaptic) {
+      if (type === 'success') window.gmpHaptic.success();
+      else if (type === 'error') window.gmpHaptic.error();
+      else if (type === 'warning') window.gmpHaptic.warning();
+    }
     const t = document.createElement('div');
     t.className = `${colors[type]} border rounded-lg px-4 py-3 flex items-start gap-3 backdrop-blur-md shadow-xl animate-enter`;
     t.innerHTML = `

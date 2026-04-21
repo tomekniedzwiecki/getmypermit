@@ -1450,6 +1450,83 @@ label {
     .modal-backdrop { padding: 8px !important; }
 }
 
+/* === BOTTOM NAVIGATION — tylko mobile === */
+.bottom-nav {
+    display: none;  /* desktop: ukryte, sidebar jest widoczny */
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 38;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -1px 3px rgba(0,0,0,0.2);
+}
+.bottom-nav .bn-item {
+    flex: 1;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 4px 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 10px;
+    font-weight: 500;
+    text-decoration: none;
+    min-height: 52px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 120ms;
+    letter-spacing: 0.02em;
+}
+.bottom-nav .bn-item i { font-size: 22px; line-height: 1; }
+.bottom-nav .bn-item:active { color: var(--text); }
+.bottom-nav .bn-item.active { color: var(--accent); }
+.bottom-nav .bn-item.active i { color: var(--accent); }
+
+@media (max-width: 900px) {
+    .bottom-nav { display: flex; }
+    /* Padding-bottom app-main żeby ostatnia treść nie była zasłaniana przez bottom-nav */
+    .app-main { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 16px); }
+    /* Gdy FAB obecny, app-main ma już większy padding — użyj max z dwóch */
+}
+/* FAB uwzględnia bottom nav (aby nie przykrywał) */
+@media (max-width: 900px) {
+    .gmp-fab {
+        bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+}
+
+/* === FAB (Floating Action Button) — tylko mobile === */
+.gmp-fab {
+    position: fixed;
+    z-index: 35;  /* poniżej modala (50) i toasta (50), powyżej content */
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    right: calc(20px + env(safe-area-inset-right, 0px));
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    display: none;  /* desktop: ukryty (page-header ma swoj przycisk) */
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 2px 6px rgba(99,102,241,0.3);
+    cursor: pointer;
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), background 120ms;
+}
+.gmp-fab:hover { background: var(--accent-hover); }
+.gmp-fab:active { transform: scale(0.92); }
+.gmp-fab i { font-size: 26px; }
+@media (max-width: 900px) {
+    .gmp-fab { display: inline-flex; }
+    /* Zapobiegaj zasłanianiu ostatnich wierszy listy */
+    .app-main { padding-bottom: max(90px, calc(90px + env(safe-area-inset-bottom, 0px))); }
+}
+
 /* === MICRO MOBILE <= 380px (iPhone SE, małe Androidy) === */
 @media (max-width: 380px) {
     .app-main { padding: 12px; }
