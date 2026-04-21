@@ -39,7 +39,7 @@
 
         <div class="card overflow-hidden">
             <div class="overflow-x-auto max-h-[calc(100vh-280px)]">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead>
                         <tr>
                             <th>Nazwa</th>
@@ -107,13 +107,13 @@ async function loadList() {
 
     tbody.innerHTML = data.map(e => `
         <tr class="clickable" onclick="location.href='employers.html?id=${e.id}'">
-            <td><span class="text-white">${esc(e.name)}</span></td>
-            <td class="font-mono text-xs text-zinc-400">${esc(e.nip || '')}</td>
-            <td class="text-xs text-zinc-400">${esc(e.contact_person || '')}</td>
-            <td class="font-mono text-xs text-zinc-300">${esc(e.contact_phone || '')}</td>
-            <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(e.contact_email || '')}</td>
-            <td class="text-right text-xs">${cByEmp[e.id] || 0}</td>
-            <td class="text-right text-xs">${caseByEmp[e.id] || 0}</td>
+            <td data-label="Nazwa"><span class="text-white">${esc(e.name)}</span></td>
+            <td data-label="NIP" class="font-mono text-xs text-zinc-400">${esc(e.nip || '')}</td>
+            <td data-label="Kontakt" class="text-xs text-zinc-400">${esc(e.contact_person || '')}</td>
+            <td data-label="Telefon" class="font-mono text-xs text-zinc-300">${esc(e.contact_phone || '')}</td>
+            <td data-label="Email" class="text-xs text-zinc-400 truncate max-w-xs">${esc(e.contact_email || '')}</td>
+            <td data-label="Klientów" class="text-right text-xs">${cByEmp[e.id] || 0}</td>
+            <td data-label="Spraw" class="text-right text-xs">${caseByEmp[e.id] || 0}</td>
             <td class="row-open">${window.rowOpen()}</td>
         </tr>`).join('');
     renderPagination();

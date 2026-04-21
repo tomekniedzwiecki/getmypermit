@@ -25,7 +25,28 @@
 /* === HERO KPI CARDS === */
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px)  { .kpi-grid { grid-template-columns: 1fr; } }
+/* Mobile: KPI jako horizontal scroll-snap carousel (Netflix-like) */
+@media (max-width: 640px) {
+    .kpi-grid {
+        display: flex !important;
+        grid-template-columns: none !important;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 10px !important;
+        padding: 0 16px 12px;
+        margin: 0 -16px;
+        -webkit-overflow-scrolling: touch;
+        /* Wyłącz fade bo ma scroll-hint */
+        mask-image: none !important;
+        -webkit-mask-image: none !important;
+    }
+    .kpi-grid::-webkit-scrollbar { display: none; }
+    .kpi-grid .kpi {
+        flex: 0 0 82%;
+        scroll-snap-align: center;
+        min-width: 0;
+    }
+}
 
 .kpi {
     position: relative;

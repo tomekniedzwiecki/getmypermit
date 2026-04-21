@@ -59,7 +59,7 @@
             <!-- Tabela -->
             <div class="card overflow-hidden">
                 <div class="overflow-x-auto max-h-[calc(100vh-340px)]">
-                    <table class="gmp-table">
+                    <table class="gmp-table gmp-table-mobile-cards">
                         <thead>
                             <tr>
                                 <th>Imię i nazwisko</th>
@@ -200,35 +200,35 @@ async function loadList() {
     const tbody = document.getElementById('tbody');
     tbody.innerHTML = rows.map(r => `
         <tr class="clickable" onclick="location.href='staff.html?id=${r.id}'">
-            <td>
+            <td data-label="Imię i nazwisko">
                 <div class="flex items-center gap-2">
                     <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-black" style="background: ${esc(r.color || '#3b82f6')}">${esc(r.full_name[0])}</span>
                     <span class="text-white">${esc(r.full_name)}</span>
                 </div>
             </td>
-            <td class="text-xs"><span class="badge ${r.role === 'admin' ? 'badge-aktywna' : 'badge-lead'}">${esc(r.role || 'staff')}</span></td>
-            <td class="text-right font-mono">${fmt.num(r.clients.size)}</td>
-            <td class="text-right font-mono">${fmt.num(r.cases_total)}</td>
-            <td class="text-right font-mono text-emerald-400">${r.cases_active || '—'}</td>
-            <td class="text-right font-mono text-zinc-400">${r.cases_done || '—'}</td>
-            <td class="text-right font-mono text-zinc-500">${r.cases_lead || '—'}</td>
-            <td class="text-right font-mono text-emerald-300 font-bold">${r.revenue_fee ? fmt.money(r.revenue_fee) : '—'}</td>
+            <td data-label="Rola" class="text-xs"><span class="badge ${r.role === 'admin' ? 'badge-aktywna' : 'badge-lead'}">${esc(r.role || 'staff')}</span></td>
+            <td data-label="Klientów" class="text-right font-mono">${fmt.num(r.clients.size)}</td>
+            <td data-label="Spraw" class="text-right font-mono">${fmt.num(r.cases_total)}</td>
+            <td data-label="Aktywnych" class="text-right font-mono text-emerald-400">${r.cases_active || '—'}</td>
+            <td data-label="Zakończonych" class="text-right font-mono text-zinc-400">${r.cases_done || '—'}</td>
+            <td data-label="Leadów" class="text-right font-mono text-zinc-500">${r.cases_lead || '—'}</td>
+            <td data-label="Przychód" class="text-right font-mono text-emerald-300 font-bold">${r.revenue_fee ? fmt.money(r.revenue_fee) : '—'}</td>
             ${(() => {
                 const e = effByStaff[r.id] || {};
                 const pending = Number(e.pending_balance || 0);
-                return `<td class="text-right font-mono ${pending > 0.009 ? 'text-amber-300 font-bold' : 'text-zinc-600'}">${pending > 0.009 ? fmt.money(pending) : '—'}</td>`;
+                return `<td data-label="Zal. fin." class="text-right font-mono ${pending > 0.009 ? 'text-amber-300 font-bold' : 'text-zinc-600'}">${pending > 0.009 ? fmt.money(pending) : '—'}</td>`;
             })()}
             ${(() => {
                 const e = effByStaff[r.id] || {};
                 const i20 = Number(e.cases_inactive_20d || 0);
                 const i30 = Number(e.cases_inactive_30d || 0);
-                if (!i20) return '<td class="text-right font-mono text-zinc-600">—</td>';
+                if (!i20) return '<td data-label="Zaniedbane 20d+" class="text-right font-mono text-zinc-600">—</td>';
                 const color = i30 > 0 ? 'text-red-400 font-bold' : 'text-amber-300';
                 const title = i30 > 0 ? `${i20} łącznie, ${i30} powyżej 30 dni` : `${i20} spraw bez czynności > 20 dni`;
-                return `<td class="text-right font-mono ${color}" title="${title}">${i20}${i30 > 0 ? ` <span class="text-red-500">(${i30})</span>` : ''}</td>`;
+                return `<td data-label="Zaniedbane 20d+" class="text-right font-mono ${color}" title="${title}">${i20}${i30 > 0 ? ` <span class="text-red-500">(${i30})</span>` : ''}</td>`;
             })()}
-            <td class="text-right font-mono">${r.tasks_open || '—'}</td>
-            <td class="text-right font-mono ${r.tasks_overdue ? 'text-red-400 font-bold' : 'text-zinc-500'}">${r.tasks_overdue || '—'}</td>
+            <td data-label="Zadań otw." class="text-right font-mono">${r.tasks_open || '—'}</td>
+            <td data-label="Zaległych" class="text-right font-mono ${r.tasks_overdue ? 'text-red-400 font-bold' : 'text-zinc-500'}">${r.tasks_overdue || '—'}</td>
             <td class="row-open">${window.rowOpen()}</td>
         </tr>`).join('');
 }

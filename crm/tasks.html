@@ -41,7 +41,7 @@
 
         <div class="card overflow-hidden">
             <div class="overflow-x-auto max-h-[calc(100vh-260px)]">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead>
                         <tr>
                             <th>✓</th>
@@ -132,15 +132,15 @@ async function loadList() {
         const isPrivate = t.visibility === 'private';
         return `
             <tr class="${t.case_id ? 'clickable' : ''}" onclick="${t.case_id ? `if(!event.target.matches('input')) location.href='case.html?id=${t.case_id}'` : ''}">
-                <td><input type="checkbox" ${done ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)"></td>
-                <td><div class="text-sm ${done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${isPrivate ? '<i class="ph ph-lock text-zinc-500 mr-1" title="Prywatne"></i>' : ''}${esc(t.title)}</div>${t.description ? `<div class="text-xs text-zinc-500 mt-0.5">${esc(t.description.slice(0,80))}</div>` : ''}</td>
-                <td class="text-xs text-zinc-400">${esc(typeLabel)}</td>
-                <td class="text-xs">${c ? `<div class="text-zinc-400">${client}</div><div class="text-zinc-600 font-mono">${esc(c.case_number || '')}</div>` : '—'}</td>
-                <td class="text-xs text-zinc-400">${esc(t.gmp_staff?.full_name || '—')}</td>
-                <td class="text-xs ${overdue ? 'text-red-400 font-medium' : 'text-zinc-400'}">${t.due_date ? fmt.date(t.due_date) : '—'}</td>
-                <td class="text-center text-xs">${t.show_in_calendar ? '<i class="ph ph-calendar-check text-emerald-400" title="Widoczne w kalendarzu"></i>' : '<i class="ph ph-calendar-x text-zinc-700" title="Niewidoczne w kalendarzu"></i>'}</td>
-                <td class="text-xs text-zinc-500">${fmt.daysAgo(t.created_at)}</td>
-                <td><span class="badge ${done ? 'badge-zakonczona' : 'badge-zlecona'}">${esc(t.status)}</span></td>
+                <td data-label=""><input type="checkbox" ${done ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)"></td>
+                <td data-label="Tytuł"><div class="text-sm ${done ? 'line-through text-zinc-500' : 'text-zinc-200'}">${isPrivate ? '<i class="ph ph-lock text-zinc-500 mr-1" title="Prywatne"></i>' : ''}${esc(t.title)}</div>${t.description ? `<div class="text-xs text-zinc-500 mt-0.5">${esc(t.description.slice(0,80))}</div>` : ''}</td>
+                <td data-label="Typ" class="text-xs text-zinc-400">${esc(typeLabel)}</td>
+                <td data-label="Sprawa" class="text-xs">${c ? `<div class="text-zinc-400">${client}</div><div class="text-zinc-600 font-mono">${esc(c.case_number || '')}</div>` : '—'}</td>
+                <td data-label="Przypisane" class="text-xs text-zinc-400">${esc(t.gmp_staff?.full_name || '—')}</td>
+                <td data-label="Termin" class="text-xs ${overdue ? 'text-red-400 font-medium' : 'text-zinc-400'}">${t.due_date ? fmt.date(t.due_date) : '—'}</td>
+                <td data-label="W kal." class="text-center text-xs">${t.show_in_calendar ? '<i class="ph ph-calendar-check text-emerald-400" title="Widoczne w kalendarzu"></i>' : '<i class="ph ph-calendar-x text-zinc-700" title="Niewidoczne w kalendarzu"></i>'}</td>
+                <td data-label="Utworzone" class="text-xs text-zinc-500">${fmt.daysAgo(t.created_at)}</td>
+                <td data-label="Status"><span class="badge ${done ? 'badge-zakonczona' : 'badge-zlecona'}">${esc(t.status)}</span></td>
                 <td class="row-open">${t.case_id ? window.rowOpen() : ''}</td>
             </tr>`;
     }).join('');

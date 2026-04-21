@@ -174,7 +174,7 @@
         <!-- Tabela -->
         <div class="card overflow-hidden">
             <div class="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead>
                         <tr>
                             <th class="w-8"><input type="checkbox" id="sel-all" title="Zaznacz wszystkie"></th>
@@ -608,41 +608,41 @@ function renderRows() {
             : '';
         return `
             <tr class="clickable" data-id="${row.id}">
-                <td onclick="event.stopPropagation()"><input type="checkbox" class="case-chk" value="${row.id}"></td>
-                <td onclick="togglePin('${row.id}', ${row.is_pinned ? 'true' : 'false'}); event.stopPropagation();" style="cursor: pointer">
+                <td data-label="" onclick="event.stopPropagation()"><input type="checkbox" class="case-chk" value="${row.id}"></td>
+                <td data-label="" onclick="togglePin('${row.id}', ${row.is_pinned ? 'true' : 'false'}); event.stopPropagation();" style="cursor: pointer">
                     <i class="ph ${row.is_pinned ? 'ph-fill ph-push-pin text-amber-400' : 'ph-push-pin text-zinc-700'}" title="${row.is_pinned ? 'Odepnij' : 'Przypnij'}"></i>
                 </td>
-                <td class="font-mono text-xs">${esc(nr)}</td>
-                <td>${client}</td>
-                <td class="text-zinc-300 text-xs">${employer}</td>
-                <td class="text-zinc-400 text-xs">${esc(row.case_type || '—')}</td>
-                <td class="text-xs">${row.category ? `<span class="badge badge-category" title="${esc(row.category)}">${esc((window.CATEGORIES_LIST || []).find(c => c.code === row.category)?.label || row.category)}</span>` : ''}</td>
-                <td data-edit-status="${row.id}" data-val="${esc(row.status || '')}" onclick="event.stopPropagation()"><span class="badge badge-${row.status}">${esc(row.status || '—')}</span></td>
-                <td class="text-xs" data-edit-stage="${row.id}" data-val="${esc(row.stage || '')}" onclick="event.stopPropagation()">${row.stage ? `<span class="badge badge-stage">${esc(row.stage)}</span>` : '<span class="text-zinc-600">—</span>'}</td>
-                <td class="text-zinc-300 text-xs" data-edit-staff="${row.id}" data-val="${esc(row.assigned_to || '')}" onclick="event.stopPropagation()"><div class="flex items-center gap-2">${staffAva}<span>${staff}</span></div></td>
-                <td>${tagsHTML}</td>
-                <td class="text-zinc-500 text-xs">${fmt.date(row.date_accepted)}</td>
+                <td data-label="Nr" class="font-mono text-xs">${esc(nr)}</td>
+                <td data-label="Klient">${client}</td>
+                <td data-label="Pracodawca" class="text-zinc-300 text-xs">${employer}</td>
+                <td data-label="Typ" class="text-zinc-400 text-xs">${esc(row.case_type || '—')}</td>
+                <td data-label="Kat." class="text-xs">${row.category ? `<span class="badge badge-category" title="${esc(row.category)}">${esc((window.CATEGORIES_LIST || []).find(c => c.code === row.category)?.label || row.category)}</span>` : ''}</td>
+                <td data-label="Status" data-edit-status="${row.id}" data-val="${esc(row.status || '')}" onclick="event.stopPropagation()"><span class="badge badge-${row.status}">${esc(row.status || '—')}</span></td>
+                <td data-label="Etap" class="text-xs" data-edit-stage="${row.id}" data-val="${esc(row.stage || '')}" onclick="event.stopPropagation()">${row.stage ? `<span class="badge badge-stage">${esc(row.stage)}</span>` : '<span class="text-zinc-600">—</span>'}</td>
+                <td data-label="Opiekun" class="text-zinc-300 text-xs" data-edit-staff="${row.id}" data-val="${esc(row.assigned_to || '')}" onclick="event.stopPropagation()"><div class="flex items-center gap-2">${staffAva}<span>${staff}</span></div></td>
+                <td data-label="Tagi">${tagsHTML}</td>
+                <td data-label="Przyjęta" class="text-zinc-500 text-xs">${fmt.date(row.date_accepted)}</td>
                 ${(() => {
-                    if (!row.date_joined) return '<td class="text-zinc-700 text-xs">—</td>';
+                    if (!row.date_joined) return '<td data-label="Dni od przyst." class="text-zinc-700 text-xs">—</td>';
                     const days = Math.floor((Date.now() - new Date(row.date_joined).getTime()) / 86400000);
                     const color = days > 180 ? 'text-red-400' : days > 90 ? 'text-amber-300' : 'text-zinc-400';
-                    return `<td class="${color} text-xs font-mono" title="Przystąpienie: ${fmt.date(row.date_joined)}">${days}d</td>`;
+                    return `<td data-label="Dni od przyst." class="${color} text-xs font-mono" title="Przystąpienie: ${fmt.date(row.date_joined)}">${days}d</td>`;
                 })()}
-                <td class="text-zinc-500 text-xs">${fmt.date(row.date_submitted)}</td>
-                <td class="text-xs ${row.legal_stay_end_date && new Date(row.legal_stay_end_date) < new Date() ? 'text-red-400 font-semibold' : 'text-zinc-400'}">${fmt.date(row.legal_stay_end_date)}</td>
+                <td data-label="Złożony" class="text-zinc-500 text-xs">${fmt.date(row.date_submitted)}</td>
+                <td data-label="Koniec legalu" class="text-xs ${row.legal_stay_end_date && new Date(row.legal_stay_end_date) < new Date() ? 'text-red-400 font-semibold' : 'text-zinc-400'}">${fmt.date(row.legal_stay_end_date)}</td>
                 ${(() => {
                     const bal = balanceByCase[row.id] || {};
                     const due = Number(bal.balance_due || 0);
                     const overdue = Number(bal.overdue_installments_amount || 0);
                     if (due <= 0.009 && overdue <= 0.009) {
-                        return `<td class="text-right text-zinc-600 text-xs">—</td>`;
+                        return `<td data-label="Zaległość" class="text-right text-zinc-600 text-xs">—</td>`;
                     }
                     const isOverdue = overdue > 0.009;
                     const color = isOverdue ? 'text-red-400' : 'text-amber-300';
                     const dot = isOverdue ? '<span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1" title="Przeterminowana rata"></span>' : '';
-                    return `<td class="text-right font-mono text-xs ${color}" title="${isOverdue ? 'Przeterminowane raty: ' + fmt.money(overdue) : 'Saldo: ' + fmt.money(due)}">${dot}${fmt.money(due)}</td>`;
+                    return `<td data-label="Zaległość" class="text-right font-mono text-xs ${color}" title="${isOverdue ? 'Przeterminowane raty: ' + fmt.money(overdue) : 'Saldo: ' + fmt.money(due)}">${dot}${fmt.money(due)}</td>`;
                 })()}
-                <td class="text-right text-zinc-500 text-xs">${fmt.daysAgo(row.date_last_activity)}</td>
+                <td data-label="Ostatnia akt." class="text-right text-zinc-500 text-xs">${fmt.daysAgo(row.date_last_activity)}</td>
                 <td class="row-open">${window.rowOpen()}</td>
             </tr>`;
     }).join('');

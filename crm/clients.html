@@ -52,7 +52,7 @@
 
         <div class="card overflow-hidden">
             <div class="overflow-x-auto max-h-[calc(100vh-280px)]">
-                <table class="gmp-table">
+                <table class="gmp-table gmp-table-mobile-cards">
                     <thead>
                         <tr>
                             <th>Nazwisko i imię</th>
@@ -157,13 +157,13 @@ async function loadList() {
 
     tbody.innerHTML = data.map(c => `
         <tr class="clickable" onclick="window.location.href='clients.html?id=${c.id}'">
-            <td><span class="text-white">${esc(c.last_name)}</span> <span class="text-zinc-400">${esc(c.first_name)}</span></td>
-            <td class="text-xs text-zinc-400">${fmt.date(c.birth_date)}</td>
-            <td class="text-xs text-zinc-400">${esc(c.nationality || '')}</td>
-            <td class="text-xs text-zinc-400">${esc(c.gmp_employers?.name || '')}</td>
-            <td class="font-mono text-xs text-zinc-300">${esc(c.phone || '')}</td>
-            <td class="text-xs text-zinc-400 truncate max-w-xs">${esc(c.email || '')}</td>
-            <td class="text-right text-zinc-400 text-xs">${casesByClient[c.id] || 0}</td>
+            <td data-label="Klient"><span class="text-white">${esc(c.last_name)}</span> <span class="text-zinc-400">${esc(c.first_name)}</span></td>
+            <td data-label="Data ur." class="text-xs text-zinc-400">${fmt.date(c.birth_date)}</td>
+            <td data-label="Obywatelstwo" class="text-xs text-zinc-400">${esc(c.nationality || '')}</td>
+            <td data-label="Pracodawca" class="text-xs text-zinc-400">${esc(c.gmp_employers?.name || '')}</td>
+            <td data-label="Telefon" class="font-mono text-xs text-zinc-300">${esc(c.phone || '')}</td>
+            <td data-label="Email" class="text-xs text-zinc-400 truncate max-w-xs">${esc(c.email || '')}</td>
+            <td data-label="Spraw" class="text-right text-zinc-400 text-xs">${casesByClient[c.id] || 0}</td>
             <td class="row-open">${window.rowOpen()}</td>
         </tr>
     `).join('');

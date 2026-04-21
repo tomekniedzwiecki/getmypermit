@@ -192,6 +192,10 @@
     window.addEventListener('resize', () => {
       if (window.innerWidth > 900) closeSidebar();
     });
+    // Close on Escape key (a11y)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sidebar?.classList.contains('open')) closeSidebar();
+    });
   });
 
   // Gdy auth ready - wypelnij info o userze + ukryj linki wymagajace uprawnien (req Pawel pkt 5)

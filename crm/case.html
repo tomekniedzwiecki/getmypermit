@@ -379,22 +379,49 @@
         }
 
         /* === MOBILE case.html === */
+        @media (max-width: 900px) {
+            /* Sticky case-header poniżej mobile-topbar (52px + notch) */
+            .case-header {
+                top: calc(52px + env(safe-area-inset-top, 0px)) !important;
+            }
+        }
         @media (max-width: 600px) {
             .case-header { margin: -16px -16px 0 !important; padding: 10px 14px !important; }
             .case-tabs { margin: 10px -16px 0 !important; padding: 0 14px !important; }
-            .case-tab { padding: 10px 12px; font-size: 12px; }
+            .case-tab { padding: 12px 14px; font-size: 12px; min-height: 44px; }
             .case-aside { position: static !important; max-height: none !important; overflow-y: visible !important; }
             .case-body { padding-top: 12px !important; gap: 12px !important; }
             /* Grid-cols-2 w "Dane szczegółowe" i w modalach → 1-col */
             .tab-panel .grid.grid-cols-2 { grid-template-columns: 1fr !important; }
-            /* Kwartet Quick actions (Call/WA/Email + Dodaj wpis + Pin + Usuń) */
-            #quick-contact { flex-wrap: wrap; width: 100%; }
-            .quick-action { padding: 8px 10px !important; font-size: 11px; }
+            /* Quick actions (Call/WA/Email) — każdy przycisk touch-friendly */
+            #quick-contact { flex-wrap: wrap; width: 100%; gap: 8px !important; }
+            #quick-contact > * { flex: 1 1 calc(50% - 4px); min-width: 0; }
+            .quick-action {
+                padding: 10px 12px !important;
+                font-size: 13px;
+                min-height: 44px;
+                justify-content: center;
+            }
             /* Nazwa klienta, badges wrap bez nachodzenia */
-            #case-client-name { font-size: 18px !important; }
+            #case-client-name { font-size: 18px !important; word-break: break-word; }
             #case-number-display, #case-znak-sprawy, #case-type-display, #case-employer-display {
                 font-size: 10px !important;
             }
+            /* Save floater — pełna szerokość na mobile, safe-area */
+            #save-floater {
+                left: 12px !important;
+                right: 12px !important;
+                bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+                transform: none !important;
+            }
+            #save-floater .btn { width: 100%; min-height: 48px; font-size: 15px; }
+            /* Module cards padding mniejszy na mobile */
+            .module-card-header { padding: 12px 14px; }
+            .module-card { border-radius: var(--r-lg); }
+            /* Intake tabs, composer — pełna szerokość */
+            .composer { padding: 12px !important; }
+            /* Tag dots w tagach sprawy — większe */
+            .tag-chip { padding: 5px 10px 5px 8px !important; font-size: 12px; }
         }
     </style>
 </head>
