@@ -71,13 +71,14 @@
                                 <th class="text-right">Leadów</th>
                                 <th class="text-right">Przychód</th>
                                 <th class="text-right">Zal. fin.</th>
+                                <th class="text-right" title="Sprawy bez czynności >20 dni">Zaniedbane 20d+</th>
                                 <th class="text-right">Zadań otw.</th>
                                 <th class="text-right">Zaległych</th>
                                 <th class="row-open"></th>
                             </tr>
                         </thead>
                         <tbody id="tbody">
-                            <tr><td colspan="12" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Analizuję dane...</td></tr>
+                            <tr><td colspan="13" class="p-6 text-center text-zinc-500"><span class="spinner mr-2"></span>Analizuję dane...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -120,9 +121,9 @@ async function loadList() {
         fetchAll(() => db.from('gmp_cases').select('id, client_id, status, fee_amount, assigned_to')),
         fetchAll(() => db.from('gmp_payments').select('amount, case_id, kind')),
         fetchAll(() => db.from('gmp_tasks').select('assigned_to, status, due_date')),
-        db.from('gmp_staff_effectiveness').select('staff_id, pending_balance'),
+        db.from('gmp_staff_effectiveness').select('staff_id, pending_balance, cases_inactive_20d, cases_inactive_30d'),
     ]);
-    const pendingByStaff = Object.fromEntries((effectiveness.data || []).map(e => [e.staff_id, Number(e.pending_balance || 0)]));
+    const effByStaff = Object.fromEntries((effectiveness.data || []).map(e => [e.staff_id, e]));
     const staff = staffRes.data;
 
     // Case id -> assigned_to, dla agregatow platnosci
@@ -212,7 +213,20 @@ async function loadList() {
             <td class="text-right font-mono text-zinc-400">${r.cases_done || '—'}</td>
             <td class="text-right font-mono text-zinc-500">${r.cases_lead || '—'}</td>
             <td class="text-right font-mono text-emerald-300 font-bold">${r.revenue_fee ? fmt.money(r.revenue_fee) : '—'}</td>
-            <td class="text-right font-mono ${pendingByStaff[r.id] > 0.009 ? 'text-amber-300 font-bold' : 'text-zinc-600'}">${pendingByStaff[r.id] > 0.009 ? fmt.money(pendingByStaff[r.id]) : '—'}</td>
+            ${(() => {
+                const e = effByStaff[r.id] || {};
+                const pending = Number(e.pending_balance || 0);
+                return `<td class="text-right font-mono ${pending > 0.009 ? 'text-amber-300 font-bold' : 'text-zinc-600'}">${pending > 0.009 ? fmt.money(pending) : '—'}</td>`;
+            })()}
+            ${(() => {
+                const e = effByStaff[r.id] || {};
+                const i20 = Number(e.cases_inactive_20d || 0);
+                const i30 = Number(e.cases_inactive_30d || 0);
+                if (!i20) return '<td class="text-right font-mono text-zinc-600">—</td>';
+                const color = i30 > 0 ? 'text-red-400 font-bold' : 'text-amber-300';
+                const title = i30 > 0 ? `${i20} łącznie, ${i30} powyżej 30 dni` : `${i20} spraw bez czynności > 20 dni`;
+                return `<td class="text-right font-mono ${color}" title="${title}">${i20}${i30 > 0 ? ` <span class="text-red-500">(${i30})</span>` : ''}</td>`;
+            })()}
             <td class="text-right font-mono">${r.tasks_open || '—'}</td>
             <td class="text-right font-mono ${r.tasks_overdue ? 'text-red-400 font-bold' : 'text-zinc-500'}">${r.tasks_overdue || '—'}</td>
             <td class="row-open">${window.rowOpen()}</td>

@@ -361,6 +361,17 @@
             </section>
         </div>
 
+        <!-- ============ MOJE ZANIEDBANE SPRAWY (>20 dni bez czynności) ============ -->
+        <div class="section-h">
+            <h2><i class="ph ph-warning-octagon text-amber-400"></i>Moje zaniedbane sprawy <span class="muted font-normal" id="my-inactive-count"></span></h2>
+            <a href="alerts.html" class="text-xs muted hover:text-white">Wszystkie alerty <i class="ph ph-arrow-right"></i></a>
+        </div>
+        <section class="card mb-4">
+            <div id="my-inactive-list" class="divide-y divide-zinc-900/50 max-h-[400px] overflow-y-auto">
+                <div class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</div>
+            </div>
+        </section>
+
         <!-- ============ PIPELINE SPRAW ============ -->
         <div class="section-h">
             <h2><i class="ph ph-flow-arrow"></i>Przepływ spraw — etapy postępowania</h2>
@@ -591,6 +602,7 @@ async function loadDashboard() {
         loadNewCasesChart(),
         loadActivityFeed(),
         loadMyTasks(),
+        loadMyInactiveCases(),  // nowa sekcja (prośba Pawła 2026-04-21)
         loadPlan(),
         loadFreshLeads(),
     ];
@@ -713,6 +725,86 @@ async function loadPlan() {
                 <div class="tl-sub">${esc(i.sub)}</div>
             </div>
         </a>`).join('');
+}
+
+// Moje zaniedbane sprawy (>20 dni bez czynności) — prośba Pawła 2026-04-21
+async function loadMyInactiveCases() {
+    const el = document.getElementById('my-inactive-list');
+    const countEl = document.getElementById('my-inactive-count');
+    if (!window.currentStaff) {
+        el.innerHTML = '<div class="p-6 text-center muted text-sm">Brak profilu staff</div>';
+        return;
+    }
+
+    // Pobierz sprawy przypisane do bieżącego usera z inactive_20 / inactive_30 / never_active
+    const { data, error } = await db.from('gmp_case_alerts')
+        .select('case_id, case_number, days_inactive, inactivity_level, inactivity_reason, inactivity_note, date_last_activity, stage, client_id')
+        .eq('assigned_to', window.currentStaff.id)
+        .in('inactivity_level', ['inactive_20', 'inactive_30', 'never_active'])
+        .order('days_inactive', { ascending: false, nullsFirst: false })
+        .limit(50);
+
+    if (error) { el.innerHTML = `<div class="p-4 text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    if (!data?.length) {
+        countEl.textContent = '';
+        el.innerHTML = '<div class="empty-state p-6"><i class="ph ph-check-circle text-emerald-400"></i><div>Brak — wszystkie sprawy pod kontrolą</div></div>';
+        return;
+    }
+    countEl.textContent = `(${data.length})`;
+
+    // Pobierz imiona klientów (osobnym zapytaniem bo view nie embeduje)
+    const clientIds = [...new Set(data.map(r => r.client_id).filter(Boolean))];
+    let clientsMap = {};
+    if (clientIds.length) {
+        const { data: clients } = await db.from('gmp_clients')
+            .select('id, last_name, first_name, phone')
+            .in('id', clientIds);
+        clientsMap = Object.fromEntries((clients || []).map(c => [c.id, c]));
+    }
+
+    const REASON_LABELS = {
+        brak_pracownika: 'brak działania',
+        brak_urzedu: 'brak reakcji urzędu',
+        brak_klienta: 'brak reakcji klienta',
+        brak_dokumentow: 'brak dokumentów',
+        inne: 'inne',
+    };
+    const LEVEL_COLOR = {
+        never_active: 'text-zinc-400',
+        inactive_20: 'text-amber-400',
+        inactive_30: 'text-red-400',
+    };
+    const LEVEL_LABEL = {
+        never_active: 'nigdy aktywna',
+        inactive_20: '20+ dni',
+        inactive_30: '30+ dni',
+    };
+
+    el.innerHTML = data.map(a => {
+        const cl = clientsMap[a.client_id];
+        const client = cl ? `${esc(cl.last_name)} ${esc(cl.first_name)}` : '—';
+        const phone = cl?.phone ? esc(cl.phone) : '';
+        const reason = a.inactivity_reason && a.inactivity_reason !== 'none'
+            ? REASON_LABELS[a.inactivity_reason] || a.inactivity_reason : null;
+        const color = LEVEL_COLOR[a.inactivity_level] || 'text-zinc-500';
+        const lvlLabel = LEVEL_LABEL[a.inactivity_level] || '';
+        return `
+            <a href="case.html?id=${a.case_id}" class="block p-3 hover:bg-zinc-900/50">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white">${client}</div>
+                        <div class="text-xs muted">
+                            #${esc(a.case_number || a.case_id.slice(0,8))}${a.stage ? ' · ' + esc(a.stage) : ''}${phone ? ' · <i class="ph ph-phone"></i> ' + phone : ''}
+                        </div>
+                        ${reason ? `<div class="text-xs text-amber-400 mt-0.5">${reason}${a.inactivity_note ? ': ' + esc(a.inactivity_note.slice(0, 60)) : ''}</div>` : ''}
+                    </div>
+                    <div class="text-right whitespace-nowrap">
+                        <div class="${color} text-sm font-mono font-semibold">${a.days_inactive !== null ? a.days_inactive + ' dni' : lvlLabel}</div>
+                        <div class="text-xs muted">${lvlLabel}</div>
+                    </div>
+                </div>
+            </a>`;
+    }).join('');
 }
 
 async function loadMyTasks() {
