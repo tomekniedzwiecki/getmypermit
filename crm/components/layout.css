@@ -1486,19 +1486,6 @@ label {
 .bottom-nav .bn-item.active { color: var(--accent); }
 .bottom-nav .bn-item.active i { color: var(--accent); }
 
-@media (max-width: 900px) {
-    .bottom-nav { display: flex; }
-    /* Padding-bottom app-main żeby ostatnia treść nie była zasłaniana przez bottom-nav */
-    .app-main { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 16px); }
-    /* Gdy FAB obecny, app-main ma już większy padding — użyj max z dwóch */
-}
-/* FAB uwzględnia bottom nav (aby nie przykrywał) */
-@media (max-width: 900px) {
-    .gmp-fab {
-        bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
-    }
-}
-
 /* === FAB (Floating Action Button) — tylko mobile === */
 .gmp-fab {
     position: fixed;
@@ -1521,10 +1508,22 @@ label {
 .gmp-fab:hover { background: var(--accent-hover); }
 .gmp-fab:active { transform: scale(0.92); }
 .gmp-fab i { font-size: 26px; }
+
+/* === MOBILE: bottom-nav + FAB + padding-bottom — ZKONSOLIDOWANE === */
 @media (max-width: 900px) {
+    .bottom-nav { display: flex; }
     .gmp-fab { display: inline-flex; }
-    /* Zapobiegaj zasłanianiu ostatnich wierszy listy */
-    .app-main { padding-bottom: max(90px, calc(90px + env(safe-area-inset-bottom, 0px))); }
+    /* FAB nad bottom-nav (bottom-nav = ~60px + safe-bottom, gap 16-20px) */
+    .gmp-fab {
+        bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    /* Padding-bottom app-main:
+       bottom-nav (60px) + FAB wysokość (56px) + gap (20px) + safe-area + breathing (16px) = ~152px */
+    .app-main {
+        padding-bottom: calc(152px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    /* Gdy FAB NIE jest obecny (strony bez FAB), wciąż potrzeba miejsca na bottom-nav */
+    /* Ale to dalej OK bo 152px jest niż "minimum dla bottom-nav 76px" */
 }
 
 /* === MICRO MOBILE <= 380px (iPhone SE, małe Androidy) === */
