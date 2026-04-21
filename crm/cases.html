@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Sprawy - GetMyPermit CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -609,8 +609,8 @@ function renderRows() {
         return `
             <tr class="clickable" data-id="${row.id}">
                 <td data-label="" onclick="event.stopPropagation()"><input type="checkbox" class="case-chk" value="${row.id}"></td>
-                <td data-label="" onclick="togglePin('${row.id}', ${row.is_pinned ? 'true' : 'false'}); event.stopPropagation();" style="cursor: pointer">
-                    <i class="ph ${row.is_pinned ? 'ph-fill ph-push-pin text-amber-400' : 'ph-push-pin text-zinc-700'}" title="${row.is_pinned ? 'Odepnij' : 'Przypnij'}"></i>
+                <td data-label="" onclick="togglePin('${row.id}', ${row.is_pinned ? 'true' : 'false'}); event.stopPropagation();" style="cursor: pointer; min-width: 44px; text-align: center">
+                    <i class="ph ${row.is_pinned ? 'ph-fill ph-push-pin text-amber-400' : 'ph-push-pin text-zinc-700'} text-lg" title="${row.is_pinned ? 'Odepnij' : 'Przypnij'}"></i>
                 </td>
                 <td data-label="Nr" class="font-mono text-xs">${esc(nr)}</td>
                 <td data-label="Klient">${client}</td>

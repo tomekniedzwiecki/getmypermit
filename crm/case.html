@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Karta sprawy - GetMyPermit CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -384,6 +384,19 @@
             .case-header {
                 top: calc(52px + env(safe-area-inset-top, 0px)) !important;
             }
+            /* Breadcrumb — single line z truncate */
+            main > .flex.items-center.gap-2.mb-2.text-xs {
+                flex-wrap: nowrap !important;
+                overflow: hidden;
+            }
+            main > .flex.items-center.gap-2.mb-2.text-xs > a,
+            main > .flex.items-center.gap-2.mb-2.text-xs > div {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                min-width: 0;
+            }
+            #breadcrumb-case { max-width: 180px; }
         }
         @media (max-width: 600px) {
             .case-header { margin: -16px -16px 0 !important; padding: 10px 14px !important; }
@@ -2123,7 +2136,8 @@ function fillForm() {
         const phoneIntl = phoneDigits && !phoneDigits.startsWith('48') ? '48' + phoneDigits : phoneDigits;
         const waUrl = phoneIntl ? `https://wa.me/${phoneIntl}` : null;
         const mailUrl = c.email ? `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent('Sprawa ' + (d.case_number || d.id.slice(0, 8)))}` : null;
-        const callUrl = phoneDigits ? `tel:${phoneIntl || phoneDigits}` : null;
+        // iOS wymaga `+` przed numerem międzynarodowym żeby dialer zaakceptował
+        const callUrl = phoneDigits ? `tel:+${phoneIntl || phoneDigits}` : null;
 
         // Panel
         cp.innerHTML = `

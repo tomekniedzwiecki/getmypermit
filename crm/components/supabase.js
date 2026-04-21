@@ -36,7 +36,14 @@ window.toast = (function() {
     if (!container) {
       container = document.createElement('div');
       container.id = 'toast-container';
-      container.className = 'fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm';
+      // Desktop: bottom-right, mobile: top (nie pod klawiaturą i nie pod home indicator)
+      container.className = 'gmp-toast-container fixed z-50 flex flex-col gap-2';
+      // Inline style żeby CSS media queries działały bez ingerencji w layout.css
+      container.style.cssText = `
+        bottom: max(1.5rem, env(safe-area-inset-bottom, 0px) + 12px);
+        right: 1.5rem;
+        max-width: 420px;
+      `;
       document.body.appendChild(container);
     }
     const t = document.createElement('div');

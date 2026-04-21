@@ -36,10 +36,10 @@ window.gmpModal = (function() {
         <div><label>Nazwisko *</label><input id="cl-last" class="input w-full" value="${esc(client.last_name || '')}" autofocus required></div>
         <div><label>Imię *</label><input id="cl-first" class="input w-full" value="${esc(client.first_name || '')}" required></div>
         <div><label>Data urodzenia</label><input type="date" id="cl-birth" class="input w-full" value="${client.birth_date || ''}"></div>
-        <div><label>PESEL</label><input id="cl-pesel" class="input w-full" value="${esc(client.pesel || '')}" pattern="[0-9]{11}" maxlength="11" placeholder="11 cyfr"></div>
-        <div><label>Obywatelstwo</label><input id="cl-nat" class="input w-full" value="${esc(client.nationality || '')}" placeholder="np. UKRAINA"></div>
-        <div><label>Telefon</label><input id="cl-phone" class="input w-full" value="${esc(client.phone || '')}"></div>
-        <div><label>Email</label><input type="email" id="cl-email" class="input w-full" value="${esc(client.email || '')}"></div>
+        <div><label>PESEL</label><input id="cl-pesel" class="input w-full" value="${esc(client.pesel || '')}" pattern="[0-9]{11}" maxlength="11" placeholder="11 cyfr" inputmode="numeric" autocorrect="off" autocapitalize="off"></div>
+        <div><label>Obywatelstwo</label><input id="cl-nat" class="input w-full" value="${esc(client.nationality || '')}" placeholder="np. UKRAINA" autocapitalize="characters"></div>
+        <div><label>Telefon</label><input type="tel" id="cl-phone" class="input w-full" value="${esc(client.phone || '')}" inputmode="tel" autocorrect="off"></div>
+        <div><label>Email</label><input type="email" id="cl-email" class="input w-full" value="${esc(client.email || '')}" inputmode="email" autocorrect="off" autocapitalize="off"></div>
         <div class="col-span-2"><label>Pracodawca</label>
           <select id="cl-emp" class="input w-full">${empOpts}</select>
           <div class="text-xs text-zinc-500 mt-1">Nie ma? <a href="employers.html" class="text-blue-400">Dodaj pracodawcę →</a></div>
@@ -103,10 +103,10 @@ window.gmpModal = (function() {
       <div class="modal-header">${employerId ? 'Edytuj pracodawcę' : 'Nowy pracodawca'} <button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
       <div class="modal-body grid grid-cols-2 gap-3">
         <div class="col-span-2"><label>Nazwa *</label><input id="em-name" class="input w-full" value="${esc(emp.name || '')}" autofocus required></div>
-        <div><label>NIP</label><input id="em-nip" class="input w-full" value="${esc(emp.nip || '')}"></div>
+        <div><label>NIP</label><input id="em-nip" class="input w-full" value="${esc(emp.nip || '')}" inputmode="numeric" autocorrect="off" autocapitalize="off"></div>
         <div><label>Osoba kontaktowa</label><input id="em-contact" class="input w-full" value="${esc(emp.contact_person || '')}"></div>
-        <div><label>Telefon</label><input id="em-phone" class="input w-full" value="${esc(emp.contact_phone || '')}"></div>
-        <div><label>Email</label><input type="email" id="em-email" class="input w-full" value="${esc(emp.contact_email || '')}"></div>
+        <div><label>Telefon</label><input type="tel" id="em-phone" class="input w-full" value="${esc(emp.contact_phone || '')}" inputmode="tel" autocorrect="off"></div>
+        <div><label>Email</label><input type="email" id="em-email" class="input w-full" value="${esc(emp.contact_email || '')}" inputmode="email" autocorrect="off" autocapitalize="off"></div>
         <div class="col-span-2"><label>Adres</label><input id="em-addr" class="input w-full" value="${esc(emp.address || '')}"></div>
         <div class="col-span-2">
           <label>Dane do faktury (JSON - opcjonalnie)</label>

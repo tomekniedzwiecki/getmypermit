@@ -28,6 +28,16 @@
         }
         [data-theme="light"] .composer-input { color: #18181b; }
         .composer-input::placeholder { color: #52525b; }
+        /* Mobile: większy textarea + font 16px (iOS anti-zoom) + composer-field input też 16px */
+        @media (max-width: 600px) {
+            .composer-input { min-height: 100px; font-size: 16px; }
+            .composer-tab { font-size: 13px; padding: 10px 14px; min-height: 40px; }
+            .composer-field { padding: 8px 10px; font-size: 13px; }
+            .composer-field select,
+            .composer-field input { font-size: 16px; min-height: 36px; }
+            .composer-footer { padding: 12px; flex-wrap: wrap; gap: 8px; }
+            .composer-footer .btn { flex: 1; min-height: 44px; }
+        }
 
         .composer-fields { display: flex; gap: 8px; padding-top: 10px; flex-wrap: wrap; align-items: center; }
         .composer-field { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.04); padding: 4px 8px; border-radius: 6px; font-size: 11px; }
