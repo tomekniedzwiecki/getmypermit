@@ -7,6 +7,27 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Immigration Lawyer Wrocław — Residence Permit, MOS 2.0 & Case Takeover</title>
+  <!-- Consent Mode v2 defaults (MUST load before GTM) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      wait_for_update: 500,
+    });
+    gtag('set', 'url_passthrough', true);
+    gtag('set', 'ads_data_redaction', true);
+  </script>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-P8ZD3B58');</script>
+  <!-- End Google Tag Manager -->
   <meta name="description" content="MOS 2.0 launches April 27, 2026 — you file alone, or we take over end-to-end. Licensed immigration lawyers in Lower Silesia handling residence permits from application to decision.">
   <meta property="og:title" content="MOS 2.0 is here — don't file alone. Immigration Lawyer Wrocław">
   <meta property="og:description" content="From April 27, 2026 foreigners submit applications themselves via MOS 2.0. One mistake = illegal stay. We take over the whole case — from Trusted Profile to final decision.">
@@ -3705,6 +3726,10 @@
   </script>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P8ZD3B58" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<script src="tracking.js" defer></script>
 
   <!-- TOP BAR - MOS 2.0 ALERT -->
   <a href="#mos20" class="top-bar">
@@ -5373,6 +5398,16 @@
 
     // Show step function
     window.showStep = function(stepId) {
+      // Tracking: fire lead_form_start once, then per-step events
+      if (window.gmpTrack) {
+        if (!window._gmpFormStarted && stepId !== "1") {
+          window._gmpFormStarted = true;
+          window.gmpTrack("lead_form_start", { form_location: "landing_hero" });
+        }
+        if (["success","not-qualified","info-only"].indexOf(stepId) === -1) {
+          window.gmpTrack("lead_form_step", { step_name: String(stepId) });
+        }
+      }
       document.querySelectorAll(".form-step").forEach(function(step) {
         step.classList.remove("active");
       });
@@ -5662,6 +5697,24 @@
         utm_campaign: tracking.utm_campaign
       });
 
+      // === GOOGLE ADS + GA4 CONVERSION ===
+      if (window.gmpTrack) {
+        window.gmpTrack("lead_submit", {
+          value: window.gmpValueFromScore ? window.gmpValueFromScore(score) : 60,
+          currency: "PLN",
+          lead_score: score,
+          lead_type: leadType,
+          situation: situation || undefined,
+          location: location || undefined,
+          intent: intent || undefined,
+          permit_type: permitType || undefined,
+          user_data: {
+            email_address: email,
+            phone_number: phone || undefined,
+          },
+        });
+      }
+
       window.showStep("success");
       sessionStorage.setItem("formSubmitted", "true");
     });
@@ -5851,6 +5904,18 @@
         a.click();
         a.remove();
       } catch (err) { console.error('PDF download failed:', err); }
+
+      // === GA4 event (secondary, no Google Ads conversion fire) ===
+      if (window.gmpTrack) {
+        window.gmpTrack("lead_magnet_submit", {
+          value: 10,
+          currency: "PLN",
+          user_data: {
+            email_address: email,
+            phone_number: phone || undefined,
+          },
+        });
+      }
 
       // Mark as submitted & hide widget
       sessionStorage.setItem('leadMagnetSubmitted', 'true');
