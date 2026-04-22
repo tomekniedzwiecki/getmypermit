@@ -48,8 +48,8 @@
   // CONSENT MANAGEMENT (RODO / ePrivacy / Google Consent Mode v2)
   // ============================================================
 
-  const CONSENT_KEY = 'gmp_consent_v2';
-  const LEGACY_KEY = 'gmp_consent_v1';
+  const CONSENT_KEY = 'gmp_consent_v3';
+  const LEGACY_KEYS = ['gmp_consent_v1', 'gmp_consent_v2'];
   const PRIVACY_URL = { pl: '/polityka-prywatnosci', en: '/privacy-policy' };
 
   function getLang() {
@@ -109,17 +109,15 @@
     try {
       const raw = localStorage.getItem(CONSENT_KEY);
       if (raw) return JSON.parse(raw);
-      // Migrate legacy v1 (granted/denied string)
-      const legacy = localStorage.getItem(LEGACY_KEY);
-      if (legacy === 'granted') return { version: 2, timestamp: new Date().toISOString(), analytics: true, marketing: true, migrated: true };
-      if (legacy === 'denied') return { version: 2, timestamp: new Date().toISOString(), analytics: false, marketing: false, migrated: true };
+      // Clear old keys so user gets fresh modal (v1 baner + v2 intermediate)
+      LEGACY_KEYS.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
     } catch (e) {}
     return null;
   }
 
   function storeConsent(analytics, marketing) {
     const record = {
-      version: 2,
+      version: 3,
       timestamp: new Date().toISOString(),
       analytics: !!analytics,
       marketing: !!marketing,
@@ -127,7 +125,7 @@
     };
     try {
       localStorage.setItem(CONSENT_KEY, JSON.stringify(record));
-      localStorage.removeItem(LEGACY_KEY);
+      LEGACY_KEYS.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
     } catch (e) {}
     return record;
   }
