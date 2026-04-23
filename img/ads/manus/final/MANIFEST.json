@@ -1,0 +1,264 @@
+{
+  "campaign": "GetMyPermit PMax EN-only",
+  "launch_date": "2026-04-26",
+  "total_assets": 50,
+  "summary": {
+    "images_45": "15 concepts × 3 formats (1200×628 landscape, 1200×1200 square, 960×1200 portrait)",
+    "logos_2": "gmp-logo-square-1200x1200-final.png + gmp-logo-landscape-1200x300-final.png",
+    "video_storyboards_3": "16:9 (1920×1080 target), 9:16 (1080×1920 target), 1:1 (1080×1080 target)"
+  },
+  "images": [
+    {
+      "file": "gmp-img_01-mos2-solo-struggle-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 229.9
+    },
+    {
+      "file": "gmp-img_01-mos2-solo-struggle-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 117.0
+    },
+    {
+      "file": "gmp-img_01-mos2-solo-struggle-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 194.1
+    },
+    {
+      "file": "gmp-img_02-takeover-relief-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 231.1
+    },
+    {
+      "file": "gmp-img_02-takeover-relief-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 132.6
+    },
+    {
+      "file": "gmp-img_02-takeover-relief-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 183.9
+    },
+    {
+      "file": "gmp-img_03-fingerprint-delay-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 211.5
+    },
+    {
+      "file": "gmp-img_03-fingerprint-delay-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 124.0
+    },
+    {
+      "file": "gmp-img_03-fingerprint-delay-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 175.5
+    },
+    {
+      "file": "gmp-img_04-refusal-letter-shock-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 194.5
+    },
+    {
+      "file": "gmp-img_04-refusal-letter-shock-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 104.3
+    },
+    {
+      "file": "gmp-img_04-refusal-letter-shock-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 161.4
+    },
+    {
+      "file": "gmp-img_05-team-authority-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 228.4
+    },
+    {
+      "file": "gmp-img_05-team-authority-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 123.3
+    },
+    {
+      "file": "gmp-img_05-team-authority-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 184.3
+    },
+    {
+      "file": "gmp-img_06-decision-celebration-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 209.6
+    },
+    {
+      "file": "gmp-img_06-decision-celebration-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 125.9
+    },
+    {
+      "file": "gmp-img_06-decision-celebration-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 169.1
+    },
+    {
+      "file": "gmp-img_07-mos2-system-interface-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 198.5
+    },
+    {
+      "file": "gmp-img_07-mos2-system-interface-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 112.2
+    },
+    {
+      "file": "gmp-img_07-mos2-system-interface-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 169.5
+    },
+    {
+      "file": "gmp-img_08-trusted-profile-setup-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 241.1
+    },
+    {
+      "file": "gmp-img_08-trusted-profile-setup-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 137.8
+    },
+    {
+      "file": "gmp-img_08-trusted-profile-setup-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 205.8
+    },
+    {
+      "file": "gmp-img_09-office-visit-prep-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 199.3
+    },
+    {
+      "file": "gmp-img_09-office-visit-prep-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 112.7
+    },
+    {
+      "file": "gmp-img_09-office-visit-prep-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 160.1
+    },
+    {
+      "file": "gmp-img_10-remote-case-handling-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 279.7
+    },
+    {
+      "file": "gmp-img_10-remote-case-handling-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 160.8
+    },
+    {
+      "file": "gmp-img_10-remote-case-handling-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 227.6
+    },
+    {
+      "file": "gmp-img_11-family-reunification-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 389.5
+    },
+    {
+      "file": "gmp-img_11-family-reunification-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 219.3
+    },
+    {
+      "file": "gmp-img_11-family-reunification-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 312.2
+    },
+    {
+      "file": "gmp-img_12-permanent-residence-goal-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 169.1
+    },
+    {
+      "file": "gmp-img_12-permanent-residence-goal-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 90.9
+    },
+    {
+      "file": "gmp-img_12-permanent-residence-goal-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 142.0
+    },
+    {
+      "file": "gmp-img_13-24h-response-promise-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 214.2
+    },
+    {
+      "file": "gmp-img_13-24h-response-promise-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 119.7
+    },
+    {
+      "file": "gmp-img_13-24h-response-promise-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 178.9
+    },
+    {
+      "file": "gmp-img_14-language-accessibility-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 226.4
+    },
+    {
+      "file": "gmp-img_14-language-accessibility-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 149.3
+    },
+    {
+      "file": "gmp-img_14-language-accessibility-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 178.5
+    },
+    {
+      "file": "gmp-img_15-legal-shield-1200x1200.jpg",
+      "dims": "1200×1200",
+      "size_kb": 262.8
+    },
+    {
+      "file": "gmp-img_15-legal-shield-1200x628.jpg",
+      "dims": "1200×628",
+      "size_kb": 143.3
+    },
+    {
+      "file": "gmp-img_15-legal-shield-960x1200.jpg",
+      "dims": "960×1200",
+      "size_kb": 212.6
+    }
+  ],
+  "logos": [
+    {
+      "file": "gmp-logo-square-1200x1200-final.png",
+      "dims": "1200×1200",
+      "usage": "REQUIRED by PMax"
+    },
+    {
+      "file": "gmp-logo-landscape-1200x300-final.png",
+      "dims": "1200×300",
+      "usage": "RECOMMENDED by PMax"
+    }
+  ],
+  "video_storyboards": [
+    {
+      "file": "gmp-video-15s-storyboard-16x9.png",
+      "target_video": "gmp-video-15s-16x9-1920x1080.mp4"
+    },
+    {
+      "file": "gmp-video-15s-storyboard-9x16.png",
+      "target_video": "gmp-video-15s-9x16-1080x1920.mp4"
+    },
+    {
+      "file": "gmp-video-15s-storyboard-1x1.png",
+      "target_video": "gmp-video-15s-1x1-1080x1080.mp4"
+    }
+  ],
+  "errors": []
+}
