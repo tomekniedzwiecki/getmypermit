@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polityka prywatności — getmypermit.pl</title>
+  <meta name="description" content="Polityka prywatności serwisu getmypermit.pl. Administrator: Stachurski i Grzybowska Adwokacka Spółka Partnerska, Wrocław.">
+  <meta name="robots" content="index,follow">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="img/favicon-192.png">
+  <link rel="apple-touch-icon" href="img/favicon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --accent: #05f;
+      --accent-light: #3377ff;
+      --black: #000;
+      --dark: #1f2124;
+      --gray: #54595f;
+      --light-gray: #f1f2f3;
+      --white: #fff;
+      --border: #e5e7eb;
+      --font: 'Wix Madefor Text', -apple-system, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--white);
+      color: var(--dark);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+    /* HEADER */
+    .legal-header {
+      position: sticky;
+      top: 0;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 14px 0;
+    }
+    .legal-header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .legal-logo {
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--black);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .legal-logo span { color: var(--accent); }
+    .legal-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--gray);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 8px;
+      transition: all .2s;
+    }
+    .legal-back:hover { background: var(--light-gray); color: var(--dark); }
+    .legal-back svg { width: 16px; height: 16px; }
+
+    /* CONTENT */
+    .legal-content {
+      padding: 48px 0 80px;
+    }
+    .legal-content h1 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--black);
+      margin-bottom: 8px;
+    }
+    .legal-meta {
+      color: var(--gray);
+      font-size: 14px;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .legal-content h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--black);
+      margin: 36px 0 14px;
+      letter-spacing: -0.01em;
+    }
+    .legal-content h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--black);
+      margin: 24px 0 10px;
+    }
+    .legal-content p { margin-bottom: 12px; color: #2a2d31; }
+    .legal-content ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+    }
+    .legal-content ul li {
+      position: relative;
+      padding-left: 22px;
+      margin-bottom: 6px;
+      color: #2a2d31;
+    }
+    .legal-content ul li::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 11px;
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+    .legal-content a { color: var(--accent); text-decoration: none; }
+    .legal-content a:hover { text-decoration: underline; }
+    .legal-content strong { font-weight: 700; color: var(--black); }
+
+    .admin-card {
+      background: var(--light-gray);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin: 16px 0 20px;
+      border-left: 3px solid var(--accent);
+    }
+    .admin-card p { margin-bottom: 4px; }
+    .admin-card .admin-name { font-weight: 700; color: var(--black); margin-bottom: 8px; }
+
+    /* FOOTER */
+    .legal-footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 0;
+      background: #fafbfc;
+    }
+    .legal-footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 13px;
+      color: var(--gray);
+    }
+    .legal-footer-links { display: flex; gap: 20px; }
+    .legal-footer-links a { color: var(--gray); text-decoration: none; }
+    .legal-footer-links a:hover { color: var(--accent); }
+
+    @media (max-width: 640px) {
+      .legal-content { padding: 32px 0 60px; }
+      .legal-content h1 { font-size: 26px; }
+      .legal-content h2 { font-size: 19px; margin: 28px 0 12px; }
+      .legal-content h3 { font-size: 16px; }
+      .legal-footer-inner { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="legal-header">
+    <div class="container">
+      <div class="legal-header-inner">
+        <a href="/" class="legal-logo">get<span>my</span>permit</a>
+        <a href="/" class="legal-back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Powrót
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="legal-content">
+    <div class="container">
+
+      <h1>Polityka prywatności</h1>
+      <p class="legal-meta">Aktualna wersja obowiązuje od dnia 1 stycznia 2026 r.</p>
+
+      <h2>1. Informacje ogólne</h2>
+      <p>Administratorem danych osobowych jest:</p>
+      <div class="admin-card">
+        <p class="admin-name">Stachurski i Grzybowska Adwokacka Spółka Partnerska</p>
+        <p>NIP: 898 224 15 82</p>
+        <p>REGON: 369 541 276</p>
+        <p>KRS: 0000720228</p>
+        <p>Oławska 17/6, 50-123 Wrocław</p>
+        <p>Telefon: <a href="tel:+48576816321">+48 576 816 321</a></p>
+        <p>E-mail: <a href="mailto:sekretariat@adwokaci-sg.pl">sekretariat@adwokaci-sg.pl</a></p>
+      </div>
+      <p>Administrator dokłada szczególnej staranności w celu ochrony interesów osób, których dane dotyczą, w szczególności zapewnia, że dane są:</p>
+      <ul>
+        <li>przetwarzane zgodnie z prawem,</li>
+        <li>zbierane dla oznaczonych, zgodnych z prawem celów,</li>
+        <li>merytorycznie poprawne i adekwatne,</li>
+        <li>przechowywane nie dłużej niż jest to niezbędne.</li>
+      </ul>
+
+      <h2>2. Zakres zbieranych danych</h2>
+      <p>W ramach serwisu mogą być przetwarzane następujące dane:</p>
+      <ul>
+        <li>imię i nazwisko,</li>
+        <li>adres e-mail,</li>
+        <li>numer telefonu,</li>
+        <li>treść wiadomości (formularz kontaktowy),</li>
+        <li>adres IP,</li>
+        <li>dane techniczne dotyczące przeglądarki.</li>
+      </ul>
+      <p>W przypadku kontaktu z kancelarią użytkownik może przekazać dane dotyczące spraw prawnych, które mogą stanowić dane wrażliwe (np. dotyczące sytuacji osobistej, zdrowia, spraw sądowych).</p>
+
+      <h2>3. Cel i podstawa przetwarzania danych</h2>
+      <p>Dane przetwarzane są w następujących celach:</p>
+      <h3>Kontakt z użytkownikiem</h3>
+      <p>Odpowiedź na zapytanie. Podstawa prawna: art. 6 ust. 1 lit. f RODO (uzasadniony interes administratora).</p>
+      <h3>Podjęcie działań przed zawarciem umowy</h3>
+      <p>Przygotowanie oferty, analiza sprawy. Podstawa prawna: art. 6 ust. 1 lit. b RODO.</p>
+      <h3>Wypełnienie obowiązków prawnych</h3>
+      <p>Dokumentacja, rozliczenia. Podstawa prawna: art. 6 ust. 1 lit. c RODO.</p>
+      <h3>Dane szczególnej kategorii (jeśli wystąpią)</h3>
+      <p>Przetwarzanie danych dotyczących sprawy klienta. Podstawa prawna: art. 9 ust. 2 lit. f RODO (ustalenie, dochodzenie lub obrona roszczeń).</p>
+
+      <h2>4. Okres przechowywania danych</h2>
+      <p>Dane będą przechowywane:</p>
+      <ul>
+        <li>przez okres prowadzenia korespondencji,</li>
+        <li>przez czas niezbędny do realizacji usługi,</li>
+        <li>przez okres wynikający z przepisów prawa (np. podatkowych),</li>
+        <li>do czasu przedawnienia roszczeń.</li>
+      </ul>
+
+      <h2>5. Odbiorcy danych</h2>
+      <p>Dane mogą być przekazywane:</p>
+      <ul>
+        <li>firmie hostingowej (utrzymanie serwera),</li>
+        <li>dostawcy poczty e-mail,</li>
+        <li>podmiotom świadczącym usługi IT,</li>
+        <li>operatorowi zabezpieczeń (np. Cloudflare).</li>
+      </ul>
+      <p>Dane nie są sprzedawane ani udostępniane podmiotom marketingowym.</p>
+
+      <h2>6. Przekazywanie danych poza EOG</h2>
+      <p>W przypadku korzystania z usług takich jak Cloudflare lub Google, dane mogą być przekazywane poza Europejski Obszar Gospodarczy (np. do USA) na podstawie odpowiednich zabezpieczeń zgodnych z RODO.</p>
+
+      <h2>7. Prawa użytkownika</h2>
+      <p>Użytkownik ma prawo do:</p>
+      <ul>
+        <li>dostępu do danych,</li>
+        <li>sprostowania danych,</li>
+        <li>usunięcia danych,</li>
+        <li>ograniczenia przetwarzania,</li>
+        <li>wniesienia sprzeciwu,</li>
+        <li>przenoszenia danych,</li>
+        <li>wniesienia skargi do Prezesa UODO.</li>
+      </ul>
+
+      <h2>8. Pliki cookies</h2>
+      <p>Strona wykorzystuje pliki cookies w celu:</p>
+      <ul>
+        <li>zapewnienia prawidłowego działania strony,</li>
+        <li>zwiększenia bezpieczeństwa,</li>
+        <li>obsługi formularzy.</li>
+      </ul>
+      <p>Szczegółowe informacje znajdują się w <a href="#cookies">Polityce cookies</a> poniżej.</p>
+
+      <h2>9. Zabezpieczenia</h2>
+      <p>Administrator stosuje odpowiednie środki techniczne i organizacyjne zapewniające ochronę przetwarzanych danych, w szczególności:</p>
+      <ul>
+        <li>szyfrowanie połączenia (SSL),</li>
+        <li>zabezpieczenia serwera,</li>
+        <li>ograniczony dostęp do danych.</li>
+      </ul>
+
+      <h2>10. Postanowienia końcowe</h2>
+      <p>Polityka prywatności może być aktualizowana. Aktualna wersja obowiązuje od dnia: 1 stycznia 2026 r.</p>
+      <p>Kontakt w sprawach danych osobowych: <a href="mailto:sekretariat@adwokaci-sg.pl">sekretariat@adwokaci-sg.pl</a></p>
+
+      <h1 id="cookies" style="margin-top:60px;">Polityka cookies</h1>
+      <p class="legal-meta">Oświadczenie dotyczące plików cookie zostało ostatnio zaktualizowane 23 kwietnia 2026 r. i dotyczy obywateli oraz legalnych stałych rezydentów Europejskiego Obszaru Gospodarczego i Szwajcarii.</p>
+
+      <h2>1. Wprowadzenie</h2>
+      <p>Nasza strona internetowa, <a href="https://getmypermit.pl">https://getmypermit.pl</a> (dalej: „strona internetowa") używa plików cookie i innych powiązanych technologii (dla wygody wszystkie technologie są określane jako „pliki cookie"). Pliki cookie są również umieszczane przez strony zewnętrzne. W poniższym dokumencie informujemy o korzystaniu z plików cookie na naszej stronie internetowej.</p>
+
+      <h2>2. Czym są cookies?</h2>
+      <p>Plik cookie to niewielki prosty plik wysyłany wraz ze stronami tej witryny i przechowywany przez przeglądarkę na dysku twardym komputera lub innego urządzenia. Informacje w nich przechowywane mogą zostać zwrócone na nasze serwery lub do serwerów odpowiednich stron trzecich podczas kolejnej wizyty.</p>
+
+      <h2>3. Czym są skrypty?</h2>
+      <p>Skrypt to fragment kodu programu, który służy do prawidłowego i interaktywnego działania naszej witryny. Ten kod jest wykonywany na naszym serwerze lub na Twoim urządzeniu.</p>
+
+      <h2>4. Co to jest pixel tag?</h2>
+      <p>Web beacon (lub znacznik pikselowy) to mały, niewidoczny fragment tekstu lub obrazu na stronie internetowej, który służy do monitorowania ruchu na stronie internetowej. Aby to zrobić, różne dane o Tobie są przechowywane przy użyciu web beaconów.</p>
+
+      <h2>5. Pliki cookies</h2>
+      <h3>5.1 Ciasteczka techniczne lub funkcjonalne</h3>
+      <p>Niektóre pliki cookie zapewniają prawidłowe działanie niektórych części witryny i poznanie preferencji użytkownika. Umieszczając funkcjonalne pliki cookie, ułatwiamy odwiedzanie naszej strony internetowej. W ten sposób nie musisz wielokrotnie wprowadzać tych samych informacji podczas odwiedzania naszej strony internetowej. Możemy umieścić te pliki cookie bez Twojej zgody.</p>
+      <h3>5.2 Marketingowe / śledzące pliki cookies</h3>
+      <p>Marketingowe / śledzące pliki cookies są plikami cookies (lub innymi formami lokalnego przechowywania) używanymi do stworzenia profilu użytkownika w celu wyświetlania mu reklam lub śledzenia tego użytkownika na tej lub na kilku witrynach w podobnych celach marketingowych.</p>
+      <h3>5.3 Media społecznościowe</h3>
+      <p>Na naszej witrynie mamy treści z Instagram i Facebook, żeby promować poszczególne strony (np. przyciski „przypnij", „polub to", „podziel się") w mediach społecznościowych, jak Instagram i Facebook. Ta treść jest osadzona kodem pochodzącym z Instagram i Facebook i umieszcza pliki cookies. Ta treść może przechowywać i przetwarzać pewne informacje na potrzeby spersonalizowanych reklam.</p>
+      <p>Przeczytaj oświadczenie o ochronie prywatności tych sieci społecznościowych (które mogą się regularnie zmieniać), aby dowiedzieć się, co robią z Twoimi (osobistymi) danymi, które przetwarzają za pomocą tych plików cookie. Odzyskiwane dane są w miarę możliwości anonimizowane. Sieci społecznościowe Instagram i Facebook są zlokalizowane w Stanach Zjednoczonych.</p>
+
+      <h2>6. Zgoda</h2>
+      <p>Kiedy odwiedzasz naszą stronę po raz pierwszy, pokażemy Ci wyskakujące okienko z wyjaśnieniem dotyczącym plików cookie. Po kliknięciu przycisku „Zapisz ustawienia" wyrażasz zgodę na używanie przez nas kategorii plików cookie i wtyczek wybranych w wyskakującym okienku, jak opisano w tym oświadczeniu dotyczącym plików cookie. Korzystanie z plików cookie może zostać wyłączone za pośrednictwem przeglądarki, ale pamiętaj, że nasza witryna może już nie działać poprawnie.</p>
+
+      <h2>7. Włączanie / wyłączanie i usuwanie plików cookie</h2>
+      <p>Możesz użyć przeglądarki internetowej do automatycznego lub ręcznego usuwania plików cookie. Możesz również określić, że niektóre pliki cookie mogą nie być umieszczane. Inną opcją jest zmiana ustawień przeglądarki internetowej, tak aby otrzymywać komunikat za każdym razem, gdy plik cookie zostanie umieszczony. Aby uzyskać więcej informacji na temat tych opcji, zapoznaj się z instrukcjami w sekcji pomocy przeglądarki.</p>
+      <p>Pamiętaj, że nasza witryna może nie działać poprawnie, jeśli wszystkie pliki cookie są wyłączone. Jeśli usuniesz pliki cookie w swojej przeglądarce, zostaną one ponownie umieszczone po wyrażeniu zgody podczas ponownego odwiedzania naszych stron internetowych.</p>
+
+      <h2>8. Twoje prawa w odniesieniu do danych osobowych</h2>
+      <p>Masz następujące prawa w odniesieniu do swoich danych osobowych:</p>
+      <ul>
+        <li>masz prawo wiedzieć, dlaczego Twoje dane osobowe są potrzebne, co się z nimi stanie i jak długo będą przechowywane,</li>
+        <li>prawo dostępu: masz prawo dostępu do znanych nam danych osobowych,</li>
+        <li>prawo do sprostowania: masz prawo do uzupełnienia, poprawienia, usunięcia lub zablokowania danych osobowych w dowolnym momencie,</li>
+        <li>jeśli wyrazisz zgodę na przetwarzanie swoich danych, masz prawo odwołać tę zgodę i usunąć swoje dane osobowe,</li>
+        <li>prawo do przekazywania danych: masz prawo zażądać od administratora wszystkich swoich danych osobowych i przekazać je w całości innemu kontrolerowi,</li>
+        <li>prawo do sprzeciwu: możesz sprzeciwić się przetwarzaniu danych. Przestrzegamy tego, chyba że istnieją uzasadnione podstawy do przetwarzania.</li>
+      </ul>
+      <p>Aby skorzystać z tych praw, skontaktuj się z nami. Dane kontaktowe znajdują się na dole tego oświadczenia. Jeśli masz skargę dotyczącą sposobu postępowania z Twoimi danymi, masz prawo złożyć skargę do organu nadzorczego (Prezes UODO).</p>
+
+      <h2>9. Dane kontaktowe</h2>
+      <p>W przypadku pytań lub komentarzy dotyczących naszej polityki prywatności i tego oświadczenia, prosimy o kontakt:</p>
+      <div class="admin-card">
+        <p class="admin-name">STACHURSKI I GRZYBOWSKA ADWOKACKA SPÓŁKA PARTNERSKA</p>
+        <p>ul. Oławska nr 17 lok. 6</p>
+        <p>50-123 Wrocław, Polska</p>
+        <p>Strona internetowa: <a href="https://getmypermit.pl">https://getmypermit.pl</a></p>
+        <p>E-mail: <a href="mailto:sekretariat@adwokaci-sg.pl">sekretariat@adwokaci-sg.pl</a></p>
+        <p>Telefon: <a href="tel:+48576816321">+48 576 816 321</a></p>
+      </div>
+
+      <h1 id="klauzula" style="margin-top:60px;">Klauzula informacyjna o przetwarzaniu danych</h1>
+      <p>Niniejszym informujemy, że przetwarzamy Twoje dane osobowe. Szczegóły poniżej.</p>
+
+      <h2>Administrator</h2>
+      <p>Administratorami Pani/Pana danych osobowych są:</p>
+      <ul>
+        <li>adwokat Paweł Stachurski — Stachurski i Grzybowska Adwokacka Spółka Partnerska z siedzibą we Wrocławiu,</li>
+        <li>adwokat Katarzyna Grzybowska-Jagódka — Stachurski i Grzybowska Adwokacka Spółka Partnerska z siedzibą we Wrocławiu.</li>
+      </ul>
+
+      <h2>Inspektor Ochrony Danych</h2>
+      <p>Wyznaczyliśmy Inspektora Ochrony Danych, z którym możesz się skontaktować w sprawach ochrony swoich danych osobowych i realizacji swoich praw:</p>
+      <p>Katarzyna Grzybowska, <a href="mailto:k.grzybowska@adwokaci-sg.pl">k.grzybowska@adwokaci-sg.pl</a></p>
+
+      <h2>Cel przetwarzania</h2>
+      <p>Będziemy przetwarzać Pani/Pana dane wyłącznie w celu wykonania umowy o udzielenie pomocy prawnej, objętej udzielonym pełnomocnictwem/zleceniem, zgodnie z zasadami wymienionymi w art. 5 RODO i art. 6 ustawy z 26.05.1982 r. Prawo o adwokaturze (j.t. Dz.U. 2017 r., poz. 2368 z późn. zm.). Niedopuszczalne jest przetwarzanie Pani/Pana danych w celu marketingu bezpośredniego.</p>
+
+      <h2>Sprzeciw</h2>
+      <p>W każdej chwili przysługuje Pani/Panu prawo do wniesienia sprzeciwu wobec przetwarzania Pani/Pana danych, przetwarzanych w celu i na podstawie wskazanych powyżej. Przestaniemy przetwarzać Pani/Pana dane w tych celach, chyba że będziemy w stanie wykazać, że istnieją ważne, prawnie uzasadnione podstawy, które są nadrzędne wobec Pani/Pana interesów, praw i wolności lub Pani/Pana dane będą nam niezbędne do ewentualnego ustalenia, dochodzenia lub obrony roszczeń.</p>
+
+      <h2>Okres przechowywania</h2>
+      <p>Będziemy przechowywać dane przez okres niezbędny dla prawidłowego wykonania umowy, nie dłużej jednak niż do przedawnienia dochodzenia roszczenia lub zatarcia skazania.</p>
+
+      <h2>Odbiorcy danych</h2>
+      <p>Pani/Pana dane osobowe mogą zostać przekazywane wyłącznie prawnikom, na których przepisy nakładają obowiązek zachowania tajemnicy — tylko w celu umożliwienia zastępstwa adwokata prowadzącego sprawę Pani/Pana lub pracownikom kancelarii, którym powierzono pisemnie przetwarzanie danych osobowych i którzy ponoszą odpowiedzialność za naruszenie zasad przetwarzania.</p>
+
+      <h2>Prawa</h2>
+      <p>Zgodnie z RODO, przysługuje Pani/Panu prawo do:</p>
+      <ul>
+        <li>dostępu do swoich danych oraz otrzymania ich kopii,</li>
+        <li>sprostowania (poprawiania) swoich danych,</li>
+        <li>żądania usunięcia, ograniczenia lub wniesienia sprzeciwu wobec ich przetwarzania,</li>
+        <li>przenoszenia danych,</li>
+        <li>wniesienia skargi do organu nadzorczego.</li>
+      </ul>
+      <p>Podanie danych jest dobrowolne, z tym że odmowa ich podania może utrudnić albo uniemożliwić należytą pomoc prawną.</p>
+      <p>W każdej chwili przysługuje Pani/Panu prawo do wycofania zgody na przetwarzanie Pani/Pana danych osobowych (w tym należących do szczególnej kategorii), ale cofnięcie zgody nie wpływa na zgodność z prawem przetwarzania, którego dokonano zgodnie z prawem, przed jej wycofaniem.</p>
+      <p>Nie przekazujemy Twoich danych poza teren Polski / UE / Europejskiego Obszaru Gospodarczego.</p>
+      <p>W celu wykonania swoich praw skieruj żądanie pod adres e-mail: <a href="mailto:k.grzybowska@adwokaci-sg.pl">k.grzybowska@adwokaci-sg.pl</a>.</p>
+
+    </div>
+  </main>
+
+  <footer class="legal-footer">
+    <div class="container">
+      <div class="legal-footer-inner">
+        <span>&copy; 2026 Stachurski i Grzybowska Adwokacka Spółka Partnerska</span>
+        <div class="legal-footer-links">
+          <a href="/polityka-prywatnosci.html">Polityka prywatności</a>
+          <a href="/regulamin.html">Regulamin</a>
+          <a href="/">Strona główna</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

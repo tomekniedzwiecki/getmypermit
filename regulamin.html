@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regulamin serwisu — getmypermit.pl</title>
+  <meta name="description" content="Regulamin serwisu internetowego getmypermit.pl. Usługodawca: Stachurski i Grzybowska Adwokacka Spółka Partnerska, Wrocław.">
+  <meta name="robots" content="index,follow">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="img/favicon-192.png">
+  <link rel="apple-touch-icon" href="img/favicon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --accent: #05f;
+      --accent-light: #3377ff;
+      --black: #000;
+      --dark: #1f2124;
+      --gray: #54595f;
+      --light-gray: #f1f2f3;
+      --white: #fff;
+      --border: #e5e7eb;
+      --font: 'Wix Madefor Text', -apple-system, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--white);
+      color: var(--dark);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+    /* HEADER */
+    .legal-header {
+      position: sticky;
+      top: 0;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 14px 0;
+    }
+    .legal-header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .legal-logo {
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--black);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .legal-logo span { color: var(--accent); }
+    .legal-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--gray);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 8px;
+      transition: all .2s;
+    }
+    .legal-back:hover { background: var(--light-gray); color: var(--dark); }
+    .legal-back svg { width: 16px; height: 16px; }
+
+    /* CONTENT */
+    .legal-content {
+      padding: 48px 0 80px;
+    }
+    .legal-content h1 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--black);
+      margin-bottom: 8px;
+    }
+    .legal-meta {
+      color: var(--gray);
+      font-size: 14px;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .legal-content h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--black);
+      margin: 36px 0 14px;
+      letter-spacing: -0.01em;
+    }
+    .legal-content p { margin-bottom: 12px; color: #2a2d31; }
+    .legal-content ol, .legal-content ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+      counter-reset: item;
+    }
+    .legal-content ol > li {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 8px;
+      color: #2a2d31;
+      counter-increment: item;
+    }
+    .legal-content ol > li::before {
+      content: counter(item) '.';
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 22px;
+    }
+    .legal-content ul li {
+      position: relative;
+      padding-left: 22px;
+      margin-bottom: 6px;
+      color: #2a2d31;
+    }
+    .legal-content ul li::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 11px;
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+    .legal-content a { color: var(--accent); text-decoration: none; }
+    .legal-content a:hover { text-decoration: underline; }
+    .legal-content strong { font-weight: 700; color: var(--black); }
+
+    .admin-card {
+      background: var(--light-gray);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin: 16px 0 20px;
+      border-left: 3px solid var(--accent);
+    }
+    .admin-card p { margin-bottom: 4px; }
+    .admin-card .admin-name { font-weight: 700; color: var(--black); margin-bottom: 8px; }
+
+    /* FOOTER */
+    .legal-footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 0;
+      background: #fafbfc;
+    }
+    .legal-footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 13px;
+      color: var(--gray);
+    }
+    .legal-footer-links { display: flex; gap: 20px; }
+    .legal-footer-links a { color: var(--gray); text-decoration: none; }
+    .legal-footer-links a:hover { color: var(--accent); }
+
+    @media (max-width: 640px) {
+      .legal-content { padding: 32px 0 60px; }
+      .legal-content h1 { font-size: 26px; }
+      .legal-content h2 { font-size: 19px; margin: 28px 0 12px; }
+      .legal-footer-inner { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="legal-header">
+    <div class="container">
+      <div class="legal-header-inner">
+        <a href="/" class="legal-logo">get<span>my</span>permit</a>
+        <a href="/" class="legal-back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Powrót
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="legal-content">
+    <div class="container">
+
+      <h1>Regulamin serwisu internetowego getmypermit.pl</h1>
+      <p class="legal-meta">Wersja obowiązuje od dnia 1 stycznia 2026 r.</p>
+
+      <h2>§1 Postanowienia ogólne</h2>
+      <ol>
+        <li>Niniejszy regulamin określa zasady korzystania ze strony internetowej dostępnej pod adresem <a href="https://getmypermit.pl">https://getmypermit.pl</a> (dalej: „Serwis").</li>
+        <li>Właścicielem Serwisu i usługodawcą jest:
+          <div class="admin-card">
+            <p class="admin-name">Stachurski i Grzybowska Adwokacka Spółka Partnerska</p>
+            <p>Oławska 17/6, 50-123 Wrocław</p>
+            <p>NIP: 898 224 15 82</p>
+            <p>REGON: 369 541 276</p>
+            <p>KRS: 0000720228</p>
+            <p>Telefon: <a href="tel:+48576816321">+48 576 816 321</a></p>
+            <p>E-mail: <a href="mailto:sekretariat@adwokaci-sg.pl">sekretariat@adwokaci-sg.pl</a></p>
+          </div>
+        </li>
+        <li>Korzystanie z Serwisu oznacza akceptację niniejszego Regulaminu.</li>
+        <li>Regulamin jest udostępniony nieodpłatnie w Serwisie.</li>
+      </ol>
+
+      <h2>§2 Zakres usług</h2>
+      <ol>
+        <li>Serwis ma charakter informacyjno-marketingowy.</li>
+        <li>Za pośrednictwem Serwisu użytkownik może:
+          <ul>
+            <li>zapoznać się z ofertą usług prawnych,</li>
+            <li>wypełnić formularz kontaktowy („Free Assessment"),</li>
+            <li>umówić konsultację.</li>
+          </ul>
+        </li>
+        <li>Usługi świadczone przez Serwis nie stanowią świadczenia pomocy prawnej.</li>
+        <li>Pomoc prawna świadczona jest wyłącznie na podstawie odrębnej umowy z klientem.</li>
+      </ol>
+
+      <h2>§3 Formularz kontaktowy</h2>
+      <ol>
+        <li>Użytkownik może przesłać zapytanie poprzez formularz dostępny w Serwisie.</li>
+        <li>Podanie danych jest dobrowolne, ale niezbędne do kontaktu.</li>
+        <li>Przesłanie formularza oznacza:
+          <ul>
+            <li>zgodę na kontakt,</li>
+            <li>zapoznanie się z <a href="/polityka-prywatnosci.html">Polityką prywatności</a>.</li>
+          </ul>
+        </li>
+        <li>Usługodawca podejmuje kontakt w terminie do 24 godzin (dni robocze).</li>
+      </ol>
+
+      <h2>§4 Warunki korzystania</h2>
+      <ol>
+        <li>Użytkownik zobowiązany jest do:
+          <ul>
+            <li>podawania prawdziwych danych,</li>
+            <li>korzystania z Serwisu zgodnie z prawem.</li>
+          </ul>
+        </li>
+        <li>Zabronione jest:
+          <ul>
+            <li>dostarczanie treści bezprawnych,</li>
+            <li>próby ingerencji w działanie Serwisu.</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h2>§5 Odpowiedzialność</h2>
+      <ol>
+        <li>Informacje zawarte w Serwisie mają charakter ogólny i informacyjny.</li>
+        <li>Nie stanowią one porady prawnej ani oferty w rozumieniu kodeksu cywilnego.</li>
+        <li>Usługodawca nie ponosi odpowiedzialności za decyzje podjęte na podstawie treści Serwisu.</li>
+        <li>Usługodawca nie gwarantuje dostępności Serwisu bez przerw.</li>
+      </ol>
+
+      <h2>§6 Własność intelektualna</h2>
+      <ol>
+        <li>Wszelkie treści w Serwisie stanowią własność Usługodawcy.</li>
+        <li>Zabronione jest ich kopiowanie bez zgody.</li>
+      </ol>
+
+      <h2>§7 Reklamacje</h2>
+      <ol>
+        <li>Reklamacje dotyczące funkcjonowania Serwisu można zgłaszać na adres: <a href="mailto:sekretariat@adwokaci-sg.pl">sekretariat@adwokaci-sg.pl</a>.</li>
+        <li>Reklamacja powinna zawierać opis problemu.</li>
+        <li>Odpowiedź udzielana jest w terminie 14 dni.</li>
+      </ol>
+
+      <h2>§8 Dane osobowe</h2>
+      <ol>
+        <li>Administratorem danych jest Usługodawca.</li>
+        <li>Dane przetwarzane są w celu:
+          <ul>
+            <li>kontaktu z użytkownikiem,</li>
+            <li>obsługi zapytania.</li>
+          </ul>
+        </li>
+        <li>Szczegółowe zasady przetwarzania danych określa <a href="/polityka-prywatnosci.html">Polityka prywatności</a>.</li>
+      </ol>
+
+      <h2>§9 Postanowienia końcowe</h2>
+      <ol>
+        <li>Regulamin podlega prawu polskiemu.</li>
+        <li>Usługodawca może zmienić Regulamin.</li>
+        <li>Spory rozstrzygane są przez sąd właściwy dla siedziby Usługodawcy.</li>
+      </ol>
+
+    </div>
+  </main>
+
+  <footer class="legal-footer">
+    <div class="container">
+      <div class="legal-footer-inner">
+        <span>&copy; 2026 Stachurski i Grzybowska Adwokacka Spółka Partnerska</span>
+        <div class="legal-footer-links">
+          <a href="/polityka-prywatnosci.html">Polityka prywatności</a>
+          <a href="/regulamin.html">Regulamin</a>
+          <a href="/">Strona główna</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
