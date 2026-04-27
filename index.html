@@ -5600,14 +5600,38 @@
     captureTrackingParams();
 
     function saveLeadToSupabase(leadData) {
-      db.from("permit_leads").insert([leadData]).then(function(result) {
-        if (result.error) {
-          console.error("Error saving lead:", result.error);
+      // Wysyla przez edge function permit-lead-save zeby miec fallback do Storage
+      // gdy Postgres jest niedostepny (PGRST002, 503 itd.). Lead nie ginie nawet
+      // przy wiekszym incidentcie Supabase - cron lead-fallback-replay przepisze
+      // go do permit_leads jak baza wstanie.
+      fetch(SUPABASE_URL + "/functions/v1/permit-lead-save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(leadData)
+      }).then(function(r) {
+        return r.json();
+      }).then(function(result) {
+        if (result.success) {
+          if (result.fallback) {
+            console.warn("Lead saved to fallback storage (DB temporarily unavailable):", result.message);
+          } else {
+            console.log("Lead saved successfully:", result.lead_id);
+          }
         } else {
-          console.log("Lead saved successfully:", result.data);
+          console.error("Error saving lead:", result.error);
         }
       }).catch(function(err) {
-        console.error("Supabase error:", err);
+        // Calkowity fail (network error, edge function down): ostatnia deska -
+        // probujemy bezposredni insert do bazy (moze sie udac jak edge function
+        // padla a baza wciaz dziala)
+        console.error("Edge function failed, trying direct insert:", err);
+        db.from("permit_leads").insert([leadData]).then(function(result) {
+          if (result.error) console.error("Direct insert also failed:", result.error);
+          else console.log("Direct insert succeeded:", result.data);
+        });
       });
     }
 

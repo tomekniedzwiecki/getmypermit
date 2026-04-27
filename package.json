@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy:permit-lead-save": "npx supabase functions deploy permit-lead-save --project-ref gfwsdrbywgmceateubyq --no-verify-jwt",
+    "deploy:lead-fallback-replay": "npx supabase functions deploy lead-fallback-replay --project-ref gfwsdrbywgmceateubyq --no-verify-jwt",
+    "deploy:lead-fallback": "npx supabase functions deploy permit-lead-save lead-fallback-replay --project-ref gfwsdrbywgmceateubyq --no-verify-jwt"
   },
   "repository": {
     "type": "git",
