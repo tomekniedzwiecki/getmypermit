@@ -5259,6 +5259,7 @@
         <div class="footer-links-inline">
           <a href="/polityka-prywatnosci.html">Privacy Policy</a>
           <a href="/regulamin.html">Terms</a>
+          <a href="#" data-i18n="footerCookies" onclick="event.preventDefault(); window.gmpOpenConsent && window.gmpOpenConsent();">Cookies</a>
         </div>
       </div>
     </div>
@@ -5522,33 +5523,30 @@
       if (completedSteps.indexOf(stepId) === -1) completedSteps.push(stepId);
     }
 
-    // Giant choice selection — UI (selected class). Tracking osobno na input change
-    // zeby uniknac duplikacji (label click + bubbled input click = 2 eventy z jednego wyboru).
+    // Giant choice selection — UI + tracking, z guardem na bubbled input click.
+    // Klik w <label> dispatcheje click na child <input> (default action), ten
+    // bubble'uje z powrotem do label → handler odpalalby sie 2x. Guard na e.target.
     document.querySelectorAll(".giant-choice").forEach(function(choice) {
-      choice.addEventListener("click", function() {
+      choice.addEventListener("click", function(e) {
+        if (e.target.tagName === "INPUT") return; // skip bubbled input click
         var input = this.querySelector("input");
         var name = input.name;
+        var value = input.value;
         document.querySelectorAll("input[name=\"" + name + "\"]").forEach(function(inp) {
           inp.closest(".giant-choice").classList.remove("selected");
         });
         this.classList.add("selected");
         input.checked = true;
-      });
-    });
 
-    // Tracking wyboru radio — na input.change (1 event = 1 faktyczny wybor)
-    document.querySelectorAll(".giant-choice input[type=\"radio\"]").forEach(function(input) {
-      input.addEventListener("change", function() {
-        if (!input.checked) return;
         var currentStepEl = document.querySelector(".form-step.active");
         var currentStepId = currentStepEl ? currentStepEl.dataset.step : "unknown";
         gmpFormTrack("form_choice_select", {
           step_name: currentStepId,
           step_label: STEP_LABELS[currentStepId] || currentStepId,
-          field_name: input.name,
-          field_label: FIELD_LABELS[input.name] || input.name,
-          choice_value: input.value,
-          choice_label: (CHOICE_LABELS[input.name] && CHOICE_LABELS[input.name][input.value]) || input.value
+          field_name: name,
+          field_label: FIELD_LABELS[name] || name,
+          choice_value: value,
+          choice_label: (CHOICE_LABELS[name] && CHOICE_LABELS[name][value]) || value
         });
       });
     });
@@ -5810,18 +5808,21 @@
 
     // === INITIAL STEP 1 TRACKING ===
     // Step 1 jest aktywny od load (.form-step.active w HTML), nie przez showStep —
-    // bez tego eventu w funnelu GA4 nie zobaczysz "ile osob WIDZIALO step 1".
+    // bez tego eventu w funnelu GA4 brak punktu poczatkowego.
+    // tracking.js laduje sie async, gmpTrack moze jeszcze nie istniec — czekamy.
     stepEnterTime["1"] = Date.now();
-    gmpFormTrack("form_step_view", {
-      step_name: "1",
-      step_label: STEP_LABELS["1"],
-      step_index: 1,
-      total_steps: 5,
-      branch: "unknown"
-    });
-    if (window.gmpTrack) {
-      window.gmpTrack("lead_form_step", { step_name: "1" }); // backward compat
+    function fireInitialStep1View() {
+      if (!window.gmpTrack) return setTimeout(fireInitialStep1View, 100);
+      gmpFormTrack("form_step_view", {
+        step_name: "1",
+        step_label: STEP_LABELS["1"],
+        step_index: 1,
+        total_steps: 5,
+        branch: "unknown"
+      });
+      window.gmpTrack("lead_form_step", { step_name: "1" });
     }
+    fireInitialStep1View();
 
     // Reset form function
     window.resetForm = function() {
@@ -6381,6 +6382,7 @@
         footerCopy: "© 2025 Immigration Lawyer Wrocław",
         footerPrivacy: "Privacy Policy",
         footerTerms: "Terms",
+        footerCookies: "Cookies",
         // Sticky CTA
         stickyCta: "Free Assessment",
         // Problems section
@@ -6813,6 +6815,7 @@
         footerCopy: "© 2025 Prawnik Imigracyjny Wrocław",
         footerPrivacy: "Polityka prywatności",
         footerTerms: "Regulamin",
+        footerCookies: "Pliki cookie",
         stickyCta: "Darmowa wycena",
         problemsTitle: "Twoja sprawa <span class=\"text-gradient\">utknęła</span>?",
         problemsSubtitle: "Złożyłeś wniosek i czekasz. Nawet sprawa w toku wymaga pełnego przejęcia — wchodzimy na każdym etapie.",
@@ -8426,7 +8429,7 @@
       // Footer
       setText('.footer-minimal span', 'footerCopy');
       document.querySelectorAll('.footer-links-inline a').forEach((el, i) => {
-        const keys = ['footerPrivacy', 'footerTerms'];
+        const keys = ['footerPrivacy', 'footerTerms', 'footerCookies'];
         if (t[keys[i]]) el.textContent = t[keys[i]];
       });
 

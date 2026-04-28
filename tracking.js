@@ -224,7 +224,6 @@
     const overlay = document.getElementById('gmp-consent-overlay');
     if (overlay) overlay.remove();
     unlockBody();
-    renderSettingsButton();
   }
 
   function buildActionsView(prefs) {
@@ -367,13 +366,18 @@
   window.gmpOpenConsent = function () { openModal('actions'); };
 
   // === Boot ===
+  // Decyzja 2026-04-28: nie pokazujemy modala na pierwsza wizyte. Cookies sa
+  // automatycznie zaakceptowane (analytics + marketing = granted), modal mozna
+  // otworzyc z linka "Cookies" w footerze (window.gmpOpenConsent). Floating
+  // gear button (renderSettingsButton) wycofany — link w footer wystarczy.
   function boot() {
     const stored = loadStored();
     if (stored) {
       applyConsent(stored.analytics, stored.marketing);
-      renderSettingsButton();
     } else {
-      openModal('actions');
+      // Auto-accept all (zgoda domyslna, brak modala)
+      storeConsent(true, true);
+      applyConsent(true, true);
     }
   }
 
