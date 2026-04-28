@@ -5383,28 +5383,218 @@
       "info-only": 100
     };
 
-    // Giant choice selection
+    // === FORM TRACKING (GA4) ===
+    // Bogaty tracking dropoffu w Free Assessment Form. Eventy → dataLayer → GTM
+    // (GTM-P8ZD3B58) → GA4. Funnel mozna zbudowac w GA4 → Explore → Funnel exploration:
+    //   form_section_view → form_start → form_step_view (per step_name)
+    //   → form_step_complete → form_complete (lub form_disqualified)
+    // Drop-off na danym kroku = roznica miedzy form_step_view a form_step_complete.
+
+    var FORM_SESSION_ID = (function() {
+      try {
+        var existing = sessionStorage.getItem("gmp_form_session_id");
+        if (existing) return existing;
+        var id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+          : (Date.now() + "-" + Math.random().toString(36).slice(2));
+        sessionStorage.setItem("gmp_form_session_id", id);
+        return id;
+      } catch (e) { return "anon-" + Date.now(); }
+    })();
+
+    // Step ID → human label dla GA4 raportow (ASCII EN)
+    var STEP_LABELS = {
+      "1": "Step 1 — Situation",
+      "rejection-timing": "Step 2a — Rejection timing (when received)",
+      "permit-type": "Step 2b — Permit type (residence/work/citizenship)",
+      "2": "Step 3 — Phone (WhatsApp number)",
+      "3": "Step 4 — Location (Lower Silesia / other)",
+      "intent": "Step 5 — Intent (ready / just exploring)",
+      "waiting-time": "Step 6 — Waiting time (months)",
+      "details": "Step 7 — Contact details (name, email, consent)",
+      "success": "Final — Submitted successfully",
+      "not-qualified": "Disqualified — Out of region",
+      "info-only": "Disqualified — Just exploring"
+    };
+
+    var STEP_INDEX = {
+      "1": 1, "rejection-timing": 2, "permit-type": 2,
+      "2": 3, "3": 4, "intent": 5,
+      "waiting-time": 6, "details": 7
+    };
+
+    var FIELD_LABELS = {
+      "situation": "Q1: Situation",
+      "rejectionTiming": "Q2a: Rejection timing",
+      "permitType": "Q2b: Permit type",
+      "phone": "Q3: WhatsApp number",
+      "location": "Q4: Location",
+      "intent": "Q5: Intent",
+      "waitingTime": "Q6: Waiting time",
+      "name": "Q7a: Full name",
+      "email": "Q7b: Email",
+      "consent": "Q7c: Privacy policy consent"
+    };
+
+    var CHOICE_LABELS = {
+      "situation": {
+        "no-fingerprints": "Waiting for fingerprints",
+        "stuck": "Case stuck / no updates",
+        "letter": "Got a letter from office",
+        "rejected": "Application rejected",
+        "new": "Start new application"
+      },
+      "rejectionTiming": {
+        "0-7": "Less than 7 days ago",
+        "7-14": "7–14 days ago",
+        "14+": "More than 14 days ago",
+        "not-sure": "Not sure"
+      },
+      "permitType": {
+        "residence": "Residence permit (Karta pobytu)",
+        "work": "Work permit",
+        "citizenship": "Polish citizenship",
+        "not-sure": "Need consultation"
+      },
+      "location": {
+        "wroclaw": "Wrocław",
+        "dolnoslaskie": "Lower Silesia (other city)",
+        "other": "Other region"
+      },
+      "intent": {
+        "ready": "Ready for professional help",
+        "exploring": "Just exploring options"
+      },
+      "waitingTime": {
+        "0-6": "Less than 6 months",
+        "6-12": "6–12 months",
+        "12-18": "12–18 months",
+        "18+": "More than 18 months"
+      }
+    };
+
+    var stepEnterTime = {};
+    var formStartTime = null;
+    var pageLoadTime = Date.now();
+    var completedSteps = [];
+
+    function getCurrentBranch() {
+      var s = form.querySelector("input[name=\"situation\"]:checked");
+      return s ? s.value : "unknown";
+    }
+
+    function getTotalSteps() {
+      var b = getCurrentBranch();
+      return ["rejected","new","no-fingerprints","stuck"].indexOf(b) !== -1 ? 6 : 5;
+    }
+
+    function gmpFormTrack(eventName, params) {
+      if (!window.gmpTrack) return;
+      var base = {
+        form_session_id: FORM_SESSION_ID,
+        form_language: window.currentLang || "en"
+      };
+      window.gmpTrack(eventName, Object.assign(base, params || {}));
+    }
+
+    function trackValidationError(stepId, errorType, errorField, message) {
+      gmpFormTrack("form_step_validation_error", {
+        step_name: stepId,
+        step_label: STEP_LABELS[stepId] || stepId,
+        error_type: errorType,
+        error_field: errorField || ""
+      });
+      alert(message);
+    }
+
+    function trackStepComplete(stepId, choiceValue, choiceField) {
+      var now = Date.now();
+      var enter = stepEnterTime[stepId] || now;
+      gmpFormTrack("form_step_complete", {
+        step_name: stepId,
+        step_label: STEP_LABELS[stepId] || stepId,
+        step_index: STEP_INDEX[stepId] || 0,
+        choice_value: choiceValue || "",
+        choice_label: (choiceField && CHOICE_LABELS[choiceField] && CHOICE_LABELS[choiceField][choiceValue]) || choiceValue || "",
+        choice_field: choiceField || "",
+        time_on_step_ms: now - enter,
+        branch: getCurrentBranch()
+      });
+      if (completedSteps.indexOf(stepId) === -1) completedSteps.push(stepId);
+    }
+
+    // Giant choice selection — z trackingiem wyboru radio (PRZED Continue)
     document.querySelectorAll(".giant-choice").forEach(function(choice) {
       choice.addEventListener("click", function() {
         var input = this.querySelector("input");
         var name = input.name;
+        var value = input.value;
         document.querySelectorAll("input[name=\"" + name + "\"]").forEach(function(inp) {
           inp.closest(".giant-choice").classList.remove("selected");
         });
         this.classList.add("selected");
         input.checked = true;
+
+        var currentStepEl = document.querySelector(".form-step.active");
+        var currentStepId = currentStepEl ? currentStepEl.dataset.step : "unknown";
+        gmpFormTrack("form_choice_select", {
+          step_name: currentStepId,
+          step_label: STEP_LABELS[currentStepId] || currentStepId,
+          field_name: name,
+          field_label: FIELD_LABELS[name] || name,
+          choice_value: value,
+          choice_label: (CHOICE_LABELS[name] && CHOICE_LABELS[name][value]) || value
+        });
       });
     });
 
     // Show step function
     window.showStep = function(stepId) {
-      // Tracking: fire lead_form_start once, then per-step events
+      var now = Date.now();
+      var isTerminal = ["success","not-qualified","info-only"].indexOf(stepId) !== -1;
+
       if (window.gmpTrack) {
+        // form_start raz na sesje gdy user zaangazowany (przeszedl poza step 1)
         if (!window._gmpFormStarted && stepId !== "1") {
           window._gmpFormStarted = true;
+          formStartTime = now;
+          gmpFormTrack("form_start", {
+            time_to_start_ms: now - pageLoadTime,
+            entry_step: "1"
+          });
+          // Backward compat (Google Ads / GA4 conversion configs moga byc na tym evencie)
           window.gmpTrack("lead_form_start", { form_location: "landing_hero" });
         }
-        if (["success","not-qualified","info-only"].indexOf(stepId) === -1) {
+
+        if (isTerminal) {
+          if (stepId === "success") {
+            gmpFormTrack("form_complete", {
+              time_total_ms: formStartTime ? (now - formStartTime) : null,
+              completed_steps: completedSteps.join(","),
+              steps_count: completedSteps.length,
+              branch: getCurrentBranch()
+            });
+          } else {
+            var reason = stepId === "not-qualified" ? "out_of_region" : "just_exploring";
+            gmpFormTrack("form_disqualified", {
+              step_name: stepId,
+              step_label: STEP_LABELS[stepId] || stepId,
+              reason: reason,
+              branch: getCurrentBranch(),
+              completed_steps: completedSteps.join(","),
+              steps_reached: completedSteps.length,
+              time_total_ms: formStartTime ? (now - formStartTime) : null
+            });
+          }
+        } else {
+          gmpFormTrack("form_step_view", {
+            step_name: stepId,
+            step_label: STEP_LABELS[stepId] || stepId,
+            step_index: STEP_INDEX[stepId] || 0,
+            total_steps: getTotalSteps(),
+            branch: getCurrentBranch()
+          });
+          stepEnterTime[stepId] = now;
+          // Backward compat
           window.gmpTrack("lead_form_step", { step_name: String(stepId) });
         }
       }
@@ -5447,9 +5637,10 @@
 
       if (currentStepId === "1") {
         if (!situation) {
-          alert("Please select your situation");
+          trackValidationError("1", "missing_choice", "situation", "Please select your situation");
           return;
         }
+        trackStepComplete("1", situation, "situation");
         if (situation === "rejected") {
           stepHistory.push("rejection-timing");
           window.showStep("rejection-timing");
@@ -5466,9 +5657,10 @@
       if (currentStepId === "rejection-timing") {
         var timing = form.querySelector("input[name=\"rejectionTiming\"]:checked");
         if (!timing) {
-          alert("Please select when you received the rejection");
+          trackValidationError("rejection-timing", "missing_choice", "rejectionTiming", "Please select when you received the rejection");
           return;
         }
+        trackStepComplete("rejection-timing", timing.value, "rejectionTiming");
         stepHistory.push("2");
         window.showStep("2");
         return;
@@ -5477,9 +5669,10 @@
       if (currentStepId === "permit-type") {
         var permitType = form.querySelector("input[name=\"permitType\"]:checked");
         if (!permitType) {
-          alert("Please select what you need");
+          trackValidationError("permit-type", "missing_choice", "permitType", "Please select what you need");
           return;
         }
+        trackStepComplete("permit-type", permitType.value, "permitType");
         stepHistory.push("2");
         window.showStep("2");
         return;
@@ -5488,9 +5681,10 @@
       if (currentStepId === "2") {
         var phone = form.querySelector("input[name=\"phone\"]").value;
         if (!phone || phone.length < 9) {
-          alert("Please enter a valid phone number");
+          trackValidationError("2", phone ? "invalid_phone" : "empty_phone", "phone", "Please enter a valid phone number");
           return;
         }
+        trackStepComplete("2", "filled", "phone");
         stepHistory.push("3");
         window.showStep("3");
         return;
@@ -5499,9 +5693,10 @@
       if (currentStepId === "3") {
         var location = form.querySelector("input[name=\"location\"]:checked");
         if (!location) {
-          alert("Please select your location");
+          trackValidationError("3", "missing_choice", "location", "Please select your location");
           return;
         }
+        trackStepComplete("3", location.value, "location");
         if (location.value === "other") {
           window.showStep("not-qualified");
           return;
@@ -5514,9 +5709,10 @@
       if (currentStepId === "intent") {
         var intent = form.querySelector("input[name=\"intent\"]:checked");
         if (!intent) {
-          alert("Please select an option");
+          trackValidationError("intent", "missing_choice", "intent", "Please select an option");
           return;
         }
+        trackStepComplete("intent", intent.value, "intent");
         if (intent.value === "exploring") {
           window.showStep("info-only");
           return;
@@ -5534,23 +5730,77 @@
       if (currentStepId === "waiting-time") {
         var waitingTime = form.querySelector("input[name=\"waitingTime\"]:checked");
         if (!waitingTime) {
-          alert("Please select how long you have been waiting");
+          trackValidationError("waiting-time", "missing_choice", "waitingTime", "Please select how long you have been waiting");
           return;
         }
+        trackStepComplete("waiting-time", waitingTime.value, "waitingTime");
         stepHistory.push("details");
         window.showStep("details");
         return;
       }
     };
 
-    // Previous step function
+    // Previous step function — z trackingiem (form_step_back)
     window.prevStep = function() {
       if (stepHistory.length > 1) {
+        var fromStep = stepHistory[stepHistory.length - 1];
         stepHistory.pop();
         var previousStep = stepHistory[stepHistory.length - 1];
+        gmpFormTrack("form_step_back", {
+          from_step: fromStep,
+          from_step_label: STEP_LABELS[fromStep] || fromStep,
+          to_step: previousStep,
+          to_step_label: STEP_LABELS[previousStep] || previousStep
+        });
         window.showStep(previousStep);
       }
     };
+
+    // === FIELD FOCUS / BLUR TRACKING (text inputs only) ===
+    ["phone", "name", "email"].forEach(function(fieldName) {
+      var input = form.querySelector("input[name=\"" + fieldName + "\"]");
+      if (!input) return;
+      input.addEventListener("focus", function() {
+        var stepEl = input.closest(".form-step");
+        var stepId = stepEl ? stepEl.dataset.step : "";
+        gmpFormTrack("form_field_focus", {
+          step_name: stepId,
+          step_label: STEP_LABELS[stepId] || stepId,
+          field_name: fieldName,
+          field_label: FIELD_LABELS[fieldName] || fieldName
+        });
+      }, { passive: true });
+      input.addEventListener("blur", function() {
+        var stepEl = input.closest(".form-step");
+        var stepId = stepEl ? stepEl.dataset.step : "";
+        gmpFormTrack("form_field_blur", {
+          step_name: stepId,
+          step_label: STEP_LABELS[stepId] || stepId,
+          field_name: fieldName,
+          field_label: FIELD_LABELS[fieldName] || fieldName,
+          filled: !!input.value,
+          value_length: input.value.length
+        });
+      }, { passive: true });
+    });
+
+    // === FORM SECTION VISIBILITY (form_section_view) ===
+    var formSection = document.getElementById("form");
+    if (formSection && "IntersectionObserver" in window) {
+      var formViewCount = 0;
+      var formSectionObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            formViewCount++;
+            gmpFormTrack("form_section_view", {
+              view_count: formViewCount,
+              time_to_view_ms: Date.now() - pageLoadTime
+            });
+          }
+        });
+      }, { threshold: 0.4 });
+      formSectionObserver.observe(formSection);
+    }
 
     // Reset form function
     window.resetForm = function() {
@@ -5599,7 +5849,7 @@
 
     captureTrackingParams();
 
-    function saveLeadToSupabase(leadData) {
+    function saveLeadToSupabase(leadData, onSuccess, onError) {
       // Wysyla przez edge function permit-lead-save zeby miec fallback do Storage
       // gdy Postgres jest niedostepny (PGRST002, 503 itd.). Lead nie ginie nawet
       // przy wiekszym incidentcie Supabase - cron lead-fallback-replay przepisze
@@ -5617,20 +5867,25 @@
         if (result.success) {
           if (result.fallback) {
             console.warn("Lead saved to fallback storage (DB temporarily unavailable):", result.message);
+            if (onSuccess) onSuccess({ via: "fallback", lead_id: result.lead_id });
           } else {
             console.log("Lead saved successfully:", result.lead_id);
+            if (onSuccess) onSuccess({ via: "edge_function", lead_id: result.lead_id });
           }
         } else {
           console.error("Error saving lead:", result.error);
+          if (onError) onError({ via: "edge_function", message: result.error || "unknown" });
         }
       }).catch(function(err) {
-        // Calkowity fail (network error, edge function down): ostatnia deska -
-        // probujemy bezposredni insert do bazy (moze sie udac jak edge function
-        // padla a baza wciaz dziala)
         console.error("Edge function failed, trying direct insert:", err);
         db.from("permit_leads").insert([leadData]).then(function(result) {
-          if (result.error) console.error("Direct insert also failed:", result.error);
-          else console.log("Direct insert succeeded:", result.data);
+          if (result.error) {
+            console.error("Direct insert also failed:", result.error);
+            if (onError) onError({ via: "direct_insert", message: String(result.error.message || result.error).slice(0, 200) });
+          } else {
+            console.log("Direct insert succeeded:", result.data);
+            if (onSuccess) onSuccess({ via: "direct_insert" });
+          }
         });
       });
     }
@@ -5644,14 +5899,22 @@
       var phone = form.querySelector("input[name=\"phone\"]").value;
       var consent = form.querySelector("input[name=\"consent\"]").checked;
 
+      gmpFormTrack("form_submit_attempt", {
+        time_total_ms: formStartTime ? (Date.now() - formStartTime) : null,
+        steps_count: completedSteps.length,
+        completed_steps: completedSteps.join(",")
+      });
+
       if (!name || !email) {
-        alert("Please fill in all fields");
+        var missing = !name && !email ? "name_and_email" : (!name ? "name" : "email");
+        trackValidationError("details", "missing_field", missing, "Please fill in all fields");
         return;
       }
       if (!consent) {
-        alert("Please agree to the privacy policy");
+        trackValidationError("details", "missing_consent", "consent", "Please agree to the privacy policy");
         return;
       }
+      trackStepComplete("details", "filled", "name");
 
       var situationInput = form.querySelector("input[name=\"situation\"]:checked");
       var locationInput = form.querySelector("input[name=\"location\"]:checked");
@@ -5719,9 +5982,27 @@
         utm_source: tracking.utm_source,
         utm_medium: tracking.utm_medium,
         utm_campaign: tracking.utm_campaign
+      }, function(ok) {
+        // form_submit_success — lead poszedl do bazy / fallback / direct insert
+        gmpFormTrack("form_submit_success", {
+          save_via: ok.via,
+          lead_score: score,
+          lead_type: leadType,
+          branch: situation || "unknown",
+          time_total_ms: formStartTime ? (Date.now() - formStartTime) : null
+        });
+      }, function(err) {
+        // form_submit_error — caly save padl (edge function + direct insert)
+        gmpFormTrack("form_submit_error", {
+          save_via: err.via,
+          error_message: err.message,
+          lead_score: score,
+          lead_type: leadType
+        });
       });
 
       // === GOOGLE ADS + GA4 CONVERSION ===
+      // lead_submit zostaje bez zmian — to konwersja w Google Ads, nie ruszamy
       if (window.gmpTrack) {
         window.gmpTrack("lead_submit", {
           value: window.gmpValueFromScore ? window.gmpValueFromScore(score) : 60,
