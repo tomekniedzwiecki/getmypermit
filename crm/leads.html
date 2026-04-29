@@ -93,6 +93,32 @@
 
 .flag-kw { color: var(--success); }
 .flag-dq { color: var(--danger); }
+
+/* Bulk select + delete */
+.checkbox-col { width: 36px; padding-left: 12px !important; padding-right: 4px !important; text-align: center; }
+.checkbox-col input[type="checkbox"] {
+    width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent);
+    vertical-align: middle;
+}
+tr.row-selected { background: rgba(0, 85, 255, 0.08) !important; }
+.bulk-action-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, rgba(0,85,255,.08), rgba(0,85,255,.03));
+    border: 1px solid rgba(0,85,255,.2);
+    border-radius: var(--r-lg);
+    margin-bottom: 12px;
+    animation: bulkFadeIn .15s ease-out;
+}
+@keyframes bulkFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.bulk-action-bar[hidden] { display: none; }
+.bulk-count { font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+.bulk-count i { color: var(--accent); }
+.bulk-btn-delete {
+    background: var(--danger, #ef4444); color: #fff; border: 0;
+}
+.bulk-btn-delete:hover { background: #dc2626; }
+.bulk-btn-delete[disabled] { opacity: .6; cursor: wait; }
 </style>
 
 <div class="app-layout">
@@ -179,12 +205,20 @@
             <button class="btn btn-ghost btn-sm" onclick="resetFilters()"><i class="ph ph-eraser"></i> Wyczyść</button>
         </div>
 
+        <!-- BULK ACTION BAR (visible gdy są zaznaczone leady) -->
+        <div id="bulk-action-bar" class="bulk-action-bar" hidden>
+            <span class="bulk-count"><i class="ph ph-check-square"></i> <span id="bulk-count">0</span> zaznaczonych</span>
+            <button type="button" class="btn btn-sm bulk-btn-delete" onclick="deleteSelectedLeads()"><i class="ph ph-trash"></i> Usuń</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="clearSelection()">Anuluj</button>
+        </div>
+
         <!-- LIST VIEW -->
         <div class="card">
             <div class="overflow-x-auto" style="max-height: calc(100vh - 380px)">
                 <table class="gmp-table gmp-table-mobile-cards">
                     <thead>
                         <tr>
+                            <th class="checkbox-col"><input type="checkbox" id="lead-select-all" aria-label="Zaznacz wszystkie"></th>
                             <th data-sort="name">Osoba</th>
                             <th data-sort="status">Status</th>
                             <th data-sort="type">Jakość</th>
@@ -197,7 +231,7 @@
                         </tr>
                     </thead>
                     <tbody id="list-tbody">
-                        <tr><td colspan="9" class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</td></tr>
+                        <tr><td colspan="10" class="p-6 text-center muted text-sm"><span class="spinner mr-2"></span>Ładuję...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -248,6 +282,7 @@ async function init() {
 
     await loadLeads();
     setupListeners();
+    setupBulkSelectListeners();
 
     if (window.gmpSavedViews) {
         gmpSavedViews.init({
@@ -341,11 +376,14 @@ function renderKPIs() {
 }
 
 // ======== LIST VIEW ========
+const selectedLeadIds = new Set();
+
 function renderList() {
     const rows = filterLeads();
     const tbody = document.getElementById('list-tbody');
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><i class="ph ph-magnet"></i><div>Brak leadów dla tych filtrów</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><i class="ph ph-magnet"></i><div>Brak leadów dla tych filtrów</div></td></tr>';
+        updateBulkBar();
         return;
     }
     tbody.innerHTML = rows.map(l => {
@@ -354,8 +392,12 @@ function renderList() {
         const scoreColor = score >= 60 ? 'var(--danger)' : score >= 35 ? 'var(--warn)' : 'var(--accent)';
         const daysAgoBadge = l.days_since_contact === null ? 'bez kontaktu' : `${l.days_since_contact}d`;
         const contactClass = l.days_since_contact === null || l.days_since_contact >= 3 ? 'text-amber-300' : 'text-tertiary';
+        const isSelected = selectedLeadIds.has(l.id);
 
-        return `<tr class="clickable" onclick="location.href='lead.html?id=${l.id}'">
+        return `<tr class="clickable${isSelected ? ' row-selected' : ''}" data-id="${l.id}" onclick="onLeadRowClick(event, '${l.id}')">
+            <td data-label="Zaznacz" class="checkbox-col" onclick="event.stopPropagation()">
+                <input type="checkbox" class="row-check" data-id="${l.id}"${isSelected ? ' checked' : ''} aria-label="Zaznacz leada">
+            </td>
             <td data-label="Lead">
                 <div class="lead-name-cell">
                     ${window.avatar(name, 'sm')}
@@ -383,6 +425,105 @@ function renderList() {
             <td data-label="Kontakt" class="text-right text-xs mono ${contactClass}">${daysAgoBadge}</td>
         </tr>`;
     }).join('');
+    updateBulkBar();
+}
+
+// ======== BULK SELECT + DELETE ========
+function onLeadRowClick(e, id) {
+    // Klik w checkbox lub jego cell — propagacja wyłączona przez onclick="event.stopPropagation()" na td
+    // Klik w resztę wiersza — przejdź do leada
+    if (e.target.closest('input[type="checkbox"]')) return;
+    location.href = `lead.html?id=${id}`;
+}
+
+function toggleLeadSelection(id, checked) {
+    if (checked) selectedLeadIds.add(id);
+    else selectedLeadIds.delete(id);
+    const tr = document.querySelector(`tr[data-id="${id}"]`);
+    if (tr) tr.classList.toggle('row-selected', checked);
+    updateBulkBar();
+}
+
+function clearSelection() {
+    selectedLeadIds.clear();
+    document.querySelectorAll('.row-check').forEach(cb => { cb.checked = false; });
+    document.querySelectorAll('tr.row-selected').forEach(tr => tr.classList.remove('row-selected'));
+    const all = document.getElementById('lead-select-all');
+    if (all) { all.checked = false; all.indeterminate = false; }
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    const bar = document.getElementById('bulk-action-bar');
+    const count = selectedLeadIds.size;
+    document.getElementById('bulk-count').textContent = count;
+    bar.hidden = count === 0;
+    // Zaktualizuj master checkbox state (checked / indeterminate)
+    const all = document.getElementById('lead-select-all');
+    const visibleChecks = document.querySelectorAll('.row-check');
+    const visibleCount = visibleChecks.length;
+    const visibleSelected = Array.from(visibleChecks).filter(cb => cb.checked).length;
+    if (all) {
+        if (visibleSelected === 0) { all.checked = false; all.indeterminate = false; }
+        else if (visibleSelected === visibleCount) { all.checked = true; all.indeterminate = false; }
+        else { all.checked = false; all.indeterminate = true; }
+    }
+}
+
+function setupBulkSelectListeners() {
+    // Master checkbox — select/deselect all visible
+    const all = document.getElementById('lead-select-all');
+    if (all) {
+        all.addEventListener('click', (e) => e.stopPropagation()); // nie sortuj kolumny
+        all.addEventListener('change', () => {
+            const checked = all.checked;
+            document.querySelectorAll('.row-check').forEach(cb => {
+                cb.checked = checked;
+                const id = cb.dataset.id;
+                if (checked) selectedLeadIds.add(id);
+                else selectedLeadIds.delete(id);
+                const tr = cb.closest('tr');
+                if (tr) tr.classList.toggle('row-selected', checked);
+            });
+            updateBulkBar();
+        });
+    }
+
+    // Per-row checkbox — delegacja na tbody (żeby działało po re-render)
+    const tbody = document.getElementById('list-tbody');
+    if (tbody) {
+        tbody.addEventListener('change', (e) => {
+            const cb = e.target.closest('.row-check');
+            if (!cb) return;
+            toggleLeadSelection(cb.dataset.id, cb.checked);
+        });
+    }
+}
+
+async function deleteSelectedLeads() {
+    const ids = Array.from(selectedLeadIds);
+    if (!ids.length) return;
+    const confirmMsg = ids.length === 1
+        ? 'Czy na pewno usunąć tego leada? Operacji nie można cofnąć.'
+        : `Czy na pewno usunąć ${ids.length} leadów? Operacji nie można cofnąć.`;
+    if (!confirm(confirmMsg)) return;
+
+    const btn = document.querySelector('.bulk-btn-delete');
+    if (btn) { btn.disabled = true; btn.textContent = 'Usuwam...'; }
+
+    const { error } = await db.from('permit_leads').delete().in('id', ids);
+    if (error) {
+        if (window.toast) toast.error('Błąd usuwania: ' + error.message);
+        else alert('Błąd usuwania: ' + error.message);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ph ph-trash"></i> Usuń'; }
+        return;
+    }
+
+    if (window.toast) toast.success(`Usunięto ${ids.length} ${ids.length === 1 ? 'leada' : 'leadów'}`);
+    selectedLeadIds.clear();
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ph ph-trash"></i> Usuń'; }
+    await loadLeads();
+    renderAll();
 }
 
 function resetFilters() {
