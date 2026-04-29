@@ -3418,6 +3418,8 @@
       overflow: hidden;
       animation: phoneCountryFadeIn 0.15s ease-out;
     }
+    /* HTML attribute hidden — display:flex by sam ignoruje, eksplicytnie override */
+    .phone-country-dropdown[hidden] { display: none !important; }
     @keyframes phoneCountryFadeIn {
       from { opacity: 0; transform: translateY(-4px); }
       to   { opacity: 1; transform: translateY(0); }
