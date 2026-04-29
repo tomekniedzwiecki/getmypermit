@@ -3286,7 +3286,16 @@
       border: 2px solid var(--light-gray);
       border-radius: 14px;
       transition: border-color 0.2s, box-shadow 0.2s;
-      overflow: hidden;
+      /* overflow:visible — dropdown moze wystawac ponizej. Rounded corners
+         na child buttonie (lewy) i input (prawy radius). */
+    }
+    .phone-input-wrap > .phone-country-btn {
+      border-top-left-radius: 12px;
+      border-bottom-left-radius: 12px;
+    }
+    .phone-input-wrap > .phone-input {
+      border-top-right-radius: 12px !important;
+      border-bottom-right-radius: 12px !important;
     }
     .phone-input-wrap:focus-within {
       border-color: var(--accent);
