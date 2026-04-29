@@ -3359,6 +3359,142 @@
       height: 16px;
     }
 
+    /* Country picker button (replaces static .phone-prefix) */
+    .phone-country-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px 0 16px;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--black);
+      background: #fafbfc;
+      border: 0;
+      border-right: 1px solid #e5e7eb;
+      cursor: pointer;
+      transition: background 0.15s;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .phone-country-btn:hover { background: #f1f3f5; }
+    .phone-country-btn:active { background: #e9ecef; }
+    .phone-country-btn .phone-country-flag {
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+    }
+    .phone-country-chevron {
+      width: 14px;
+      height: 14px;
+      color: var(--gray);
+      transition: transform 0.18s;
+    }
+    .phone-country-btn[aria-expanded="true"] .phone-country-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* Dropdown */
+    .phone-country-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      max-height: 320px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: phoneCountryFadeIn 0.15s ease-out;
+    }
+    @keyframes phoneCountryFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .phone-country-search-wrap {
+      position: relative;
+      padding: 10px 12px;
+      border-bottom: 1px solid #f1f3f5;
+      flex-shrink: 0;
+    }
+    .phone-country-search-wrap svg {
+      position: absolute;
+      left: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--gray);
+      pointer-events: none;
+    }
+    .phone-country-search {
+      width: 100%;
+      padding: 8px 12px 8px 34px;
+      font-size: 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fafbfc;
+      color: var(--black);
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .phone-country-search:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+    .phone-country-list {
+      list-style: none;
+      margin: 0;
+      padding: 4px 0;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .phone-country-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      font-size: 14px;
+      color: var(--black);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .phone-country-list li:hover,
+    .phone-country-list li.highlight {
+      background: var(--accent-soft);
+    }
+    .phone-country-list li.selected {
+      background: var(--accent-soft);
+      font-weight: 600;
+    }
+    .phone-country-list li img {
+      flex-shrink: 0;
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+    }
+    .phone-country-list li .pc-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .phone-country-list li .pc-dial {
+      color: var(--gray);
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .phone-country-list .phone-country-empty {
+      padding: 24px 14px;
+      text-align: center;
+      color: var(--gray);
+      font-size: 14px;
+      cursor: default;
+    }
+    .phone-country-list .phone-country-empty:hover { background: transparent; }
+
     /* Trust row — 3 chips */
     .phone-trust-row {
       display: grid;
@@ -5158,20 +5294,34 @@
               </div>
 
               <div class="phone-input-wrap">
-                <span class="phone-prefix" aria-hidden="true">
-                  <img src="https://flagcdn.com/w20/pl.png" width="20" height="14" alt="" loading="eager" decoding="async">
-                  <span>+48</span>
-                </span>
+                <button type="button" class="phone-country-btn" id="phoneCountryBtn"
+                        aria-haspopup="listbox" aria-expanded="false"
+                        aria-label="Wybierz kraj">
+                  <img class="phone-country-flag" id="phoneFlagImg" src="https://flagcdn.com/w20/pl.png" width="20" height="14" alt="" loading="eager" decoding="async">
+                  <span class="phone-dial-code" id="phoneDialCode">+48</span>
+                  <svg class="phone-country-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
                 <input type="tel" class="form-input phone-input" name="phone"
                        placeholder="600 700 800"
                        autocomplete="tel"
                        inputmode="numeric"
-                       maxlength="11"
+                       maxlength="20"
                        required
-                       aria-label="Numer WhatsApp">
+                       aria-label="Numer telefonu">
                 <span class="phone-validity-indicator" aria-hidden="true">
                   <svg class="phone-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                 </span>
+
+                <!-- Dropdown z listą krajów -->
+                <div class="phone-country-dropdown" id="phoneCountryDropdown" role="listbox" hidden>
+                  <div class="phone-country-search-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" class="phone-country-search" id="phoneCountrySearch"
+                           placeholder="Szukaj kraju..." data-i18n-placeholder="phoneCountrySearchPlaceholder"
+                           autocomplete="off">
+                  </div>
+                  <ul class="phone-country-list" id="phoneCountryList"></ul>
+                </div>
               </div>
 
               <div class="phone-trust-row">
@@ -5769,14 +5919,23 @@
         var el = form.querySelector('input[name="' + name + '"]');
         return el && el.value ? el.value : null;
       };
-      // Phone: normalizacja do +48XXXXXXXXX (strip spaces, prepend prefix gdy 9 cyfr)
+      // Phone: normalizacja do <dial><digits>, np. "+48600700800", "+380501234567".
+      // Dial code z aktualnie wybranego kraju. Jezeli user napisal numer z + na poczatku,
+      // uzywamy tego co wpisal (zaufanie userowi).
       var normalizePhone = function() {
         var raw = val("phone");
         if (!raw) return null;
-        var digits = String(raw).replace(/\D/g, "");
-        if (digits.length === 9) return "+48" + digits;
-        if (digits.length > 9 && digits.indexOf("48") === 0) return "+" + digits;
-        return raw; // fallback — zapisz to co user wpisal
+        var trimmed = String(raw).trim();
+        if (trimmed.charAt(0) === '+') {
+          // User wpisal pelny miedzynarodowy — zachowaj +
+          return '+' + trimmed.replace(/\D/g, '');
+        }
+        var digits = trimmed.replace(/\D/g, '');
+        if (digits.length < 6) return raw; // za krotki, zapisz raw
+        var dial = (typeof selectedCountry !== 'undefined' && selectedCountry && selectedCountry.dial)
+          ? selectedCountry.dial
+          : '+48';
+        return dial + digits;
       };
       var t = getTrackingData();
       return {
@@ -5951,7 +6110,7 @@
           return;
         }
         trackStepComplete("1", situation, "situation");
-        savePartialLead("1");
+        // NIE zapisujemy leada przed phone — bez kontaktu nieprzydatne dla handlowca.
         if (situation === "rejected") {
           stepHistory.push("rejection-timing");
           window.showStep("rejection-timing");
@@ -5972,7 +6131,7 @@
           return;
         }
         trackStepComplete("rejection-timing", timing.value, "rejectionTiming");
-        savePartialLead("rejection-timing");
+        // NIE zapisujemy leada przed phone.
         stepHistory.push("2");
         window.showStep("2");
         return;
@@ -5985,7 +6144,7 @@
           return;
         }
         trackStepComplete("permit-type", permitType.value, "permitType");
-        savePartialLead("permit-type");
+        // NIE zapisujemy leada przed phone.
         stepHistory.push("2");
         window.showStep("2");
         return;
@@ -5994,15 +6153,17 @@
       if (currentStepId === "2") {
         var phoneRaw = form.querySelector("input[name=\"phone\"]").value;
         var phoneDigits = String(phoneRaw || "").replace(/\D/g, "");
-        if (phoneDigits.length !== 9) {
+        if (phoneDigits.length < 6) {
           trackValidationError("2", phoneDigits.length === 0 ? "empty_phone" : "invalid_phone", "phone",
             phoneDigits.length === 0
-              ? "Wpisz numer telefonu (9 cyfr)"
-              : "Numer musi mieć 9 cyfr (np. 600 700 800)");
+              ? "Wpisz numer telefonu"
+              : "Numer wydaje się za krótki — sprawdź proszę");
           return;
         }
-        // Normalizacja: zapisujemy w bazie z prefiksem +48 (E.164-friendly)
-        form.querySelector("input[name=\"phone\"]")._normalizedPhone = "+48" + phoneDigits;
+        if (phoneDigits.length > 15) {
+          trackValidationError("2", "invalid_phone", "phone", "Numer jest za długi — sprawdź proszę");
+          return;
+        }
         trackStepComplete("2", "filled", "phone");
         savePartialLead("2");
         stepHistory.push("3");
@@ -6079,26 +6240,255 @@
       }
     };
 
-    // === PHONE INPUT: auto-format + live validity ===
-    // 9 cyfr (PL standard), formatowane jako "XXX XXX XXX" gdy user pisze.
-    // Wrapper dostaje klasę .is-valid -> green border + checkmark icon.
+    // === PHONE INPUT: international country picker + auto-format + live validity ===
+    // Country picker z ~70 krajami. Domyslny kraj zalezny od currentLang.
+    // Walidacja: minimum 6 cyfr (E.164 minimum dla mobile na swiecie).
+    // Format: 3-cyfrowe grupy oddzielone spacja (uniwersalne dla wiekszosci krajow).
+    // Zapis w bazie: dial code + cyfry, np. "+48600700800", "+380501234567".
+    var PHONE_COUNTRIES = [
+      // Top — najczęstsi klienci kancelarii imigracyjnej w Polsce
+      { iso: 'pl', name: 'Polska / Poland',         dial: '+48',  flag: 'pl' },
+      { iso: 'ua', name: 'Україна / Ukraine',       dial: '+380', flag: 'ua' },
+      { iso: 'by', name: 'Беларусь / Belarus',      dial: '+375', flag: 'by' },
+      { iso: 'ru', name: 'Россия / Russia',         dial: '+7',   flag: 'ru' },
+      { iso: 'ge', name: 'საქართველო / Georgia',     dial: '+995', flag: 'ge' },
+      { iso: 'am', name: 'Հայաստան / Armenia',       dial: '+374', flag: 'am' },
+      { iso: 'az', name: 'Azərbaycan / Azerbaijan', dial: '+994', flag: 'az' },
+      { iso: 'md', name: 'Moldova',                 dial: '+373', flag: 'md' },
+      { iso: 'kz', name: 'Қазақстан / Kazakhstan',  dial: '+7',   flag: 'kz' },
+      { iso: 'uz', name: 'Oʻzbekiston / Uzbekistan',dial: '+998', flag: 'uz' },
+      { iso: 'tj', name: 'Тоҷикистон / Tajikistan', dial: '+992', flag: 'tj' },
+      { iso: 'kg', name: 'Кыргызстан / Kyrgyzstan', dial: '+996', flag: 'kg' },
+      { iso: 'tm', name: 'Türkmenistan / Turkmenistan', dial: '+993', flag: 'tm' },
+      { iso: 'tr', name: 'Türkiye / Turkey',        dial: '+90',  flag: 'tr' },
+      // Asia
+      { iso: 'in', name: 'भारत / India',             dial: '+91',  flag: 'in' },
+      { iso: 'bd', name: 'বাংলাদেশ / Bangladesh',     dial: '+880', flag: 'bd' },
+      { iso: 'pk', name: 'پاکستان / Pakistan',       dial: '+92',  flag: 'pk' },
+      { iso: 'np', name: 'नेपाल / Nepal',            dial: '+977', flag: 'np' },
+      { iso: 'lk', name: 'ශ්‍රී ලංකා / Sri Lanka',     dial: '+94',  flag: 'lk' },
+      { iso: 'id', name: 'Indonesia',               dial: '+62',  flag: 'id' },
+      { iso: 'ph', name: 'Pilipinas / Philippines', dial: '+63',  flag: 'ph' },
+      { iso: 'vn', name: 'Việt Nam / Vietnam',      dial: '+84',  flag: 'vn' },
+      { iso: 'cn', name: '中国 / China',             dial: '+86',  flag: 'cn' },
+      { iso: 'kr', name: '한국 / South Korea',        dial: '+82',  flag: 'kr' },
+      { iso: 'jp', name: '日本 / Japan',             dial: '+81',  flag: 'jp' },
+      { iso: 'th', name: 'ไทย / Thailand',           dial: '+66',  flag: 'th' },
+      { iso: 'my', name: 'Malaysia',                dial: '+60',  flag: 'my' },
+      { iso: 'sg', name: 'Singapore',               dial: '+65',  flag: 'sg' },
+      // Middle East / Africa
+      { iso: 'ir', name: 'ایران / Iran',             dial: '+98',  flag: 'ir' },
+      { iso: 'iq', name: 'العراق / Iraq',            dial: '+964', flag: 'iq' },
+      { iso: 'sy', name: 'سوريا / Syria',            dial: '+963', flag: 'sy' },
+      { iso: 'lb', name: 'لبنان / Lebanon',          dial: '+961', flag: 'lb' },
+      { iso: 'jo', name: 'الأردن / Jordan',          dial: '+962', flag: 'jo' },
+      { iso: 'il', name: 'ישראל / Israel',           dial: '+972', flag: 'il' },
+      { iso: 'sa', name: 'السعودية / Saudi Arabia',  dial: '+966', flag: 'sa' },
+      { iso: 'ae', name: 'الإمارات / UAE',           dial: '+971', flag: 'ae' },
+      { iso: 'eg', name: 'مصر / Egypt',              dial: '+20',  flag: 'eg' },
+      { iso: 'ma', name: 'المغرب / Morocco',         dial: '+212', flag: 'ma' },
+      { iso: 'tn', name: 'تونس / Tunisia',           dial: '+216', flag: 'tn' },
+      { iso: 'dz', name: 'الجزائر / Algeria',        dial: '+213', flag: 'dz' },
+      { iso: 'ng', name: 'Nigeria',                 dial: '+234', flag: 'ng' },
+      { iso: 'gh', name: 'Ghana',                   dial: '+233', flag: 'gh' },
+      { iso: 'ke', name: 'Kenya',                   dial: '+254', flag: 'ke' },
+      { iso: 'za', name: 'South Africa',            dial: '+27',  flag: 'za' },
+      // EU / EEA
+      { iso: 'de', name: 'Deutschland / Germany',   dial: '+49',  flag: 'de' },
+      { iso: 'fr', name: 'France',                  dial: '+33',  flag: 'fr' },
+      { iso: 'es', name: 'España / Spain',          dial: '+34',  flag: 'es' },
+      { iso: 'it', name: 'Italia / Italy',          dial: '+39',  flag: 'it' },
+      { iso: 'pt', name: 'Portugal',                dial: '+351', flag: 'pt' },
+      { iso: 'gb', name: 'United Kingdom',          dial: '+44',  flag: 'gb' },
+      { iso: 'ie', name: 'Ireland',                 dial: '+353', flag: 'ie' },
+      { iso: 'nl', name: 'Nederland / Netherlands', dial: '+31',  flag: 'nl' },
+      { iso: 'be', name: 'België / Belgium',        dial: '+32',  flag: 'be' },
+      { iso: 'at', name: 'Österreich / Austria',    dial: '+43',  flag: 'at' },
+      { iso: 'ch', name: 'Schweiz / Switzerland',   dial: '+41',  flag: 'ch' },
+      { iso: 'no', name: 'Norge / Norway',          dial: '+47',  flag: 'no' },
+      { iso: 'se', name: 'Sverige / Sweden',        dial: '+46',  flag: 'se' },
+      { iso: 'dk', name: 'Danmark / Denmark',       dial: '+45',  flag: 'dk' },
+      { iso: 'fi', name: 'Suomi / Finland',         dial: '+358', flag: 'fi' },
+      { iso: 'lt', name: 'Lietuva / Lithuania',     dial: '+370', flag: 'lt' },
+      { iso: 'lv', name: 'Latvija / Latvia',        dial: '+371', flag: 'lv' },
+      { iso: 'ee', name: 'Eesti / Estonia',         dial: '+372', flag: 'ee' },
+      { iso: 'ro', name: 'România / Romania',       dial: '+40',  flag: 'ro' },
+      { iso: 'hu', name: 'Magyarország / Hungary',  dial: '+36',  flag: 'hu' },
+      { iso: 'cz', name: 'Česko / Czech Republic',  dial: '+420', flag: 'cz' },
+      { iso: 'sk', name: 'Slovensko / Slovakia',    dial: '+421', flag: 'sk' },
+      { iso: 'bg', name: 'България / Bulgaria',     dial: '+359', flag: 'bg' },
+      { iso: 'hr', name: 'Hrvatska / Croatia',      dial: '+385', flag: 'hr' },
+      { iso: 'si', name: 'Slovenija / Slovenia',    dial: '+386', flag: 'si' },
+      { iso: 'rs', name: 'Srbija / Serbia',         dial: '+381', flag: 'rs' },
+      { iso: 'gr', name: 'Ελλάδα / Greece',         dial: '+30',  flag: 'gr' },
+      // Americas / Oceania
+      { iso: 'us', name: 'United States',           dial: '+1',   flag: 'us' },
+      { iso: 'ca', name: 'Canada',                  dial: '+1',   flag: 'ca' },
+      { iso: 'br', name: 'Brasil / Brazil',         dial: '+55',  flag: 'br' },
+      { iso: 'mx', name: 'México / Mexico',         dial: '+52',  flag: 'mx' },
+      { iso: 'ar', name: 'Argentina',               dial: '+54',  flag: 'ar' },
+      { iso: 've', name: 'Venezuela',               dial: '+58',  flag: 've' },
+      { iso: 'cl', name: 'Chile',                   dial: '+56',  flag: 'cl' },
+      { iso: 'co', name: 'Colombia',                dial: '+57',  flag: 'co' },
+      { iso: 'au', name: 'Australia',               dial: '+61',  flag: 'au' },
+      { iso: 'nz', name: 'New Zealand',             dial: '+64',  flag: 'nz' }
+    ];
+
     var phoneInputEl = form.querySelector('input[name="phone"]');
     var phoneWrap = phoneInputEl ? phoneInputEl.closest('.phone-input-wrap') : null;
+    var countryBtn = document.getElementById('phoneCountryBtn');
+    var countryDropdown = document.getElementById('phoneCountryDropdown');
+    var countrySearch = document.getElementById('phoneCountrySearch');
+    var countryList = document.getElementById('phoneCountryList');
+    var flagImg = document.getElementById('phoneFlagImg');
+    var dialCodeSpan = document.getElementById('phoneDialCode');
+
+    function getDefaultCountry() {
+      var lang = (window.currentLang || 'en').slice(0, 2).toLowerCase();
+      var langToCountry = {
+        'pl': 'pl', 'uk': 'ua', 'ru': 'ru', 'es': 'es',
+        'fr': 'fr', 'hi': 'in', 'bn': 'bd', 'id': 'id',
+        'en': 'pl' // EN default to PL bo strona PL-targetowana
+      };
+      var iso = langToCountry[lang] || 'pl';
+      return PHONE_COUNTRIES.find(function(c) { return c.iso === iso; }) || PHONE_COUNTRIES[0];
+    }
+
+    var selectedCountry = getDefaultCountry();
+
+    function setCountry(country) {
+      selectedCountry = country;
+      if (flagImg) {
+        flagImg.src = 'https://flagcdn.com/w20/' + country.flag + '.png';
+        flagImg.alt = country.name;
+      }
+      if (dialCodeSpan) dialCodeSpan.textContent = country.dial;
+      if (typeof revalidatePhone === 'function') revalidatePhone();
+    }
+
+    function renderCountryList(filter) {
+      if (!countryList) return;
+      filter = (filter || '').toLowerCase().trim();
+      var items = filter
+        ? PHONE_COUNTRIES.filter(function(c) {
+            return c.name.toLowerCase().indexOf(filter) !== -1
+                || c.dial.indexOf(filter) !== -1
+                || c.iso.indexOf(filter) !== -1;
+          })
+        : PHONE_COUNTRIES;
+      if (items.length === 0) {
+        var lang = (window.currentLang || 'en');
+        var noResultsText = (window.translations && window.translations[lang] && window.translations[lang].phoneCountryNoResults)
+          || (window.translations && window.translations.en && window.translations.en.phoneCountryNoResults)
+          || 'No results';
+        countryList.innerHTML = '<li class="phone-country-empty">' + noResultsText + '</li>';
+        return;
+      }
+      countryList.innerHTML = items.map(function(c) {
+        var sel = c.iso === selectedCountry.iso ? ' selected' : '';
+        return '<li class="' + sel.trim() + '" data-iso="' + c.iso + '">' +
+          '<img src="https://flagcdn.com/w20/' + c.flag + '.png" width="20" height="14" alt="" loading="lazy">' +
+          '<span class="pc-name">' + c.name + '</span>' +
+          '<span class="pc-dial">' + c.dial + '</span>' +
+        '</li>';
+      }).join('');
+    }
+
+    function openCountryDropdown() {
+      if (!countryDropdown || !countryBtn) return;
+      countryDropdown.hidden = false;
+      countryBtn.setAttribute('aria-expanded', 'true');
+      renderCountryList('');
+      if (countrySearch) {
+        countrySearch.value = '';
+        setTimeout(function() { countrySearch.focus(); }, 50);
+      }
+    }
+    function closeCountryDropdown() {
+      if (!countryDropdown || !countryBtn) return;
+      countryDropdown.hidden = true;
+      countryBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    if (countryBtn) {
+      countryBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (countryDropdown && countryDropdown.hidden) openCountryDropdown();
+        else closeCountryDropdown();
+      });
+    }
+    if (countrySearch) {
+      countrySearch.addEventListener('input', function() {
+        renderCountryList(countrySearch.value);
+      });
+      countrySearch.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          // Wybierz pierwszy z listy
+          var first = countryList && countryList.querySelector('li[data-iso]');
+          if (first) first.click();
+          e.preventDefault();
+        }
+      });
+    }
+    if (countryList) {
+      countryList.addEventListener('click', function(e) {
+        var li = e.target.closest('li[data-iso]');
+        if (!li) return;
+        var iso = li.dataset.iso;
+        var c = PHONE_COUNTRIES.find(function(x) { return x.iso === iso; });
+        if (c) {
+          setCountry(c);
+          closeCountryDropdown();
+          if (phoneInputEl) phoneInputEl.focus();
+        }
+      });
+    }
+    document.addEventListener('click', function(e) {
+      if (countryDropdown && !countryDropdown.hidden && !e.target.closest('.phone-input-wrap')) {
+        closeCountryDropdown();
+      }
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && countryDropdown && !countryDropdown.hidden) {
+        closeCountryDropdown();
+      }
+    });
+
+    // Auto-format: 3-cyfrowe grupy oddzielone spacja (uniwersalne)
     if (phoneInputEl) {
       var formatPhone = function(raw) {
-        var digits = String(raw || '').replace(/\D/g, '').slice(0, 9);
-        if (digits.length > 6) return digits.slice(0,3) + ' ' + digits.slice(3,6) + ' ' + digits.slice(6);
-        if (digits.length > 3) return digits.slice(0,3) + ' ' + digits.slice(3);
-        return digits;
+        var digits = String(raw || '').replace(/\D/g, '').slice(0, 15);
+        var groups = [];
+        for (var i = 0; i < digits.length; i += 3) groups.push(digits.slice(i, i + 3));
+        return groups.join(' ');
       };
       var revalidatePhone = function() {
         var formatted = formatPhone(phoneInputEl.value);
         if (formatted !== phoneInputEl.value) phoneInputEl.value = formatted;
-        var ok = formatted.replace(/\s/g, '').length === 9;
+        var ok = formatted.replace(/\s/g, '').length >= 6;
         if (phoneWrap) phoneWrap.classList.toggle('is-valid', ok);
       };
       phoneInputEl.addEventListener('input', revalidatePhone);
       phoneInputEl.addEventListener('paste', function() { setTimeout(revalidatePhone, 0); });
+    }
+
+    // Apply initial country
+    setCountry(selectedCountry);
+
+    // Re-detect default country gdy user zmienia language
+    var origSetLanguage = window.setLanguage;
+    if (typeof origSetLanguage === 'function') {
+      window.setLanguage = function(lang) {
+        origSetLanguage.apply(this, arguments);
+        // Tylko jak user nie wybrał ręcznie żadnego kraju, zaktualizuj po lang
+        if (!window._gmpCountryManuallyPicked) {
+          setCountry(getDefaultCountry());
+        }
+      };
+    }
+    if (countryList) {
+      countryList.addEventListener('click', function() { window._gmpCountryManuallyPicked = true; });
     }
 
     // === FIELD FOCUS / BLUR TRACKING (text inputs only) ===
@@ -6260,9 +6650,13 @@
       var name = form.querySelector("input[name=\"name\"]").value;
       var email = form.querySelector("input[name=\"email\"]").value;
       var phoneRawSubmit = form.querySelector("input[name=\"phone\"]").value;
-      var phoneDigitsSubmit = String(phoneRawSubmit || "").replace(/\D/g, "");
-      var phone = phoneDigitsSubmit.length === 9 ? "+48" + phoneDigitsSubmit
-                : (phoneDigitsSubmit.length > 9 && phoneDigitsSubmit.indexOf("48") === 0 ? "+" + phoneDigitsSubmit : phoneRawSubmit);
+      var phoneTrimmed = String(phoneRawSubmit || "").trim();
+      var phoneDigitsSubmit = phoneTrimmed.replace(/\D/g, "");
+      var phoneDial = (typeof selectedCountry !== 'undefined' && selectedCountry && selectedCountry.dial)
+        ? selectedCountry.dial : '+48';
+      var phone = phoneTrimmed.charAt(0) === '+'
+        ? '+' + phoneDigitsSubmit
+        : (phoneDigitsSubmit.length >= 6 ? phoneDial + phoneDigitsSubmit : phoneRawSubmit);
       var consent = form.querySelector("input[name=\"consent\"]").checked;
 
       gmpFormTrack("form_submit_attempt", {
@@ -6632,7 +7026,8 @@
 
   <script>
     // ========== INTERNATIONALIZATION ==========
-    const translations = {
+    // Eksponowane na window zeby form-logic IIFE i inne moduly mogly skorzystac.
+    const translations = window.translations = {
       en: {
         // Header
         headerCta: "Free Assessment",
@@ -6681,6 +7076,8 @@
         phoneTrustFree: "Free",
         phoneTrustNoStrings: "No obligation",
         phoneTrustReply: "Reply < 24h",
+        phoneCountrySearchPlaceholder: "Search country...",
+        phoneCountryNoResults: "No results",
         phoneConsentNote: "By clicking Continue you agree to be contacted via WhatsApp regarding your case. <a href=\"/privacy-policy\" target=\"_blank\" rel=\"noopener\">Privacy Policy</a>.",
         // Location
         locationTitle: "Where do you live?",
@@ -6910,9 +7307,15 @@
         permitCitizenship: "Польське громадянство",
         permitConsultation: "Мені потрібна консультація",
         phoneTitle: "Ваш номер WhatsApp",
-        phoneHint: "Ми зв'яжемося з вами протягом 24 годин",
-        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneHint: "Надішлемо безкоштовну оцінку справи протягом 24 годин. Без спаму.",
+        phonePlaceholder: "600 700 800",
         phoneSafe: "Ваш номер у безпеці. Ми ніколи не передаємо його.",
+        phoneTrustFree: "Безкоштовно",
+        phoneTrustNoStrings: "Без зобов'язань",
+        phoneTrustReply: "Відповідь < 24г",
+        phoneCountrySearchPlaceholder: "Пошук країни...",
+        phoneCountryNoResults: "Немає результатів",
+        phoneConsentNote: "Натискаючи Далі, ви погоджуєтесь на контакт через WhatsApp у вашій справі. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Політика конфіденційності</a>.",
         locationTitle: "Де ви живете?",
         locationHint: "Ми спеціалізуємося на Нижній Сілезії",
         locationWroclaw: "Вроцлав",
@@ -7337,9 +7740,15 @@
         permitCitizenship: "Ciudadanía polaca",
         permitConsultation: "Necesito una consulta",
         phoneTitle: "Tu número de WhatsApp",
-        phoneHint: "Te contactaremos en 24 horas",
-        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneHint: "Te enviaremos una evaluación gratuita en 24 horas. Sin spam.",
+        phonePlaceholder: "600 700 800",
         phoneSafe: "Tu número está seguro. Nunca lo compartimos.",
+        phoneTrustFree: "Gratis",
+        phoneTrustNoStrings: "Sin compromiso",
+        phoneTrustReply: "Respuesta < 24h",
+        phoneCountrySearchPlaceholder: "Buscar país...",
+        phoneCountryNoResults: "Sin resultados",
+        phoneConsentNote: "Al hacer clic en Continuar aceptas ser contactado por WhatsApp sobre tu caso. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Política de privacidad</a>.",
         locationTitle: "¿Dónde vives?",
         locationHint: "Nos especializamos en Baja Silesia",
         locationWroclaw: "Wrocław",
@@ -7548,9 +7957,15 @@
         permitCitizenship: "Citoyenneté polonaise",
         permitConsultation: "J'ai besoin d'une consultation",
         phoneTitle: "Votre numéro WhatsApp",
-        phoneHint: "Nous vous contacterons dans les 24 heures",
-        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneHint: "Nous vous enverrons une évaluation gratuite sous 24 heures. Sans spam.",
+        phonePlaceholder: "600 700 800",
         phoneSafe: "Votre numéro est en sécurité. Nous ne le partageons jamais.",
+        phoneTrustFree: "Gratuit",
+        phoneTrustNoStrings: "Sans engagement",
+        phoneTrustReply: "Réponse < 24h",
+        phoneCountrySearchPlaceholder: "Rechercher un pays...",
+        phoneCountryNoResults: "Aucun résultat",
+        phoneConsentNote: "En cliquant sur Continuer, vous acceptez d'être contacté via WhatsApp au sujet de votre dossier. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Politique de confidentialité</a>.",
         locationTitle: "Où habitez-vous?",
         locationHint: "Nous sommes spécialisés en Basse-Silésie",
         locationWroclaw: "Wrocław",
@@ -7759,9 +8174,15 @@
         permitCitizenship: "पोलिश नागरिकता",
         permitConsultation: "मुझे परामर्श चाहिए",
         phoneTitle: "आपका WhatsApp नंबर",
-        phoneHint: "हम 24 घंटे में संपर्क करेंगे",
-        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneHint: "हम आपको 24 घंटों के भीतर मुफ़्त मूल्यांकन भेजेंगे। कोई स्पैम नहीं।",
+        phonePlaceholder: "600 700 800",
         phoneSafe: "आपका नंबर सुरक्षित है। हम इसे कभी साझा नहीं करते।",
+        phoneTrustFree: "मुफ़्त",
+        phoneTrustNoStrings: "कोई बाध्यता नहीं",
+        phoneTrustReply: "जवाब < 24घं",
+        phoneCountrySearchPlaceholder: "देश खोजें...",
+        phoneCountryNoResults: "कोई परिणाम नहीं",
+        phoneConsentNote: "जारी रखें पर क्लिक करके आप अपने मामले के बारे में WhatsApp के माध्यम से संपर्क करने के लिए सहमत हैं। <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">गोपनीयता नीति</a>।",
         locationTitle: "आप कहाँ रहते हैं?",
         locationHint: "हम निचले सिलेसिया में विशेषज्ञ हैं",
         locationWroclaw: "व्रोट्सवाफ",
@@ -7970,9 +8391,15 @@
         permitCitizenship: "পোলিশ নাগরিকত্ব",
         permitConsultation: "আমার পরামর্শ দরকার",
         phoneTitle: "আপনার WhatsApp নম্বর",
-        phoneHint: "আমরা ২৪ ঘন্টার মধ্যে যোগাযোগ করব",
-        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneHint: "আমরা ২৪ ঘন্টার মধ্যে বিনামূল্যে মূল্যায়ন পাঠাব। কোন স্প্যাম নেই।",
+        phonePlaceholder: "600 700 800",
         phoneSafe: "আপনার নম্বর নিরাপদ। আমরা কখনো শেয়ার করি না।",
+        phoneTrustFree: "বিনামূল্যে",
+        phoneTrustNoStrings: "কোন বাধ্যবাধকতা নেই",
+        phoneTrustReply: "উত্তর < ২৪ঘ",
+        phoneCountrySearchPlaceholder: "দেশ খুঁজুন...",
+        phoneCountryNoResults: "কোন ফলাফল নেই",
+        phoneConsentNote: "চালিয়ে যান এ ক্লিক করে আপনি আপনার মামলার বিষয়ে WhatsApp এর মাধ্যমে যোগাযোগের সম্মতি দিচ্ছেন। <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">গোপনীয়তা নীতি</a>।",
         locationTitle: "আপনি কোথায় থাকেন?",
         locationHint: "আমরা লোয়ার সাইলেশিয়ায় বিশেষজ্ঞ",
         locationWroclaw: "রক্লাউ",
@@ -8181,9 +8608,15 @@
         permitCitizenship: "Kewarganegaraan Polandia",
         permitConsultation: "Saya butuh konsultasi",
         phoneTitle: "Nomor WhatsApp Anda",
-        phoneHint: "Kami akan menghubungi dalam 24 jam",
-        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneHint: "Kami akan mengirim penilaian gratis dalam 24 jam. Tanpa spam.",
+        phonePlaceholder: "600 700 800",
         phoneSafe: "Nomor Anda aman. Kami tidak pernah membagikannya.",
+        phoneTrustFree: "Gratis",
+        phoneTrustNoStrings: "Tanpa kewajiban",
+        phoneTrustReply: "Balas < 24 jam",
+        phoneCountrySearchPlaceholder: "Cari negara...",
+        phoneCountryNoResults: "Tidak ada hasil",
+        phoneConsentNote: "Dengan mengklik Lanjutkan Anda menyetujui untuk dihubungi melalui WhatsApp tentang kasus Anda. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Kebijakan Privasi</a>.",
         locationTitle: "Di mana Anda tinggal?",
         locationHint: "Kami spesialis di Lower Silesia",
         locationWroclaw: "Wrocław",
@@ -8392,9 +8825,15 @@
         permitCitizenship: "Польское гражданство",
         permitConsultation: "Мне нужна консультация",
         phoneTitle: "Ваш номер WhatsApp",
-        phoneHint: "Мы свяжемся с вами в течение 24 часов",
-        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneHint: "Отправим бесплатную оценку дела в течение 24 часов. Без спама.",
+        phonePlaceholder: "600 700 800",
         phoneSafe: "Ваш номер в безопасности. Мы никогда его не передаём.",
+        phoneTrustFree: "Бесплатно",
+        phoneTrustNoStrings: "Без обязательств",
+        phoneTrustReply: "Ответ < 24ч",
+        phoneCountrySearchPlaceholder: "Поиск страны...",
+        phoneCountryNoResults: "Нет результатов",
+        phoneConsentNote: "Нажимая Далее, вы соглашаетесь на контакт через WhatsApp по вашему делу. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Политика конфиденциальности</a>.",
         locationTitle: "Где вы живёте?",
         locationHint: "Мы специализируемся на Нижней Силезии",
         locationWroclaw: "Вроцлав",
@@ -8662,6 +9101,10 @@
       document.querySelectorAll('[data-i18n-html]').forEach(el => {
         const key = el.getAttribute('data-i18n-html');
         if (t[key]) el.innerHTML = t[key];
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (t[key]) el.placeholder = t[key];
       });
       setText('.hero-headline h1', 'heroTitle', true);
       setText('.hero-subtitle', 'heroSubtitle');
