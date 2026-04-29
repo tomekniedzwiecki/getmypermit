@@ -5300,7 +5300,7 @@
                     <path d="M16 0C7.16 0 0 7.16 0 16c0 2.83.74 5.49 2.04 7.79L0 32l8.41-2.21A15.95 15.95 0 0 0 16 32c8.84 0 16-7.16 16-16S24.84 0 16 0zm0 29.33c-2.46 0-4.83-.65-6.91-1.88l-.5-.3-5.13 1.35 1.37-5.01-.32-.52A13.27 13.27 0 0 1 2.67 16C2.67 8.66 8.66 2.67 16 2.67c7.34 0 13.33 5.99 13.33 13.33S23.34 29.33 16 29.33zm7.51-9.99c-.41-.21-2.43-1.2-2.81-1.34-.38-.14-.65-.21-.93.21-.27.41-1.06 1.34-1.3 1.61-.24.27-.48.31-.89.1-.41-.21-1.74-.64-3.31-2.04-1.22-1.09-2.05-2.43-2.29-2.84-.24-.41-.03-.63.18-.84.19-.19.41-.48.62-.72.21-.24.27-.41.41-.69.14-.27.07-.51-.03-.72-.1-.21-.93-2.24-1.27-3.07-.34-.81-.68-.7-.93-.71h-.79c-.27 0-.72.1-1.09.51-.38.41-1.43 1.4-1.43 3.41s1.46 3.95 1.67 4.22c.21.27 2.88 4.4 6.97 6.16.97.42 1.73.67 2.32.86.97.31 1.86.27 2.56.16.78-.12 2.43-.99 2.77-1.95.34-.96.34-1.78.24-1.95-.1-.17-.38-.27-.79-.48z"/>
                   </svg>
                 </div>
-                <h3 class="step-title phone-step-title" data-i18n="phoneTitle">Twój numer WhatsApp</h3>
+                <h3 class="step-title phone-step-title" data-i18n="phoneTitle">Twój numer telefonu</h3>
                 <p class="phone-step-hint" data-i18n="phoneHint">Wyślemy darmową wycenę w ciągu 24 godzin. Bez spamu.</p>
               </div>
 
@@ -5890,14 +5890,19 @@
       window.gmpTrack(eventName, Object.assign(base, params || {}));
     }
 
-    function trackValidationError(stepId, errorType, errorField, message) {
+    function trackValidationError(stepId, errorType, errorField, messageKey, fallback) {
       gmpFormTrack("form_step_validation_error", {
         step_name: stepId,
         step_label: STEP_LABELS[stepId] || stepId,
         error_type: errorType,
         error_field: errorField || ""
       });
-      alert(message);
+      // Custom modal zamiast alert(). Bez fallback — uzyje messageKey jako tekst.
+      if (typeof window.gmpShowMessage === 'function') {
+        window.gmpShowMessage(messageKey, fallback || messageKey);
+      } else {
+        alert(fallback || messageKey);
+      }
     }
 
     function trackStepComplete(stepId, choiceValue, choiceField) {
@@ -6117,7 +6122,7 @@
 
       if (currentStepId === "1") {
         if (!situation) {
-          trackValidationError("1", "missing_choice", "situation", "Please select your situation");
+          trackValidationError("1", "missing_choice", "situation", "vSituationMissing", "Wybierz swoją sytuację");
           return;
         }
         trackStepComplete("1", situation, "situation");
@@ -6138,7 +6143,7 @@
       if (currentStepId === "rejection-timing") {
         var timing = form.querySelector("input[name=\"rejectionTiming\"]:checked");
         if (!timing) {
-          trackValidationError("rejection-timing", "missing_choice", "rejectionTiming", "Please select when you received the rejection");
+          trackValidationError("rejection-timing", "missing_choice", "rejectionTiming", "vRejectionMissing", "Wybierz kiedy otrzymano decyzję");
           return;
         }
         trackStepComplete("rejection-timing", timing.value, "rejectionTiming");
@@ -6151,7 +6156,7 @@
       if (currentStepId === "permit-type") {
         var permitType = form.querySelector("input[name=\"permitType\"]:checked");
         if (!permitType) {
-          trackValidationError("permit-type", "missing_choice", "permitType", "Please select what you need");
+          trackValidationError("permit-type", "missing_choice", "permitType", "vPermitTypeMissing", "Wybierz typ dokumentu");
           return;
         }
         trackStepComplete("permit-type", permitType.value, "permitType");
@@ -6165,14 +6170,15 @@
         var phoneRaw = form.querySelector("input[name=\"phone\"]").value;
         var phoneDigits = String(phoneRaw || "").replace(/\D/g, "");
         if (phoneDigits.length < 6) {
-          trackValidationError("2", phoneDigits.length === 0 ? "empty_phone" : "invalid_phone", "phone",
-            phoneDigits.length === 0
-              ? "Wpisz numer telefonu"
-              : "Numer wydaje się za krótki — sprawdź proszę");
+          if (phoneDigits.length === 0) {
+            trackValidationError("2", "empty_phone", "phone", "vPhoneEmpty", "Wpisz numer telefonu");
+          } else {
+            trackValidationError("2", "invalid_phone", "phone", "vPhoneShort", "Numer wydaje się za krótki — sprawdź proszę");
+          }
           return;
         }
         if (phoneDigits.length > 15) {
-          trackValidationError("2", "invalid_phone", "phone", "Numer jest za długi — sprawdź proszę");
+          trackValidationError("2", "invalid_phone", "phone", "vPhoneLong", "Numer jest za długi — sprawdź proszę");
           return;
         }
         trackStepComplete("2", "filled", "phone");
@@ -6185,7 +6191,7 @@
       if (currentStepId === "3") {
         var location = form.querySelector("input[name=\"location\"]:checked");
         if (!location) {
-          trackValidationError("3", "missing_choice", "location", "Please select your location");
+          trackValidationError("3", "missing_choice", "location", "vLocationMissing", "Wybierz swoją lokalizację");
           return;
         }
         trackStepComplete("3", location.value, "location");
@@ -6202,7 +6208,7 @@
       if (currentStepId === "intent") {
         var intent = form.querySelector("input[name=\"intent\"]:checked");
         if (!intent) {
-          trackValidationError("intent", "missing_choice", "intent", "Please select an option");
+          trackValidationError("intent", "missing_choice", "intent", "vIntentMissing", "Wybierz jedną opcję");
           return;
         }
         trackStepComplete("intent", intent.value, "intent");
@@ -6224,7 +6230,7 @@
       if (currentStepId === "waiting-time") {
         var waitingTime = form.querySelector("input[name=\"waitingTime\"]:checked");
         if (!waitingTime) {
-          trackValidationError("waiting-time", "missing_choice", "waitingTime", "Please select how long you have been waiting");
+          trackValidationError("waiting-time", "missing_choice", "waitingTime", "vWaitingTimeMissing", "Wybierz jak długo czekasz");
           return;
         }
         trackStepComplete("waiting-time", waitingTime.value, "waitingTime");
@@ -6678,11 +6684,11 @@
 
       if (!name || !email) {
         var missing = !name && !email ? "name_and_email" : (!name ? "name" : "email");
-        trackValidationError("details", "missing_field", missing, "Please fill in all fields");
+        trackValidationError("details", "missing_field", missing, "vDetailsMissing", "Wypełnij wszystkie pola");
         return;
       }
       if (!consent) {
-        trackValidationError("details", "missing_consent", "consent", "Please agree to the privacy policy");
+        trackValidationError("details", "missing_consent", "consent", "vConsentMissing", "Zaakceptuj politykę prywatności");
         return;
       }
       trackStepComplete("details", "filled", "name");
@@ -7080,7 +7086,7 @@
         permitCitizenship: "Polish citizenship",
         permitConsultation: "I need consultation",
         // Phone
-        phoneTitle: "Your WhatsApp number",
+        phoneTitle: "Your phone number",
         phoneHint: "We'll send you a free assessment within 24 hours. No spam.",
         phonePlaceholder: "600 700 800",
         phoneSafe: "Your number is safe. We never share it.",
@@ -7089,6 +7095,19 @@
         phoneTrustReply: "Reply < 24h",
         phoneCountrySearchPlaceholder: "Search country...",
         phoneCountryNoResults: "No results",
+        formModalTitle: "Please check",
+        formModalOk: "Got it",
+        vSituationMissing: "Please select your situation",
+        vRejectionMissing: "Please select when you received the rejection",
+        vPermitTypeMissing: "Please select what type of document you need",
+        vPhoneEmpty: "Please enter your phone number",
+        vPhoneShort: "The number seems too short — please check",
+        vPhoneLong: "The number is too long — please check",
+        vLocationMissing: "Please select your location",
+        vIntentMissing: "Please select an option",
+        vWaitingTimeMissing: "Please select how long you have been waiting",
+        vDetailsMissing: "Please fill in all fields",
+        vConsentMissing: "Please accept the privacy policy",
         phoneConsentNote: "By clicking Continue you agree to be contacted via WhatsApp regarding your case. <a href=\"/privacy-policy\" target=\"_blank\" rel=\"noopener\">Privacy Policy</a>.",
         // Location
         locationTitle: "Where do you live?",
@@ -7317,7 +7336,7 @@
         permitWork: "Дозвіл на роботу",
         permitCitizenship: "Польське громадянство",
         permitConsultation: "Мені потрібна консультація",
-        phoneTitle: "Ваш номер WhatsApp",
+        phoneTitle: "Ваш номер телефону",
         phoneHint: "Надішлемо безкоштовну оцінку справи протягом 24 годин. Без спаму.",
         phonePlaceholder: "600 700 800",
         phoneSafe: "Ваш номер у безпеці. Ми ніколи не передаємо його.",
@@ -7326,6 +7345,19 @@
         phoneTrustReply: "Відповідь < 24г",
         phoneCountrySearchPlaceholder: "Пошук країни...",
         phoneCountryNoResults: "Немає результатів",
+        formModalTitle: "Перевірте, будь ласка",
+        formModalOk: "Зрозуміло",
+        vSituationMissing: "Будь ласка, виберіть свою ситуацію",
+        vRejectionMissing: "Виберіть, коли ви отримали відмову",
+        vPermitTypeMissing: "Виберіть тип документа",
+        vPhoneEmpty: "Введіть номер телефону",
+        vPhoneShort: "Номер занадто короткий — перевірте, будь ласка",
+        vPhoneLong: "Номер занадто довгий — перевірте, будь ласка",
+        vLocationMissing: "Виберіть своє місце проживання",
+        vIntentMissing: "Виберіть один варіант",
+        vWaitingTimeMissing: "Виберіть, як довго ви чекаєте",
+        vDetailsMissing: "Заповніть усі поля",
+        vConsentMissing: "Прийміть політику конфіденційності",
         phoneConsentNote: "Натискаючи Далі, ви погоджуєтесь на контакт через WhatsApp у вашій справі. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Політика конфіденційності</a>.",
         locationTitle: "Де ви живете?",
         locationHint: "Ми спеціалізуємося на Нижній Сілезії",
@@ -7534,13 +7566,28 @@
         permitWork: "Pozwolenie na pracę",
         permitCitizenship: "Polskie obywatelstwo",
         permitConsultation: "Potrzebuję konsultacji",
-        phoneTitle: "Twój numer WhatsApp",
+        phoneTitle: "Twój numer telefonu",
         phoneHint: "Wyślemy darmową wycenę w ciągu 24 godzin. Bez spamu.",
         phonePlaceholder: "600 700 800",
         phoneSafe: "Twój numer jest bezpieczny. Nigdy go nie udostępniamy.",
         phoneTrustFree: "Bezpłatne",
         phoneTrustNoStrings: "Bez zobowiązań",
         phoneTrustReply: "Odpowiedź < 24h",
+        phoneCountrySearchPlaceholder: "Szukaj kraju...",
+        phoneCountryNoResults: "Brak wyników",
+        formModalTitle: "Sprawdź dane",
+        formModalOk: "Rozumiem",
+        vSituationMissing: "Wybierz swoją sytuację",
+        vRejectionMissing: "Wybierz, kiedy otrzymano decyzję odmowną",
+        vPermitTypeMissing: "Wybierz typ dokumentu",
+        vPhoneEmpty: "Wpisz numer telefonu",
+        vPhoneShort: "Numer wydaje się za krótki — sprawdź proszę",
+        vPhoneLong: "Numer jest za długi — sprawdź proszę",
+        vLocationMissing: "Wybierz swoją lokalizację",
+        vIntentMissing: "Wybierz jedną opcję",
+        vWaitingTimeMissing: "Wybierz jak długo czekasz",
+        vDetailsMissing: "Wypełnij wszystkie pola",
+        vConsentMissing: "Zaakceptuj politykę prywatności",
         phoneConsentNote: "Klikając Dalej wyrażasz zgodę na kontakt przez WhatsApp w sprawie Twojej sprawy. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Polityka prywatności</a>.",
         locationTitle: "Gdzie mieszkasz?",
         locationHint: "Specjalizujemy się w Dolnym Śląsku",
@@ -7750,7 +7797,7 @@
         permitWork: "Permiso de trabajo",
         permitCitizenship: "Ciudadanía polaca",
         permitConsultation: "Necesito una consulta",
-        phoneTitle: "Tu número de WhatsApp",
+        phoneTitle: "Tu número de teléfono",
         phoneHint: "Te enviaremos una evaluación gratuita en 24 horas. Sin spam.",
         phonePlaceholder: "600 700 800",
         phoneSafe: "Tu número está seguro. Nunca lo compartimos.",
@@ -7759,6 +7806,19 @@
         phoneTrustReply: "Respuesta < 24h",
         phoneCountrySearchPlaceholder: "Buscar país...",
         phoneCountryNoResults: "Sin resultados",
+        formModalTitle: "Por favor verifica",
+        formModalOk: "Entendido",
+        vSituationMissing: "Por favor selecciona tu situación",
+        vRejectionMissing: "Selecciona cuándo recibiste el rechazo",
+        vPermitTypeMissing: "Selecciona qué tipo de documento necesitas",
+        vPhoneEmpty: "Ingresa tu número de teléfono",
+        vPhoneShort: "El número parece demasiado corto — revisa por favor",
+        vPhoneLong: "El número es demasiado largo — revisa por favor",
+        vLocationMissing: "Selecciona tu ubicación",
+        vIntentMissing: "Selecciona una opción",
+        vWaitingTimeMissing: "Selecciona cuánto tiempo has esperado",
+        vDetailsMissing: "Completa todos los campos",
+        vConsentMissing: "Acepta la política de privacidad",
         phoneConsentNote: "Al hacer clic en Continuar aceptas ser contactado por WhatsApp sobre tu caso. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Política de privacidad</a>.",
         locationTitle: "¿Dónde vives?",
         locationHint: "Nos especializamos en Baja Silesia",
@@ -7967,7 +8027,7 @@
         permitWork: "Permis de travail",
         permitCitizenship: "Citoyenneté polonaise",
         permitConsultation: "J'ai besoin d'une consultation",
-        phoneTitle: "Votre numéro WhatsApp",
+        phoneTitle: "Votre numéro de téléphone",
         phoneHint: "Nous vous enverrons une évaluation gratuite sous 24 heures. Sans spam.",
         phonePlaceholder: "600 700 800",
         phoneSafe: "Votre numéro est en sécurité. Nous ne le partageons jamais.",
@@ -7976,6 +8036,19 @@
         phoneTrustReply: "Réponse < 24h",
         phoneCountrySearchPlaceholder: "Rechercher un pays...",
         phoneCountryNoResults: "Aucun résultat",
+        formModalTitle: "Veuillez vérifier",
+        formModalOk: "Compris",
+        vSituationMissing: "Veuillez sélectionner votre situation",
+        vRejectionMissing: "Sélectionnez quand vous avez reçu le refus",
+        vPermitTypeMissing: "Sélectionnez le type de document souhaité",
+        vPhoneEmpty: "Saisissez votre numéro de téléphone",
+        vPhoneShort: "Le numéro semble trop court — vérifiez s'il vous plaît",
+        vPhoneLong: "Le numéro est trop long — vérifiez s'il vous plaît",
+        vLocationMissing: "Sélectionnez votre localisation",
+        vIntentMissing: "Sélectionnez une option",
+        vWaitingTimeMissing: "Sélectionnez depuis combien de temps vous attendez",
+        vDetailsMissing: "Remplissez tous les champs",
+        vConsentMissing: "Acceptez la politique de confidentialité",
         phoneConsentNote: "En cliquant sur Continuer, vous acceptez d'être contacté via WhatsApp au sujet de votre dossier. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Politique de confidentialité</a>.",
         locationTitle: "Où habitez-vous?",
         locationHint: "Nous sommes spécialisés en Basse-Silésie",
@@ -8184,7 +8257,7 @@
         permitWork: "कार्य परमिट",
         permitCitizenship: "पोलिश नागरिकता",
         permitConsultation: "मुझे परामर्श चाहिए",
-        phoneTitle: "आपका WhatsApp नंबर",
+        phoneTitle: "आपका फ़ोन नंबर",
         phoneHint: "हम आपको 24 घंटों के भीतर मुफ़्त मूल्यांकन भेजेंगे। कोई स्पैम नहीं।",
         phonePlaceholder: "600 700 800",
         phoneSafe: "आपका नंबर सुरक्षित है। हम इसे कभी साझा नहीं करते।",
@@ -8193,6 +8266,19 @@
         phoneTrustReply: "जवाब < 24घं",
         phoneCountrySearchPlaceholder: "देश खोजें...",
         phoneCountryNoResults: "कोई परिणाम नहीं",
+        formModalTitle: "कृपया जाँच करें",
+        formModalOk: "समझ गया",
+        vSituationMissing: "कृपया अपनी स्थिति चुनें",
+        vRejectionMissing: "चुनें कि आपको अस्वीकृति कब मिली",
+        vPermitTypeMissing: "चुनें कि आपको किस प्रकार के दस्तावेज़ की आवश्यकता है",
+        vPhoneEmpty: "कृपया अपना फ़ोन नंबर दर्ज करें",
+        vPhoneShort: "नंबर बहुत छोटा लगता है — कृपया जाँचें",
+        vPhoneLong: "नंबर बहुत लंबा है — कृपया जाँचें",
+        vLocationMissing: "कृपया अपना स्थान चुनें",
+        vIntentMissing: "एक विकल्प चुनें",
+        vWaitingTimeMissing: "चुनें कि आप कितने समय से इंतज़ार कर रहे हैं",
+        vDetailsMissing: "सभी फ़ील्ड भरें",
+        vConsentMissing: "गोपनीयता नीति स्वीकार करें",
         phoneConsentNote: "जारी रखें पर क्लिक करके आप अपने मामले के बारे में WhatsApp के माध्यम से संपर्क करने के लिए सहमत हैं। <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">गोपनीयता नीति</a>।",
         locationTitle: "आप कहाँ रहते हैं?",
         locationHint: "हम निचले सिलेसिया में विशेषज्ञ हैं",
@@ -8401,7 +8487,7 @@
         permitWork: "ওয়ার্ক পারমিট",
         permitCitizenship: "পোলিশ নাগরিকত্ব",
         permitConsultation: "আমার পরামর্শ দরকার",
-        phoneTitle: "আপনার WhatsApp নম্বর",
+        phoneTitle: "আপনার ফোন নম্বর",
         phoneHint: "আমরা ২৪ ঘন্টার মধ্যে বিনামূল্যে মূল্যায়ন পাঠাব। কোন স্প্যাম নেই।",
         phonePlaceholder: "600 700 800",
         phoneSafe: "আপনার নম্বর নিরাপদ। আমরা কখনো শেয়ার করি না।",
@@ -8410,6 +8496,19 @@
         phoneTrustReply: "উত্তর < ২৪ঘ",
         phoneCountrySearchPlaceholder: "দেশ খুঁজুন...",
         phoneCountryNoResults: "কোন ফলাফল নেই",
+        formModalTitle: "অনুগ্রহ করে যাচাই করুন",
+        formModalOk: "বুঝেছি",
+        vSituationMissing: "আপনার পরিস্থিতি নির্বাচন করুন",
+        vRejectionMissing: "কখন প্রত্যাখ্যান পেয়েছিলেন তা নির্বাচন করুন",
+        vPermitTypeMissing: "আপনার কোন ধরনের নথি প্রয়োজন তা নির্বাচন করুন",
+        vPhoneEmpty: "আপনার ফোন নম্বর লিখুন",
+        vPhoneShort: "নম্বরটি খুব ছোট মনে হচ্ছে — যাচাই করুন",
+        vPhoneLong: "নম্বরটি খুব দীর্ঘ — যাচাই করুন",
+        vLocationMissing: "আপনার অবস্থান নির্বাচন করুন",
+        vIntentMissing: "একটি বিকল্প নির্বাচন করুন",
+        vWaitingTimeMissing: "কত দিন অপেক্ষা করছেন তা নির্বাচন করুন",
+        vDetailsMissing: "সব ক্ষেত্র পূরণ করুন",
+        vConsentMissing: "গোপনীয়তা নীতি গ্রহণ করুন",
         phoneConsentNote: "চালিয়ে যান এ ক্লিক করে আপনি আপনার মামলার বিষয়ে WhatsApp এর মাধ্যমে যোগাযোগের সম্মতি দিচ্ছেন। <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">গোপনীয়তা নীতি</a>।",
         locationTitle: "আপনি কোথায় থাকেন?",
         locationHint: "আমরা লোয়ার সাইলেশিয়ায় বিশেষজ্ঞ",
@@ -8618,7 +8717,7 @@
         permitWork: "Izin kerja",
         permitCitizenship: "Kewarganegaraan Polandia",
         permitConsultation: "Saya butuh konsultasi",
-        phoneTitle: "Nomor WhatsApp Anda",
+        phoneTitle: "Nomor telepon Anda",
         phoneHint: "Kami akan mengirim penilaian gratis dalam 24 jam. Tanpa spam.",
         phonePlaceholder: "600 700 800",
         phoneSafe: "Nomor Anda aman. Kami tidak pernah membagikannya.",
@@ -8627,6 +8726,19 @@
         phoneTrustReply: "Balas < 24 jam",
         phoneCountrySearchPlaceholder: "Cari negara...",
         phoneCountryNoResults: "Tidak ada hasil",
+        formModalTitle: "Mohon periksa",
+        formModalOk: "Mengerti",
+        vSituationMissing: "Silakan pilih situasi Anda",
+        vRejectionMissing: "Pilih kapan Anda menerima penolakan",
+        vPermitTypeMissing: "Pilih jenis dokumen yang Anda butuhkan",
+        vPhoneEmpty: "Masukkan nomor telepon Anda",
+        vPhoneShort: "Nomor terlalu pendek — silakan periksa",
+        vPhoneLong: "Nomor terlalu panjang — silakan periksa",
+        vLocationMissing: "Pilih lokasi Anda",
+        vIntentMissing: "Pilih satu opsi",
+        vWaitingTimeMissing: "Pilih berapa lama Anda menunggu",
+        vDetailsMissing: "Isi semua kolom",
+        vConsentMissing: "Setujui kebijakan privasi",
         phoneConsentNote: "Dengan mengklik Lanjutkan Anda menyetujui untuk dihubungi melalui WhatsApp tentang kasus Anda. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Kebijakan Privasi</a>.",
         locationTitle: "Di mana Anda tinggal?",
         locationHint: "Kami spesialis di Lower Silesia",
@@ -8835,7 +8947,7 @@
         permitWork: "Разрешение на работу",
         permitCitizenship: "Польское гражданство",
         permitConsultation: "Мне нужна консультация",
-        phoneTitle: "Ваш номер WhatsApp",
+        phoneTitle: "Ваш номер телефона",
         phoneHint: "Отправим бесплатную оценку дела в течение 24 часов. Без спама.",
         phonePlaceholder: "600 700 800",
         phoneSafe: "Ваш номер в безопасности. Мы никогда его не передаём.",
@@ -8844,6 +8956,19 @@
         phoneTrustReply: "Ответ < 24ч",
         phoneCountrySearchPlaceholder: "Поиск страны...",
         phoneCountryNoResults: "Нет результатов",
+        formModalTitle: "Пожалуйста, проверьте",
+        formModalOk: "Понятно",
+        vSituationMissing: "Пожалуйста, выберите свою ситуацию",
+        vRejectionMissing: "Выберите, когда вы получили отказ",
+        vPermitTypeMissing: "Выберите тип документа",
+        vPhoneEmpty: "Введите номер телефона",
+        vPhoneShort: "Номер слишком короткий — проверьте, пожалуйста",
+        vPhoneLong: "Номер слишком длинный — проверьте, пожалуйста",
+        vLocationMissing: "Выберите своё местоположение",
+        vIntentMissing: "Выберите один вариант",
+        vWaitingTimeMissing: "Выберите, как долго вы ждёте",
+        vDetailsMissing: "Заполните все поля",
+        vConsentMissing: "Примите политику конфиденциальности",
         phoneConsentNote: "Нажимая Далее, вы соглашаетесь на контакт через WhatsApp по вашему делу. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Политика конфиденциальности</a>.",
         locationTitle: "Где вы живёте?",
         locationHint: "Мы специализируемся на Нижней Силезии",
@@ -9469,6 +9594,129 @@
         io.observe(heroTag);
       }
     });
+  </script>
+
+  <!-- Form validation modal (zastępuje native alert) -->
+  <div id="gmpMessageModal" class="gmm-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="gmmTitle">
+    <div class="gmm-card">
+      <div class="gmm-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="13"/>
+          <line x1="12" y1="16.5" x2="12.01" y2="16.5"/>
+        </svg>
+      </div>
+      <h3 class="gmm-title" id="gmmTitle" data-i18n="formModalTitle">Sprawdź dane</h3>
+      <p class="gmm-message" id="gmmMessage"></p>
+      <button type="button" class="gmm-btn" id="gmmOkBtn" data-i18n="formModalOk">Rozumiem</button>
+    </div>
+  </div>
+
+  <style>
+    .gmm-overlay {
+      position: fixed; inset: 0;
+      background: rgba(5, 10, 20, .65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 2147483645;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      animation: gmmFadeIn .18s ease-out;
+    }
+    .gmm-overlay[hidden] { display: none; }
+    @keyframes gmmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes gmmCardIn { from { transform: translateY(8px) scale(.96); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    .gmm-card {
+      background: #fff; color: #0a0f19;
+      max-width: 380px; width: 100%;
+      padding: 28px 24px 22px;
+      border-radius: 18px;
+      box-shadow: 0 24px 60px -12px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.04);
+      text-align: center;
+      animation: gmmCardIn .22s ease-out;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .gmm-icon {
+      width: 56px; height: 56px;
+      margin: 0 auto 14px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border-radius: 50%;
+      color: #b45309;
+      box-shadow: 0 6px 18px rgba(245, 158, 11, .22);
+    }
+    .gmm-icon svg { width: 28px; height: 28px; }
+    .gmm-title {
+      margin: 0 0 8px;
+      font-size: 19px; font-weight: 700;
+      color: #0a0f19; letter-spacing: -.01em;
+    }
+    .gmm-message {
+      margin: 0 0 22px;
+      font-size: 15px; line-height: 1.5;
+      color: #4b5563;
+    }
+    .gmm-btn {
+      width: 100%;
+      padding: 13px 20px;
+      font-size: 16px; font-weight: 600;
+      background: #05f; color: #fff;
+      border: 0; border-radius: 12px;
+      cursor: pointer;
+      transition: background .15s, transform .08s;
+      box-shadow: 0 6px 16px -4px rgba(0,85,255,.4);
+    }
+    .gmm-btn:hover { background: #2563eb; }
+    .gmm-btn:active { transform: scale(.98); }
+    @media (max-width: 480px) {
+      .gmm-card { padding: 22px 18px 18px; max-width: 92vw; }
+      .gmm-title { font-size: 17px; }
+      .gmm-message { font-size: 14px; }
+      .gmm-btn { padding: 12px 16px; font-size: 15px; }
+    }
+  </style>
+
+  <script>
+    // ===== Form validation modal API =====
+    // window.gmpShowMessage(key, fallback?) — pokazuje custom modal zamiast alert.
+    // 'key' to klucz translation (np. "vPhoneShort"). Fallback = raw text gdy brak klucza.
+    (function(){
+      var modal = document.getElementById('gmpMessageModal');
+      var msgEl = document.getElementById('gmpMessage') || document.getElementById('gmmMessage');
+      var titleEl = document.getElementById('gmmTitle');
+      var okBtn = document.getElementById('gmmOkBtn');
+      if (!modal || !msgEl) return;
+
+      function getTranslation(key) {
+        var lang = (window.currentLang || 'en');
+        var t = (window.translations && window.translations[lang])
+             || (window.translations && window.translations.en) || {};
+        return t[key] || null;
+      }
+
+      window.gmpShowMessage = function(key, fallback) {
+        var msg = getTranslation(key) || fallback || key || '';
+        msgEl.textContent = msg;
+        // Refresh title + button text z aktualnego lang (na wypadek zmiany lang)
+        var titleTxt = getTranslation('formModalTitle');
+        if (titleTxt && titleEl) titleEl.textContent = titleTxt;
+        var okTxt = getTranslation('formModalOk');
+        if (okTxt && okBtn) okBtn.textContent = okTxt;
+        modal.hidden = false;
+        // Focus OK button po krótkim delay (a11y)
+        setTimeout(function(){ if (okBtn) okBtn.focus(); }, 50);
+      };
+
+      function close() { modal.hidden = true; }
+
+      if (okBtn) okBtn.addEventListener('click', close);
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) close();
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.hidden) close();
+      });
+    })();
   </script>
 
 </body>
