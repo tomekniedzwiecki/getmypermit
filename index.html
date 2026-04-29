@@ -3242,6 +3242,197 @@
       flex-shrink: 0;
     }
 
+    /* === PHONE STEP — premium WhatsApp capture === */
+    .phone-step-hero {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .phone-step-icon-wa {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+      border-radius: 50%;
+      color: #fff;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);
+    }
+    .phone-step-icon-wa svg {
+      width: 30px;
+      height: 30px;
+    }
+    .phone-step-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--black);
+      margin: 0 0 8px;
+      letter-spacing: -0.01em;
+    }
+    .phone-step-hint {
+      font-size: 15px;
+      color: var(--gray);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* Input wrap z prefiksem +48 i live validity check */
+    .phone-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      background: #fff;
+      border: 2px solid var(--light-gray);
+      border-radius: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+    }
+    .phone-input-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(0, 85, 255, 0.1);
+    }
+    .phone-input-wrap.is-valid {
+      border-color: #25d366;
+      box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.12);
+    }
+    .phone-prefix {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px 0 18px;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--black);
+      background: #fafbfc;
+      border-right: 1px solid #e5e7eb;
+      user-select: none;
+    }
+    .phone-prefix img {
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+    }
+    .phone-input {
+      flex: 1;
+      min-width: 0;
+      border: 0 !important;
+      padding: 22px 50px 22px 16px !important;
+      font-size: 22px !important;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: var(--black);
+    }
+    .phone-input:focus {
+      box-shadow: none !important;
+      outline: none;
+    }
+    .phone-input::placeholder {
+      color: #c0c4cc;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+    .phone-validity-indicator {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%) scale(0.5);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #25d366;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      pointer-events: none;
+    }
+    .phone-input-wrap.is-valid .phone-validity-indicator {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
+    .phone-validity-indicator svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Trust row — 3 chips */
+    .phone-trust-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .phone-trust-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 8px;
+      background: #f0fdf4;
+      border: 1px solid #d1fae5;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #15803d;
+    }
+    .phone-trust-item svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      stroke: #15803d;
+    }
+
+    /* Mikro-zgoda RODO — premium info-box */
+    .phone-consent-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: rgba(0, 85, 255, 0.04);
+      border: 1px solid rgba(0, 85, 255, 0.12);
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: var(--gray);
+      line-height: 1.55;
+    }
+    .phone-consent-note .phone-consent-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--accent);
+      margin-top: 1px;
+    }
+    .phone-consent-note a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .phone-consent-note a:hover {
+      text-decoration: none;
+    }
+
+    @media (max-width: 540px) {
+      .phone-step-icon-wa { width: 56px; height: 56px; margin-bottom: 12px; }
+      .phone-step-icon-wa svg { width: 26px; height: 26px; }
+      .phone-step-title { font-size: 20px; }
+      .phone-step-hint { font-size: 14px; }
+      .phone-prefix { font-size: 16px; padding: 0 10px 0 14px; gap: 6px; }
+      .phone-input { padding: 18px 44px 18px 12px !important; font-size: 19px !important; }
+      .phone-trust-row { gap: 6px; }
+      .phone-trust-item { padding: 9px 4px; font-size: 11px; gap: 4px; }
+      .phone-trust-item svg { width: 12px; height: 12px; }
+      .phone-consent-note { font-size: 12px; padding: 10px 12px; }
+    }
+    @media (max-width: 380px) {
+      .phone-trust-item { font-size: 10.5px; }
+      .phone-trust-item svg { display: none; }
+    }
+
     /* Navigation */
     .form-nav {
       display: flex;
@@ -4955,26 +5146,53 @@
 
             <!-- STEP 2: WhatsApp / Phone (Early capture) -->
             <div class="form-step" data-step="2">
-              <div class="step-question">
-                <div class="step-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <div class="phone-step-hero">
+                <div class="phone-step-icon-wa">
+                  <!-- WhatsApp official mark -->
+                  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                    <path d="M16 0C7.16 0 0 7.16 0 16c0 2.83.74 5.49 2.04 7.79L0 32l8.41-2.21A15.95 15.95 0 0 0 16 32c8.84 0 16-7.16 16-16S24.84 0 16 0zm0 29.33c-2.46 0-4.83-.65-6.91-1.88l-.5-.3-5.13 1.35 1.37-5.01-.32-.52A13.27 13.27 0 0 1 2.67 16C2.67 8.66 8.66 2.67 16 2.67c7.34 0 13.33 5.99 13.33 13.33S23.34 29.33 16 29.33zm7.51-9.99c-.41-.21-2.43-1.2-2.81-1.34-.38-.14-.65-.21-.93.21-.27.41-1.06 1.34-1.3 1.61-.24.27-.48.31-.89.1-.41-.21-1.74-.64-3.31-2.04-1.22-1.09-2.05-2.43-2.29-2.84-.24-.41-.03-.63.18-.84.19-.19.41-.48.62-.72.21-.24.27-.41.41-.69.14-.27.07-.51-.03-.72-.1-.21-.93-2.24-1.27-3.07-.34-.81-.68-.7-.93-.71h-.79c-.27 0-.72.1-1.09.51-.38.41-1.43 1.4-1.43 3.41s1.46 3.95 1.67 4.22c.21.27 2.88 4.4 6.97 6.16.97.42 1.73.67 2.32.86.97.31 1.86.27 2.56.16.78-.12 2.43-.99 2.77-1.95.34-.96.34-1.78.24-1.95-.1-.17-.38-.27-.79-.48z"/>
+                  </svg>
                 </div>
-                <h3 class="step-title">Your WhatsApp number</h3>
-                <p class="step-hint">We'll message you within 24 hours</p>
+                <h3 class="step-title phone-step-title" data-i18n="phoneTitle">Twój numer WhatsApp</h3>
+                <p class="phone-step-hint" data-i18n="phoneHint">Wyślemy darmową wycenę w ciągu 24 godzin. Bez spamu.</p>
               </div>
 
-              <div class="form-field">
-                <input type="tel" class="form-input form-input-large" name="phone" placeholder="+48 XXX XXX XXX" required>
+              <div class="phone-input-wrap">
+                <span class="phone-prefix" aria-hidden="true">
+                  <img src="https://flagcdn.com/w20/pl.png" width="20" height="14" alt="" loading="eager" decoding="async">
+                  <span>+48</span>
+                </span>
+                <input type="tel" class="form-input phone-input" name="phone"
+                       placeholder="600 700 800"
+                       autocomplete="tel"
+                       inputmode="numeric"
+                       maxlength="11"
+                       required
+                       aria-label="Numer WhatsApp">
+                <span class="phone-validity-indicator" aria-hidden="true">
+                  <svg class="phone-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
               </div>
 
-              <div class="trust-note">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <span data-i18n="phoneSafe">Your number is safe. We never share it.</span>
+              <div class="phone-trust-row">
+                <div class="phone-trust-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+                  <span data-i18n="phoneTrustFree">Bezpłatne</span>
+                </div>
+                <div class="phone-trust-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+                  <span data-i18n="phoneTrustNoStrings">Bez zobowiązań</span>
+                </div>
+                <div class="phone-trust-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span data-i18n="phoneTrustReply">Odpowiedź &lt; 24h</span>
+                </div>
               </div>
 
-              <p class="phone-consent-note" data-i18n="phoneConsentNote" style="margin: 12px 0 0; font-size: 12px; color: #778; line-height: 1.5;">
-                By clicking Continue you agree to be contacted by Immigration Lawyer Wrocław via WhatsApp regarding your case. <a href="/polityka-prywatnosci.html" target="_blank" rel="noopener" style="color: #05f; text-decoration: underline;">Privacy Policy</a>.
-              </p>
+              <div class="phone-consent-note">
+                <svg class="phone-consent-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span data-i18n-html="phoneConsentNote">Klikając Dalej wyrażasz zgodę na kontakt przez WhatsApp w sprawie Twojej sprawy. <a href="/polityka-prywatnosci.html" target="_blank" rel="noopener">Polityka prywatności</a>.</span>
+              </div>
 
               <div class="form-nav">
                 <button type="button" class="btn-back" onclick="prevStep()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
@@ -5551,10 +5769,19 @@
         var el = form.querySelector('input[name="' + name + '"]');
         return el && el.value ? el.value : null;
       };
+      // Phone: normalizacja do +48XXXXXXXXX (strip spaces, prepend prefix gdy 9 cyfr)
+      var normalizePhone = function() {
+        var raw = val("phone");
+        if (!raw) return null;
+        var digits = String(raw).replace(/\D/g, "");
+        if (digits.length === 9) return "+48" + digits;
+        if (digits.length > 9 && digits.indexOf("48") === 0) return "+" + digits;
+        return raw; // fallback — zapisz to co user wpisal
+      };
       var t = getTrackingData();
       return {
         form_session_id: FORM_SESSION_ID,
-        phone: val("phone"),
+        phone: normalizePhone(),
         name: val("name"),
         email: val("email"),
         situation: get("situation"),
@@ -5765,11 +5992,17 @@
       }
 
       if (currentStepId === "2") {
-        var phone = form.querySelector("input[name=\"phone\"]").value;
-        if (!phone || phone.length < 9) {
-          trackValidationError("2", phone ? "invalid_phone" : "empty_phone", "phone", "Please enter a valid phone number");
+        var phoneRaw = form.querySelector("input[name=\"phone\"]").value;
+        var phoneDigits = String(phoneRaw || "").replace(/\D/g, "");
+        if (phoneDigits.length !== 9) {
+          trackValidationError("2", phoneDigits.length === 0 ? "empty_phone" : "invalid_phone", "phone",
+            phoneDigits.length === 0
+              ? "Wpisz numer telefonu (9 cyfr)"
+              : "Numer musi mieć 9 cyfr (np. 600 700 800)");
           return;
         }
+        // Normalizacja: zapisujemy w bazie z prefiksem +48 (E.164-friendly)
+        form.querySelector("input[name=\"phone\"]")._normalizedPhone = "+48" + phoneDigits;
         trackStepComplete("2", "filled", "phone");
         savePartialLead("2");
         stepHistory.push("3");
@@ -5845,6 +6078,28 @@
         window.showStep(previousStep);
       }
     };
+
+    // === PHONE INPUT: auto-format + live validity ===
+    // 9 cyfr (PL standard), formatowane jako "XXX XXX XXX" gdy user pisze.
+    // Wrapper dostaje klasę .is-valid -> green border + checkmark icon.
+    var phoneInputEl = form.querySelector('input[name="phone"]');
+    var phoneWrap = phoneInputEl ? phoneInputEl.closest('.phone-input-wrap') : null;
+    if (phoneInputEl) {
+      var formatPhone = function(raw) {
+        var digits = String(raw || '').replace(/\D/g, '').slice(0, 9);
+        if (digits.length > 6) return digits.slice(0,3) + ' ' + digits.slice(3,6) + ' ' + digits.slice(6);
+        if (digits.length > 3) return digits.slice(0,3) + ' ' + digits.slice(3);
+        return digits;
+      };
+      var revalidatePhone = function() {
+        var formatted = formatPhone(phoneInputEl.value);
+        if (formatted !== phoneInputEl.value) phoneInputEl.value = formatted;
+        var ok = formatted.replace(/\s/g, '').length === 9;
+        if (phoneWrap) phoneWrap.classList.toggle('is-valid', ok);
+      };
+      phoneInputEl.addEventListener('input', revalidatePhone);
+      phoneInputEl.addEventListener('paste', function() { setTimeout(revalidatePhone, 0); });
+    }
 
     // === FIELD FOCUS / BLUR TRACKING (text inputs only) ===
     ["phone", "name", "email"].forEach(function(fieldName) {
@@ -6004,7 +6259,10 @@
 
       var name = form.querySelector("input[name=\"name\"]").value;
       var email = form.querySelector("input[name=\"email\"]").value;
-      var phone = form.querySelector("input[name=\"phone\"]").value;
+      var phoneRawSubmit = form.querySelector("input[name=\"phone\"]").value;
+      var phoneDigitsSubmit = String(phoneRawSubmit || "").replace(/\D/g, "");
+      var phone = phoneDigitsSubmit.length === 9 ? "+48" + phoneDigitsSubmit
+                : (phoneDigitsSubmit.length > 9 && phoneDigitsSubmit.indexOf("48") === 0 ? "+" + phoneDigitsSubmit : phoneRawSubmit);
       var consent = form.querySelector("input[name=\"consent\"]").checked;
 
       gmpFormTrack("form_submit_attempt", {
@@ -6417,10 +6675,13 @@
         permitConsultation: "I need consultation",
         // Phone
         phoneTitle: "Your WhatsApp number",
-        phoneHint: "We'll message you within 24 hours",
-        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneHint: "We'll send you a free assessment within 24 hours. No spam.",
+        phonePlaceholder: "600 700 800",
         phoneSafe: "Your number is safe. We never share it.",
-        phoneConsentNote: "By clicking Continue you agree to be contacted by Immigration Lawyer Wrocław via WhatsApp regarding your case. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\" style=\"color: #05f; text-decoration: underline;\">Privacy Policy</a>.",
+        phoneTrustFree: "Free",
+        phoneTrustNoStrings: "No obligation",
+        phoneTrustReply: "Reply < 24h",
+        phoneConsentNote: "By clicking Continue you agree to be contacted via WhatsApp regarding your case. <a href=\"/privacy-policy\" target=\"_blank\" rel=\"noopener\">Privacy Policy</a>.",
         // Location
         locationTitle: "Where do you live?",
         locationHint: "We specialize in Lower Silesia",
@@ -6860,10 +7121,13 @@
         permitCitizenship: "Polskie obywatelstwo",
         permitConsultation: "Potrzebuję konsultacji",
         phoneTitle: "Twój numer WhatsApp",
-        phoneHint: "Skontaktujemy się w ciągu 24 godzin",
-        phonePlaceholder: "+48 XXX XXX XXX",
+        phoneHint: "Wyślemy darmową wycenę w ciągu 24 godzin. Bez spamu.",
+        phonePlaceholder: "600 700 800",
         phoneSafe: "Twój numer jest bezpieczny. Nigdy go nie udostępniamy.",
-        phoneConsentNote: "Klikając Dalej zgadzasz się na kontakt od Immigration Lawyer Wrocław przez WhatsApp w sprawie Twojej sprawy. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\" style=\"color: #05f; text-decoration: underline;\">Polityka prywatności</a>.",
+        phoneTrustFree: "Bezpłatne",
+        phoneTrustNoStrings: "Bez zobowiązań",
+        phoneTrustReply: "Odpowiedź < 24h",
+        phoneConsentNote: "Klikając Dalej wyrażasz zgodę na kontakt przez WhatsApp w sprawie Twojej sprawy. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\">Polityka prywatności</a>.",
         locationTitle: "Gdzie mieszkasz?",
         locationHint: "Specjalizujemy się w Dolnym Śląsku",
         locationWroclaw: "Wrocław",
@@ -8457,7 +8721,7 @@
       const phoneInput = document.querySelector('[data-step="2"] input[name="phone"]');
       if (phoneInput) phoneInput.placeholder = t.phonePlaceholder;
       setText('.trust-note span', 'phoneSafe');
-      const phoneConsentNote = document.querySelector('.phone-consent-note');
+      const phoneConsentNote = document.querySelector('.phone-consent-note span[data-i18n-html]');
       if (phoneConsentNote && t.phoneConsentNote) phoneConsentNote.innerHTML = t.phoneConsentNote;
 
       // Location step
