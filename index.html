@@ -28,6 +28,15 @@
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-P8ZD3B58');</script>
   <!-- End Google Tag Manager -->
+  <!-- Direct GA4 (gtag.js) — bypass GTM dla custom form_* events.
+       GTM nie ma Tagow dla naszych form_step_view/form_choice_select itd.,
+       wiec eventy musza isc bezposrednio przez gtag('event', ...). page_view
+       wylaczony zeby nie duplikowac z GTM. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-5W9YPERVSK"></script>
+  <script>
+    gtag('js', new Date());
+    gtag('config', 'G-5W9YPERVSK', { send_page_view: false, anonymize_ip: true });
+  </script>
   <meta name="description" content="MOS 2.0 launches April 27, 2026 — you file alone, or we take over end-to-end. Licensed immigration lawyers in Lower Silesia handling residence permits from application to decision.">
   <meta property="og:title" content="MOS 2.0 is here — don't file alone. Immigration Lawyer Wrocław">
   <meta property="og:description" content="From April 27, 2026 foreigners submit applications themselves via MOS 2.0. One mistake = illegal stay. We take over the whole case — from Trusted Profile to final decision.">

@@ -7,9 +7,16 @@
 
   window.dataLayer = window.dataLayer || [];
 
-  // === Helper: push event to dataLayer ===
+  // === Helper: push event to dataLayer + GA4 direct ===
+  // Push do dataLayer dla GTM (zachowanie istniejacych Tagow Google Ads / GA4 conv.).
+  // RÓWNIEZ wywolanie gtag('event', ...) zeby event poszedl bezposrednio do GA4
+  // (pomijajac GTM) — GTM nie ma Tagow dla naszych form_* custom events.
   window.gmpTrack = function (event, params) {
-    window.dataLayer.push(Object.assign({ event: event }, params || {}));
+    var p = params || {};
+    window.dataLayer.push(Object.assign({ event: event }, p));
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', event, p);
+    }
   };
 
   // === Helper: SHA-256 (lowercase hex) for Enhanced Conversions ===
