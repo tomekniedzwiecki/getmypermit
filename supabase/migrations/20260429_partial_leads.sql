@@ -1,11 +1,17 @@
--- Soft-save dla landing form: zapisuj phone tuz po wpisaniu, nie czekaj na pelne ukonczenie.
--- Frontend wysyla partial save po phone step (krok 2). Jak user dotrze do konca, ten sam
--- rekord (po form_session_id) jest update'owany do is_partial=false z pelnymi danymi.
+-- Soft-save dla landing form: zapisuj odpowiedz po KAZDYM kroku, nie czekaj na phone/finish.
+-- Frontend wysyla partial save po kazdym Continue (step 1: situation, step 2: phone, etc).
+-- Edge function robi upsert po form_session_id - kolejne kroki UPDATE'uja istniejacy rekord.
+-- Jak user dotrze do konca, ten sam rekord jest update'owany do is_partial=false z full data.
 
 ALTER TABLE permit_leads
     ADD COLUMN IF NOT EXISTS is_partial BOOLEAN DEFAULT false,
     ADD COLUMN IF NOT EXISTS form_session_id TEXT,
     ADD COLUMN IF NOT EXISTS last_step_reached TEXT;
+
+-- phone NOT NULL blokowal partial save na step 1 (przed phone step). Soft-save robi insert
+-- juz po wybraniu situation - phone jeszcze pusty. NOT NULL wymuszamy aplikacyjnie tylko
+-- na full leadzie (is_partial=false).
+ALTER TABLE permit_leads ALTER COLUMN phone DROP NOT NULL;
 
 -- Unique index na form_session_id (gdy nie NULL) zeby upsert dzialal w edge function.
 -- Stare leady (sprzed migracji) nie maja form_session_id -> partial unique pomija je.

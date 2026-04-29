@@ -179,7 +179,11 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Permit lead save error:', error)
 
-    const errMsg = error instanceof Error ? error.message : String(error)
+    const errMsg = error instanceof Error
+      ? error.message
+      : (typeof error === 'object' && error !== null && 'message' in error)
+        ? String((error as any).message)
+        : JSON.stringify(error)
     const errCode = (error as any)?.code || ''
     const isDbDown =
       errCode === 'PGRST002' ||
