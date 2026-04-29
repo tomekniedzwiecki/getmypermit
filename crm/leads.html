@@ -173,6 +173,9 @@
                 <option value="">Opiekun (wszyscy)</option>
                 <option value="__unassigned__">Nieprzypisane</option>
             </select>
+            <label class="filter-input flex items-center gap-1.5 cursor-pointer" style="padding-left:10px; padding-right:10px;" title="Pokaz leady ktore nie ukonczyly formularza (soft-save). Domyslnie zaznaczone — odznacz zeby ukryc partial.">
+                <input type="checkbox" id="f-show-partial" class="cursor-pointer" checked> Częściowe
+            </label>
             <button class="btn btn-ghost btn-sm" onclick="resetFilters()"><i class="ph ph-eraser"></i> Wyczyść</button>
         </div>
 
@@ -272,8 +275,13 @@ async function init() {
 }
 
 async function loadLeads() {
-    allLeads = await fetchAll(() => db.from('gmp_leads_overview').select('*').order('created_at', { ascending: false }), 1000, 5000);
-    document.getElementById('page-count').textContent = `${allLeads.length} leadów w bazie`;
+    const showPartial = document.getElementById('f-show-partial')?.checked || false;
+    let q = db.from('gmp_leads_overview').select('*').order('created_at', { ascending: false });
+    if (!showPartial) q = q.eq('is_partial', false);
+    allLeads = await fetchAll(() => q, 1000, 5000);
+    const partialCount = showPartial ? allLeads.filter(l => l.is_partial).length : 0;
+    const partialLabel = partialCount ? ` · ${partialCount} częściowych` : '';
+    document.getElementById('page-count').textContent = `${allLeads.length} leadów w bazie${partialLabel}`;
 }
 
 function setupListeners() {
@@ -282,6 +290,7 @@ function setupListeners() {
     ['f-status', 'f-type', 'f-permit', 'f-assigned'].forEach(id => {
         document.getElementById(id).addEventListener('change', renderAll);
     });
+    document.getElementById('f-show-partial')?.addEventListener('change', async () => { await loadLeads(); renderAll(); });
 }
 
 function filterLeads() {
