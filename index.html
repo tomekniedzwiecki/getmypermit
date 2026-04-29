@@ -4969,8 +4969,12 @@
 
               <div class="trust-note">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <span>Your number is safe. We never share it.</span>
+                <span data-i18n="phoneSafe">Your number is safe. We never share it.</span>
               </div>
+
+              <p class="phone-consent-note" data-i18n="phoneConsentNote" style="margin: 12px 0 0; font-size: 12px; color: #778; line-height: 1.5;">
+                By clicking Continue you agree to be contacted by Immigration Lawyer Wrocław via WhatsApp regarding your case. <a href="/polityka-prywatnosci.html" target="_blank" rel="noopener" style="color: #05f; text-decoration: underline;">Privacy Policy</a>.
+              </p>
 
               <div class="form-nav">
                 <button type="button" class="btn-back" onclick="prevStep()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
@@ -5533,6 +5537,63 @@
       if (completedSteps.indexOf(stepId) === -1) completedSteps.push(stepId);
     }
 
+    // === SOFT-SAVE: zapisz partial lead po kazdym kroku ===
+    // Zbiera stan formularza (cokolwiek zostalo wybrane/wpisane do tej pory) i
+    // wysyla do edge function permit-lead-save z is_partial=true. Edge function
+    // robi upsert po form_session_id - kolejne wywolania UPDATEuja istniejacy
+    // rekord, nie tworza duplikatow. Final submit zamienia is_partial na false.
+    function collectFormState() {
+      var get = function(name) {
+        var el = form.querySelector('input[name="' + name + '"]:checked');
+        return el ? el.value : null;
+      };
+      var val = function(name) {
+        var el = form.querySelector('input[name="' + name + '"]');
+        return el && el.value ? el.value : null;
+      };
+      var t = getTrackingData();
+      return {
+        form_session_id: FORM_SESSION_ID,
+        phone: val("phone"),
+        name: val("name"),
+        email: val("email"),
+        situation: get("situation"),
+        location: get("location"),
+        intent: get("intent"),
+        waiting_time: get("waitingTime"),
+        rejection_timing: get("rejectionTiming"),
+        permit_type: get("permitType"),
+        language: window.currentLang || "en",
+        user_agent: navigator.userAgent,
+        referrer: document.referrer,
+        utm_source: t.utm_source,
+        utm_medium: t.utm_medium,
+        utm_campaign: t.utm_campaign
+      };
+    }
+
+    function savePartialLead(stepReached, extraFields) {
+      var payload = collectFormState();
+      payload.is_partial = true;
+      payload.last_step_reached = stepReached;
+      if (extraFields) {
+        for (var k in extraFields) payload[k] = extraFields[k];
+      }
+      saveLeadToSupabase(payload, function(ok) {
+        gmpFormTrack("form_partial_save", {
+          save_via: ok.via,
+          mode: ok.mode || "unknown",
+          last_step_reached: stepReached
+        });
+      }, function(err) {
+        gmpFormTrack("form_partial_save_error", {
+          save_via: err.via,
+          error_message: err.message,
+          last_step_reached: stepReached
+        });
+      });
+    }
+
     // Giant choice selection — UI + tracking, z guardem na bubbled input click.
     // Klik w <label> dispatcheje click na child <input> (default action), ten
     // bubble'uje z powrotem do label → handler odpalalby sie 2x. Guard na e.target.
@@ -5598,6 +5659,14 @@
               steps_reached: completedSteps.length,
               time_total_ms: formStartTime ? (now - formStartTime) : null
             });
+            // Soft-save dyskwalifikacji jako partial lead z disqualification_reason
+            // (zostaje is_partial=true bo nie ma name/email/consent)
+            if (typeof savePartialLead === "function") {
+              savePartialLead(stepId, {
+                status: "disqualified",
+                disqualification_reason: reason
+              });
+            }
           }
         } else {
           gmpFormTrack("form_step_view", {
@@ -5655,6 +5724,7 @@
           return;
         }
         trackStepComplete("1", situation, "situation");
+        savePartialLead("1");
         if (situation === "rejected") {
           stepHistory.push("rejection-timing");
           window.showStep("rejection-timing");
@@ -5675,6 +5745,7 @@
           return;
         }
         trackStepComplete("rejection-timing", timing.value, "rejectionTiming");
+        savePartialLead("rejection-timing");
         stepHistory.push("2");
         window.showStep("2");
         return;
@@ -5687,6 +5758,7 @@
           return;
         }
         trackStepComplete("permit-type", permitType.value, "permitType");
+        savePartialLead("permit-type");
         stepHistory.push("2");
         window.showStep("2");
         return;
@@ -5699,6 +5771,7 @@
           return;
         }
         trackStepComplete("2", "filled", "phone");
+        savePartialLead("2");
         stepHistory.push("3");
         window.showStep("3");
         return;
@@ -5711,6 +5784,7 @@
           return;
         }
         trackStepComplete("3", location.value, "location");
+        savePartialLead("3");
         if (location.value === "other") {
           window.showStep("not-qualified");
           return;
@@ -5727,6 +5801,7 @@
           return;
         }
         trackStepComplete("intent", intent.value, "intent");
+        savePartialLead("intent");
         if (intent.value === "exploring") {
           window.showStep("info-only");
           return;
@@ -5748,6 +5823,7 @@
           return;
         }
         trackStepComplete("waiting-time", waitingTime.value, "waitingTime");
+        savePartialLead("waiting-time");
         stepHistory.push("details");
         window.showStep("details");
         return;
@@ -6013,7 +6089,13 @@
         referrer: document.referrer,
         utm_source: tracking.utm_source,
         utm_medium: tracking.utm_medium,
-        utm_campaign: tracking.utm_campaign
+        utm_campaign: tracking.utm_campaign,
+        // Upsert po form_session_id — jak wczesniej zapisalismy partial, ten payload
+        // UPDATEuje go (status, name, email, lead_score wpadaja). is_partial=false
+        // oznacza ze user dotarl do konca i mamy pelne dane.
+        form_session_id: FORM_SESSION_ID,
+        is_partial: false,
+        last_step_reached: "success"
       }, function(ok) {
         // form_submit_success — lead poszedl do bazy / fallback / direct insert
         gmpFormTrack("form_submit_success", {
@@ -6338,6 +6420,7 @@
         phoneHint: "We'll message you within 24 hours",
         phonePlaceholder: "+48 XXX XXX XXX",
         phoneSafe: "Your number is safe. We never share it.",
+        phoneConsentNote: "By clicking Continue you agree to be contacted by Immigration Lawyer Wrocław via WhatsApp regarding your case. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\" style=\"color: #05f; text-decoration: underline;\">Privacy Policy</a>.",
         // Location
         locationTitle: "Where do you live?",
         locationHint: "We specialize in Lower Silesia",
@@ -6780,6 +6863,7 @@
         phoneHint: "Skontaktujemy się w ciągu 24 godzin",
         phonePlaceholder: "+48 XXX XXX XXX",
         phoneSafe: "Twój numer jest bezpieczny. Nigdy go nie udostępniamy.",
+        phoneConsentNote: "Klikając Dalej zgadzasz się na kontakt od Immigration Lawyer Wrocław przez WhatsApp w sprawie Twojej sprawy. <a href=\"/polityka-prywatnosci.html\" target=\"_blank\" rel=\"noopener\" style=\"color: #05f; text-decoration: underline;\">Polityka prywatności</a>.",
         locationTitle: "Gdzie mieszkasz?",
         locationHint: "Specjalizujemy się w Dolnym Śląsku",
         locationWroclaw: "Wrocław",
@@ -8373,6 +8457,8 @@
       const phoneInput = document.querySelector('[data-step="2"] input[name="phone"]');
       if (phoneInput) phoneInput.placeholder = t.phonePlaceholder;
       setText('.trust-note span', 'phoneSafe');
+      const phoneConsentNote = document.querySelector('.phone-consent-note');
+      if (phoneConsentNote && t.phoneConsentNote) phoneConsentNote.innerHTML = t.phoneConsentNote;
 
       // Location step
       setText('[data-step="3"] .step-title', 'locationTitle');

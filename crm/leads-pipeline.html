@@ -242,6 +242,9 @@
                 <option value="work">Pobyt + praca</option>
                 <option value="residence">Residence</option>
             </select>
+            <label class="text-xs muted flex items-center gap-1.5 cursor-pointer ml-2" title="Pokaz leady ktore nie ukonczyly formularza (soft-save z phone step)">
+                <input type="checkbox" id="f-show-partial" class="cursor-pointer"> Częściowe
+            </label>
             <span class="text-xs muted ml-auto">Przeciągnij kartę aby zmienić status. Dwie strony w lewo: Wygrany → konwersja do sprawy.</span>
         </div>
 
@@ -311,14 +314,22 @@ async function init() {
 }
 
 async function loadLeads() {
-    allLeads = await fetchAll(() => db.from('gmp_leads_overview').select('*').order('created_at', { ascending: false }), 1000, 5000);
-    document.getElementById('page-sub').textContent = `${allLeads.length} leadów w bazie · przeciągnij kartę aby zmienić status`;
+    // Domyslnie pomijamy partial leads (soft-save z formularza, bez name/email/consent).
+    // Toggle "Pokaz partial" w toolbar pozwala je zobaczyc.
+    const showPartial = document.getElementById('f-show-partial')?.checked || false;
+    let q = db.from('gmp_leads_overview').select('*').order('created_at', { ascending: false });
+    if (!showPartial) q = q.eq('is_partial', false);
+    allLeads = await fetchAll(() => q, 1000, 5000);
+    const partialCount = showPartial ? allLeads.filter(l => l.is_partial).length : 0;
+    const partialLabel = partialCount ? ` · ${partialCount} partial` : '';
+    document.getElementById('page-sub').textContent = `${allLeads.length} leadów w bazie${partialLabel} · przeciągnij kartę aby zmienić status`;
 }
 
 function setupListeners() {
     let t;
     document.getElementById('f-search').addEventListener('input', () => { clearTimeout(t); t = setTimeout(render, 200); });
     ['f-assigned', 'f-permit'].forEach(id => document.getElementById(id).addEventListener('change', render));
+    document.getElementById('f-show-partial')?.addEventListener('change', async () => { await loadLeads(); render(); });
     document.querySelectorAll('.filter-chip').forEach(b => b.addEventListener('click', () => {
         document.querySelectorAll('.filter-chip').forEach(x => x.classList.remove('active'));
         b.classList.add('active');

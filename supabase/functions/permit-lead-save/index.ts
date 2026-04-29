@@ -40,6 +40,10 @@ interface LeadData {
   status?: string
   // Lead magnet path
   is_lead_magnet?: boolean
+  // Partial-save (soft-save po kazdym kroku formularza)
+  is_partial?: boolean
+  form_session_id?: string
+  last_step_reached?: string
 }
 
 async function saveToFallbackStorage(
@@ -96,34 +100,80 @@ Deno.serve(async (req) => {
     leadData = await req.json()
     const data = leadData!
 
-    if (!data.email && !data.phone) {
+    // Wymagamy: phone, email, ALBO form_session_id (dla partial saves PRZED phone step)
+    if (!data.email && !data.phone && !data.form_session_id) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Email lub phone jest wymagany' }),
+        JSON.stringify({ success: false, error: 'Email, phone lub form_session_id jest wymagany' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
 
-    // Insert do permit_leads
+    // Sanitizuj payload
     const insertData: Record<string, any> = { ...data }
-
-    // Zachowuj is_lead_magnet jako notes/situation jezeli przyszlo
     if (data.is_lead_magnet) {
       delete insertData.is_lead_magnet
-      // situation i lead_score juz powinny byc ustawione przez frontend
     }
 
-    const { data: newLead, error: insertError } = await supabase
-      .from('permit_leads')
-      .insert([insertData])
-      .select('id')
-      .single()
+    // === UPSERT po form_session_id ===
+    // Jezeli payload ma form_session_id, sprobuj znalezc istniejacy rekord
+    // (z partial save z wczesniejszego kroku) i UPDATE go zamiast INSERT.
+    // Bez tego dla 7 krokow formularza powstaje 7 osobnych rekordow.
+    let leadId: string | null = null
+    let upsertMode: 'insert' | 'update' = 'insert'
 
-    if (insertError) {
-      throw insertError
+    if (data.form_session_id) {
+      const { data: existing, error: selectError } = await supabase
+        .from('permit_leads')
+        .select('id, is_partial')
+        .eq('form_session_id', data.form_session_id)
+        .maybeSingle()
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        // PGRST116 = "no rows" - to OK. Inne bledy throw.
+        throw selectError
+      }
+
+      if (existing) {
+        // Update istniejacy rekord
+        // Guard: nie pozwol downgradeowac is_partial=false → true (ochrona finalnego rekordu)
+        const updatePayload: Record<string, any> = { ...insertData }
+        if (existing.is_partial === false && insertData.is_partial === true) {
+          // Już mamy pełny lead — partial save od tego samego session ID jest no-op.
+          // Np. user kliknął submit → full save, potem cofnął się i klikał Continue → partial.
+          return new Response(
+            JSON.stringify({ success: true, lead_id: existing.id, mode: 'noop_already_full' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          )
+        }
+        // Usuwamy form_session_id z payload (immutable klucz dedupu)
+        delete updatePayload.form_session_id
+
+        const { error: updateError } = await supabase
+          .from('permit_leads')
+          .update(updatePayload)
+          .eq('id', existing.id)
+
+        if (updateError) throw updateError
+
+        leadId = existing.id
+        upsertMode = 'update'
+      }
+    }
+
+    if (!leadId) {
+      // INSERT nowy rekord
+      const { data: newLead, error: insertError } = await supabase
+        .from('permit_leads')
+        .insert([insertData])
+        .select('id')
+        .single()
+
+      if (insertError) throw insertError
+      leadId = newLead.id
     }
 
     return new Response(
-      JSON.stringify({ success: true, lead_id: newLead.id }),
+      JSON.stringify({ success: true, lead_id: leadId, mode: upsertMode }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   } catch (error) {
