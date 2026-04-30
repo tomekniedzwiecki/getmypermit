@@ -44,6 +44,19 @@
             </div>
         </div>
 
+        <!-- Pawel v3.2 — Banner szkiców (C2) -->
+        <div id="drafts-banner" class="hidden p-3 mb-3 rounded border-l-4 border-amber-500 bg-amber-500/5 flex items-center gap-3">
+            <i class="ph ph-warning-circle text-amber-400 text-xl"></i>
+            <div class="flex-1 text-sm">
+                <span class="text-amber-200">Masz <strong id="drafts-count">0</strong> niedokończonych szkiców spraw</span>
+                <span class="text-zinc-500 text-xs ml-2">(z ostatnich 7 dni)</span>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="filterDrafts()">Pokaż szkice</button>
+            <button class="btn btn-sm btn-ghost" onclick="document.getElementById('drafts-banner').classList.add('hidden')" title="Ukryj">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+
         <!-- Szybkie zakładki -->
         <div class="flex gap-1 mb-3 flex-wrap">
             <button class="btn btn-secondary tab-btn active" data-preset="">Wszystkie</button>
@@ -184,7 +197,7 @@
                             <th class="w-32" data-sort="case_number">Nr / Znak</th>
                             <th data-sort="client">Klient</th>
                             <th data-sort="employer">Pracodawca</th>
-                            <th data-sort="case_type">Typ sprawy</th>
+                            <th data-sort="case_type">Tryb sprawy</th>
                             <th data-sort="category">Kat.</th>
                             <th data-sort="status">Status</th>
                             <th data-sort="stage">Etap</th>
@@ -287,6 +300,9 @@ async function init() {
     }
 
     await loadCases();
+
+    // Pawel v3.2 — Banner szkiców (C2)
+    loadDraftsBanner();
 
     // Obsluga filtrow
     ['f-status', 'f-stage', 'f-category', 'f-staff', 'f-department', 'f-employer', 'f-method', 'f-date-from', 'f-date-to'].forEach(id => {
@@ -1286,7 +1302,7 @@ function newCaseEmployer() {
         <div class="modal-header">Nowa sprawa — pracodawca<button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body">
             <div class="mb-4">
-                <label class="text-xs text-zinc-500 uppercase mb-2 block">Typ sprawy</label>
+                <label class="text-xs text-zinc-500 uppercase mb-2 block">Tryb sprawy</label>
                 <div class="grid grid-cols-2 gap-2">
                     <label class="flex items-center gap-2 p-3 border border-zinc-800 rounded cursor-pointer hover:border-zinc-600">
                         <input type="radio" name="emp-type" value="work_permit" checked>
@@ -1321,7 +1337,7 @@ function newCaseOther() {
         <div class="modal-header">Nowa sprawa — inna<button class="btn btn-ghost btn-sm" onclick="gmpModal.close()"><i class="ph ph-x"></i></button></div>
         <div class="modal-body">
             <div class="mb-4">
-                <label class="text-xs text-zinc-500 uppercase mb-2 block">Typ sprawy</label>
+                <label class="text-xs text-zinc-500 uppercase mb-2 block">Tryb sprawy</label>
                 <select id="other-subtype" class="input w-full">
                     <option value="civil">Cywilna</option>
                     <option value="criminal">Karna</option>
@@ -1404,6 +1420,43 @@ async function createCaseAndGo(extras = {}) {
     toast.success('Utworzono sprawę');
     window.location.href = 'case.html?id=' + data.id;
 }
+
+// === Pawel v3.2 — C2: Banner szkiców ===
+async function loadDraftsBanner() {
+    try {
+        const { data: { user } } = await window.supabaseClient.auth.getUser();
+        if (!user) return;
+
+        // Znajdź staff_id dla aktualnego user'a
+        const { data: staff } = await db.from('gmp_staff')
+            .select('id').eq('user_id', user.id).maybeSingle();
+        if (!staff) return;
+
+        const sevenDaysAgo = new Date(Date.now() - 7 * 86400 * 1000).toISOString();
+        const { count } = await db.from('gmp_cases')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'lead')
+            .eq('assigned_to', staff.id)
+            .is('kind', null)
+            .gte('created_at', sevenDaysAgo);
+
+        if ((count || 0) > 0) {
+            document.getElementById('drafts-count').textContent = count;
+            document.getElementById('drafts-banner').classList.remove('hidden');
+        }
+    } catch (e) {
+        console.warn('[drafts-banner] error:', e);
+    }
+}
+
+function filterDrafts() {
+    // Ustaw filtr "moje szkice": status=lead + brak kind
+    document.getElementById('f-status').value = 'lead';
+    currentPage = 1;
+    loadCases();
+    document.getElementById('drafts-banner').classList.add('hidden');
+}
+window.filterDrafts = filterDrafts;
 </script>
 </body>
 </html>

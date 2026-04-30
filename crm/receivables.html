@@ -331,6 +331,23 @@
             </div>
         </div>
 
+        <!-- Pawel v3.2 — Zbliżające się raty (§ 1.5) — żółty band przed zaległościami -->
+        <div id="upcoming-installments-section" class="hidden p-4 mb-6 rounded border-l-4 border-amber-500 bg-amber-500/5">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-amber-200 flex items-center gap-2">
+                    <i class="ph ph-clock-clockwise"></i>
+                    Zbliżające się raty (14 dni)
+                    <span id="upcoming-count" class="text-xs text-zinc-400 font-normal">—</span>
+                </h3>
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('upcoming-installments-section').classList.toggle('collapsed')" title="Zwiń">
+                    <i class="ph ph-caret-down"></i>
+                </button>
+            </div>
+            <div id="upcoming-installments-list" class="space-y-1 text-sm">
+                <div class="text-zinc-500">Ładuję...</div>
+            </div>
+        </div>
+
         <!-- Hero metric + secondary metrics -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
             <div class="hero-card md:col-span-1" style="display: flex; flex-direction: column; justify-content: space-between;">
@@ -406,6 +423,7 @@ async function init() {
     const { data: staff } = await db.from('gmp_staff').select('id, full_name, color').order('full_name');
     staffList = staff || [];
     await loadCollections();
+    await loadUpcomingInstallments();
 
     document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
@@ -416,6 +434,52 @@ async function init() {
 
     render();
     renderKPIs();
+}
+
+// === Pawel v3.2 — § 1.5 — Zbliżające się raty (14 dni) ===
+async function loadUpcomingInstallments() {
+    try {
+        const { data, error } = await db.from('gmp_upcoming_installments')
+            .select('*').order('due_date');
+        if (error) {
+            console.warn('[upcoming] error (view może nie istnieć):', error.message);
+            return;
+        }
+        const list = data || [];
+        if (list.length === 0) return;
+
+        document.getElementById('upcoming-installments-section').classList.remove('hidden');
+        document.getElementById('upcoming-count').textContent = `${list.length} rat`;
+
+        const html = list.map(r => {
+            const fullName = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Nieznany klient';
+            const urgencyClass = {
+                critical: 'text-red-300',
+                warning: 'text-amber-300',
+                info: 'text-blue-300',
+            }[r.urgency] || 'text-zinc-300';
+            const daysLabel = r.days_until_due === 0 ? 'dziś'
+                : r.days_until_due === 1 ? 'jutro'
+                : `za ${r.days_until_due} dni`;
+            return `
+                <div class="flex items-center justify-between py-1 border-b border-zinc-800/50 last:border-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs ${urgencyClass}">${daysLabel}</span>
+                        <a href="case.html?id=${r.case_id}" class="text-zinc-200 hover:text-white">${fullName}</a>
+                        ${r.case_number ? `<span class="text-xs text-zinc-500 font-mono">${r.case_number}</span>` : ''}
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-zinc-500">rata #${r.installment_number}</span>
+                        <span class="font-semibold ${urgencyClass}">${Number(r.amount).toFixed(2)} zł</span>
+                        <span class="text-xs text-zinc-500">${r.due_date}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('upcoming-installments-list').innerHTML = html;
+    } catch (e) {
+        console.warn('[upcoming] exception:', e);
+    }
 }
 
 async function loadCollections() {

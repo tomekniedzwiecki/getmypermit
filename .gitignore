@@ -17,3 +17,20 @@ CRM.docx
 CRM_PLAN.md
 CRM_UI_PLAN.md
 CRM_*_PLAN.md
+PAWEL_*.md
+WDROZENIE_*.md
+AUDYT_*.md
+PLAN_POPRAWEK_*.md
+BEZPIECZENSTWO_*.md
+MAIL_DLA_PAWLA.md
+BRIEF_COWORKER_*.md
+IMPLEMENTATION_PLAN.md
+IMPROVEMENT_CHECKLIST.md
+KAMPANIA_*.md
+KAMPANIA_*.json
+PLAN_MOBILE_PWA.md
+
+# Spike artifacts — test outputy, nie commitujemy
+_spike_test_template*.docx
+spike_output*.docx
+supabase/seed/test_pawel_cases.sql

@@ -338,6 +338,14 @@
                 <div class="kpi-value" id="k-alerts">—</div>
                 <div class="kpi-sub" id="k-alerts-sub">sprawy bez aktywności</div>
             </a>
+            <!-- Pawel v3.2 § 1.5 — Zbliżające się raty (14 dni) -->
+            <a href="receivables.html" class="kpi kpi--cyan gated-finance" style="display: none">
+                <div class="kpi-glow"></div>
+                <div class="kpi-icon"><i class="ph ph-clock-clockwise"></i></div>
+                <div class="kpi-label">Zbliżające się raty (14 dni)</div>
+                <div class="kpi-value" id="k-upcoming">—</div>
+                <div class="kpi-sub" id="k-upcoming-sub">do zapłaty wkrótce</div>
+            </a>
         </div>
 
         <!-- ============ DZIS ============ -->
@@ -688,6 +696,20 @@ async function loadKPIs() {
                 ? `<span class="kpi-trend-up"><i class="ph ph-trend-up"></i> +${pct}%</span> <span class="muted">vs poprzedni</span>`
                 : `<span class="kpi-trend-down"><i class="ph ph-trend-down"></i> ${pct}%</span> <span class="muted">vs poprzedni</span>`);
         document.getElementById('k-rev-trend').innerHTML = trendHTML;
+
+        // Pawel v3.2 § 1.5 — Zbliżające się raty (14 dni)
+        try {
+            const { data: upcoming, error: upErr } = await db.from('gmp_upcoming_installments')
+                .select('amount, due_date, urgency');
+            if (!upErr && upcoming) {
+                const sum = upcoming.reduce((s, r) => s + Number(r.amount || 0), 0);
+                document.getElementById('k-upcoming').textContent = fmt.money(sum).replace(/\s?zł$/, '');
+                const critical = upcoming.filter(r => r.urgency === 'critical').length;
+                document.getElementById('k-upcoming-sub').innerHTML =
+                    `<i class="ph ph-clock-clockwise"></i> ${upcoming.length} rat` +
+                    (critical > 0 ? ` <span class="text-red-300">(${critical} pilne)</span>` : '');
+            }
+        } catch (e) { console.warn('[upcoming KPI] view może nie istnieć:', e); }
     }
 }
 
