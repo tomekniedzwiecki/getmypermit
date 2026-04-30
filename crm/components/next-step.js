@@ -46,19 +46,44 @@ export async function renderNextSteps(caseId, supabase, targetSelector = '#next-
     }
 
     if (banner) banner.classList.remove('next-steps-empty-banner');
-    target.innerHTML = steps.map(step => {
+    target.innerHTML = steps.map((step, idx) => {
         const priorityClass = `next-steps-priority-${step.priority}`;
         const icon = step.icon || 'ph-arrow-right';
         return `
-            <li class="next-steps-item ${priorityClass}">
+            <li class="next-steps-item ${priorityClass}" data-step-idx="${idx}">
                 <i class="ph ${icon}"></i>
                 <span class="next-steps-label">${escapeHtml(step.label)}</span>
                 ${step.action_url
-                    ? `<a class="next-steps-action" href="${escapeAttr(step.action_url)}">Otwórz</a>`
+                    ? `<button class="next-steps-action" type="button" data-action-url="${escapeAttr(step.action_url)}">Otwórz</button>`
                     : ''}
             </li>
         `;
     }).join('');
+
+    // Bind klików (zamiast href — pewniej, plus scroll do sekcji)
+    target.querySelectorAll('button.next-steps-action').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const url = btn.dataset.actionUrl;
+            if (!url || !url.startsWith('#')) return;
+            const tabName = url.slice(1);
+
+            // Sprawdź czy to nazwa istniejącego tabu
+            const tabBtn = document.querySelector(`.case-tab[data-tab="${tabName}"]`);
+            if (tabBtn) {
+                tabBtn.click();  // korzystamy z istniejącego event listenera
+                return;
+            }
+
+            // Inaczej — anchor scroll do elementu o tym ID
+            const el = document.getElementById(tabName);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                el.classList.add('flash-highlight');
+                setTimeout(() => el.classList.remove('flash-highlight'), 2000);
+            }
+        });
+    });
 }
 
 function escapeHtml(s) {
