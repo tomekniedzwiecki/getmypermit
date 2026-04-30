@@ -21,7 +21,7 @@
 .wizard-container {
     max-width: 880px;
     margin: 0 auto;
-    padding-bottom: 100px;  /* miejsce na sticky footer */
+    padding-bottom: 24px;
 }
 
 /* === HEADER === */
@@ -489,27 +489,13 @@
     color: #10b981; font-weight: bold;
 }
 
-/* === STICKY FOOTER === */
-.wizard-footer {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: rgba(9, 9, 11, 0.95);
-    backdrop-filter: blur(16px);
+/* === ACTIONS — wewnątrz step container, blisko treści === */
+.wizard-actions {
+    margin-top: 24px;
+    padding-top: 20px;
     border-top: 1px solid #27272a;
-    padding: 14px 24px;
-    z-index: 40;
     display: flex; justify-content: space-between; align-items: center;
     gap: 12px;
-}
-.wizard-footer-inner {
-    max-width: 880px;
-    margin: 0 auto;
-    width: 100%;
-    display: flex; justify-content: space-between; align-items: center;
-    gap: 12px;
-}
-@media (min-width: 1024px) {
-    .wizard-footer { left: 240px; }  /* miejsce na sidebar */
 }
 .btn-wizard {
     padding: 10px 20px;
@@ -849,26 +835,24 @@
                     </div>
                 </div>
 
-            </div>
-        </div>
-
-        <!-- STICKY FOOTER -->
-        <div class="wizard-footer">
-            <div class="wizard-footer-inner">
-                <button class="btn-wizard btn-ghost" id="btn-prev" onclick="prevStep()" disabled>
-                    <i class="ph ph-arrow-left"></i> Wstecz
-                </button>
-                <div class="flex gap-2">
-                    <button class="btn-wizard btn-secondary" onclick="saveDraft()">
-                        <i class="ph ph-floppy-disk"></i> <span class="hidden md:inline">Zapisz szkic</span>
+                <!-- ACTIONS — przyciski wewnątrz step container, tuż pod treścią -->
+                <div class="wizard-actions">
+                    <button class="btn-wizard btn-ghost" id="btn-prev" onclick="prevStep()" disabled>
+                        <i class="ph ph-arrow-left"></i> Wstecz
                     </button>
-                    <button class="btn-wizard btn-primary" id="btn-next" onclick="nextStep()">
-                        Dalej <i class="ph ph-arrow-right"></i>
-                    </button>
-                    <button class="btn-wizard btn-success hidden" id="btn-create" onclick="createCase()">
-                        <i class="ph ph-check"></i> Utwórz sprawę
-                    </button>
+                    <div class="flex gap-2">
+                        <button class="btn-wizard btn-secondary" onclick="saveDraft()">
+                            <i class="ph ph-floppy-disk"></i> <span class="hidden md:inline">Zapisz szkic</span>
+                        </button>
+                        <button class="btn-wizard btn-primary" id="btn-next" onclick="nextStep()">
+                            Dalej <i class="ph ph-arrow-right"></i>
+                        </button>
+                        <button class="btn-wizard btn-success hidden" id="btn-create" onclick="createCase()">
+                            <i class="ph ph-check"></i> Utwórz sprawę
+                        </button>
+                    </div>
                 </div>
+
             </div>
         </div>
     </main>
