@@ -28,6 +28,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createReport } from "npm:docx-templates@4.15.0";
 import { buildCaseContext } from "./lib/build-context.ts";
+import { hasCustomRenderer, renderDocument } from "./lib/render-document.ts";
 
 interface GenerateRequest {
     case_id: string;
@@ -129,23 +130,7 @@ Deno.serve(async (req) => {
     }
 
     // ============================================================
-    // 2. Download template DOCX from storage
-    // ============================================================
-    const { data: tplFile, error: dlErr } = await supabase.storage
-        .from("document-templates")
-        .download(template.storage_path);
-
-    if (dlErr || !tplFile) {
-        return new Response(JSON.stringify({
-            error: "Template file missing from storage",
-            details: dlErr?.message,
-            storage_path: template.storage_path,
-        }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const tplBuffer = new Uint8Array(await tplFile.arrayBuffer());
-
-    // ============================================================
-    // 3. Build context per case_id
+    // 2. Build context per case_id (potrzebny dla obu ścieżek render)
     // ============================================================
     let ctx: any;
     try {
@@ -158,7 +143,7 @@ Deno.serve(async (req) => {
     const data = { ...ctx, ...overrides };
 
     // ============================================================
-    // 4. Validate required_fields
+    // 3. Validate required_fields
     // ============================================================
     const missing: string[] = [];
     for (const field of template.required_fields || []) {
@@ -176,18 +161,40 @@ Deno.serve(async (req) => {
     }
 
     // ============================================================
-    // 5. Render DOCX
+    // 4. Render DOCX — custom renderer (npm:docx) lub docx-templates fallback
     // ============================================================
     let report: Uint8Array;
     const renderStart = Date.now();
+    let renderMethod = "docx-templates";
+
     try {
-        report = await createReport({
-            template: tplBuffer,
-            data,
-            cmdDelimiter: ["+++", "+++"],  // alternative delimiter — łatwiej w Word
-            noSandbox: true,                // KLUCZOWE dla Deno
-            failFast: false,
-        });
+        if (hasCustomRenderer(template.kind)) {
+            // Custom renderer (npm:docx) — gwarancja poprawnego XML, czytelne w Google Docs
+            renderMethod = "npm:docx";
+            report = await renderDocument(template.kind, data);
+        } else {
+            // Fallback: docx-templates dla user-uploaded templates
+            const { data: tplFile, error: dlErr } = await supabase.storage
+                .from("document-templates")
+                .download(template.storage_path);
+
+            if (dlErr || !tplFile) {
+                return new Response(JSON.stringify({
+                    error: "Template file missing from storage",
+                    details: dlErr?.message,
+                    storage_path: template.storage_path,
+                }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            }
+            const tplBuffer = new Uint8Array(await tplFile.arrayBuffer());
+
+            report = await createReport({
+                template: tplBuffer,
+                data,
+                cmdDelimiter: ["+++", "+++"],
+                noSandbox: true,
+                failFast: false,
+            });
+        }
     } catch (renderErr) {
         // Log błędu generacji
         await supabase.from("gmp_document_generation_log").insert({
@@ -256,7 +263,7 @@ Deno.serve(async (req) => {
         case_id, template_id, document_id,
         generated_by: user.id,
         status: "success",
-        parameters: { overrides, template_version: template.version },
+        parameters: { overrides, template_version: template.version, render_method: renderMethod },
         duration_ms: Date.now() - startedAt,
     });
 
