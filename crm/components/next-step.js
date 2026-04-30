@@ -66,12 +66,42 @@ export async function renderNextSteps(caseId, supabase, targetSelector = '#next-
             e.preventDefault();
             const url = btn.dataset.actionUrl;
             if (!url || !url.startsWith('#')) return;
-            const tabName = url.slice(1);
+            let tabName = url.slice(1);
 
-            // Sprawdź czy to nazwa istniejącego tabu
-            const tabBtn = document.querySelector(`.case-tab[data-tab="${tabName}"]`);
+            // Pawel v3.2 — mapa starych nazw → nowe zakładki (po refactor 10→6)
+            const TAB_MAP = {
+                'checklist': 'procedura',
+                'e-submission': 'procedura',
+                'e-submission-zalacznik': 'procedura',
+                'tasks': 'activity',
+                'history': 'activity',
+                'calendar': 'activity',
+                'intake': 'documents',
+            };
+            const SUBTAB_MAP = {
+                'tasks': { panel: 'activity', subtab: 'tasks' },
+                'history': { panel: 'activity', subtab: 'history' },
+                'calendar': { panel: 'activity', subtab: 'calendar' },
+                'intake': { panel: 'documents', subtab: 'intake' },
+            };
+
+            const mappedTab = TAB_MAP[tabName] || tabName;
+            const subTabAction = SUBTAB_MAP[tabName];
+
+            // Sprawdź czy to nazwa istniejącego tabu (możliwie zmapowana)
+            const tabBtn = document.querySelector(`.case-tab[data-tab="${mappedTab}"]`);
             if (tabBtn) {
-                tabBtn.click();  // korzystamy z istniejącego event listenera
+                tabBtn.click();
+                if (subTabAction && window.switchSubTab) {
+                    setTimeout(() => window.switchSubTab(subTabAction.panel, subTabAction.subtab), 100);
+                }
+                // Scroll do konkretnej sekcji wewnątrz panelu (np. e-submission po procedurze)
+                if (tabName === 'e-submission' || tabName === 'e-submission-zalacznik') {
+                    setTimeout(() => {
+                        const sec = document.getElementById('e-submission-section');
+                        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 200);
+                }
                 return;
             }
 

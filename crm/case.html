@@ -68,6 +68,76 @@
             color: #a1a1aa;
         }
         .case-tab.active .case-tab-count { background: rgba(59,130,246,0.15); color: #93c5fd; }
+        .case-tab .case-tab-label { display: inline; }
+        @media (max-width: 600px) {
+            /* Mobile: tylko ikony w głównym tab-bar — oszczędność miejsca */
+            .case-tab .case-tab-label { display: none; }
+            .case-tab i { font-size: 18px; }
+            .case-tab.active .case-tab-label { display: inline; font-size: 11px; }
+            .case-tab { padding: 12px 12px; gap: 4px; }
+        }
+
+        /* === SUB-TABS — używane w panelu Dokumenty + Aktywność === */
+        .sub-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 6px;
+            background: #0a0a0c;
+            border: 1px solid #18181b;
+            border-radius: 12px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+        .sub-tab {
+            flex: 1;
+            min-width: max-content;
+            padding: 10px 16px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #a1a1aa;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .sub-tab:hover { color: #e4e4e7; background: rgba(255,255,255,0.03); }
+        .sub-tab.active {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: #93c5fd;
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .sub-tab i { font-size: 16px; }
+        .sub-tab-count {
+            background: rgba(255,255,255,0.06);
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-size: 10px;
+            color: #71717a;
+        }
+        .sub-tab.active .sub-tab-count {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+        }
+        .sub-pane {
+            animation: subPaneIn 0.2s ease;
+        }
+        @keyframes subPaneIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 600px) {
+            .sub-tab { padding: 10px 12px; font-size: 12px; }
+            .sub-tab i { font-size: 15px; }
+        }
 
         .case-body { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; padding-top: 1rem; }
         @media (max-width: 900px) {
@@ -677,16 +747,12 @@
 
                 <!-- TABS -->
                 <div class="case-tabs mt-4 -mx-8 px-8">
-                    <button class="case-tab active" data-tab="overview"><i class="ph ph-house"></i> Przegląd</button>
-                    <button class="case-tab" data-tab="history"><i class="ph ph-clock-counter-clockwise"></i> Historia <span class="case-tab-count" id="cnt-history">0</span></button>
-                    <button class="case-tab" data-tab="tasks"><i class="ph ph-check-square"></i> Zadania <span class="case-tab-count" id="cnt-tasks">0</span></button>
-                    <button class="case-tab" data-tab="finance"><i class="ph ph-coins"></i> Finanse <span class="case-tab-count" id="cnt-finance">0</span></button>
-                    <button class="case-tab" data-tab="documents"><i class="ph ph-file"></i> Dokumenty <span class="case-tab-count" id="cnt-docs">0</span></button>
-                    <button class="case-tab" data-tab="checklist"><i class="ph ph-list-checks"></i> Checklista <span class="case-tab-count" id="cnt-checklist">—</span></button>
-                    <button class="case-tab" data-tab="e-submission" data-show-when="submission_method:elektronicznie"><i class="ph ph-lightning"></i> E-złożenie <span class="case-tab-count" id="cnt-esubm">—</span></button>
-                    <button class="case-tab" data-tab="calendar"><i class="ph ph-calendar"></i> Terminy <span class="case-tab-count" id="cnt-appts">0</span></button>
-                    <button class="case-tab" data-tab="intake"><i class="ph ph-clipboard-text"></i> Ankieta klienta <span class="case-tab-count" id="cnt-intake">—</span></button>
-                    <button class="case-tab" data-tab="data"><i class="ph ph-gear"></i> Dane szczegółowe</button>
+                    <button class="case-tab active" data-tab="overview"><i class="ph ph-house"></i> <span class="case-tab-label">Przegląd</span></button>
+                    <button class="case-tab" data-tab="procedura"><i class="ph ph-list-checks"></i> <span class="case-tab-label">Procedura</span> <span class="case-tab-count" id="cnt-procedura">—</span></button>
+                    <button class="case-tab" data-tab="documents"><i class="ph ph-file"></i> <span class="case-tab-label">Dokumenty</span> <span class="case-tab-count" id="cnt-docs">0</span></button>
+                    <button class="case-tab" data-tab="finance"><i class="ph ph-coins"></i> <span class="case-tab-label">Finanse</span> <span class="case-tab-count" id="cnt-finance">0</span></button>
+                    <button class="case-tab" data-tab="activity"><i class="ph ph-pulse"></i> <span class="case-tab-label">Aktywność</span> <span class="case-tab-count" id="cnt-activity">0</span></button>
+                    <button class="case-tab" data-tab="data"><i class="ph ph-gear"></i> <span class="case-tab-label">Dane</span></button>
                 </div>
             </div>
 
@@ -774,46 +840,102 @@
                         </div>
                     </div>
 
-                    <!-- HISTORY TAB -->
-                    <div class="tab-panel hidden" data-panel="history">
-                        <div id="history-composer" class="mb-4"></div>
-                        <section class="module-card">
+                    <!-- PROCEDURA TAB (Pawel v3.2 § II-B + III) — Checklista + E-złożenie -->
+                    <div class="tab-panel hidden" data-panel="procedura">
+                        <!-- Checklista -->
+                        <section class="module-card mb-4">
                             <div class="module-card-header">
-                                <span>Historia działań</span>
-                                <select id="history-filter" class="filter-input text-xs" style="width: 180px">
-                                    <option value="">Wszystkie zdarzenia</option>
-                                    <option value="note">Tylko notatki</option>
-                                    <option value="status_change">Zmiany statusu</option>
-                                    <option value="stage_change">Zmiany etapu</option>
-                                    <option value="task_assigned">Zadania</option>
-                                    <option value="document_added">Dokumenty</option>
-                                    <option value="payment_received">Płatności</option>
-                                    <option value="email_sent,whatsapp_sent">Komunikacja</option>
-                                    <option value="decision_received">Decyzje</option>
-                                </select>
+                                <span><i class="ph ph-list-checks text-blue-400 mr-1"></i>Checklista sprawy</span>
+                                <span class="text-xs text-zinc-500">audyt zgodnie z listą Pawła per kategoria</span>
                             </div>
-                            <div id="activities-list" class="p-4">
-                                <div class="text-zinc-500 text-sm">Ładuję...</div>
+                            <div id="checklist-section">
+                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+
+                        <!-- E-złożenie (conditional dla submission_method=elektronicznie) -->
+                        <section class="module-card" data-show-when="submission_method:elektronicznie">
+                            <div class="module-card-header">
+                                <span><i class="ph ph-lightning text-amber-400 mr-1"></i>Elektroniczne złożenie wniosku</span>
+                                <span class="text-xs text-zinc-500">8 podsekcji A-H wg pkt 10 Pawła</span>
+                            </div>
+                            <div id="e-submission-section">
+                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
                             </div>
                         </section>
                     </div>
 
-                    <!-- TASKS TAB -->
-                    <div class="tab-panel hidden" data-panel="tasks">
-                        <div id="tasks-composer" class="mb-4"></div>
-                        <section class="module-card">
-                            <div class="module-card-header">
-                                <span>Zadania</span>
-                                <select id="tasks-filter" class="filter-input text-xs" style="width: 160px">
-                                    <option value="open">Otwarte</option>
-                                    <option value="done">Ukończone</option>
-                                    <option value="all">Wszystkie</option>
-                                </select>
-                            </div>
-                            <div id="tasks-list" class="divide-y divide-zinc-900/50">
-                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
-                            </div>
-                        </section>
+                    <!-- ACTIVITY TAB — Zadania + Terminy + Historia (sub-tabs) -->
+                    <div class="tab-panel hidden" data-panel="activity">
+                        <div class="sub-tabs mb-4">
+                            <button class="sub-tab active" data-subtab="tasks" data-panel-parent="activity">
+                                <i class="ph ph-check-square"></i> Zadania
+                                <span class="sub-tab-count" id="cnt-sub-tasks">0</span>
+                            </button>
+                            <button class="sub-tab" data-subtab="calendar" data-panel-parent="activity">
+                                <i class="ph ph-calendar"></i> Terminy
+                                <span class="sub-tab-count" id="cnt-sub-appts">0</span>
+                            </button>
+                            <button class="sub-tab" data-subtab="history" data-panel-parent="activity">
+                                <i class="ph ph-clock-counter-clockwise"></i> Historia
+                                <span class="sub-tab-count" id="cnt-sub-history">0</span>
+                            </button>
+                        </div>
+
+                        <!-- Sub-pane: Zadania -->
+                        <div class="sub-pane" data-subpane="tasks">
+                            <div id="tasks-composer" class="mb-4"></div>
+                            <section class="module-card">
+                                <div class="module-card-header">
+                                    <span>Zadania</span>
+                                    <select id="tasks-filter" class="filter-input text-xs" style="width: 160px">
+                                        <option value="open">Otwarte</option>
+                                        <option value="done">Ukończone</option>
+                                        <option value="all">Wszystkie</option>
+                                    </select>
+                                </div>
+                                <div id="tasks-list" class="divide-y divide-zinc-900/50">
+                                    <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- Sub-pane: Terminy / spotkania -->
+                        <div class="sub-pane hidden" data-subpane="calendar">
+                            <div id="calendar-composer" class="mb-4"></div>
+                            <section class="module-card">
+                                <div class="module-card-header">
+                                    <span>Spotkania i terminy</span>
+                                </div>
+                                <div id="appointments-list">
+                                    <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- Sub-pane: Historia -->
+                        <div class="sub-pane hidden" data-subpane="history">
+                            <div id="history-composer" class="mb-4"></div>
+                            <section class="module-card">
+                                <div class="module-card-header">
+                                    <span>Historia działań</span>
+                                    <select id="history-filter" class="filter-input text-xs" style="width: 180px">
+                                        <option value="">Wszystkie zdarzenia</option>
+                                        <option value="note">Tylko notatki</option>
+                                        <option value="status_change">Zmiany statusu</option>
+                                        <option value="stage_change">Zmiany etapu</option>
+                                        <option value="task_assigned">Zadania</option>
+                                        <option value="document_added">Dokumenty</option>
+                                        <option value="payment_received">Płatności</option>
+                                        <option value="email_sent,whatsapp_sent">Komunikacja</option>
+                                        <option value="decision_received">Decyzje</option>
+                                    </select>
+                                </div>
+                                <div id="activities-list" class="p-4">
+                                    <div class="text-zinc-500 text-sm">Ładuję...</div>
+                                </div>
+                            </section>
+                        </div>
                     </div>
 
                     <!-- FINANCE TAB -->
@@ -858,83 +980,63 @@
                         </section>
                     </div>
 
-                    <!-- DOCUMENTS TAB -->
+                    <!-- DOCUMENTS TAB — sub-tabs: Pakiet | Wszystkie | Ankieta -->
                     <div class="tab-panel hidden" data-panel="documents">
-                        <!-- Pawel v3.2 § II-A.6 — Generator dokumentów (pakiet startowy) -->
-                        <section class="module-card mb-4">
-                            <div class="module-card-header">
-                                <span><i class="ph ph-file-magnifying-glass text-emerald-400 mr-1"></i>Generator dokumentów</span>
-                                <span class="text-xs text-zinc-500">automatyczne wypełnianie z danych sprawy</span>
-                            </div>
-                            <div id="document-generator-section" class="p-3">
-                                <div class="text-zinc-500 text-sm">Ładuję szablony...</div>
-                            </div>
-                        </section>
+                        <div class="sub-tabs mb-4">
+                            <button class="sub-tab active" data-subtab="pakiet" data-panel-parent="documents">
+                                <i class="ph ph-file-magnifying-glass"></i> Pakiet startowy
+                            </button>
+                            <button class="sub-tab" data-subtab="all" data-panel-parent="documents">
+                                <i class="ph ph-file"></i> Wszystkie
+                                <span class="sub-tab-count" id="cnt-sub-docs">0</span>
+                            </button>
+                            <button class="sub-tab" data-subtab="intake" data-panel-parent="documents">
+                                <i class="ph ph-clipboard-text"></i> Ankieta klienta
+                                <span class="sub-tab-count" id="cnt-sub-intake">—</span>
+                            </button>
+                        </div>
 
-                        <section class="module-card">
-                            <div class="module-card-header">
-                                <span><i class="ph ph-file mr-1"></i>Wszystkie dokumenty</span>
-                                <label class="btn btn-primary btn-sm cursor-pointer">
-                                    <i class="ph ph-upload-simple"></i> Dodaj plik
-                                    <input type="file" id="doc-upload" class="hidden" multiple>
-                                </label>
-                            </div>
-                            <div id="documents-list">
-                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
-                            </div>
-                        </section>
-                    </div>
+                        <!-- Sub-pane: Generator (Pakiet startowy) -->
+                        <div class="sub-pane" data-subpane="pakiet">
+                            <section class="module-card">
+                                <div class="module-card-header">
+                                    <span><i class="ph ph-file-magnifying-glass text-emerald-400 mr-1"></i>Generator dokumentów</span>
+                                    <span class="text-xs text-zinc-500">automatyczne wypełnianie z danych sprawy</span>
+                                </div>
+                                <div id="document-generator-section" class="p-3">
+                                    <div class="text-zinc-500 text-sm">Ładuję szablony...</div>
+                                </div>
+                            </section>
+                        </div>
 
-                    <!-- E-SUBMISSION TAB (Pawel v3.2 § III) -->
-                    <div class="tab-panel hidden" data-panel="e-submission" data-show-when="submission_method:elektronicznie">
-                        <section class="module-card">
-                            <div class="module-card-header">
-                                <span><i class="ph ph-lightning text-amber-400 mr-1"></i>Elektroniczne złożenie wniosku</span>
-                                <span class="text-xs text-zinc-500">8 podsekcji A-H wg pkt 10 Pawła</span>
-                            </div>
-                            <div id="e-submission-section">
-                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
-                            </div>
-                        </section>
-                    </div>
+                        <!-- Sub-pane: Wszystkie pliki -->
+                        <div class="sub-pane hidden" data-subpane="all">
+                            <section class="module-card">
+                                <div class="module-card-header">
+                                    <span><i class="ph ph-file mr-1"></i>Wszystkie dokumenty</span>
+                                    <label class="btn btn-primary btn-sm cursor-pointer">
+                                        <i class="ph ph-upload-simple"></i> Dodaj plik
+                                        <input type="file" id="doc-upload" class="hidden" multiple>
+                                    </label>
+                                </div>
+                                <div id="documents-list">
+                                    <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                                </div>
+                            </section>
+                        </div>
 
-                    <!-- CHECKLIST TAB (Pawel v3.2 § II-B.4) -->
-                    <div class="tab-panel hidden" data-panel="checklist">
-                        <section class="module-card">
-                            <div class="module-card-header">
-                                <span><i class="ph ph-list-checks text-blue-400 mr-1"></i>Checklista sprawy</span>
-                                <span class="text-xs text-zinc-500">audyt zgodnie z listą Pawła per kategoria</span>
-                            </div>
-                            <div id="checklist-section">
-                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <!-- CALENDAR TAB -->
-                    <div class="tab-panel hidden" data-panel="calendar">
-                        <div id="calendar-composer" class="mb-4"></div>
-                        <section class="module-card">
-                            <div class="module-card-header">
-                                <span>Spotkania i terminy</span>
-                            </div>
-                            <div id="appointments-list">
-                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <!-- ANKIETA KLIENTA TAB -->
-                    <div class="tab-panel hidden" data-panel="intake">
-                        <section class="module-card mb-4">
-                            <div class="module-card-header">
-                                <span><i class="ph ph-clipboard-text text-indigo-400 mr-1"></i>Ankieta klienta — MOS 2.0</span>
-                                <div id="intake-actions"></div>
-                            </div>
-                            <div id="intake-body" class="p-4">
-                                <div class="text-zinc-500 text-sm">Ładuję...</div>
-                            </div>
-                        </section>
+                        <!-- Sub-pane: Ankieta klienta -->
+                        <div class="sub-pane hidden" data-subpane="intake">
+                            <section class="module-card mb-4">
+                                <div class="module-card-header">
+                                    <span><i class="ph ph-clipboard-text text-indigo-400 mr-1"></i>Ankieta klienta — MOS 2.0</span>
+                                    <div id="intake-actions"></div>
+                                </div>
+                                <div id="intake-body" class="p-4">
+                                    <div class="text-zinc-500 text-sm">Ładuję...</div>
+                                </div>
+                            </section>
+                        </div>
                     </div>
 
                     <!-- DANE TAB -->
@@ -1259,24 +1361,17 @@ async function init() {
     document.getElementById('tasks-filter').addEventListener('change', renderTasksTab);
 }
 
+// Pawel v3.2 — Refactored 6 zakładek (procedura, documents, finance, activity, data, overview)
 function switchTab(name) {
     activeTab = name;
     document.querySelectorAll('.case-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== name));
     history.replaceState(null, '', `#${name}`);
 
-    // Lazy load
-    if (name === 'history' && !tabsLoaded.history) { renderHistory(); tabsLoaded.history = true; }
-    if (name === 'tasks' && !tabsLoaded.tasks) {
-        initComposer('tasks-composer');
-        // Switch composer to task type
-        setTimeout(() => {
-            const tab = document.querySelector('#tasks-composer .composer-tab[data-type="task"]');
-            if (tab) tab.click();
-        }, 50);
-        renderTasksTab();
-        tabsLoaded.tasks = true;
-    }
+    // Bind sub-tabs (raz per panel)
+    bindSubTabs(name);
+
+    // Lazy load per panel
     if (name === 'finance' && !tabsLoaded.finance) {
         initComposer('finance-composer');
         setTimeout(() => {
@@ -1286,39 +1381,87 @@ function switchTab(name) {
         renderFinanceTab();
         tabsLoaded.finance = true;
     }
-    if (name === 'documents' && !tabsLoaded.documents) { renderDocumentsTab(); tabsLoaded.documents = true; }
-    // Pawel v3.2 § III — E-złożenie lazy load
-    if (name === 'e-submission' && !tabsLoaded['e-submission']) {
-        if (window.gmp?.renderESubmission && caseData) {
-            window.gmp.renderESubmission(caseData, db, '#e-submission-section');
-        }
-        tabsLoaded['e-submission'] = true;
-    }
-    // Pawel v3.2 § II-B.4 — Checklista lazy load
-    if (name === 'checklist' && !tabsLoaded.checklist) {
+    if (name === 'procedura' && !tabsLoaded.procedura) {
+        // Checklista
         if (window.gmp?.renderChecklist) {
             window.gmp.renderChecklist(caseId, db, '#checklist-section');
         }
-        tabsLoaded.checklist = true;
+        // E-złożenie (jeśli elektronicznie — conditional UI ukryje sekcję jeśli nie)
+        if (window.gmp?.renderESubmission && caseData) {
+            window.gmp.renderESubmission(caseData, db, '#e-submission-section');
+        }
+        tabsLoaded.procedura = true;
     }
-    // Pawel v3.2 § II-C — Role w sprawie (Dane szczegółowe)
+    if (name === 'documents' && !tabsLoaded.documents) {
+        renderDocumentsTab();
+        tabsLoaded.documents = true;
+        // Pakiet (generator) jest default sub-tab — zostaje aktywny
+    }
+    if (name === 'activity' && !tabsLoaded.activity) {
+        // Default sub-tab: Zadania
+        switchSubTab('activity', 'tasks');
+        tabsLoaded.activity = true;
+    }
     if (name === 'data' && !tabsLoaded.data) {
         if (window.gmp?.renderRoleAssignments && caseData) {
             window.gmp.renderRoleAssignments(caseData, db, '#role-assignments-section');
         }
         tabsLoaded.data = true;
     }
-    if (name === 'calendar' && !tabsLoaded.calendar) {
-        initComposer('calendar-composer');
-        setTimeout(() => {
-            const tab = document.querySelector('#calendar-composer .composer-tab[data-type="appointment"]');
-            if (tab) tab.click();
-        }, 50);
-        renderCalendarTab();
-        tabsLoaded.calendar = true;
-    }
-    if (name === 'intake') { renderIntakeTab(); }
 }
+
+// === SUB-TABS (Pawel v3.2 — 6 zakładek z grupowaniem) ===
+let subTabsBound = {};
+
+function bindSubTabs(panelName) {
+    if (subTabsBound[panelName]) return;
+    subTabsBound[panelName] = true;
+    document.querySelectorAll(`.sub-tab[data-panel-parent="${panelName}"]`).forEach(btn => {
+        btn.addEventListener('click', () => switchSubTab(panelName, btn.dataset.subtab));
+    });
+}
+
+let subTabsLoaded = {};   // {panel: {subtab: true}}
+
+function switchSubTab(panel, subtab) {
+    // UI: aktywny przycisk + visible pane
+    document.querySelectorAll(`.sub-tab[data-panel-parent="${panel}"]`).forEach(b => {
+        b.classList.toggle('active', b.dataset.subtab === subtab);
+    });
+    document.querySelectorAll(`.tab-panel[data-panel="${panel}"] .sub-pane`).forEach(p => {
+        p.classList.toggle('hidden', p.dataset.subpane !== subtab);
+    });
+
+    // Lazy load per sub-tab
+    subTabsLoaded[panel] = subTabsLoaded[panel] || {};
+    if (subTabsLoaded[panel][subtab]) return;
+    subTabsLoaded[panel][subtab] = true;
+
+    if (panel === 'activity') {
+        if (subtab === 'tasks') {
+            initComposer('tasks-composer');
+            setTimeout(() => {
+                const tab = document.querySelector('#tasks-composer .composer-tab[data-type="task"]');
+                if (tab) tab.click();
+            }, 50);
+            renderTasksTab();
+        }
+        if (subtab === 'calendar') {
+            initComposer('calendar-composer');
+            setTimeout(() => {
+                const tab = document.querySelector('#calendar-composer .composer-tab[data-type="appointment"]');
+                if (tab) tab.click();
+            }, 50);
+            renderCalendarTab();
+        }
+        if (subtab === 'history') { renderHistory(); }
+    }
+    if (panel === 'documents') {
+        if (subtab === 'intake') { renderIntakeTab(); }
+        // 'pakiet' i 'all' są ładowane przez renderDocumentsTab() przy switchTab
+    }
+}
+window.switchSubTab = switchSubTab;
 
 // === INTAKE TAB (MOS 2.0 ankieta) ===
 let currentIntake = null;
@@ -2811,18 +2954,31 @@ async function removeWorker(clientId) {
 }
 
 function updateCounts() {
-    document.getElementById('cnt-history').textContent = allActivities.length;
-    document.getElementById('cnt-tasks').textContent = allTasks.filter(t => t.status !== 'done').length;
-    document.getElementById('cnt-finance').textContent = allPayments.length;
-    document.getElementById('cnt-docs').textContent = allDocuments.length + (intakePendingDocs.length ? ` (+${intakePendingDocs.length})` : '');
-    document.getElementById('cnt-appts').textContent = allAppointments.filter(a => !a.scheduled_date || a.scheduled_date >= new Date().toISOString().slice(0,10)).length;
-    // Pawel v3.2 § II-B.4 — count for checklist tab
+    // Helper — bezpieczny update (element może nie istnieć)
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    const openTasks = allTasks.filter(t => t.status !== 'done').length;
+    const futureAppts = allAppointments.filter(a => !a.scheduled_date || a.scheduled_date >= new Date().toISOString().slice(0,10)).length;
+    const docsCount = allDocuments.length + (intakePendingDocs.length ? ` (+${intakePendingDocs.length})` : '');
+
+    // Sub-tab counts (Pawel v3.2 — refactored 6 zakładek)
+    setText('cnt-sub-tasks', openTasks);
+    setText('cnt-sub-appts', futureAppts);
+    setText('cnt-sub-history', allActivities.length);
+    setText('cnt-sub-docs', allDocuments.length);
+    setText('cnt-sub-intake', intakePendingDocs.length || '—');
+
+    // Top-level counts: Aktywność = open tasks + future appts (suma działań)
+    setText('cnt-activity', openTasks + futureAppts);
+    setText('cnt-finance', allPayments.length);
+    setText('cnt-docs', docsCount);
+
+    // Procedura: liczbnik checklist (sumarycznie — kluczowa metryka)
     if (window.gmp?.loadChecklist && caseId) {
         window.gmp.loadChecklist(caseId, db).then(items => {
             const total = items.length;
             const done = items.filter(i => i.status === 'done').length;
-            const cntEl = document.getElementById('cnt-checklist');
-            if (cntEl) cntEl.textContent = total > 0 ? `${done}/${total}` : '—';
+            setText('cnt-procedura', total > 0 ? `${done}/${total}` : '—');
         }).catch(() => {});
     }
 }
