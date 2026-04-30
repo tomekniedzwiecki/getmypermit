@@ -88,6 +88,18 @@ export async function renderNextSteps(caseId, supabase, targetSelector = '#next-
             const mappedTab = TAB_MAP[tabName] || tabName;
             const subTabAction = SUBTAB_MAP[tabName];
 
+            // Mapowanie konkretnej sekcji do scroll'a (po przełączeniu tabu)
+            const SCROLL_TARGET = {
+                'checklist': '#checklist-section',
+                'e-submission': '#e-submission-section',
+                'e-submission-zalacznik': '#e-submission-section',
+                'tasks': '#tasks-section',
+                'history': '#history-section',
+                'calendar': '#calendar-section',
+                'intake': '#intake-section',
+            };
+            const scrollSelector = SCROLL_TARGET[tabName];
+
             // Sprawdź czy to nazwa istniejącego tabu (możliwie zmapowana)
             const tabBtn = document.querySelector(`.case-tab[data-tab="${mappedTab}"]`);
             if (tabBtn) {
@@ -95,13 +107,17 @@ export async function renderNextSteps(caseId, supabase, targetSelector = '#next-
                 if (subTabAction && window.switchSubTab) {
                     setTimeout(() => window.switchSubTab(subTabAction.panel, subTabAction.subtab), 100);
                 }
-                // Scroll do konkretnej sekcji wewnątrz panelu (np. e-submission po procedurze)
-                if (tabName === 'e-submission' || tabName === 'e-submission-zalacznik') {
-                    setTimeout(() => {
-                        const sec = document.getElementById('e-submission-section');
-                        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 200);
-                }
+                // Scroll do konkretnej sekcji jeśli zdefiniowana, inaczej do panelu zakładki
+                setTimeout(() => {
+                    const target = scrollSelector ? document.querySelector(scrollSelector) : null;
+                    const fallback = document.querySelector(`.tab-panel[data-panel="${mappedTab}"]`);
+                    const sec = target || fallback;
+                    if (sec) {
+                        sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        sec.classList.add('flash-highlight');
+                        setTimeout(() => sec.classList.remove('flash-highlight'), 2000);
+                    }
+                }, subTabAction ? 250 : 150);
                 return;
             }
 
