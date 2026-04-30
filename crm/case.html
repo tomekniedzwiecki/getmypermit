@@ -728,9 +728,20 @@
 
                     <!-- DOCUMENTS TAB -->
                     <div class="tab-panel hidden" data-panel="documents">
+                        <!-- Pawel v3.2 § II-A.6 — Generator dokumentów (pakiet startowy) -->
+                        <section class="module-card mb-4">
+                            <div class="module-card-header">
+                                <span><i class="ph ph-file-magnifying-glass text-emerald-400 mr-1"></i>Generator dokumentów</span>
+                                <span class="text-xs text-zinc-500">automatyczne wypełnianie z danych sprawy</span>
+                            </div>
+                            <div id="document-generator-section" class="p-3">
+                                <div class="text-zinc-500 text-sm">Ładuję szablony...</div>
+                            </div>
+                        </section>
+
                         <section class="module-card">
                             <div class="module-card-header">
-                                <span>Dokumenty</span>
+                                <span><i class="ph ph-file mr-1"></i>Wszystkie dokumenty</span>
                                 <label class="btn btn-primary btn-sm cursor-pointer">
                                     <i class="ph ph-upload-simple"></i> Dodaj plik
                                     <input type="file" id="doc-upload" class="hidden" multiple>
@@ -956,11 +967,13 @@
 <script type="module">
 import { applyConditionalModules, buildCaseUiContext } from './components/conditional-modules.js';
 import { computeNextSteps, renderNextSteps } from './components/next-step.js';
+import { renderDocumentGenerator } from './components/document-generator.js';
 window.gmp = window.gmp || {};
 window.gmp.applyConditionalModules = applyConditionalModules;
 window.gmp.buildCaseUiContext = buildCaseUiContext;
 window.gmp.computeNextSteps = computeNextSteps;
 window.gmp.renderNextSteps = renderNextSteps;
+window.gmp.renderDocumentGenerator = renderDocumentGenerator;
 window.dispatchEvent(new Event('gmp-modules-ready'));
 </script>
 
@@ -2067,7 +2080,7 @@ async function loadCase() {
     renderOverview();
     updateCounts();
 
-    // Pawel v3.2 — Conditional UI + sekcja "Co teraz" (§ 1.4 + § 1.7)
+    // Pawel v3.2 — Conditional UI + sekcja "Co teraz" + Generator dokumentów
     try {
         if (window.gmp?.buildCaseUiContext && window.gmp?.applyConditionalModules) {
             const uiCtx = await window.gmp.buildCaseUiContext(caseData, db);
@@ -2075,13 +2088,18 @@ async function loadCase() {
         }
         if (window.gmp?.renderNextSteps) {
             await window.gmp.renderNextSteps(caseId, db);
-            // Pokaż banner Co teraz (jeśli są kroki)
             const list = document.querySelector('#next-steps-list');
             const banner = document.getElementById('next-steps');
             if (banner && list && list.children.length > 0
                 && !list.querySelector('.next-steps-empty')) {
                 banner.classList.remove('hidden');
             }
+        }
+        // Pawel v3.2 § II-A.6 — Generator dokumentów w zakładce Dokumenty
+        if (window.gmp?.renderDocumentGenerator) {
+            await window.gmp.renderDocumentGenerator(caseId, db, '#document-generator-section', {
+                partyType: caseData.party_type,
+            });
         }
     } catch (e) {
         console.warn('[case.html] gmp modules error (non-fatal):', e);

@@ -33,4 +33,5 @@ PLAN_MOBILE_PWA.md
 # Spike artifacts — test outputy, nie commitujemy
 _spike_test_template*.docx
 spike_output*.docx
+test_*.docx
 supabase/seed/test_pawel_cases.sql
