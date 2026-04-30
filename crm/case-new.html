@@ -7,58 +7,587 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="components/layout.css">
     <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] } } } }</script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js"></script>
     <script src="components/sidebar.js" data-active="cases"></script>
-    <style>
-        .wizard-step { display: none; }
-        .wizard-step.active { display: block; }
+<style>
+/* ============================================================ */
+/* WIZARD — odświeżony design                                    */
+/* ============================================================ */
 
-        .step-indicator {
-            display: flex; align-items: center; gap: 8px;
-            padding: 16px 0; margin-bottom: 24px;
-        }
-        .step-dot {
-            width: 32px; height: 32px; border-radius: 50%;
-            background: #27272a; color: #71717a;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 14px; font-weight: 600;
-            transition: all 0.2s;
-        }
-        .step-dot.active { background: #3b82f6; color: #fff; }
-        .step-dot.completed { background: #10b981; color: #fff; }
-        .step-line {
-            flex: 1; height: 2px; background: #27272a;
-        }
-        .step-line.completed { background: #10b981; }
+.wizard-container {
+    max-width: 880px;
+    margin: 0 auto;
+    padding-bottom: 100px;  /* miejsce na sticky footer */
+}
 
-        .field-group { margin-bottom: 16px; }
-        .field-label { display: block; font-size: 12px; color: #a1a1aa; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
-        .field-input { width: 100%; padding: 10px 12px; background: #18181b; color: #e4e4e7; border: 1px solid #27272a; border-radius: 6px; font-size: 14px; }
-        .field-input:focus { outline: none; border-color: #3b82f6; }
+/* === HEADER === */
+.wizard-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+.wizard-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fafafa;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+}
+.wizard-subtitle {
+    color: #71717a;
+    font-size: 14px;
+}
 
-        .role-chip {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 6px 12px; background: #1e293b; border: 1px solid #334155;
-            border-radius: 20px; font-size: 12px; color: #cbd5e1;
-            margin: 2px;
-        }
-        .role-chip.has-override { background: #422006; border-color: #92400e; color: #fcd34d; }
+/* === PROGRESS BAR === */
+.progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 40px;
+    padding: 0 8px;
+}
+.progress-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+.progress-step::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: calc(50% + 22px);
+    right: calc(-50% + 22px);
+    height: 2px;
+    background: #27272a;
+    z-index: 0;
+    transition: background 0.4s ease;
+}
+.progress-step:last-child::after { display: none; }
+.progress-step.completed::after { background: linear-gradient(to right, #10b981, #059669); }
 
-        .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #27272a; }
-        .summary-row:last-child { border-bottom: none; }
-        .summary-key { color: #a1a1aa; }
-        .summary-val { color: #e4e4e7; font-weight: 500; }
-    </style>
+.progress-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #18181b;
+    border: 2px solid #27272a;
+    color: #52525b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 1;
+    position: relative;
+    transition: all 0.3s ease;
+}
+.progress-step.active .progress-circle {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-color: #3b82f6;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    transform: scale(1.05);
+}
+.progress-step.completed .progress-circle {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-color: #10b981;
+    color: #fff;
+}
+.progress-step.completed .progress-circle::before {
+    content: '\2713';
+    font-size: 16px;
+    font-weight: bold;
+}
+.progress-step.completed .progress-circle .step-num { display: none; }
+
+.progress-label {
+    font-size: 11px;
+    color: #52525b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    text-align: center;
+    line-height: 1.3;
+}
+.progress-step.active .progress-label { color: #93c5fd; font-weight: 600; }
+.progress-step.completed .progress-label { color: #6ee7b7; }
+
+/* === STEP CONTAINER === */
+.step-container {
+    background: linear-gradient(135deg, rgba(24, 24, 27, 0.8), rgba(15, 15, 17, 0.6));
+    border: 1px solid #27272a;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+}
+
+.wizard-step {
+    display: none;
+    animation: fadeInUp 0.4s ease;
+}
+.wizard-step.active { display: block; }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-icon-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-bottom: 16px;
+}
+
+.step-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f4f4f5;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+}
+.step-desc {
+    color: #a1a1aa;
+    font-size: 14px;
+    margin-bottom: 28px;
+}
+
+/* === FIELDS === */
+.field-block { margin-bottom: 20px; }
+.field-label {
+    display: block;
+    font-size: 12px;
+    color: #a1a1aa;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+.field-label .req { color: #f87171; margin-left: 2px; }
+.field-input,
+.field-select {
+    width: 100%;
+    padding: 11px 14px;
+    background: #0c0c0d;
+    color: #e4e4e7;
+    border: 1px solid #27272a;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+.field-input:focus,
+.field-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.field-hint { font-size: 12px; color: #71717a; margin-top: 4px; }
+
+/* === CHOICE CARDS (visual decisions) === */
+.choice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+.choice-card {
+    background: #0c0c0d;
+    border: 2px solid #27272a;
+    border-radius: 12px;
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    position: relative;
+}
+.choice-card:hover {
+    border-color: #3f3f46;
+    background: #131316;
+    transform: translateY(-2px);
+}
+.choice-card.selected {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.05));
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.choice-card.selected::after {
+    content: '\2713';
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    width: 20px;
+    height: 20px;
+    background: #3b82f6;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+.choice-card .icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+    display: block;
+    color: #93c5fd;
+}
+.choice-card .title { font-size: 14px; font-weight: 600; color: #f4f4f5; margin-bottom: 4px; }
+.choice-card .desc { font-size: 12px; color: #71717a; line-height: 1.4; }
+
+/* === RADIO LIST (lepsze radio z opisami) === */
+.radio-list { display: flex; flex-direction: column; gap: 8px; }
+.radio-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #0c0c0d;
+    border: 1px solid #27272a;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.radio-option:hover { border-color: #3f3f46; background: #131316; }
+.radio-option input[type="radio"] {
+    margin-top: 2px;
+    accent-color: #3b82f6;
+    transform: scale(1.1);
+}
+.radio-option.selected {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+.radio-option .opt-title { font-size: 14px; font-weight: 600; color: #f4f4f5; margin-bottom: 2px; }
+.radio-option .opt-desc { font-size: 12px; color: #a1a1aa; line-height: 1.4; }
+.radio-option .star { color: #fbbf24; font-size: 16px; }
+
+/* === PERSON CARD === */
+.person-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(5, 150, 105, 0.02));
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.person-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.person-info { flex: 1; min-width: 0; }
+.person-name { font-size: 15px; font-weight: 600; color: #f4f4f5; margin-bottom: 2px; }
+.person-meta { font-size: 12px; color: #a1a1aa; word-break: break-all; }
+.person-actions { display: flex; gap: 4px; }
+
+/* === SEARCH PICKER (autocomplete) === */
+.picker-wrap { position: relative; }
+.picker-input {
+    width: 100%;
+    padding: 11px 40px 11px 14px;
+    background: #0c0c0d;
+    color: #e4e4e7;
+    border: 1px solid #27272a;
+    border-radius: 10px;
+    font-size: 14px;
+}
+.picker-input:focus { outline: none; border-color: #3b82f6; }
+.picker-actions {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    display: flex; gap: 4px;
+}
+.picker-results {
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    margin-top: 4px;
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 50;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+    display: none;
+}
+.picker-results.show { display: block; }
+.picker-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #27272a;
+    transition: background 0.15s;
+}
+.picker-item:last-child { border-bottom: none; }
+.picker-item:hover { background: #27272a; }
+.picker-item .pi-name { font-size: 14px; color: #e4e4e7; font-weight: 500; }
+.picker-item .pi-meta { font-size: 11px; color: #71717a; margin-top: 2px; }
+.picker-empty { padding: 16px; text-align: center; color: #71717a; font-size: 13px; }
+
+.picker-cta {
+    margin-top: 8px;
+    padding: 12px 14px;
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px dashed rgba(59, 130, 246, 0.4);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 13px;
+    color: #93c5fd;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.picker-cta:hover { background: rgba(59, 130, 246, 0.1); }
+
+/* === ROLE GRID === */
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+.role-card {
+    background: #0c0c0d;
+    border: 1px solid #27272a;
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: all 0.2s;
+}
+.role-card.has-override {
+    border-color: rgba(251, 191, 36, 0.4);
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.05), rgba(245, 158, 11, 0.02));
+}
+.role-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+}
+.role-card-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #e4e4e7; }
+.role-card-title i { color: #a78bfa; font-size: 16px; }
+.role-card-value { font-size: 13px; color: #d4d4d8; }
+.role-card-default { font-size: 11px; color: #71717a; font-style: italic; }
+.role-card-override { font-size: 11px; color: #fbbf24; font-weight: 500; }
+
+/* === MONEY GRID === */
+.money-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+.money-card {
+    background: #0c0c0d;
+    border: 1px solid #27272a;
+    border-radius: 10px;
+    padding: 14px;
+}
+.money-card label { font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; display: block; margin-bottom: 6px; }
+.money-card .val-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #f4f4f5;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: inherit;
+    padding: 0;
+}
+.money-card .val-input:focus { outline: none; }
+.money-card .currency { color: #71717a; font-size: 14px; font-weight: 500; margin-left: 4px; }
+.money-card .hint { font-size: 11px; color: #52525b; margin-top: 6px; }
+
+.money-suggestion {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-right: 6px; margin-top: 6px;
+    padding: 3px 8px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    font-size: 11px;
+    color: #93c5fd;
+    cursor: pointer;
+}
+.money-suggestion:hover { background: rgba(59, 130, 246, 0.2); }
+
+.total-card {
+    margin-top: 16px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.04));
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.total-card-label { color: #6ee7b7; font-size: 13px; font-weight: 500; }
+.total-card-value { color: #f4f4f5; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+
+/* === SUMMARY === */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+.summary-card {
+    background: #0c0c0d;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    padding: 16px;
+}
+.summary-card-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: #93c5fd;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.summary-card-title i { font-size: 16px; }
+.summary-row {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 5px 0;
+    font-size: 13px;
+    border-bottom: 1px solid #18181b;
+}
+.summary-row:last-child { border-bottom: none; }
+.summary-key { color: #a1a1aa; flex-shrink: 0; }
+.summary-val { color: #f4f4f5; font-weight: 500; text-align: right; word-break: break-word; }
+.summary-val.empty { color: #52525b; font-style: italic; }
+
+.actions-after-create {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.02));
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.actions-after-create-title { color: #93c5fd; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.actions-after-create li {
+    color: #d4d4d8; font-size: 13px;
+    padding: 3px 0; padding-left: 22px;
+    position: relative;
+}
+.actions-after-create li::before {
+    content: '\2713';
+    position: absolute; left: 0; top: 4px;
+    color: #10b981; font-weight: bold;
+}
+
+/* === STICKY FOOTER === */
+.wizard-footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(9, 9, 11, 0.95);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid #27272a;
+    padding: 14px 24px;
+    z-index: 40;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px;
+}
+.wizard-footer-inner {
+    max-width: 880px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px;
+}
+@media (min-width: 1024px) {
+    .wizard-footer { left: 240px; }  /* miejsce na sidebar */
+}
+.btn-wizard {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer; font-family: inherit;
+    border: 1px solid transparent;
+}
+.btn-wizard.btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+.btn-wizard.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(59, 130, 246, 0.4); }
+.btn-wizard.btn-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.btn-wizard.btn-success:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4); }
+.btn-wizard.btn-ghost {
+    background: transparent; color: #a1a1aa;
+}
+.btn-wizard.btn-ghost:hover { color: #fafafa; background: #27272a; }
+.btn-wizard.btn-secondary {
+    background: #27272a; color: #d4d4d8;
+}
+.btn-wizard.btn-secondary:hover { background: #3f3f46; color: #fff; }
+.btn-wizard:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+/* === MODAL (custom — nie prompt) === */
+.gmp-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+}
+.gmp-modal-overlay.show { display: flex; }
+.gmp-modal {
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    animation: modalIn 0.2s ease;
+}
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+.gmp-modal-title { font-size: 18px; font-weight: 700; color: #fafafa; margin-bottom: 4px; }
+.gmp-modal-subtitle { font-size: 13px; color: #a1a1aa; margin-bottom: 20px; }
+.gmp-modal-options { display: flex; flex-direction: column; gap: 8px; }
+
+@media (max-width: 640px) {
+    .step-container { padding: 20px; border-radius: 12px; }
+    .progress-label { display: none; }
+    .step-icon-circle { width: 44px; height: 44px; font-size: 22px; }
+    .step-title { font-size: 18px; }
+    .total-card-value { font-size: 22px; }
+}
+</style>
 </head>
 <body>
 <div class="app-layout">
     <div id="sidebar-placeholder"></div>
+
     <main class="app-main" id="main-content">
-        <div class="flex items-center gap-2 mb-2 text-xs flex-wrap">
+        <!-- Breadcrumbs -->
+        <div class="flex items-center gap-2 mb-3 text-xs flex-wrap">
             <a href="dashboard.html" class="text-zinc-500 hover:text-white">Dashboard</a>
             <span class="text-zinc-700">/</span>
             <a href="cases.html" class="text-zinc-500 hover:text-white">Sprawy</a>
@@ -66,237 +595,277 @@
             <span class="text-zinc-300">Nowa sprawa</span>
         </div>
 
-        <div class="page-header">
-            <div>
-                <h1 class="page-title">Nowa sprawa — Wizard</h1>
-                <p class="page-subtitle">5 prostych kroków. "Zapisz szkic" zachowuje pracę na każdym etapie.</p>
+        <div class="wizard-container">
+            <!-- HEADER -->
+            <div class="wizard-header">
+                <h1 class="wizard-title">Nowa sprawa</h1>
+                <p class="wizard-subtitle">5 prostych kroków · Możesz zapisać szkic na każdym etapie</p>
+            </div>
+
+            <!-- PROGRESS BAR -->
+            <div class="progress-bar">
+                <div class="progress-step active" data-step-indicator="1">
+                    <div class="progress-circle"><span class="step-num">1</span></div>
+                    <div class="progress-label">Kontekst</div>
+                </div>
+                <div class="progress-step" data-step-indicator="2">
+                    <div class="progress-circle"><span class="step-num">2</span></div>
+                    <div class="progress-label">Osoby</div>
+                </div>
+                <div class="progress-step" data-step-indicator="3">
+                    <div class="progress-circle"><span class="step-num">3</span></div>
+                    <div class="progress-label">Role</div>
+                </div>
+                <div class="progress-step" data-step-indicator="4">
+                    <div class="progress-circle"><span class="step-num">4</span></div>
+                    <div class="progress-label">Pieniądze</div>
+                </div>
+                <div class="progress-step" data-step-indicator="5">
+                    <div class="progress-circle"><span class="step-num">5</span></div>
+                    <div class="progress-label">Podsumowanie</div>
+                </div>
+            </div>
+
+            <!-- STEP CONTAINER -->
+            <div class="step-container">
+
+                <!-- STEP 1: Kontekst -->
+                <div class="wizard-step active" data-step="1">
+                    <div class="step-icon-circle"><i class="ph ph-info"></i></div>
+                    <h2 class="step-title">Kontekst sprawy</h2>
+                    <p class="step-desc">Zacznij od podstawowych informacji — typ klienta, kategoria i tryb prowadzenia.</p>
+
+                    <div class="field-block">
+                        <label class="field-label">Typ klienta <span class="req">*</span></label>
+                        <div class="choice-grid" id="party-type-grid">
+                            <div class="choice-card" data-value="individual">
+                                <i class="ph ph-user icon"></i>
+                                <div class="title">Cudzoziemiec</div>
+                                <div class="desc">Sprawa indywidualna jednej osoby</div>
+                            </div>
+                            <div class="choice-card" data-value="employer">
+                                <i class="ph ph-buildings icon"></i>
+                                <div class="title">Pracodawca</div>
+                                <div class="desc">Firma z wieloma cudzoziemcami</div>
+                            </div>
+                            <div class="choice-card" data-value="other">
+                                <i class="ph ph-folder-notch icon"></i>
+                                <div class="title">Inna sprawa</div>
+                                <div class="desc">Cywilna / karna / specjalna</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="field-block">
+                            <label class="field-label">Kategoria sprawy <span class="req">*</span></label>
+                            <select id="f-category" class="field-select">
+                                <option value="">— wybierz kategorię —</option>
+                            </select>
+                        </div>
+                        <div class="field-block">
+                            <label class="field-label">Tryb sprawy <span class="req">*</span></label>
+                            <select id="f-kind" class="field-select">
+                                <option value="nowa_sprawa">Nowa sprawa</option>
+                                <option value="przystapienie_do_sprawy">Przystąpienie do sprawy</option>
+                                <option value="przejeta_do_dalszego_prowadzenia">Sprawa przejęta</option>
+                                <option value="kontrola_legalnosci_pobytu_pracy">Kontrola legalności</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field-block hidden" id="kind-variant-block">
+                        <label class="field-label">Wariant trybu</label>
+                        <select id="f-kind-variant" class="field-select">
+                            <option value="">—</option>
+                            <option value="przystapienie_kompletne">Przystąpienie kompletne (bez braków)</option>
+                            <option value="przystapienie_z_brakami">Przystąpienie z brakami formalnymi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Osoby -->
+                <div class="wizard-step" data-step="2">
+                    <div class="step-icon-circle"><i class="ph ph-users-three"></i></div>
+                    <h2 class="step-title">Osoby w sprawie</h2>
+                    <p class="step-desc">Wybierz cudzoziemca i opcjonalnie pracodawcę. Możesz wyszukać istniejące lub utworzyć nowe.</p>
+
+                    <div class="field-block">
+                        <label class="field-label">Cudzoziemiec <span class="req">*</span></label>
+                        <div id="client-block">
+                            <!-- Pusty stan: search picker -->
+                            <div id="client-empty" class="picker-wrap">
+                                <input type="text" id="client-search" class="picker-input"
+                                    placeholder="Wpisz imię, nazwisko, telefon lub email..."
+                                    autocomplete="off">
+                                <div class="picker-actions"></div>
+                                <div id="client-results" class="picker-results"></div>
+                            </div>
+                            <div id="client-empty-cta" class="picker-cta hidden" onclick="openNewClientModal()">
+                                <i class="ph ph-user-plus"></i>
+                                <span>Brak takiej osoby — utwórz nowego klienta</span>
+                            </div>
+                            <!-- Wybrany klient: card -->
+                            <div id="client-selected" class="hidden person-card">
+                                <div class="person-avatar" id="client-avatar">?</div>
+                                <div class="person-info">
+                                    <div class="person-name" id="client-name-display"></div>
+                                    <div class="person-meta" id="client-meta"></div>
+                                </div>
+                                <div class="person-actions">
+                                    <button class="btn-wizard btn-ghost" onclick="clearClient()" title="Zmień">
+                                        <i class="ph ph-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-block hidden" id="employer-block-wrap">
+                        <label class="field-label">Pracodawca</label>
+                        <div id="employer-empty" class="picker-wrap">
+                            <input type="text" id="employer-search" class="picker-input"
+                                placeholder="Wpisz nazwę, NIP lub osobę kontaktową..."
+                                autocomplete="off">
+                            <div id="employer-results" class="picker-results"></div>
+                        </div>
+                        <div id="employer-empty-cta" class="picker-cta hidden" onclick="openNewEmployerModal()">
+                            <i class="ph ph-buildings"></i>
+                            <span>Brak takiego pracodawcy — utwórz nowego</span>
+                        </div>
+                        <div id="employer-selected" class="hidden person-card">
+                            <div class="person-avatar" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><i class="ph ph-buildings"></i></div>
+                            <div class="person-info">
+                                <div class="person-name" id="employer-name-display"></div>
+                                <div class="person-meta" id="employer-meta"></div>
+                            </div>
+                            <div class="person-actions">
+                                <button class="btn-wizard btn-ghost" onclick="clearEmployer()" title="Zmień">
+                                    <i class="ph ph-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Role -->
+                <div class="wizard-step" data-step="3">
+                    <div class="step-icon-circle"><i class="ph ph-user-circle-gear"></i></div>
+                    <h2 class="step-title">Role w sprawie</h2>
+                    <p class="step-desc">Domyślne wartości są pre-filled. Zmień tylko jeśli ktoś inny niż klient pełni daną rolę.</p>
+
+                    <div id="roles-grid" class="roles-grid"></div>
+
+                    <div class="mt-5 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 text-xs text-blue-200 flex items-start gap-2">
+                        <i class="ph ph-info text-base flex-shrink-0 mt-0.5"></i>
+                        <span>Większość spraw nie wymaga override — domyślnie strona = klient, zlecający = klient, płatnik = klient (lub pracodawca jeśli sprawa pracownicza). Dane klienta i pracodawcy automatycznie wypełniają role.</span>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Pieniądze -->
+                <div class="wizard-step" data-step="4">
+                    <div class="step-icon-circle"><i class="ph ph-coins"></i></div>
+                    <h2 class="step-title">Pieniądze i pełnomocnictwa</h2>
+                    <p class="step-desc">Wynagrodzenie kancelarii + opłaty administracyjne. Sugerowane wartości na podstawie kategorii.</p>
+
+                    <div class="money-grid">
+                        <div class="money-card">
+                            <label>Wynagrodzenie kancelarii</label>
+                            <input type="number" id="f-fee" class="val-input" min="0" step="100" placeholder="0"><span class="currency">zł</span>
+                            <div id="fee-suggestions"></div>
+                        </div>
+                        <div class="money-card">
+                            <label>Opłata administracyjna</label>
+                            <input type="number" id="f-admin-fee" class="val-input" min="0" step="10" placeholder="0"><span class="currency">zł</span>
+                            <div class="hint" id="admin-fee-hint">Auto z kategorii</div>
+                        </div>
+                        <div class="money-card">
+                            <label>Opłata za kartę pobytu</label>
+                            <input type="number" id="f-card-fee" class="val-input" min="0" step="10" value="100"><span class="currency">zł</span>
+                            <div class="hint">100 zł (50 zł dla dzieci &lt;16)</div>
+                        </div>
+                        <div class="money-card">
+                            <label>Liczba rat</label>
+                            <input type="number" id="f-installments" class="val-input" min="1" max="12" value="1">
+                            <div class="hint">1 = jedna płatność. Plan rat ustalisz w karcie sprawy.</div>
+                        </div>
+                    </div>
+
+                    <div class="total-card">
+                        <span class="total-card-label">Razem do zapłaty (wynagrodzenie + opłaty)</span>
+                        <span class="total-card-value" id="total-display">0 zł</span>
+                    </div>
+
+                    <div class="hidden" id="zalacznik-section" style="margin-top: 28px">
+                        <h3 class="step-title" style="font-size: 16px; margin-bottom: 4px;">
+                            <i class="ph ph-paperclip text-amber-400"></i> Załącznik nr 1 — model podpisania
+                        </h3>
+                        <p class="step-desc" style="font-size: 13px;">
+                            Wymagane dla spraw pobyt+praca (pkt 10.F Pawła). 3 modele do wyboru:
+                        </p>
+                        <div class="radio-list">
+                            <label class="radio-option">
+                                <input type="radio" name="zal-model" value="pracodawca_pelnomocnictwo" checked>
+                                <div>
+                                    <div class="opt-title"><span class="star">★</span> Pracodawca daje pełnomocnictwo <span class="text-emerald-400 text-xs ml-2">preferowany</span></div>
+                                    <div class="opt-desc">Kancelaria wypełnia i podpisuje załącznik za pracodawcę</div>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="zal-model" value="pracodawca_samodzielnie">
+                                <div>
+                                    <div class="opt-title">Pracodawca podpisuje samodzielnie</div>
+                                    <div class="opt-desc">Wymaga koordynacji terminu z pracodawcą i cudzoziemcem</div>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="zal-model" value="do_ustalenia">
+                                <div>
+                                    <div class="opt-title">Decyzja jeszcze nieustalona</div>
+                                    <div class="opt-desc text-amber-300">Utworzy alert "Pilne: ustal model załącznika nr 1"</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 5: Podsumowanie -->
+                <div class="wizard-step" data-step="5">
+                    <div class="step-icon-circle"><i class="ph ph-check-circle text-emerald-400"></i></div>
+                    <h2 class="step-title">Podsumowanie</h2>
+                    <p class="step-desc">Sprawdź szczegóły. Po kliknięciu "Utwórz sprawę" wszystko zostanie wygenerowane automatycznie.</p>
+
+                    <div class="summary-grid" id="summary-grid"></div>
+
+                    <div class="actions-after-create">
+                        <div class="actions-after-create-title">Po kliknięciu "Utwórz sprawę"</div>
+                        <ul class="list-none">
+                            <li>Sprawa utworzona w statusie "zlecona"</li>
+                            <li>Auto-checklista per kategoria (~30 pozycji do sprawdzenia)</li>
+                            <li>Zadania startowe per tryb sprawy</li>
+                            <li>Plan płatności (jeśli ustawiony)</li>
+                            <li>Pakiet startowy DOCX (karta przyjęcia, harmonogram, pełnomocnictwo, instrukcja)</li>
+                        </ul>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <div class="card p-6 max-w-3xl mx-auto">
-            <!-- Step indicator -->
-            <div class="step-indicator">
-                <div class="step-dot active" id="dot-1">1</div>
-                <div class="step-line" id="line-1"></div>
-                <div class="step-dot" id="dot-2">2</div>
-                <div class="step-line" id="line-2"></div>
-                <div class="step-dot" id="dot-3">3</div>
-                <div class="step-line" id="line-3"></div>
-                <div class="step-dot" id="dot-4">4</div>
-                <div class="step-line" id="line-4"></div>
-                <div class="step-dot" id="dot-5">5</div>
-            </div>
-
-            <!-- Step 1: Kontekst -->
-            <div class="wizard-step active" data-step="1">
-                <h2 class="text-lg font-semibold text-zinc-100 mb-4">
-                    <i class="ph ph-info text-blue-400"></i> Kontekst sprawy
-                </h2>
-
-                <div class="field-group">
-                    <label class="field-label">Typ klienta *</label>
-                    <select id="f-party-type" class="field-input">
-                        <option value="individual">Cudzoziemiec (indywidualny)</option>
-                        <option value="employer">Pracodawca (firma)</option>
-                        <option value="other">Inna sprawa</option>
-                    </select>
-                </div>
-
-                <div class="field-group">
-                    <label class="field-label">Kategoria sprawy *</label>
-                    <select id="f-category" class="field-input">
-                        <option value="">— wybierz —</option>
-                    </select>
-                </div>
-
-                <div class="field-group">
-                    <label class="field-label">Tryb sprawy *</label>
-                    <select id="f-kind" class="field-input">
-                        <option value="nowa_sprawa">Nowa sprawa</option>
-                        <option value="przystapienie_do_sprawy">Przystąpienie do sprawy</option>
-                        <option value="przejeta_do_dalszego_prowadzenia">Sprawa przejęta do dalszego prowadzenia</option>
-                        <option value="kontrola_legalnosci_pobytu_pracy">Kontrola legalności pobytu i pracy</option>
-                    </select>
-                </div>
-
-                <div class="field-group hidden" id="kind-variant-group">
-                    <label class="field-label">Wariant trybu (opcjonalne)</label>
-                    <select id="f-kind-variant" class="field-input">
-                        <option value="">—</option>
-                        <option value="przystapienie_kompletne">Przystąpienie kompletne</option>
-                        <option value="przystapienie_z_brakami">Przystąpienie z brakami formalnymi</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Step 2: Osoby -->
-            <div class="wizard-step" data-step="2">
-                <h2 class="text-lg font-semibold text-zinc-100 mb-4">
-                    <i class="ph ph-users text-emerald-400"></i> Osoby w sprawie
-                </h2>
-
-                <div class="field-group">
-                    <label class="field-label">Cudzoziemiec *</label>
-                    <div id="client-picker">
-                        <button class="btn btn-secondary btn-sm" onclick="openClientPicker()">
-                            <i class="ph ph-magnifying-glass"></i> Wybierz istniejącego
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="openClientNew()">
-                            <i class="ph ph-plus"></i> Nowy klient
-                        </button>
-                    </div>
-                    <div id="client-selected" class="hidden mt-2 p-3 bg-zinc-900 rounded">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <strong id="client-name-display"></strong>
-                                <div class="text-xs text-zinc-500" id="client-meta"></div>
-                            </div>
-                            <button class="btn btn-ghost btn-sm" onclick="clearClient()" title="Zmień">
-                                <i class="ph ph-x"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field-group hidden" id="employer-group">
-                    <label class="field-label">Pracodawca</label>
-                    <div id="employer-picker">
-                        <button class="btn btn-secondary btn-sm" onclick="openEmployerPicker()">
-                            <i class="ph ph-magnifying-glass"></i> Wybierz istniejącego
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="openEmployerNew()">
-                            <i class="ph ph-plus"></i> Nowy pracodawca
-                        </button>
-                        <span class="text-xs text-zinc-500 ml-2">(opcjonalne)</span>
-                    </div>
-                    <div id="employer-selected" class="hidden mt-2 p-3 bg-zinc-900 rounded">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <strong id="employer-name-display"></strong>
-                                <div class="text-xs text-zinc-500" id="employer-meta"></div>
-                            </div>
-                            <button class="btn btn-ghost btn-sm" onclick="clearEmployer()">
-                                <i class="ph ph-x"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 3: Role -->
-            <div class="wizard-step" data-step="3">
-                <h2 class="text-lg font-semibold text-zinc-100 mb-4">
-                    <i class="ph ph-user-circle-gear text-purple-400"></i> Role w sprawie
-                </h2>
-                <p class="text-sm text-zinc-500 mb-4">
-                    Defaulty są pre-filled. Możesz nadpisać dla konkretnej roli.
-                </p>
-
-                <div id="roles-list" class="space-y-2"></div>
-
-                <div class="mt-4 p-3 bg-zinc-900 rounded text-xs text-zinc-500">
-                    <i class="ph ph-info"></i> Większość spraw nie wymaga override — domyślnie strona = klient,
-                    zlecający = klient, płatnik = klient (lub pracodawca jeśli sprawa pracownicza).
-                </div>
-            </div>
-
-            <!-- Step 4: Pieniądze -->
-            <div class="wizard-step" data-step="4">
-                <h2 class="text-lg font-semibold text-zinc-100 mb-4">
-                    <i class="ph ph-coins text-yellow-400"></i> Pieniądze i pełnomocnictwa
-                </h2>
-
-                <div class="field-group">
-                    <label class="field-label">Wynagrodzenie kancelarii (zł)</label>
-                    <input type="number" id="f-fee" class="field-input" min="0" step="0.01" placeholder="np. 1500">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="field-group">
-                        <label class="field-label">Opłata administracyjna (zł)</label>
-                        <input type="number" id="f-admin-fee" class="field-input" min="0" step="0.01">
-                        <div class="text-xs text-zinc-500 mt-1" id="admin-fee-hint">—</div>
-                    </div>
-                    <div class="field-group">
-                        <label class="field-label">Opłata za kartę (zł)</label>
-                        <input type="number" id="f-card-fee" class="field-input" min="0" step="0.01" value="100">
-                        <div class="text-xs text-zinc-500 mt-1">100 zł (50 zł dla dzieci &lt;16 lat)</div>
-                    </div>
-                </div>
-
-                <div class="field-group">
-                    <label class="field-label">Liczba rat (opcjonalne)</label>
-                    <input type="number" id="f-installments" class="field-input" min="1" max="12" value="1">
-                    <div class="text-xs text-zinc-500 mt-1">1 = jedna płatność. Dla rat — szczegóły w karcie sprawy po utworzeniu.</div>
-                </div>
-
-                <!-- Warunkowo: model załącznika nr 1 dla pc_praca -->
-                <div class="field-group hidden" id="zalacznik-group">
-                    <label class="field-label">Załącznik nr 1 — model podpisania (pkt 10.F Pawła)</label>
-                    <div class="space-y-2">
-                        <label class="flex items-start gap-2 p-2 rounded hover:bg-zinc-900 cursor-pointer">
-                            <input type="radio" name="zal-model" value="pracodawca_pelnomocnictwo" checked>
-                            <div>
-                                <div class="text-sm">⭐ Pracodawca daje pełnomocnictwo (preferowany)</div>
-                                <div class="text-xs text-zinc-500">Kancelaria wypełnia i podpisuje załącznik za pracodawcę</div>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-2 p-2 rounded hover:bg-zinc-900 cursor-pointer">
-                            <input type="radio" name="zal-model" value="pracodawca_samodzielnie">
-                            <div>
-                                <div class="text-sm">Pracodawca podpisuje samodzielnie</div>
-                                <div class="text-xs text-zinc-500">Wymaga koordynacji terminu</div>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-2 p-2 rounded hover:bg-zinc-900 cursor-pointer">
-                            <input type="radio" name="zal-model" value="do_ustalenia">
-                            <div>
-                                <div class="text-sm">Decyzja jeszcze nieustalona</div>
-                                <div class="text-xs text-amber-400">Utworzy alert "Pilne: ustal model"</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 5: Podsumowanie -->
-            <div class="wizard-step" data-step="5">
-                <h2 class="text-lg font-semibold text-zinc-100 mb-4">
-                    <i class="ph ph-check-circle text-emerald-400"></i> Podsumowanie
-                </h2>
-
-                <div class="space-y-1 mb-6 p-4 bg-zinc-900 rounded">
-                    <div id="summary-content"></div>
-                </div>
-
-                <h3 class="text-sm font-semibold text-zinc-300 mb-2">Po utworzeniu sprawy:</h3>
-                <ul class="text-xs text-zinc-500 list-disc ml-4 space-y-1 mb-6">
-                    <li>Sprawa zostanie utworzona w statusie "zlecona"</li>
-                    <li>Auto-utworzona checklista per kategoria (~30 pozycji)</li>
-                    <li>Zadania startowe per tryb sprawy (3-5 zadań)</li>
-                    <li>Plan płatności (jeśli ustawiony)</li>
-                    <li>Pakiet startowy DOCX (karta przyjęcia, harmonogram, pełnomocnictwo, instrukcja)</li>
-                </ul>
-
-                <div class="bg-amber-900/20 border border-amber-800/50 rounded p-3 text-xs text-amber-200">
-                    <i class="ph ph-info"></i>
-                    Wszystko można edytować po utworzeniu sprawy w karcie sprawy.
-                </div>
-            </div>
-
-            <!-- Footer: nawigacja -->
-            <div class="flex justify-between items-center mt-6 pt-4 border-t border-zinc-800">
-                <button class="btn btn-ghost" id="btn-prev" onclick="prevStep()" disabled>
+        <!-- STICKY FOOTER -->
+        <div class="wizard-footer">
+            <div class="wizard-footer-inner">
+                <button class="btn-wizard btn-ghost" id="btn-prev" onclick="prevStep()" disabled>
                     <i class="ph ph-arrow-left"></i> Wstecz
                 </button>
                 <div class="flex gap-2">
-                    <button class="btn btn-secondary" onclick="saveDraft()">
-                        <i class="ph ph-floppy-disk"></i> Zapisz szkic
+                    <button class="btn-wizard btn-secondary" onclick="saveDraft()">
+                        <i class="ph ph-floppy-disk"></i> <span class="hidden md:inline">Zapisz szkic</span>
                     </button>
-                    <button class="btn btn-primary" id="btn-next" onclick="nextStep()">
+                    <button class="btn-wizard btn-primary" id="btn-next" onclick="nextStep()">
                         Dalej <i class="ph ph-arrow-right"></i>
                     </button>
-                    <button class="btn btn-primary hidden" id="btn-create" onclick="createCase()">
+                    <button class="btn-wizard btn-success hidden" id="btn-create" onclick="createCase()">
                         <i class="ph ph-check"></i> Utwórz sprawę
                     </button>
                 </div>
@@ -305,9 +874,23 @@
     </main>
 </div>
 
-<div id="modals-container"></div>
+<!-- Custom modal dla role override -->
+<div class="gmp-modal-overlay" id="role-modal">
+    <div class="gmp-modal">
+        <div class="gmp-modal-title" id="role-modal-title">Override roli</div>
+        <div class="gmp-modal-subtitle" id="role-modal-subtitle">Wybierz kto pełni tę rolę</div>
+        <div class="gmp-modal-options" id="role-modal-options"></div>
+        <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+            <button class="btn-wizard btn-ghost" onclick="closeRoleModal()">Anuluj</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
 <div id="toast-container"></div>
 
+<!-- Modals (legacy — używamy własnych) -->
+<div id="modals-container"></div>
 <script src="components/modals.js"></script>
 
 <script type="module">
@@ -317,7 +900,7 @@
 
 <script>
 let currentStep = 1;
-let totalSteps = 5;
+const totalSteps = 5;
 let wizardState = {
     party_type: 'individual',
     category: null,
@@ -327,15 +910,16 @@ let wizardState = {
     client_data: null,
     employer_id: null,
     employer_data: null,
-    role_overrides: [],   // [{role, party_type, client_id?, employer_id?, ...}]
+    role_overrides: [],
     fee_amount: null,
     admin_fee_amount: null,
     card_fee_amount: 100,
     installments_planned: 1,
     zalacznik_nr_1_model: null,
-    pawel_group: null,    // pochodzi z kategorii
+    pawel_group: null,
 };
 let allCategories = [];
+let _searchTimeouts = {};
 
 document.addEventListener('gmp-auth-ready', init);
 
@@ -343,25 +927,42 @@ async function init() {
     // Pobierz kategorie
     const { data } = await db.from('gmp_case_categories')
         .select('code, label, group_label, pawel_group, is_active')
-        .eq('is_active', true)
-        .order('sort_order');
+        .eq('is_active', true).order('sort_order');
     allCategories = data || [];
     renderCategoryDropdown();
 
-    // Bind on changes
-    document.getElementById('f-party-type').addEventListener('change', onPartyTypeChange);
-    document.getElementById('f-category').addEventListener('change', onCategoryChange);
-    document.getElementById('f-kind').addEventListener('change', onKindChange);
-    document.getElementById('f-fee').addEventListener('input', e => wizardState.fee_amount = parseFloat(e.target.value) || null);
-    document.getElementById('f-admin-fee').addEventListener('input', e => wizardState.admin_fee_amount = parseFloat(e.target.value) || null);
-    document.getElementById('f-card-fee').addEventListener('input', e => wizardState.card_fee_amount = parseFloat(e.target.value) || 100);
-    document.getElementById('f-installments').addEventListener('input', e => wizardState.installments_planned = parseInt(e.target.value) || 1);
-
-    document.querySelectorAll('input[name="zal-model"]').forEach(r => {
-        r.addEventListener('change', e => wizardState.zalacznik_nr_1_model = e.target.value);
+    // Choice cards (party type)
+    document.querySelectorAll('#party-type-grid .choice-card').forEach(card => {
+        if (card.dataset.value === wizardState.party_type) card.classList.add('selected');
+        card.addEventListener('click', () => {
+            document.querySelectorAll('#party-type-grid .choice-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            wizardState.party_type = card.dataset.value;
+            updateConditionalFields();
+        });
     });
 
-    // Init z URL params (np. preselected category z dashboard)
+    // Field handlers
+    document.getElementById('f-category').addEventListener('change', onCategoryChange);
+    document.getElementById('f-kind').addEventListener('change', onKindChange);
+    ['f-fee', 'f-admin-fee', 'f-card-fee', 'f-installments'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateMoney);
+    });
+    document.querySelectorAll('input[name="zal-model"]').forEach(r => {
+        r.addEventListener('change', e => {
+            wizardState.zalacznik_nr_1_model = e.target.value;
+            document.querySelectorAll('.radio-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.querySelector('input').checked);
+            });
+        });
+    });
+    document.querySelector('input[name="zal-model"]:checked')?.closest('.radio-option')?.classList.add('selected');
+
+    // Search pickers
+    setupClientSearch();
+    setupEmployerSearch();
+
+    // URL params
     const params = new URLSearchParams(window.location.search);
     if (params.get('category')) {
         document.getElementById('f-category').value = params.get('category');
@@ -371,7 +972,7 @@ async function init() {
 
 function renderCategoryDropdown() {
     const sel = document.getElementById('f-category');
-    sel.innerHTML = '<option value="">— wybierz —</option>';
+    sel.innerHTML = '<option value="">— wybierz kategorię —</option>';
     const groups = {};
     for (const c of allCategories) {
         const g = c.group_label || 'Inne';
@@ -392,36 +993,25 @@ function renderCategoryDropdown() {
     }
 }
 
-function onPartyTypeChange() {
-    wizardState.party_type = document.getElementById('f-party-type').value;
-    updateConditionalFields();
-}
-
 function onCategoryChange() {
     const sel = document.getElementById('f-category');
     wizardState.category = sel.value || null;
-    const opt = sel.options[sel.selectedIndex];
-    wizardState.pawel_group = opt?.dataset.pawelGroup || null;
-
-    // Auto admin fee
+    wizardState.pawel_group = sel.options[sel.selectedIndex]?.dataset.pawelGroup || null;
     fetchAdminFee();
     updateConditionalFields();
+    updateFeeSuggestions();
 }
 
 function onKindChange() {
     wizardState.kind = document.getElementById('f-kind').value;
-    const variantGroup = document.getElementById('kind-variant-group');
-    variantGroup.classList.toggle('hidden', !wizardState.kind.includes('przystapienie'));
+    document.getElementById('kind-variant-block').classList.toggle('hidden', !wizardState.kind.includes('przystapienie'));
 }
 
 function updateConditionalFields() {
-    // Pracodawca: visible dla pobyt_praca / zezwolenie_praca / kontrola_legalnosci LUB party_type=employer
     const showEmployer = wizardState.party_type === 'employer'
         || ['pobyt_praca', 'zezwolenie_praca', 'kontrola_legalnosci'].includes(wizardState.pawel_group);
-    document.getElementById('employer-group').classList.toggle('hidden', !showEmployer);
-
-    // Załącznik nr 1 model: tylko dla pobyt_praca
-    document.getElementById('zalacznik-group').classList.toggle('hidden', wizardState.pawel_group !== 'pobyt_praca');
+    document.getElementById('employer-block-wrap').classList.toggle('hidden', !showEmployer);
+    document.getElementById('zalacznik-section').classList.toggle('hidden', wizardState.pawel_group !== 'pobyt_praca');
 }
 
 async function fetchAdminFee() {
@@ -432,100 +1022,192 @@ async function fetchAdminFee() {
         wizardState.admin_fee_amount = num;
         const inp = document.getElementById('f-admin-fee');
         if (inp && !inp.value) inp.value = num;
-        document.getElementById('admin-fee-hint').textContent = `Default: ${num} zł (per ${wizardState.pawel_group})`;
-    } catch (e) { console.warn('default_admin_fee error:', e); }
+        document.getElementById('admin-fee-hint').textContent = `Sugerowane: ${num} zł (${wizardState.pawel_group})`;
+        updateMoney();
+    } catch (e) { console.warn(e); }
 }
 
-// === Klient picker ===
-async function openClientPicker() {
-    if (window.gmpModal?.pickClient) {
-        gmpModal.pickClient(c => selectClient(c));
-    } else {
-        toast.error('Modal picker niedostępny');
-    }
+function updateFeeSuggestions() {
+    const cont = document.getElementById('fee-suggestions');
+    if (!wizardState.pawel_group) { cont.innerHTML = ''; return; }
+    const suggestions = wizardState.pawel_group === 'pobyt_praca' ? [1500, 2000, 2500] :
+                        wizardState.pawel_group === 'pobyt_staly' ? [2000, 2500, 3000] :
+                        wizardState.pawel_group === 'rezydent_ue' ? [3000, 3500, 4000] :
+                        [1000, 1500, 2000];
+    cont.innerHTML = suggestions.map(s =>
+        `<span class="money-suggestion" onclick="setFee(${s})">${s} zł</span>`
+    ).join('');
 }
-window.openClientPicker = openClientPicker;
+window.setFee = (v) => {
+    document.getElementById('f-fee').value = v;
+    wizardState.fee_amount = v;
+    updateMoney();
+};
 
-async function openClientNew() {
-    if (window.gmpModal?.editClient) {
-        gmpModal.editClient(null, c => selectClient(c));
-    } else {
-        toast.error('Modal new niedostępny');
-    }
+function updateMoney() {
+    wizardState.fee_amount = parseFloat(document.getElementById('f-fee').value) || 0;
+    wizardState.admin_fee_amount = parseFloat(document.getElementById('f-admin-fee').value) || 0;
+    wizardState.card_fee_amount = parseFloat(document.getElementById('f-card-fee').value) || 0;
+    wizardState.installments_planned = parseInt(document.getElementById('f-installments').value) || 1;
+    const total = (wizardState.fee_amount || 0) + (wizardState.admin_fee_amount || 0) + (wizardState.card_fee_amount || 0);
+    document.getElementById('total-display').textContent = total.toLocaleString('pl-PL') + ' zł';
 }
-window.openClientNew = openClientNew;
+
+// === SEARCH PICKERS ===
+function setupClientSearch() {
+    const inp = document.getElementById('client-search');
+    const results = document.getElementById('client-results');
+    const cta = document.getElementById('client-empty-cta');
+
+    inp.addEventListener('input', () => {
+        clearTimeout(_searchTimeouts.client);
+        const q = inp.value.trim();
+        if (q.length < 2) { results.classList.remove('show'); cta.classList.add('hidden'); return; }
+        _searchTimeouts.client = setTimeout(async () => {
+            const { data } = await db.from('gmp_clients')
+                .select('id, first_name, last_name, phone, email, nationality, birth_date')
+                .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`)
+                .limit(8);
+
+            if (!data || data.length === 0) {
+                results.classList.remove('show');
+                cta.classList.remove('hidden');
+                return;
+            }
+            cta.classList.add('hidden');
+            results.innerHTML = data.map(c => `
+                <div class="picker-item" onclick='selectClient(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+                    <div class="pi-name">${esc(c.first_name)} ${esc(c.last_name)}</div>
+                    <div class="pi-meta">${[c.phone, c.email, c.nationality].filter(Boolean).map(esc).join(' · ')}</div>
+                </div>
+            `).join('');
+            results.classList.add('show');
+        }, 250);
+    });
+
+    document.addEventListener('click', e => {
+        if (!inp.parentElement.contains(e.target)) results.classList.remove('show');
+    });
+}
+
+function setupEmployerSearch() {
+    const inp = document.getElementById('employer-search');
+    const results = document.getElementById('employer-results');
+    const cta = document.getElementById('employer-empty-cta');
+
+    inp.addEventListener('input', () => {
+        clearTimeout(_searchTimeouts.employer);
+        const q = inp.value.trim();
+        if (q.length < 2) { results.classList.remove('show'); cta.classList.add('hidden'); return; }
+        _searchTimeouts.employer = setTimeout(async () => {
+            const { data } = await db.from('gmp_employers')
+                .select('id, name, nip, contact_person, contact_phone, contact_email')
+                .or(`name.ilike.%${q}%,nip.ilike.%${q}%,contact_person.ilike.%${q}%`)
+                .limit(8);
+
+            if (!data || data.length === 0) {
+                results.classList.remove('show');
+                cta.classList.remove('hidden');
+                return;
+            }
+            cta.classList.add('hidden');
+            results.innerHTML = data.map(e => `
+                <div class="picker-item" onclick='selectEmployer(${JSON.stringify(e).replace(/'/g, "&#39;")})'>
+                    <div class="pi-name">${esc(e.name)}</div>
+                    <div class="pi-meta">${[e.nip, e.contact_person].filter(Boolean).map(esc).join(' · ')}</div>
+                </div>
+            `).join('');
+            results.classList.add('show');
+        }, 250);
+    });
+
+    document.addEventListener('click', ev => {
+        if (!inp.parentElement.contains(ev.target)) results.classList.remove('show');
+    });
+}
 
 function selectClient(c) {
-    if (!c) return;
     wizardState.client_id = c.id;
     wizardState.client_data = c;
-    document.getElementById('client-picker').classList.add('hidden');
+    document.getElementById('client-empty').classList.add('hidden');
+    document.getElementById('client-empty-cta').classList.add('hidden');
     document.getElementById('client-selected').classList.remove('hidden');
+    document.getElementById('client-results').classList.remove('show');
+
+    const initials = ((c.first_name?.[0] || '') + (c.last_name?.[0] || '')).toUpperCase() || '?';
+    document.getElementById('client-avatar').textContent = initials;
     document.getElementById('client-name-display').textContent = `${c.first_name || ''} ${c.last_name || ''}`.trim();
-    document.getElementById('client-meta').textContent = [c.phone, c.email, c.nationality].filter(Boolean).join(' · ');
+    document.getElementById('client-meta').textContent = [c.phone, c.email, c.nationality, c.birth_date].filter(Boolean).join(' · ');
 }
+window.selectClient = selectClient;
 
 function clearClient() {
     wizardState.client_id = null; wizardState.client_data = null;
-    document.getElementById('client-picker').classList.remove('hidden');
+    document.getElementById('client-empty').classList.remove('hidden');
     document.getElementById('client-selected').classList.add('hidden');
+    document.getElementById('client-search').value = '';
+    document.getElementById('client-empty-cta').classList.add('hidden');
 }
 window.clearClient = clearClient;
 
-// === Pracodawca picker ===
-async function openEmployerPicker() {
-    if (window.gmpModal?.pickEmployer) gmpModal.pickEmployer(e => selectEmployer(e));
-    else toast.error('Modal picker niedostępny');
-}
-window.openEmployerPicker = openEmployerPicker;
-
-async function openEmployerNew() {
-    if (window.gmpModal?.editEmployer) gmpModal.editEmployer(null, e => selectEmployer(e));
-    else toast.error('Modal new niedostępny');
-}
-window.openEmployerNew = openEmployerNew;
-
 function selectEmployer(e) {
-    if (!e) return;
     wizardState.employer_id = e.id;
     wizardState.employer_data = e;
-    document.getElementById('employer-picker').classList.add('hidden');
+    document.getElementById('employer-empty').classList.add('hidden');
+    document.getElementById('employer-empty-cta').classList.add('hidden');
     document.getElementById('employer-selected').classList.remove('hidden');
+    document.getElementById('employer-results').classList.remove('show');
+
     document.getElementById('employer-name-display').textContent = e.name || '—';
     document.getElementById('employer-meta').textContent = [e.nip, e.contact_phone, e.contact_email].filter(Boolean).join(' · ');
 }
+window.selectEmployer = selectEmployer;
 
 function clearEmployer() {
     wizardState.employer_id = null; wizardState.employer_data = null;
-    document.getElementById('employer-picker').classList.remove('hidden');
+    document.getElementById('employer-empty').classList.remove('hidden');
     document.getElementById('employer-selected').classList.add('hidden');
+    document.getElementById('employer-search').value = '';
+    document.getElementById('employer-empty-cta').classList.add('hidden');
 }
 window.clearEmployer = clearEmployer;
 
-// === Nawigacja ===
-function nextStep() {
-    if (!validateStep(currentStep)) return;
-    if (currentStep < totalSteps) {
-        showStep(currentStep + 1);
+function openNewClientModal() {
+    if (window.gmpModal?.editClient) {
+        gmpModal.editClient(null, c => { if (c) selectClient(c); });
+    } else {
+        toast.error('Modal niedostępny');
     }
 }
-window.nextStep = nextStep;
+window.openNewClientModal = openNewClientModal;
 
+function openNewEmployerModal() {
+    if (window.gmpModal?.editEmployer) {
+        gmpModal.editEmployer(null, e => { if (e) selectEmployer(e); });
+    } else {
+        toast.error('Modal niedostępny');
+    }
+}
+window.openNewEmployerModal = openNewEmployerModal;
+
+// === NAWIGACJA ===
+function nextStep() {
+    if (!validateStep(currentStep)) return;
+    if (currentStep < totalSteps) showStep(currentStep + 1);
+}
 function prevStep() {
     if (currentStep > 1) showStep(currentStep - 1);
 }
+window.nextStep = nextStep;
 window.prevStep = prevStep;
 
 function showStep(n) {
     currentStep = n;
     document.querySelectorAll('.wizard-step').forEach(s => s.classList.toggle('active', Number(s.dataset.step) === n));
-    document.querySelectorAll('.step-dot').forEach((d, i) => {
+    document.querySelectorAll('.progress-step').forEach((d, i) => {
         const idx = i + 1;
         d.classList.toggle('active', idx === n);
         d.classList.toggle('completed', idx < n);
-    });
-    document.querySelectorAll('.step-line').forEach((l, i) => {
-        l.classList.toggle('completed', i + 1 < n);
     });
     document.getElementById('btn-prev').disabled = n === 1;
     document.getElementById('btn-next').classList.toggle('hidden', n === totalSteps);
@@ -533,193 +1215,329 @@ function showStep(n) {
 
     if (n === 3) renderRoles();
     if (n === 5) renderSummary();
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function validateStep(n) {
     if (n === 1) {
-        if (!wizardState.category) { toast.error('Wybierz kategorię sprawy'); return false; }
-        if (!wizardState.kind) { toast.error('Wybierz tryb sprawy'); return false; }
+        if (!wizardState.category) { toastErr('Wybierz kategorię sprawy'); return false; }
+        if (!wizardState.kind) { toastErr('Wybierz tryb sprawy'); return false; }
     }
     if (n === 2) {
-        if (!wizardState.client_id) { toast.error('Wybierz cudzoziemca (lub utwórz nowego)'); return false; }
+        if (!wizardState.client_id) { toastErr('Wybierz cudzoziemca lub utwórz nowego'); return false; }
     }
     return true;
 }
 
-// === Step 3: Role ===
-function renderRoles() {
-    const roles = [
-        { code: 'strona', label: 'Strona sprawy', defaultName: getDefaultPartyName('strona') },
-        { code: 'zlecajacy', label: 'Zlecający', defaultName: getDefaultPartyName('zlecajacy') },
-        { code: 'platnik', label: 'Płatnik', defaultName: getDefaultPartyName('platnik') },
-        { code: 'osoba_kontaktowa', label: 'Osoba kontaktowa', defaultName: getDefaultPartyName('osoba_kontaktowa') },
-        { code: 'podpisujacy_pelnomocnictwo_klienta', label: 'Podpisujący pełnomocnictwo (klient)', defaultName: getDefaultPartyName('podpisujacy_pelnomocnictwo_klienta') },
-    ];
+function toastErr(msg) {
+    if (window.toast) toast.error(msg);
+    else alert(msg);
+}
 
+// === STEP 3: ROLES ===
+const ROLES_DEFS = [
+    { code: 'strona', label: 'Strona sprawy', icon: 'ph-user' },
+    { code: 'zlecajacy', label: 'Zlecający', icon: 'ph-handshake' },
+    { code: 'platnik', label: 'Płatnik', icon: 'ph-currency-circle-dollar' },
+    { code: 'osoba_kontaktowa', label: 'Osoba kontaktowa', icon: 'ph-phone' },
+    { code: 'podpisujacy_pelnomocnictwo_klienta', label: 'Podpisujący pełnomocnictwo', icon: 'ph-signature' },
+];
+
+function renderRoles() {
+    const roles = [...ROLES_DEFS];
     if (wizardState.pawel_group === 'pobyt_praca' && wizardState.employer_id) {
-        roles.push({ code: 'podpisujacy_zalacznik_nr_1', label: 'Podpisujący załącznik nr 1', defaultName: wizardState.employer_data?.name || '—' });
+        roles.push({ code: 'podpisujacy_zalacznik_nr_1', label: 'Podpisujący załącznik nr 1', icon: 'ph-signature' });
     }
 
-    const container = document.getElementById('roles-list');
+    const container = document.getElementById('roles-grid');
     container.innerHTML = roles.map(r => {
         const override = wizardState.role_overrides.find(o => o.role === r.code);
+        const defaultName = getDefaultPartyName(r.code);
         return `
-            <div class="flex items-center justify-between p-2 rounded hover:bg-zinc-900">
-                <div>
-                    <span class="text-sm text-zinc-300">${escapeHtml(r.label)}</span>
-                    <span class="role-chip ${override ? 'has-override' : ''}">${escapeHtml(override?.display_name || r.defaultName || '—')}</span>
+            <div class="role-card ${override ? 'has-override' : ''}" onclick="openRoleModal('${r.code}', '${esc(r.label)}')">
+                <div class="role-card-header">
+                    <div class="role-card-title"><i class="ph ${r.icon}"></i>${esc(r.label)}</div>
+                    <i class="ph ${override ? 'ph-pencil-simple text-amber-400' : 'ph-plus text-zinc-600'}" style="font-size: 14px"></i>
                 </div>
-                <button class="btn btn-ghost btn-sm" onclick="editRole('${r.code}', '${escapeAttr(r.label)}')">
-                    ${override ? 'Zmień' : 'Override'}
-                </button>
+                <div class="role-card-value">
+                    ${override
+                        ? `<span class="role-card-override">→ ${esc(override.display_name || override.external_name || '?')}</span>`
+                        : `<span class="role-card-default">default: ${esc(defaultName)}</span>`}
+                </div>
             </div>
         `;
     }).join('');
 }
 
 function getDefaultPartyName(role) {
-    if (role === 'osoba_kontaktowa') {
-        return wizardState.client_data?.first_name + ' ' + (wizardState.client_data?.last_name || '');
-    }
-    if (role === 'podpisujacy_pelnomocnictwo_klienta') {
-        return wizardState.client_data ? `${wizardState.client_data.first_name} ${wizardState.client_data.last_name}` : '—';
-    }
-    if (role === 'platnik') {
-        // Default: jeśli employer + pc_praca, to employer; inaczej client
-        if (wizardState.pawel_group === 'pobyt_praca' && wizardState.employer_id) {
-            return wizardState.employer_data?.name || '—';
-        }
-        return wizardState.client_data ? `${wizardState.client_data.first_name} ${wizardState.client_data.last_name}` : '—';
-    }
-    return wizardState.client_data ? `${wizardState.client_data.first_name} ${wizardState.client_data.last_name}` : '—';
+    const cl = wizardState.client_data;
+    const em = wizardState.employer_data;
+    const clName = cl ? `${cl.first_name || ''} ${cl.last_name || ''}`.trim() : null;
+
+    if (role === 'platnik' && wizardState.pawel_group === 'pobyt_praca' && em) return em.name;
+    if (role === 'podpisujacy_zalacznik_nr_1') return em?.name || '— wymaga pracodawcy';
+    return clName || '—';
 }
 
-function editRole(code, label) {
-    // Prosty prompt — w prod: modal z dropdown'em (klient/employer/staff/external)
-    const choice = prompt(`Override roli "${label}":\n\nWpisz typ + ID:\n- "client" (default = ten z step 2)\n- "employer" (jeśli ustawiony)\n- "external NazwaOsoby" (np. "external Jan Kowalski")\n\nPusto = anuluj override.`);
-    if (choice === null) return;
-    if (!choice.trim()) {
-        // Usuń override
-        wizardState.role_overrides = wizardState.role_overrides.filter(o => o.role !== code);
-    } else if (choice.startsWith('external ')) {
-        const name = choice.slice(9).trim();
-        const existing = wizardState.role_overrides.findIndex(o => o.role === code);
-        const newOv = { role: code, party_type: 'external', external_name: name, display_name: name };
-        if (existing >= 0) wizardState.role_overrides[existing] = newOv;
-        else wizardState.role_overrides.push(newOv);
-    } else if (choice === 'client' && wizardState.client_id) {
-        // Default = nie zapisuj override
-        wizardState.role_overrides = wizardState.role_overrides.filter(o => o.role !== code);
-    } else if (choice === 'employer' && wizardState.employer_id) {
-        const newOv = { role: code, party_type: 'employer', employer_id: wizardState.employer_id, display_name: wizardState.employer_data.name };
-        const existing = wizardState.role_overrides.findIndex(o => o.role === code);
-        if (existing >= 0) wizardState.role_overrides[existing] = newOv;
-        else wizardState.role_overrides.push(newOv);
-    } else {
-        toast.warning('Nieznany format');
-        return;
-    }
-    renderRoles();
-}
-window.editRole = editRole;
+// === ROLE MODAL ===
+let _roleModalState = null;
 
-// === Step 5: Summary ===
+function openRoleModal(roleCode, roleLabel) {
+    _roleModalState = { roleCode, roleLabel };
+    document.getElementById('role-modal-title').textContent = roleLabel;
+    document.getElementById('role-modal-subtitle').textContent = 'Wybierz osobę pełniącą tę rolę';
+
+    const opts = document.getElementById('role-modal-options');
+    const existing = wizardState.role_overrides.find(o => o.role === roleCode);
+
+    let html = '';
+    // Klient
+    if (wizardState.client_data) {
+        html += `<div class="radio-option" onclick="setRoleClient()">
+            <div class="person-avatar" style="width: 36px; height: 36px; font-size: 13px;">${initials(wizardState.client_data.first_name, wizardState.client_data.last_name)}</div>
+            <div>
+                <div class="opt-title">${esc(wizardState.client_data.first_name)} ${esc(wizardState.client_data.last_name)}</div>
+                <div class="opt-desc">Klient (cudzoziemiec)</div>
+            </div>
+        </div>`;
+    }
+    // Pracodawca
+    if (wizardState.employer_data) {
+        html += `<div class="radio-option" onclick="setRoleEmployer()">
+            <div class="person-avatar" style="width: 36px; height: 36px; font-size: 13px; background: linear-gradient(135deg, #f59e0b, #d97706);"><i class="ph ph-buildings"></i></div>
+            <div>
+                <div class="opt-title">${esc(wizardState.employer_data.name)}</div>
+                <div class="opt-desc">Pracodawca</div>
+            </div>
+        </div>`;
+    }
+    // External
+    html += `<div class="radio-option" onclick="setRoleExternal()">
+        <div class="person-avatar" style="width: 36px; height: 36px; font-size: 13px; background: #52525b;"><i class="ph ph-user-plus"></i></div>
+        <div>
+            <div class="opt-title">Inna osoba</div>
+            <div class="opt-desc">Wpisz imię i nazwisko ręcznie</div>
+        </div>
+    </div>`;
+    // Reset (jeśli override istnieje)
+    if (existing) {
+        html += `<div class="radio-option" style="border-color: rgba(248, 113, 113, 0.3); margin-top: 8px;" onclick="clearRole()">
+            <div class="person-avatar" style="width: 36px; height: 36px; font-size: 13px; background: #7f1d1d;"><i class="ph ph-arrow-counter-clockwise"></i></div>
+            <div>
+                <div class="opt-title">Powrót do default</div>
+                <div class="opt-desc">Usuń override</div>
+            </div>
+        </div>`;
+    }
+
+    opts.innerHTML = html;
+    document.getElementById('role-modal').classList.add('show');
+}
+window.openRoleModal = openRoleModal;
+
+function closeRoleModal() {
+    document.getElementById('role-modal').classList.remove('show');
+    _roleModalState = null;
+}
+window.closeRoleModal = closeRoleModal;
+
+function setRoleClient() {
+    if (!_roleModalState) return;
+    const c = wizardState.client_data;
+    const display = `${c.first_name} ${c.last_name}`;
+    upsertRole({ role: _roleModalState.roleCode, party_type: 'client', client_id: c.id, display_name: display });
+    closeRoleModal(); renderRoles();
+}
+window.setRoleClient = setRoleClient;
+
+function setRoleEmployer() {
+    if (!_roleModalState) return;
+    const e = wizardState.employer_data;
+    upsertRole({ role: _roleModalState.roleCode, party_type: 'employer', employer_id: e.id, display_name: e.name });
+    closeRoleModal(); renderRoles();
+}
+window.setRoleEmployer = setRoleEmployer;
+
+function setRoleExternal() {
+    if (!_roleModalState) return;
+    const name = prompt('Wpisz imię i nazwisko osoby:');
+    if (!name) return;
+    upsertRole({ role: _roleModalState.roleCode, party_type: 'external', external_name: name, display_name: name });
+    closeRoleModal(); renderRoles();
+}
+window.setRoleExternal = setRoleExternal;
+
+function clearRole() {
+    if (!_roleModalState) return;
+    wizardState.role_overrides = wizardState.role_overrides.filter(o => o.role !== _roleModalState.roleCode);
+    closeRoleModal(); renderRoles();
+}
+window.clearRole = clearRole;
+
+function upsertRole(ov) {
+    const idx = wizardState.role_overrides.findIndex(o => o.role === ov.role);
+    if (idx >= 0) wizardState.role_overrides[idx] = ov;
+    else wizardState.role_overrides.push(ov);
+}
+
+function initials(first, last) {
+    return ((first?.[0] || '') + (last?.[0] || '')).toUpperCase() || '?';
+}
+
+// === STEP 5: SUMMARY ===
 function renderSummary() {
     const cat = allCategories.find(c => c.code === wizardState.category);
-    const rows = [
-        ['Typ klienta', wizardState.party_type],
-        ['Kategoria', cat?.label || wizardState.category || '—'],
-        ['Tryb sprawy', wizardState.kind],
-        ['Cudzoziemiec', wizardState.client_data ? `${wizardState.client_data.first_name} ${wizardState.client_data.last_name}` : '—'],
-        ['Pracodawca', wizardState.employer_data?.name || '—'],
-        ['Wynagrodzenie', wizardState.fee_amount ? wizardState.fee_amount + ' zł' : '—'],
-        ['Opłata admin', wizardState.admin_fee_amount ? wizardState.admin_fee_amount + ' zł' : '—'],
-        ['Opłata karty', wizardState.card_fee_amount + ' zł'],
-        ['Liczba rat', wizardState.installments_planned],
-        ['Override ról', wizardState.role_overrides.length],
+    const partyTypeLabel = { individual: 'Cudzoziemiec', employer: 'Pracodawca', other: 'Inna sprawa' }[wizardState.party_type];
+    const kindLabel = {
+        nowa_sprawa: 'Nowa sprawa',
+        przystapienie_do_sprawy: 'Przystąpienie',
+        przejeta_do_dalszego_prowadzenia: 'Sprawa przejęta',
+        kontrola_legalnosci_pobytu_pracy: 'Kontrola legalności',
+    }[wizardState.kind];
+
+    const total = (wizardState.fee_amount || 0) + (wizardState.admin_fee_amount || 0) + (wizardState.card_fee_amount || 0);
+
+    const cards = [
+        {
+            icon: 'ph-info', title: 'Kontekst sprawy',
+            rows: [
+                ['Typ klienta', partyTypeLabel],
+                ['Kategoria', cat?.label || '—'],
+                ['Tryb sprawy', kindLabel],
+            ],
+        },
+        {
+            icon: 'ph-users-three', title: 'Osoby',
+            rows: [
+                ['Cudzoziemiec', wizardState.client_data ? `${wizardState.client_data.first_name} ${wizardState.client_data.last_name}` : '—'],
+                ['Pracodawca', wizardState.employer_data?.name || '—'],
+            ],
+        },
+        {
+            icon: 'ph-coins', title: 'Pieniądze',
+            rows: [
+                ['Wynagrodzenie', formatMoney(wizardState.fee_amount)],
+                ['Opłata admin', formatMoney(wizardState.admin_fee_amount)],
+                ['Opłata karty', formatMoney(wizardState.card_fee_amount)],
+                ['Liczba rat', wizardState.installments_planned],
+                ['<strong>Razem</strong>', `<strong>${formatMoney(total)}</strong>`],
+            ],
+        },
     ];
-    if (wizardState.pawel_group === 'pobyt_praca' && wizardState.zalacznik_nr_1_model) {
-        rows.push(['Załącznik nr 1', wizardState.zalacznik_nr_1_model]);
+
+    if (wizardState.role_overrides.length > 0) {
+        cards.push({
+            icon: 'ph-user-circle-gear', title: 'Override ról',
+            rows: wizardState.role_overrides.map(o => [
+                rolesShort(o.role),
+                o.display_name || o.external_name || '?',
+            ]),
+        });
     }
-    document.getElementById('summary-content').innerHTML = rows.map(([k, v]) =>
-        `<div class="summary-row"><span class="summary-key">${escapeHtml(k)}</span><span class="summary-val">${escapeHtml(String(v))}</span></div>`
-    ).join('');
+
+    if (wizardState.pawel_group === 'pobyt_praca' && wizardState.zalacznik_nr_1_model) {
+        cards.push({
+            icon: 'ph-paperclip', title: 'Załącznik nr 1',
+            rows: [['Model', wizardState.zalacznik_nr_1_model]],
+        });
+    }
+
+    document.getElementById('summary-grid').innerHTML = cards.map(card => `
+        <div class="summary-card">
+            <div class="summary-card-title"><i class="ph ${card.icon}"></i>${esc(card.title)}</div>
+            ${card.rows.map(([k, v]) => `
+                <div class="summary-row">
+                    <span class="summary-key">${k}</span>
+                    <span class="summary-val ${v === '—' ? 'empty' : ''}">${v}</span>
+                </div>
+            `).join('')}
+        </div>
+    `).join('');
 }
 
-// === Save draft ===
+function rolesShort(code) {
+    return {
+        strona: 'Strona', zlecajacy: 'Zlecający', platnik: 'Płatnik',
+        osoba_kontaktowa: 'Kontakt',
+        podpisujacy_pelnomocnictwo_klienta: 'Pełnomocnictwo klienta',
+        podpisujacy_zalacznik_nr_1: 'Załącznik nr 1',
+    }[code] || code;
+}
+
+function formatMoney(n) {
+    if (n == null || n === '' || isNaN(Number(n))) return '—';
+    return Number(n).toLocaleString('pl-PL') + ' zł';
+}
+
+// === SAVE / CREATE ===
 async function saveDraft() {
     if (!wizardState.client_id && !wizardState.category) {
-        toast.warning('Wybierz przynajmniej kategorię i klienta');
+        toastErr('Wybierz przynajmniej kategorię i klienta');
         return;
     }
     const payload = buildPayload();
-    payload.status = 'lead';
-    payload.kind = null;  // szkic — bez kind
-    payload.import_source = 'wizard_draft';
-
+    payload.status = 'lead'; payload.kind = null; payload.import_source = 'wizard_draft';
     const { data, error } = await db.from('gmp_cases').insert(payload).select().single();
-    if (error) { toast.error(error.message); return; }
-    toast.success('Szkic zapisany');
+    if (error) { toastErr('Błąd: ' + error.message); return; }
+    if (window.toast) toast.success('Szkic zapisany');
     setTimeout(() => window.location.href = 'cases.html', 1200);
 }
 window.saveDraft = saveDraft;
 
-// === Create case ===
 async function createCase() {
     if (!validateStep(1) || !validateStep(2)) return;
+    const btn = document.getElementById('btn-create');
+    btn.disabled = true; btn.innerHTML = '<i class="ph ph-spinner-gap animate-spin"></i> Tworzę...';
 
-    const payload = buildPayload();
-    const { data: newCase, error } = await db.from('gmp_cases').insert(payload).select().single();
-    if (error) { toast.error('Błąd tworzenia: ' + error.message); return; }
-
-    const caseId = newCase.id;
-    toast.success('Sprawa utworzona — generuję zadania i pakiet startowy...');
-
-    // 1. Multi-assignee (primary)
-    if (window.currentStaff?.id) {
-        await db.from('gmp_case_assignees').insert({
-            case_id: caseId, staff_id: window.currentStaff.id, role_type: 'primary'
-        }).select();
-    }
-
-    // 2. Plan rat
-    if (wizardState.fee_amount && wizardState.installments_planned > 0) {
-        const planPayload = {
-            case_id: caseId,
-            total_amount: wizardState.fee_amount,
-            payer_type: wizardState.pawel_group === 'pobyt_praca' && wizardState.employer_id ? 'employer' : 'client',
-            installments_planned: wizardState.installments_planned,
-        };
-        if (planPayload.payer_type === 'employer') planPayload.employer_id = wizardState.employer_id;
-        else planPayload.client_id = wizardState.client_id;
-        await db.from('gmp_payment_plans').insert(planPayload);
-    }
-
-    // 3. Role overrides
-    if (wizardState.role_overrides.length > 0) {
-        const rows = wizardState.role_overrides.map(o => ({
-            case_id: caseId, role: o.role, party_type: o.party_type,
-            client_id: o.client_id || null, employer_id: o.employer_id || null,
-            staff_id: o.staff_id || null, external_name: o.external_name || null,
-        }));
-        await db.from('gmp_case_role_assignments').insert(rows);
-    }
-
-    // 4. RPC: zadania startowe
     try {
-        await db.rpc('gmp_create_startup_tasks', { p_case_id: caseId });
-    } catch (e) { console.warn('startup tasks error:', e); }
+        const payload = buildPayload();
+        const { data: newCase, error } = await db.from('gmp_cases').insert(payload).select().single();
+        if (error) throw error;
+        const caseId = newCase.id;
 
-    // 5. e_submission_status (jeśli elektronicznie — placeholder)
-    // (zostawiamy do Etapu III)
+        // 1. Multi-assignee
+        if (window.currentStaff?.id) {
+            await db.from('gmp_case_assignees').insert({
+                case_id: caseId, staff_id: window.currentStaff.id, role_type: 'primary'
+            });
+        }
 
-    // 6. case-startup-pack
-    try {
-        await supabaseClient.functions.invoke('case-startup-pack', { body: { case_id: caseId } });
-    } catch (e) { console.warn('startup pack error:', e); }
+        // 2. Plan rat
+        if (wizardState.fee_amount && wizardState.installments_planned > 0) {
+            const planPayload = {
+                case_id: caseId,
+                total_amount: wizardState.fee_amount,
+                payer_type: wizardState.pawel_group === 'pobyt_praca' && wizardState.employer_id ? 'employer' : 'client',
+                installments_planned: wizardState.installments_planned,
+            };
+            if (planPayload.payer_type === 'employer') planPayload.employer_id = wizardState.employer_id;
+            else planPayload.client_id = wizardState.client_id;
+            await db.from('gmp_payment_plans').insert(planPayload);
+        }
 
-    toast.success('Gotowe! Otwieram sprawę...');
-    setTimeout(() => window.location.href = `case.html?id=${caseId}`, 1000);
+        // 3. Role overrides
+        if (wizardState.role_overrides.length > 0) {
+            const rows = wizardState.role_overrides.map(o => ({
+                case_id: caseId, role: o.role, party_type: o.party_type,
+                client_id: o.client_id || null, employer_id: o.employer_id || null,
+                staff_id: o.staff_id || null, external_name: o.external_name || null,
+            }));
+            await db.from('gmp_case_role_assignments').insert(rows);
+        }
+
+        // 4. RPC startup tasks
+        await db.rpc('gmp_create_startup_tasks', { p_case_id: caseId }).catch(e => console.warn(e));
+
+        // 5. case-startup-pack
+        supabaseClient.functions.invoke('case-startup-pack', { body: { case_id: caseId } }).catch(e => console.warn(e));
+
+        if (window.toast) toast.success('Sprawa utworzona — otwieram...');
+        setTimeout(() => window.location.href = `case.html?id=${caseId}`, 800);
+    } catch (e) {
+        toastErr('Błąd: ' + e.message);
+        btn.disabled = false; btn.innerHTML = '<i class="ph ph-check"></i> Utwórz sprawę';
+    }
 }
 window.createCase = createCase;
 
@@ -741,11 +1559,19 @@ function buildPayload() {
     };
 }
 
-function escapeHtml(s) {
+function esc(s) {
     if (s == null) return '';
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
+// Esc do zamknięcia modala
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeRoleModal();
+});
+// Klik tła modala
+document.addEventListener('click', e => {
+    if (e.target.id === 'role-modal') closeRoleModal();
+});
 </script>
 </body>
 </html>
