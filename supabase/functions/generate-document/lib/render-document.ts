@@ -430,6 +430,248 @@ function renderAuditChecklist(ctx: any): Document {
 }
 
 // ============================================================================
+// 6. PEŁNOMOCNICTWO PRACODAWCY do załącznika nr 1 (Etap II-C)
+// ============================================================================
+function renderPelnomocnictwoPracodawca(ctx: any): Document {
+    const children: Paragraph[] = [
+        h1("PEŁNOMOCNICTWO"),
+        emptyParagraph(),
+        p(ctx.today_pl || formatDatePl(new Date()), { align: AlignmentType.RIGHT }),
+        emptyParagraph(),
+
+        new Paragraph({
+            spacing: { after: 200 },
+            children: [
+                new TextRun({ text: "Pracodawca: ", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.employer_name || "—", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ", NIP ", size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.employer_nip || "—", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ", z siedzibą pod adresem ", size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.employer_address || "—", size: SIZE, font: FONT }),
+            ],
+        }),
+
+        p("niniejszym udziela Kancelarii GetMyPermit pełnomocnictwa do:"),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "wypełnienia w imieniu Pracodawcy załącznika nr 1 do wniosku o udzielenie zezwolenia na pobyt czasowy i pracę cudzoziemca;", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "podpisania załącznika nr 1 w imieniu Pracodawcy;", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "reprezentowania Pracodawcy w zakresie powiązania ze sprawą cudzoziemca przed organami administracji publicznej.", size: SIZE, font: FONT })]}),
+        emptyParagraph(),
+
+        new Paragraph({
+            children: [
+                new TextRun({ text: "Sprawa cudzoziemca: ", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.full_client_name || "—", size: SIZE, font: FONT }),
+                new TextRun({ text: " (numer sprawy ", size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.case_number || "—", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ").", size: SIZE, font: FONT }),
+            ],
+        }),
+        emptyParagraph(),
+
+        p("Pełnomocnictwo jest ważne do czasu zakończenia sprawy lub jego pisemnego cofnięcia."),
+        emptyParagraph(), emptyParagraph(),
+
+        p("___________________________", { align: AlignmentType.RIGHT, italic: true }),
+        p("(podpis czytelny — osoba uprawniona do reprezentowania Pracodawcy)",
+            { align: AlignmentType.RIGHT, italic: true, size: SIZE_SMALL }),
+    ];
+    return makeDoc("Pełnomocnictwo pracodawcy " + (ctx.employer_name || ""), children);
+}
+
+// ============================================================================
+// 7. INSTRUKCJA DLA PRACODAWCY (zał. nr 1)
+// ============================================================================
+function renderInstrukcjaPracodawca(ctx: any): Document {
+    const children: Paragraph[] = [
+        h1("INSTRUKCJA DLA PRACODAWCY"),
+        emptyParagraph(),
+        pBold("Numer sprawy", ctx.case_number),
+        pBold("Cudzoziemiec", ctx.full_client_name),
+        pBold("Pracodawca", ctx.employer_name),
+        pBold("Data", ctx.today_pl || formatDatePl(new Date())),
+        emptyParagraph(),
+
+        h2("Załącznik nr 1 do wniosku o pobyt czasowy i pracę"),
+        new Paragraph({
+            spacing: { after: 200 },
+            children: [new TextRun({
+                text: "Szanowni Państwo, w związku z prowadzeniem sprawy " +
+                      "o udzielenie zezwolenia na pobyt czasowy i pracę dla cudzoziemca " +
+                      (ctx.full_client_name || "") + " konieczne jest dostarczenie kompletnego " +
+                      "i poprawnie wypełnionego załącznika nr 1.",
+                size: SIZE, font: FONT,
+            })],
+        }),
+
+        h2("Wymagane dane w załączniku nr 1"),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Cz. I — dane Pracodawcy zgodne z KRS/CEIDG (NIP, REGON, siedziba);", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Cz. III.1 — stanowisko (musi być zwolnione z informacji starosty lub posiadać informację starosty);", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Cz. III.2 — miejsce wykonywania pracy (konkretny adres);", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: 'Cz. III.3 — podstawa prawna: "UMOWA O PRACĘ" lub "UMOWA ZLECENIE";', size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: 'Cz. III.4 — wymiar czasu pracy: "1/1 CAŁY ETAT" lub "40 GODZ. / TYDZIEŃ";', size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Cz. III.5 — wynagrodzenie: minimum krajowa, np. \"4666 zł / miesiąc brutto\";", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Cz. III.7 — okres OD: data podpisania załącznika; okres DO: minimum 5 lat;", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Podpis na str. 6 — czytelny imieniem i nazwiskiem, zgodny z reprezentacją w KRS/CEIDG.", size: SIZE, font: FONT })]}),
+        emptyParagraph(),
+
+        h2("Dwie ścieżki podpisania"),
+        p("Wariant A (preferowany): podpisuję pełnomocnictwo dla Kancelarii — Kancelaria wypełnia i podpisuje załącznik za mnie.", { bold: true }),
+        p("Wariant B: podpisuję załącznik osobiście — Kancelaria koordynuje termin z cudzoziemcem."),
+        emptyParagraph(),
+
+        p("W razie pytań prosimy o kontakt z opiekunem sprawy w Kancelarii GetMyPermit.",
+            { italic: true, size: SIZE_SMALL }),
+    ];
+    return makeDoc("Instrukcja dla pracodawcy " + (ctx.employer_name || ""), children);
+}
+
+// ============================================================================
+// 8. LISTA DOKUMENTÓW DLA KLIENTA (per kategoria, z checklist sprawy)
+// ============================================================================
+function renderListaDokumentowKlient(ctx: any): Document {
+    const checklists: any[] = ctx.checklists || [];
+
+    const children: (Paragraph | Table)[] = [
+        h1("LISTA WYMAGANYCH DOKUMENTÓW"),
+        h1("(do dostarczenia przez Klienta)", AlignmentType.CENTER),
+        emptyParagraph(),
+        pBold("Klient", ctx.full_client_name),
+        pBold("Numer sprawy", ctx.case_number),
+        pBold("Kategoria", ctx.category_label),
+        pBold("Data", ctx.today_pl || formatDatePl(new Date())),
+        emptyParagraph(),
+
+        p("Szanowni Państwo, prosimy o dostarczenie poniższych dokumentów. " +
+          "Każdy dokument prosimy przynieść w oryginale (lub uwierzytelnionej kopii) " +
+          "oraz wykonać 1 kopię dla Kancelarii.", { italic: true }),
+        emptyParagraph(),
+    ];
+
+    // Pokaż TYLKO sekcję 'dokumenty_wymagane' lub fallback braki_merytoryczne (dla pc_praca itp.)
+    const relevantSections = ["dokumenty_wymagane", "braki_merytoryczne"];
+    const visible = checklists.filter(c => relevantSections.includes(c.section) && !c.parent_label);
+
+    if (visible.length === 0) {
+        children.push(p("(brak skonfigurowanej listy dla tej kategorii — skontaktuj się z opiekunem)", { italic: true }));
+    } else {
+        for (const item of visible) {
+            children.push(new Paragraph({
+                spacing: { before: 60, after: 30 },
+                children: [
+                    new TextRun({ text: "□ ", bold: true, size: SIZE, font: FONT }),
+                    new TextRun({ text: item.label, size: SIZE, font: FONT }),
+                ],
+            }));
+            if (item.helper_text) {
+                children.push(new Paragraph({
+                    indent: { left: convertInchesToTwip(0.4) },
+                    children: [new TextRun({ text: item.helper_text, italics: true, size: SIZE_SMALL, font: FONT, color: "666666" })],
+                }));
+            }
+        }
+    }
+
+    children.push(emptyParagraph(), emptyParagraph());
+    children.push(p("Prosimy o dostarczenie kompletu dokumentów w jednym egzemplarzu. " +
+        "W razie wątpliwości prosimy o kontakt z opiekunem sprawy.", { italic: true, size: SIZE_SMALL }));
+
+    return makeDoc("Lista dokumentów (klient) " + (ctx.case_number || ""), children);
+}
+
+// ============================================================================
+// 9. LISTA DOKUMENTÓW DLA PRACODAWCY
+// ============================================================================
+function renderListaDokumentowPracodawca(ctx: any): Document {
+    const children: (Paragraph | Table)[] = [
+        h1("LISTA DOKUMENTÓW PRACODAWCY"),
+        emptyParagraph(),
+        pBold("Pracodawca", ctx.employer_name),
+        pBold("NIP", ctx.employer_nip),
+        pBold("Sprawa cudzoziemca", ctx.full_client_name + " (" + (ctx.case_number || "—") + ")"),
+        pBold("Data", ctx.today_pl || formatDatePl(new Date())),
+        emptyParagraph(),
+
+        p("Szanowni Państwo, w związku z prowadzeniem sprawy o pobyt czasowy i pracę " +
+          "dla cudzoziemca prosimy o dostarczenie:", { italic: true }),
+        emptyParagraph(),
+
+        h2("Dokumenty rejestrowe Pracodawcy"),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "aktualny odpis z KRS / wpis CEIDG (max 3 mies.);", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "potwierdzenie nadania NIP / REGON;", size: SIZE, font: FONT })]}),
+        emptyParagraph(),
+
+        h2("Dokumenty dotyczące zatrudnienia"),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Załącznik nr 1 do wniosku — wypełniony i podpisany (patrz: Instrukcja dla Pracodawcy);", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "informacja starosty o braku możliwości zaspokojenia potrzeb kadrowych (jeśli dotyczy);", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "umowa o pracę / zlecenie — szkic do akceptacji cudzoziemca;", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "zaświadczenie o niezaleganiu w opłatach ZUS (max 1 mies.);", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "zaświadczenie o niezaleganiu w podatkach z US (max 3 mies.).", size: SIZE, font: FONT })]}),
+        emptyParagraph(),
+
+        h2("Pełnomocnictwo (Wariant A)"),
+        p("Jeśli wybierają Państwo Wariant A — Kancelaria podpisuje załącznik nr 1 — " +
+          "prosimy o dostarczenie pełnomocnictwa (osobny dokument)."),
+        emptyParagraph(),
+
+        p("W razie pytań prosimy o kontakt z opiekunem sprawy.",
+            { italic: true, size: SIZE_SMALL }),
+    ];
+    return makeDoc("Lista dokumentów (pracodawca) " + (ctx.employer_name || ""), children);
+}
+
+// ============================================================================
+// 10. ZGODA NA PRZEKAZYWANIE STATUSU SPRAWY PRACODAWCY (RODO)
+// ============================================================================
+function renderZgodaPrzekazywaniaStatusu(ctx: any): Document {
+    const children: Paragraph[] = [
+        h1("ZGODA NA PRZEKAZYWANIE INFORMACJI"),
+        h1("O STATUSIE SPRAWY PRACODAWCY", AlignmentType.CENTER),
+        emptyParagraph(),
+        p(ctx.today_pl || formatDatePl(new Date()), { align: AlignmentType.RIGHT }),
+        emptyParagraph(),
+
+        new Paragraph({
+            spacing: { after: 200 },
+            children: [
+                new TextRun({ text: "Ja, niżej podpisany(-a) ", size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.full_client_name || "—", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ", urodzony(-a) ", size: SIZE, font: FONT }),
+                new TextRun({ text: formatDatePl(ctx.client_birth_date), bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ", obywatelstwa ", size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.client_nationality || "—", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ", niniejszym wyrażam zgodę, aby Kancelaria GetMyPermit przekazywała mojemu pracodawcy ", size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.employer_name || "—", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: " (NIP ", size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.employer_nip || "—", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ") informacje o statusie mojej sprawy pobytowej numer ", size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.case_number || "—", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ", w szczególności:", size: SIZE, font: FONT }),
+            ],
+        }),
+
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "datę przyjęcia sprawy do prowadzenia;", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "datę i sposób złożenia wniosku;", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "informacje o brakach formalnych i sposobach ich uzupełnienia;", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "datę osobistego stawiennictwa w urzędzie;", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "datę i wynik decyzji urzędu.", size: SIZE, font: FONT })]}),
+        emptyParagraph(),
+
+        p("Zgoda jest dobrowolna i może być w każdej chwili pisemnie cofnięta. " +
+          "Cofnięcie zgody nie wpływa na zgodność z prawem przetwarzania, którego dokonano przed jej cofnięciem.",
+          { italic: true, size: SIZE_SMALL }),
+
+        p("Administratorem danych osobowych jest Kancelaria GetMyPermit. " +
+          "Szczegółowe informacje o przetwarzaniu danych dostępne w Polityce Prywatności na stronie kancelarii.",
+          { italic: true, size: SIZE_SMALL }),
+        emptyParagraph(), emptyParagraph(),
+
+        p("___________________________", { align: AlignmentType.RIGHT, italic: true }),
+        p("(podpis czytelny cudzoziemca)", { align: AlignmentType.RIGHT, italic: true, size: SIZE_SMALL }),
+    ];
+    return makeDoc("Zgoda RODO przekazywanie statusu " + (ctx.full_client_name || ""), children);
+}
+
+// ============================================================================
 // PUBLIC API
 // ============================================================================
 const RENDERERS: Record<string, (ctx: any) => Document> = {
@@ -438,6 +680,12 @@ const RENDERERS: Record<string, (ctx: any) => Document> = {
     "pelnomocnictwo_klient": renderPelnomocnictwoKlient,
     "instrukcja_klient": renderInstrukcjaKlient,
     "audit_checklist": renderAuditChecklist,
+    // Etap II-C — pc_praca specific
+    "pelnomocnictwo_pracodawca": renderPelnomocnictwoPracodawca,
+    "instrukcja_pracodawca": renderInstrukcjaPracodawca,
+    "lista_dokumentow_klient": renderListaDokumentowKlient,
+    "lista_dokumentow_pracodawca": renderListaDokumentowPracodawca,
+    "zgoda_przekazywania_statusu": renderZgodaPrzekazywaniaStatusu,
 };
 
 export function hasCustomRenderer(kind: string): boolean {

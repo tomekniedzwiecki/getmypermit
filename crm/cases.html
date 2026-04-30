@@ -38,8 +38,11 @@
                 <button class="btn btn-secondary" onclick="exportCSV()">
                     <i class="ph ph-download-simple"></i> CSV
                 </button>
-                <button class="btn btn-primary" onclick="openNewCaseModal()">
-                    <i class="ph ph-plus"></i> Nowa sprawa
+                <a href="case-new.html" class="btn btn-primary">
+                    <i class="ph ph-plus"></i> Nowa sprawa (Wizard)
+                </a>
+                <button class="btn btn-secondary btn-sm" onclick="openNewCaseModal()" title="Szybki tryb (1-step modal)">
+                    <i class="ph ph-lightning"></i>
                 </button>
             </div>
         </div>
@@ -221,9 +224,9 @@
         </div>
     </main>
     <!-- FAB mobile: nowa sprawa -->
-    <button class="gmp-fab" onclick="openNewCaseModal()" aria-label="Nowa sprawa" title="Nowa sprawa">
+    <a href="case-new.html" class="gmp-fab" aria-label="Nowa sprawa" title="Nowa sprawa (Wizard)">
         <i class="ph ph-plus"></i>
-    </button>
+    </a>
 </div>
 
 <style>.tab-btn{padding:0.4rem 0.75rem;font-size:0.8rem}.tab-btn.active{background:white;color:black}</style>

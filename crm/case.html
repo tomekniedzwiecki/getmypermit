@@ -805,6 +805,17 @@
 
                     <!-- DANE TAB -->
                     <div class="tab-panel hidden" data-panel="data">
+                        <!-- Pawel v3.2 § II-C — Role w sprawie -->
+                        <section class="module-card mb-4">
+                            <div class="module-card-header">
+                                <span><i class="ph ph-user-circle-gear text-purple-400 mr-1"></i>Role w sprawie</span>
+                                <span class="text-xs text-zinc-500">defaulty z danych klient/pracodawca; tu zarządzasz override</span>
+                            </div>
+                            <div id="role-assignments-section" class="p-3">
+                                <div class="text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+
                         <section class="module-card mb-4">
                             <div class="module-card-header"><span>Dane podstawowe</span></div>
                             <div class="p-4 grid grid-cols-2 gap-3">
@@ -993,6 +1004,7 @@ import { applyConditionalModules, buildCaseUiContext } from './components/condit
 import { computeNextSteps, renderNextSteps } from './components/next-step.js';
 import { renderDocumentGenerator } from './components/document-generator.js';
 import { renderChecklist, loadChecklist } from './components/checklist-renderer.js';
+import { renderRoleAssignments } from './components/role-editor.js';
 window.gmp = window.gmp || {};
 window.gmp.applyConditionalModules = applyConditionalModules;
 window.gmp.buildCaseUiContext = buildCaseUiContext;
@@ -1001,6 +1013,7 @@ window.gmp.renderNextSteps = renderNextSteps;
 window.gmp.renderDocumentGenerator = renderDocumentGenerator;
 window.gmp.renderChecklist = renderChecklist;
 window.gmp.loadChecklist = loadChecklist;
+window.gmp.renderRoleAssignments = renderRoleAssignments;
 window.dispatchEvent(new Event('gmp-modules-ready'));
 </script>
 
@@ -1144,6 +1157,13 @@ function switchTab(name) {
             window.gmp.renderChecklist(caseId, db, '#checklist-section');
         }
         tabsLoaded.checklist = true;
+    }
+    // Pawel v3.2 § II-C — Role w sprawie (Dane szczegółowe)
+    if (name === 'data' && !tabsLoaded.data) {
+        if (window.gmp?.renderRoleAssignments && caseData) {
+            window.gmp.renderRoleAssignments(caseData, db, '#role-assignments-section');
+        }
+        tabsLoaded.data = true;
     }
     if (name === 'calendar' && !tabsLoaded.calendar) {
         initComposer('calendar-composer');
