@@ -552,6 +552,7 @@
                     <button class="case-tab" data-tab="tasks"><i class="ph ph-check-square"></i> Zadania <span class="case-tab-count" id="cnt-tasks">0</span></button>
                     <button class="case-tab" data-tab="finance"><i class="ph ph-coins"></i> Finanse <span class="case-tab-count" id="cnt-finance">0</span></button>
                     <button class="case-tab" data-tab="documents"><i class="ph ph-file"></i> Dokumenty <span class="case-tab-count" id="cnt-docs">0</span></button>
+                    <button class="case-tab" data-tab="checklist"><i class="ph ph-list-checks"></i> Checklista <span class="case-tab-count" id="cnt-checklist">—</span></button>
                     <button class="case-tab" data-tab="calendar"><i class="ph ph-calendar"></i> Terminy <span class="case-tab-count" id="cnt-appts">0</span></button>
                     <button class="case-tab" data-tab="intake"><i class="ph ph-clipboard-text"></i> Ankieta klienta <span class="case-tab-count" id="cnt-intake">—</span></button>
                     <button class="case-tab" data-tab="data"><i class="ph ph-gear"></i> Dane szczegółowe</button>
@@ -748,6 +749,19 @@
                                 </label>
                             </div>
                             <div id="documents-list">
+                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- CHECKLIST TAB (Pawel v3.2 § II-B.4) -->
+                    <div class="tab-panel hidden" data-panel="checklist">
+                        <section class="module-card">
+                            <div class="module-card-header">
+                                <span><i class="ph ph-list-checks text-blue-400 mr-1"></i>Checklista sprawy</span>
+                                <span class="text-xs text-zinc-500">audyt zgodnie z listą Pawła per kategoria</span>
+                            </div>
+                            <div id="checklist-section">
                                 <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
                             </div>
                         </section>
@@ -968,12 +982,15 @@
 import { applyConditionalModules, buildCaseUiContext } from './components/conditional-modules.js';
 import { computeNextSteps, renderNextSteps } from './components/next-step.js';
 import { renderDocumentGenerator } from './components/document-generator.js';
+import { renderChecklist, loadChecklist } from './components/checklist-renderer.js';
 window.gmp = window.gmp || {};
 window.gmp.applyConditionalModules = applyConditionalModules;
 window.gmp.buildCaseUiContext = buildCaseUiContext;
 window.gmp.computeNextSteps = computeNextSteps;
 window.gmp.renderNextSteps = renderNextSteps;
 window.gmp.renderDocumentGenerator = renderDocumentGenerator;
+window.gmp.renderChecklist = renderChecklist;
+window.gmp.loadChecklist = loadChecklist;
 window.dispatchEvent(new Event('gmp-modules-ready'));
 </script>
 
@@ -1103,6 +1120,13 @@ function switchTab(name) {
         tabsLoaded.finance = true;
     }
     if (name === 'documents' && !tabsLoaded.documents) { renderDocumentsTab(); tabsLoaded.documents = true; }
+    // Pawel v3.2 § II-B.4 — Checklista lazy load
+    if (name === 'checklist' && !tabsLoaded.checklist) {
+        if (window.gmp?.renderChecklist) {
+            window.gmp.renderChecklist(caseId, db, '#checklist-section');
+        }
+        tabsLoaded.checklist = true;
+    }
     if (name === 'calendar' && !tabsLoaded.calendar) {
         initComposer('calendar-composer');
         setTimeout(() => {
@@ -2611,6 +2635,15 @@ function updateCounts() {
     document.getElementById('cnt-finance').textContent = allPayments.length;
     document.getElementById('cnt-docs').textContent = allDocuments.length + (intakePendingDocs.length ? ` (+${intakePendingDocs.length})` : '');
     document.getElementById('cnt-appts').textContent = allAppointments.filter(a => !a.scheduled_date || a.scheduled_date >= new Date().toISOString().slice(0,10)).length;
+    // Pawel v3.2 § II-B.4 — count for checklist tab
+    if (window.gmp?.loadChecklist && caseId) {
+        window.gmp.loadChecklist(caseId, db).then(items => {
+            const total = items.length;
+            const done = items.filter(i => i.status === 'done').length;
+            const cntEl = document.getElementById('cnt-checklist');
+            if (cntEl) cntEl.textContent = total > 0 ? `${done}/${total}` : '—';
+        }).catch(() => {});
+    }
 }
 
 // ============ TAB RENDERERS ============
