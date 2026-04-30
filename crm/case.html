@@ -491,6 +491,126 @@
             0% { background: rgba(245, 158, 11, 0.2); }
             100% { background: transparent; }
         }
+
+        /* === E-SUBMISSION (Pawel v3.2 § III) === */
+        .esubm-section {
+            background: #0f0f11;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .esubm-section:hover { border-color: #3f3f46; }
+        .esubm-section-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px;
+            background: linear-gradient(to right, rgba(99, 102, 241, 0.04), transparent);
+            border-bottom: 1px solid #18181b;
+        }
+        .esubm-letter {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff; font-weight: 700; font-size: 14px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+        .esubm-section-title { font-size: 14px; font-weight: 600; color: #f4f4f5; }
+        .esubm-section-title i { color: #a78bfa; margin-right: 4px; font-size: 16px; }
+        .esubm-section-body { padding: 16px; }
+
+        .esubm-badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 12px; font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .badge-pending { background: rgba(113, 113, 122, 0.15); color: #a1a1aa; }
+        .badge-progress { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
+        .badge-done { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+        .badge-blocked { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+        .badge-na { background: rgba(82, 82, 91, 0.2); color: #71717a; }
+
+        .esubm-radio-list { display: flex; flex-direction: column; gap: 6px; }
+        .esubm-radio {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; cursor: pointer;
+            background: #0c0c0d; border: 1px solid #27272a;
+            border-radius: 8px; font-size: 13px; color: #d4d4d8;
+            transition: all 0.15s;
+        }
+        .esubm-radio:hover { border-color: #3f3f46; }
+        .esubm-radio.selected { border-color: #6366f1; background: rgba(99, 102, 241, 0.05); }
+        .esubm-radio input[type="radio"] { accent-color: #6366f1; }
+
+        .esubm-checkbox-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 0; font-size: 13px; color: #d4d4d8;
+            cursor: pointer;
+        }
+        .esubm-checkbox-item input[type="checkbox"] { accent-color: #6366f1; transform: scale(1.05); }
+        .esubm-checkbox-item:hover span { color: #fff; }
+
+        .esubm-input,
+        .esubm-select {
+            width: 100%; padding: 8px 12px;
+            background: #0c0c0d; color: #e4e4e7;
+            border: 1px solid #27272a; border-radius: 8px;
+            font-size: 13px; font-family: inherit;
+        }
+        .esubm-input:focus, .esubm-select:focus {
+            outline: none; border-color: #6366f1;
+        }
+
+        .field-label {
+            display: block; font-size: 11px; color: #a1a1aa;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: 4px; font-weight: 600;
+        }
+
+        .esubm-alert {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; border-radius: 10px;
+            font-size: 13px;
+        }
+        .esubm-alert-red { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+        .esubm-alert-amber { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fcd34d; }
+        .esubm-alert i { font-size: 18px; flex-shrink: 0; }
+
+        .oplata-card {
+            padding: 14px; background: #0c0c0d;
+            border: 1px solid #27272a; border-radius: 10px;
+        }
+        .oplata-card.blocking { border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.04); }
+
+        .raport-card {
+            padding: 14px; background: #0c0c0d;
+            border: 1px solid #27272a; border-radius: 10px;
+        }
+        .raport-card-title { font-size: 14px; font-weight: 600; color: #f4f4f5; margin-bottom: 8px; }
+
+        .esubm-link-action {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px; background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px; color: #93c5fd; font-size: 12px;
+            text-decoration: none;
+        }
+        .esubm-link-action:hover { background: rgba(59, 130, 246, 0.15); }
+
+        .btn-esub {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 12px; border-radius: 8px;
+            font-size: 13px; font-weight: 500;
+            border: 1px solid #27272a; background: #18181b;
+            color: #d4d4d8; cursor: pointer; transition: all 0.15s;
+        }
+        .btn-esub:hover { background: #27272a; border-color: #3f3f46; }
+        .btn-esub.btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-color: transparent; color: #fff;
+        }
+        .btn-esub.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        .btn-esub:disabled { opacity: 0.4; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -563,6 +683,7 @@
                     <button class="case-tab" data-tab="finance"><i class="ph ph-coins"></i> Finanse <span class="case-tab-count" id="cnt-finance">0</span></button>
                     <button class="case-tab" data-tab="documents"><i class="ph ph-file"></i> Dokumenty <span class="case-tab-count" id="cnt-docs">0</span></button>
                     <button class="case-tab" data-tab="checklist"><i class="ph ph-list-checks"></i> Checklista <span class="case-tab-count" id="cnt-checklist">—</span></button>
+                    <button class="case-tab" data-tab="e-submission" data-show-when="submission_method:elektronicznie"><i class="ph ph-lightning"></i> E-złożenie <span class="case-tab-count" id="cnt-esubm">—</span></button>
                     <button class="case-tab" data-tab="calendar"><i class="ph ph-calendar"></i> Terminy <span class="case-tab-count" id="cnt-appts">0</span></button>
                     <button class="case-tab" data-tab="intake"><i class="ph ph-clipboard-text"></i> Ankieta klienta <span class="case-tab-count" id="cnt-intake">—</span></button>
                     <button class="case-tab" data-tab="data"><i class="ph ph-gear"></i> Dane szczegółowe</button>
@@ -759,6 +880,19 @@
                                 </label>
                             </div>
                             <div id="documents-list">
+                                <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- E-SUBMISSION TAB (Pawel v3.2 § III) -->
+                    <div class="tab-panel hidden" data-panel="e-submission" data-show-when="submission_method:elektronicznie">
+                        <section class="module-card">
+                            <div class="module-card-header">
+                                <span><i class="ph ph-lightning text-amber-400 mr-1"></i>Elektroniczne złożenie wniosku</span>
+                                <span class="text-xs text-zinc-500">8 podsekcji A-H wg pkt 10 Pawła</span>
+                            </div>
+                            <div id="e-submission-section">
                                 <div class="p-4 text-zinc-500 text-sm">Ładuję...</div>
                             </div>
                         </section>
@@ -1005,7 +1139,9 @@ import { computeNextSteps, renderNextSteps } from './components/next-step.js';
 import { renderDocumentGenerator } from './components/document-generator.js';
 import { renderChecklist, loadChecklist } from './components/checklist-renderer.js';
 import { renderRoleAssignments } from './components/role-editor.js';
+import { renderESubmission } from './components/e-submission-section.js';
 window.gmp = window.gmp || {};
+window.gmp.renderESubmission = renderESubmission;
 window.gmp.applyConditionalModules = applyConditionalModules;
 window.gmp.buildCaseUiContext = buildCaseUiContext;
 window.gmp.computeNextSteps = computeNextSteps;
@@ -1151,6 +1287,13 @@ function switchTab(name) {
         tabsLoaded.finance = true;
     }
     if (name === 'documents' && !tabsLoaded.documents) { renderDocumentsTab(); tabsLoaded.documents = true; }
+    // Pawel v3.2 § III — E-złożenie lazy load
+    if (name === 'e-submission' && !tabsLoaded['e-submission']) {
+        if (window.gmp?.renderESubmission && caseData) {
+            window.gmp.renderESubmission(caseData, db, '#e-submission-section');
+        }
+        tabsLoaded['e-submission'] = true;
+    }
     // Pawel v3.2 § II-B.4 — Checklista lazy load
     if (name === 'checklist' && !tabsLoaded.checklist) {
         if (window.gmp?.renderChecklist) {

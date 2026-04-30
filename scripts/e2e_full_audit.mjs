@@ -227,12 +227,13 @@ const checklistItems = await page.locator('#checklist-section .checklist-item').
 if (checklistItems > 0) pass('case.html', `Checklista: ${checklistItems} pozycji`);
 else fail('case.html', 'Checklista: 0 pozycji (powinno być ~29)');
 
-// Test klik checkboxa
+// Test klik checkboxa (z scrollIntoView — sticky banner może zasłaniać)
 const firstCheckbox = page.locator('#checklist-section .checklist-item-status').first();
 if (await firstCheckbox.count() > 0) {
-    // Pobierz status PRZED
     const iconBefore = await firstCheckbox.locator('i').getAttribute('class');
-    await firstCheckbox.click();
+    await firstCheckbox.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    await firstCheckbox.click({ force: true });  // force — banner sticky może zasłaniać
     await page.waitForTimeout(2000);
     const iconAfter = await page.locator('#checklist-section .checklist-item-status').first().locator('i').getAttribute('class');
     if (iconBefore !== iconAfter) pass('case.html', `Checkbox status zmienił się: ${iconBefore} → ${iconAfter}`);

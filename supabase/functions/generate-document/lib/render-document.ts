@@ -672,6 +672,114 @@ function renderZgodaPrzekazywaniaStatusu(ctx: any): Document {
 }
 
 // ============================================================================
+// 11. RAPORT PO ZŁOŻENIU — dla klienta (Etap III pkt 10.H)
+// ============================================================================
+function renderRaportKlient(ctx: any): Document {
+    const submitted = ctx.case?.date_submitted || ctx.today;
+    const upoNumber = ctx.upo_number || ctx.case?.znak_sprawy || "—";
+
+    const children: Paragraph[] = [
+        h1("RAPORT — WNIOSEK ZŁOŻONY"),
+        emptyParagraph(),
+        p(ctx.today_pl || formatDatePl(new Date()), { align: AlignmentType.RIGHT, italic: true, size: SIZE_SMALL }),
+        emptyParagraph(),
+
+        new Paragraph({
+            spacing: { after: 200 },
+            children: [
+                new TextRun({ text: "Szanowny(-a) ", size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.full_client_name || "Kliencie", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ",", size: SIZE, font: FONT }),
+            ],
+        }),
+
+        p("Z przyjemnością informujemy, że Pana/Pani wniosek został złożony elektronicznie."),
+        emptyParagraph(),
+
+        h2("Szczegóły złożenia"),
+        pBold("Numer sprawy", ctx.case_number),
+        pBold("Kategoria", ctx.category_label),
+        pBold("Data złożenia", formatDatePl(submitted)),
+        pBold("Metoda", "Elektronicznie (przez Profil Zaufany)"),
+        pBold("Numer UPO", upoNumber),
+        emptyParagraph(),
+
+        h2("Co dalej"),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Urząd potwierdzi przyjęcie wniosku — UPO już zostało wygenerowane i znajduje się w dokumentach sprawy.", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Następnym krokiem może być wezwanie na osobiste stawiennictwo (pobranie odcisków palców) lub wezwanie do uzupełnienia dokumentów.", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "O każdym dalszym kroku informujemy bezzwłocznie.", size: SIZE, font: FONT })]}),
+        emptyParagraph(),
+
+        h2("Status legalności pobytu"),
+        p("Wniosek złożony w terminie zapewnia legalność pobytu do czasu wydania decyzji (art. 108 § 1 kodeksu postępowania administracyjnego)."),
+        emptyParagraph(), emptyParagraph(),
+
+        p("Z poważaniem,", { italic: true }),
+        p("Kancelaria GetMyPermit", { italic: true, bold: true }),
+    ];
+    return makeDoc("Raport — wniosek złożony " + (ctx.case_number || ""), children);
+}
+
+// ============================================================================
+// 12. RAPORT PO ZŁOŻENIU — dla pracodawcy (RODO: tylko za zgodą klienta)
+// ============================================================================
+function renderRaportPracodawca(ctx: any): Document {
+    const submitted = ctx.case?.date_submitted || ctx.today;
+    const upoNumber = ctx.upo_number || ctx.case?.znak_sprawy || "—";
+
+    const children: Paragraph[] = [
+        h1("RAPORT STATUSU SPRAWY"),
+        emptyParagraph(),
+        p(ctx.today_pl || formatDatePl(new Date()), { align: AlignmentType.RIGHT, italic: true, size: SIZE_SMALL }),
+        emptyParagraph(),
+
+        new Paragraph({
+            spacing: { after: 200 },
+            children: [
+                new TextRun({ text: "Dla: ", bold: true, size: SIZE, font: FONT }),
+                new TextRun({ text: ctx.employer_name || "—", size: SIZE, font: FONT }),
+                new TextRun({ text: " (NIP " + (ctx.employer_nip || "—") + ")", size: SIZE_SMALL, italics: true, font: FONT }),
+            ],
+        }),
+
+        p("Niniejszy raport jest przekazywany na podstawie podpisanej zgody cudzoziemca na przekazywanie informacji o statusie sprawy pobytowej."),
+        emptyParagraph(),
+
+        h2("Sprawa cudzoziemca"),
+        pBold("Imię i nazwisko", ctx.full_client_name),
+        pBold("Numer sprawy", ctx.case_number),
+        pBold("Kategoria", ctx.category_label),
+        emptyParagraph(),
+
+        h2("Status złożenia"),
+        pBold("Data złożenia wniosku", formatDatePl(submitted)),
+        pBold("Metoda", "Elektronicznie"),
+        pBold("UPO wygenerowane", "Tak (numer: " + upoNumber + ")"),
+        pBold("Status", "Wniosek złożony — oczekuje na dalsze czynności urzędu"),
+        emptyParagraph(),
+
+        h2("Status legalności pobytu i pracy"),
+        p("Wniosek złożony w terminie. Pobyt cudzoziemca jest legalny do czasu wydania decyzji (art. 108 § 1 k.p.a.)."),
+        p("Pracownik może legalnie wykonywać pracę na warunkach z załącznika nr 1.", { bold: true }),
+        emptyParagraph(),
+
+        h2("Następne kroki"),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Możliwe wezwanie na osobiste stawiennictwo (pobranie odcisków palców).", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "Możliwe wezwanie do uzupełnienia dokumentów.", size: SIZE, font: FONT })]}),
+        new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: "O każdym istotnym wydarzeniu informujemy niezwłocznie.", size: SIZE, font: FONT })]}),
+        emptyParagraph(), emptyParagraph(),
+
+        p("Z poważaniem,", { italic: true }),
+        p("Kancelaria GetMyPermit", { italic: true, bold: true }),
+        emptyParagraph(),
+
+        p("Niniejszy raport został przygotowany na podstawie pisemnej zgody cudzoziemca z dnia podpisania zgody RODO na przekazywanie informacji o statusie sprawy pracodawcy.",
+            { italic: true, size: SIZE_SMALL }),
+    ];
+    return makeDoc("Raport pracodawcy " + (ctx.case_number || ""), children);
+}
+
+// ============================================================================
 // PUBLIC API
 // ============================================================================
 const RENDERERS: Record<string, (ctx: any) => Document> = {
@@ -686,6 +794,9 @@ const RENDERERS: Record<string, (ctx: any) => Document> = {
     "lista_dokumentow_klient": renderListaDokumentowKlient,
     "lista_dokumentow_pracodawca": renderListaDokumentowPracodawca,
     "zgoda_przekazywania_statusu": renderZgodaPrzekazywaniaStatusu,
+    // Etap III — raporty po złożeniu
+    "raport_po_zlozeniu_klient": renderRaportKlient,
+    "raport_po_zlozeniu_pracodawca": renderRaportPracodawca,
 };
 
 export function hasCustomRenderer(kind: string): boolean {
