@@ -388,131 +388,114 @@
             .case-tab-count { font-size: 9px; padding: 1px 5px; }
         }
 
-        /* === "CO TERAZ" — proaktywne podpowiedzi (REDESIGN 2026-05-01)
-           Lokalizacja: pod tabs, nad body. Subtelna sekcja, nie banner.
-           Layout: header label + lista chipów per priority (red/amber/blue) === */
+        /* === "CO TERAZ" — proaktywne podpowiedzi (REDESIGN 2026-05-01 v2)
+           Lokalizacja: w aside obok Klient/Pracodawca jako module-card.
+           Layout: stacked items (full-width), z left-border priority accent === */
         .next-steps {
-            margin: 16px 2rem 0;
-            padding: 0;
-            background: transparent;
-            border-radius: 0;
+            /* dziedziczy module-card (background, border, border-radius) */
         }
-        .next-steps-head {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-            padding: 0;
+        .next-steps-header {
+            background: linear-gradient(180deg, rgba(245,158,11,0.06), transparent) !important;
+            border-bottom-color: rgba(245,158,11,0.18) !important;
         }
-        .next-steps-icon {
-            width: 22px;
-            height: 22px;
-            border-radius: 6px;
-            background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.05));
-            border: 1px solid rgba(245,158,11,0.25);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #fbbf24;
-        }
-        .next-steps-icon .ph { font-size: 12px; }
-        .next-steps-label {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #a1a1aa;
-        }
+        .next-steps-header .ph { color: #fbbf24; }
         .next-steps-count {
+            display: inline-block;
+            margin-left: 6px;
             font-size: 10px;
             font-family: 'JetBrains Mono', monospace;
-            color: #71717a;
-            background: rgba(255,255,255,0.04);
+            color: #fbbf24;
+            background: rgba(245,158,11,0.12);
             padding: 1px 7px;
             border-radius: 999px;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0;
+            vertical-align: middle;
         }
         .next-steps-items {
             list-style: none;
             margin: 0;
-            padding: 0;
+            padding: 6px;
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            flex-direction: column;
+            gap: 4px;
         }
         .next-steps-item {
-            display: inline-flex;
+            display: flex;
             align-items: stretch;
-            background: linear-gradient(135deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 9px;
+            background: rgba(255,255,255,0.015);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 7px;
             overflow: hidden;
-            transition: border-color 0.15s, transform 0.15s;
-            font-size: 13px;
-            line-height: 1.3;
+            transition: border-color 0.15s, background 0.15s;
+            font-size: 12px;
+            line-height: 1.35;
         }
         .next-steps-item:hover {
-            border-color: rgba(255,255,255,0.14);
-            transform: translateY(-1px);
+            border-color: rgba(255,255,255,0.10);
+            background: rgba(255,255,255,0.03);
         }
         .next-steps-item .next-steps-item-content {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+            padding: 8px 10px;
             min-width: 0;
+            flex: 1;
         }
         .next-steps-item .ph {
-            font-size: 14px;
+            font-size: 13px;
             flex-shrink: 0;
             opacity: 0.9;
+            margin-top: 1px;
         }
-        .next-steps-priority-1 { border-left: 3px solid #ef4444; background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.01)); }
+        .next-steps-priority-1 { border-left: 3px solid #ef4444; background: linear-gradient(90deg, rgba(239,68,68,0.06), transparent 60%); }
         .next-steps-priority-1 .next-steps-item-content .ph { color: #fca5a5; }
-        .next-steps-priority-1 .next-steps-label { color: #fca5a5; }
-        .next-steps-priority-2 { border-left: 3px solid #f59e0b; background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(245,158,11,0.01)); }
+        .next-steps-priority-2 { border-left: 3px solid #f59e0b; background: linear-gradient(90deg, rgba(245,158,11,0.05), transparent 60%); }
         .next-steps-priority-2 .next-steps-item-content .ph { color: #fbbf24; }
-        .next-steps-priority-3 { border-left: 3px solid #3b82f6; background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(59,130,246,0.01)); }
+        .next-steps-priority-3 { border-left: 3px solid #3b82f6; background: linear-gradient(90deg, rgba(59,130,246,0.05), transparent 60%); }
         .next-steps-priority-3 .next-steps-item-content .ph { color: #93c5fd; }
         .next-steps-item .next-steps-label-text {
             color: #e4e4e7;
             font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 320px;
+            white-space: normal;
+            word-break: break-word;
+            font-size: 12px;
+            line-height: 1.4;
         }
         .next-steps-action {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            padding: 0 12px;
+            gap: 3px;
+            padding: 0 10px;
             margin: 0;
-            background: rgba(255,255,255,0.03);
+            background: transparent;
             border: none;
-            border-left: 1px solid rgba(255,255,255,0.06);
-            color: #a1a1aa;
-            font-size: 11px;
+            border-left: 1px solid rgba(255,255,255,0.05);
+            color: #71717a;
+            font-size: 10px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.15s;
             font-family: inherit;
             white-space: nowrap;
             text-decoration: none;
+            flex-shrink: 0;
         }
         .next-steps-action:hover {
-            background: rgba(59,130,246,0.18);
+            background: rgba(59,130,246,0.15);
             color: #dbeafe;
         }
-        .next-steps-action .arrow { font-size: 13px; transition: transform 0.15s; }
+        .next-steps-action .arrow { font-size: 12px; transition: transform 0.15s; }
         .next-steps-action:hover .arrow { transform: translateX(2px); }
-        .next-steps-empty { color: #71717a; font-size: 12px; }
-        @media (max-width: 700px) {
-            .next-steps { margin: 12px 1rem 0; }
-            .next-steps-items { gap: 6px; }
-            .next-steps-item .next-steps-label-text { max-width: 200px; font-size: 12px; }
-            .next-steps-item .next-steps-item-content { padding: 7px 10px; gap: 6px; }
-            .next-steps-action { padding: 0 10px; font-size: 10px; }
+        .next-steps-empty { color: #71717a; font-size: 11px; padding: 8px 12px; text-align: center; }
+        @media (max-width: 900px) {
+            /* Mobile: aside ląduje na dole, Co teraz nadal jako module-card — items pełnoszerokościowe */
+            .next-steps-items { padding: 8px; gap: 6px; }
+            .next-steps-item { font-size: 13px; }
+            .next-steps-item .next-steps-label-text { font-size: 13px; }
         }
 
         /* === SUB-TABS — używane w panelu Dokumenty + Aktywność === */
@@ -1226,22 +1209,21 @@
                 </div>
             </div>
 
-            <!-- "CO TERAZ" — proaktywne podpowiedzi (Pawel v3.2 § 1.7, B14)
-                 Lokalizacja: pod tabami, nad body — widoczne na KAŻDEJ zakładce.
-                 Renderowane przez crm/components/next-step.js -->
-            <div id="next-steps" class="next-steps hidden">
-                <div class="next-steps-head">
-                    <div class="next-steps-icon"><i class="ph ph-target"></i></div>
-                    <div class="next-steps-label">Co teraz</div>
-                    <span class="next-steps-count" id="next-steps-count"></span>
-                </div>
-                <ul id="next-steps-list" class="next-steps-items"></ul>
-            </div>
-
             <!-- BODY -->
             <div class="case-body">
                 <!-- ASIDE -->
                 <aside class="case-aside">
+
+                    <!-- "CO TERAZ" — proaktywne podpowiedzi (Pawel v3.2 § 1.7, B14)
+                         Lokalizacja: w aside, NAD Klient/Pracodawca — kontekstowy panel akcji.
+                         Renderowane przez crm/components/next-step.js -->
+                    <section id="next-steps" class="module-card next-steps hidden">
+                        <div class="module-card-header next-steps-header">
+                            <span><i class="ph ph-target text-amber-400 mr-1"></i>Co teraz <span class="next-steps-count" id="next-steps-count"></span></span>
+                        </div>
+                        <ul id="next-steps-list" class="next-steps-items"></ul>
+                    </section>
+
                     <section class="module-card">
                         <div class="module-card-header">
                             <span><i class="ph ph-user text-blue-400 mr-1"></i>Klient</span>
