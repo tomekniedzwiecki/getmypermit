@@ -23,15 +23,291 @@
     <script src="components/composer.js"></script>
     <script src="components/tags.js" defer></script>
     <style>
+        /* ============================================================
+           HEADER REDESIGN 2026-05-01 — 2-tier (breadcrumb + hero card)
+           Inspired by Attio/Linear/HubSpot record pages
+           ============================================================ */
         .case-header {
             position: relative;
             z-index: 1;
             background: transparent;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
             margin: -1.5rem -2rem 0;
-            padding: 1.25rem 2rem 0;
+            padding: 0;
         }
-        [data-theme="light"] .case-header { background: rgba(250,250,250,0.95); border-color: rgba(0,0,0,0.06); }
+        [data-theme="light"] .case-header { background: rgba(250,250,250,0.95); }
+
+        /* TOP MINI BAR — breadcrumb + global icon actions (pin, delete) */
+        .case-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            min-height: 42px;
+        }
+        .case-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #71717a;
+            min-width: 0;
+        }
+        .case-breadcrumb a {
+            color: #71717a;
+            text-decoration: none;
+            transition: color 0.15s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .case-breadcrumb a:hover { color: #d4d4d8; }
+        .case-breadcrumb-sep {
+            color: #3f3f46;
+            font-size: 11px;
+            opacity: 0.7;
+            user-select: none;
+        }
+        .case-breadcrumb .current {
+            color: #d4d4d8;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 380px;
+        }
+        .case-breadcrumb .crumb-id {
+            font-family: 'JetBrains Mono', monospace;
+            color: #a1a1aa;
+            font-size: 11px;
+            letter-spacing: 0.01em;
+            background: rgba(255,255,255,0.04);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+        .case-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .topbar-icon-btn {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 7px;
+            color: #71717a;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .topbar-icon-btn:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fafafa;
+            border-color: rgba(255,255,255,0.08);
+        }
+        .topbar-icon-btn.danger:hover { color: #fca5a5; border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.06); }
+        .topbar-icon-btn .ph { font-size: 15px; }
+
+        /* HERO — identity card sprawy (avatar + nazwa + status + meta + actions) */
+        .case-hero {
+            padding: 18px 2rem 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        .case-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.02em;
+            color: #fff;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.06) inset;
+            text-transform: uppercase;
+        }
+        /* 6 wariantów koloru avatara — wybierane przez JS na bazie hash imienia */
+        .case-avatar.av-1 { background: linear-gradient(135deg, #0ea5e9, #0369a1); }
+        .case-avatar.av-2 { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+        .case-avatar.av-3 { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+        .case-avatar.av-4 { background: linear-gradient(135deg, #ec4899, #be185d); }
+        .case-avatar.av-5 { background: linear-gradient(135deg, #f59e0b, #b45309); }
+        .case-avatar.av-6 { background: linear-gradient(135deg, #10b981, #047857); }
+
+        .case-hero-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .case-hero-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 6px;
+            flex-wrap: wrap;
+        }
+        .case-hero-title h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #fafafa;
+            margin: 0;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+        }
+        /* PRIMARY status pill — tylko 1, soft variants (NN/g 2023) */
+        .case-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px 3px 7px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .case-status-pill::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.05);
+        }
+        .case-status-pill.s-aktywna { background: rgba(16,185,129,0.10); color: #34d399; border: 1px solid rgba(16,185,129,0.22); }
+        .case-status-pill.s-zlecona { background: rgba(99,102,241,0.10); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.22); }
+        .case-status-pill.s-zakonczona { background: rgba(161,161,170,0.12); color: #d4d4d8; border: 1px solid rgba(161,161,170,0.18); }
+        .case-status-pill.s-archiwum { background: rgba(75,85,99,0.18); color: #a1a1aa; border: 1px solid rgba(75,85,99,0.25); }
+        .case-status-pill.s-lead { background: rgba(245,158,11,0.10); color: #fbbf24; border: 1px solid rgba(245,158,11,0.22); }
+
+        /* META — szare, inline, secondary info */
+        .case-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #71717a;
+            flex-wrap: wrap;
+        }
+        .case-meta .meta-sep { color: #3f3f46; user-select: none; }
+        .case-meta .meta-mono {
+            font-family: 'JetBrains Mono', monospace;
+            color: #a1a1aa;
+            font-size: 11px;
+            letter-spacing: 0.01em;
+        }
+        .case-meta .meta-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 5px;
+            color: #a1a1aa;
+            font-size: 11px;
+        }
+        .case-meta .meta-tag .ph { font-size: 11px; opacity: 0.7; }
+
+        /* HERO ACTIONS — primary (Dodaj wpis) + icon buttons w kolorach */
+        .case-hero-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .hero-icon-btn {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 9px;
+            color: #d4d4d8;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+            text-decoration: none;
+        }
+        .hero-icon-btn .ph { font-size: 16px; }
+        .hero-icon-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.16); color: #fff; transform: translateY(-1px); }
+        .hero-icon-btn.call { color: #34d399; border-color: rgba(16,185,129,0.22); background: rgba(16,185,129,0.06); }
+        .hero-icon-btn.call:hover { background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.4); color: #6ee7b7; }
+        .hero-icon-btn.wa { color: #4ade80; border-color: rgba(37,211,102,0.22); background: rgba(37,211,102,0.06); }
+        .hero-icon-btn.wa:hover { background: rgba(37,211,102,0.14); border-color: rgba(37,211,102,0.4); color: #86efac; }
+        .hero-icon-btn.email { color: #60a5fa; border-color: rgba(59,130,246,0.22); background: rgba(59,130,246,0.06); }
+        .hero-icon-btn.email:hover { background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.4); color: #93c5fd; }
+        .hero-primary-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(139,92,246,0.10));
+            border: 1px solid rgba(59,130,246,0.35);
+            border-radius: 9px;
+            color: #fafafa;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 2px 8px rgba(59,130,246,0.12);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .hero-primary-btn:hover { background: linear-gradient(135deg, rgba(59,130,246,0.28), rgba(139,92,246,0.16)); border-color: rgba(59,130,246,0.5); transform: translateY(-1px); }
+        .hero-primary-btn .ph { font-size: 15px; }
+        .hero-actions-sep { width: 1px; height: 24px; background: rgba(255,255,255,0.08); margin: 0 4px; }
+
+        /* HEADER bottom border (przed tabami) */
+        .case-header > .case-tabs { border-top: 1px solid rgba(255,255,255,0.04); }
+
+        /* MOBILE — hero w 2 wierszach (avatar+body, potem actions) */
+        @media (max-width: 700px) {
+            .case-topbar { padding: 8px 1rem; min-height: 38px; }
+            .case-breadcrumb { font-size: 11px; gap: 4px; }
+            .case-breadcrumb .current { max-width: 140px; }
+            .topbar-icon-btn { width: 28px; height: 28px; }
+            .topbar-icon-btn .ph { font-size: 14px; }
+
+            .case-hero {
+                padding: 14px 1rem 14px;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .case-avatar { width: 46px; height: 46px; font-size: 15px; border-radius: 11px; }
+            .case-hero-body { flex: 1 1 calc(100% - 60px); min-width: 0; }
+            .case-hero-title h1 { font-size: 18px; }
+            .case-hero-title { gap: 6px; }
+            .case-status-pill { font-size: 10px; padding: 2px 8px 2px 6px; }
+            .case-meta { font-size: 11px; gap: 6px; }
+            .case-meta .meta-tag { font-size: 10px; padding: 2px 6px; }
+            /* Actions w 2gim wierszu, równe szerokości */
+            .case-hero-actions {
+                flex: 1 1 100%;
+                width: 100%;
+                margin-top: 4px;
+                gap: 8px;
+                justify-content: flex-start;
+            }
+            .case-hero-actions #quick-contact { flex: 1; display: flex; gap: 6px; }
+            .case-hero-actions #quick-contact .hero-icon-btn { flex: 1; }
+            .hero-actions-sep { display: none; }
+            .hero-primary-btn { flex: 1.4; justify-content: center; }
+        }
         .case-tabs {
             display: flex;
             gap: 4px;
@@ -843,39 +1119,62 @@
         <div id="case-error" class="hidden card p-6 text-red-300"></div>
 
         <div id="case-content" class="hidden">
-            <!-- STICKY HEADER -->
+            <!-- ============================================================
+                 HEADER 2-tier (REDESIGN 2026-05-01)
+                 (1) topbar: breadcrumb + global icon actions
+                 (2) hero: avatar + nazwa + status pill + meta + akcje
+                 ============================================================ -->
             <div class="case-header">
-                <div class="flex items-start justify-between gap-4 flex-wrap">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-3 mb-1 flex-wrap">
-                            <h1 class="text-xl font-bold text-white" id="case-client-name">—</h1>
-                            <span class="badge hidden" id="case-party-badge">—</span>
-                            <span class="badge badge-lead" id="case-status-badge">—</span>
-                            <span class="badge badge-stage hidden" id="case-stage-badge">—</span>
-                            <span class="badge badge-category hidden" id="case-category-badge">—</span>
-                            <i id="pin-indicator" class="ph hidden text-amber-400"></i>
+                <!-- TOP: breadcrumb + pin/delete -->
+                <div class="case-topbar">
+                    <nav class="case-breadcrumb">
+                        <a href="dashboard.html"><i class="ph ph-house" style="font-size:13px;"></i></a>
+                        <span class="case-breadcrumb-sep">/</span>
+                        <a href="dashboard.html#sprawy">Sprawy</a>
+                        <span class="case-breadcrumb-sep">/</span>
+                        <span class="current" id="case-client-name-bc">—</span>
+                        <span class="crumb-id" id="case-number-display">—</span>
+                    </nav>
+                    <div class="case-topbar-actions">
+                        <i id="pin-indicator" class="ph hidden text-amber-400" style="font-size:14px; align-self:center;"></i>
+                        <button class="topbar-icon-btn" onclick="togglePin()" id="pin-btn" title="Przypnij sprawę">
+                            <i class="ph ph-push-pin" id="pin-icon"></i>
+                        </button>
+                        <button class="topbar-icon-btn danger hidden" id="btn-delete-case" onclick="deleteCase()" title="Usuń sprawę">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- HERO: avatar + tytuł + status pill + meta + akcje -->
+                <div class="case-hero">
+                    <div class="case-avatar av-1" id="case-avatar">—</div>
+                    <div class="case-hero-body">
+                        <div class="case-hero-title">
+                            <h1 id="case-client-name">—</h1>
+                            <span class="case-status-pill s-aktywna" id="case-status-badge">—</span>
+                            <span class="case-status-pill s-zlecona hidden" id="case-party-badge">—</span>
                         </div>
-                        <div class="text-zinc-500 text-xs flex items-center gap-2 flex-wrap">
-                            <span id="case-number-display" class="font-mono bg-zinc-900 px-2 py-0.5 rounded">—</span>
-                            <span id="case-znak-sprawy" class="font-mono text-zinc-400"></span>
-                            <span id="case-type-display"></span>
+                        <div class="case-meta">
+                            <span class="meta-tag hidden" id="case-category-badge"><i class="ph ph-folder"></i> —</span>
+                            <span class="meta-tag hidden" id="case-stage-badge"><i class="ph ph-flag"></i> —</span>
+                            <span class="meta-mono hidden" id="case-znak-sprawy"></span>
+                            <span class="hidden" id="case-type-display"></span>
                             <span id="case-employer-display"></span>
                         </div>
                         <div id="case-tags" class="mt-2"></div>
                     </div>
-                    <div class="flex gap-1 flex-wrap items-center">
-                        <!-- Quick contact -->
-                        <div id="quick-contact" class="flex gap-1"></div>
-                        <span class="mx-1 text-zinc-700">|</span>
-                        <button class="quick-action" onclick="scrollToComposer()" title="Szybki dodanie (Przegląd)"><i class="ph ph-plus-circle"></i> Dodaj wpis</button>
-                        <span class="mx-1 text-zinc-700">|</span>
-                        <button class="quick-action" onclick="togglePin()" id="pin-btn" title="Przypnij"><i class="ph ph-push-pin" id="pin-icon"></i></button>
-                        <button class="quick-action hidden" id="btn-delete-case" onclick="deleteCase()" title="Usuń"><i class="ph ph-trash text-red-400"></i></button>
+                    <div class="case-hero-actions">
+                        <div id="quick-contact" class="flex gap-1.5"></div>
+                        <span class="hero-actions-sep"></span>
+                        <button class="hero-primary-btn" onclick="scrollToComposer()" title="Dodaj nowy wpis (Notatka / Zadanie / Płatność / Termin)">
+                            <i class="ph ph-plus"></i> Dodaj wpis
+                        </button>
                     </div>
                 </div>
 
-                <!-- "Co teraz" banner (Pawel v3.2 § 1.7, B14) -->
-                <div id="next-steps" class="next-steps-banner mt-3 hidden">
+                <!-- "Co teraz" banner (Pawel v3.2 § 1.7, B14) — w headerze, poniżej hero -->
+                <div id="next-steps" class="next-steps-banner mx-8 mb-3 hidden" style="margin-left: 2rem; margin-right: 2rem;">
                     <div class="flex items-center gap-2 mb-1">
                         <i class="ph ph-target text-amber-400"></i>
                         <h3 class="text-sm font-semibold text-amber-200">Co teraz</h3>
@@ -884,7 +1183,7 @@
                 </div>
 
                 <!-- TABS -->
-                <div class="case-tabs mt-4 -mx-8 px-8">
+                <div class="case-tabs mt-2 -mx-8 px-8">
                     <button class="case-tab active" data-tab="overview"><i class="ph ph-house"></i> <span class="case-tab-label">Przegląd</span></button>
                     <button class="case-tab" data-tab="procedura"><i class="ph ph-list-checks"></i> <span class="case-tab-label">Procedura</span> <span class="case-tab-count" id="cnt-procedura">—</span></button>
                     <button class="case-tab" data-tab="documents"><i class="ph ph-file"></i> <span class="case-tab-label">Dokumenty</span> <span class="case-tab-count" id="cnt-docs">0</span></button>
@@ -2649,38 +2948,81 @@ function showError(msg) {
 function fillForm() {
     const d = caseData;
     const client = d.gmp_clients ? `${d.gmp_clients.last_name} ${d.gmp_clients.first_name}` : '(bez klienta)';
+
+    // === HERO + BREADCRUMB ===
     document.getElementById('case-client-name').textContent = client;
-    document.getElementById('breadcrumb-case').textContent = client + (d.case_number ? ` / #${d.case_number}` : '');
+    const bcEl = document.getElementById('case-client-name-bc');
+    if (bcEl) bcEl.textContent = client;
+    const bcOld = document.getElementById('breadcrumb-case');
+    if (bcOld) bcOld.textContent = client + (d.case_number ? ` / #${d.case_number}` : '');
     document.title = `${client} - CRM`;
 
-    const sb = document.getElementById('case-status-badge');
-    sb.className = `badge badge-${d.status || 'lead'}`;
-    sb.textContent = d.status || 'lead';
+    // === AVATAR — inicjały z hash dla koloru ===
+    const initials = d.gmp_clients
+        ? ((d.gmp_clients.first_name?.[0] || '') + (d.gmp_clients.last_name?.[0] || '')).toUpperCase() || '?'
+        : '?';
+    const avHash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h) % 6 + 1; };
+    const avClass = `av-${avHash(client)}`;
+    const heroAv = document.getElementById('case-avatar');
+    if (heroAv) { heroAv.className = `case-avatar ${avClass}`; heroAv.textContent = initials; }
 
-    // Badge typu strony sprawy (individual/employer/other)
+    // === STATUS PILL — single primary, soft colors ===
+    const STATUS_LABELS = { lead: 'Lead', zlecona: 'Zlecona', aktywna: 'Aktywna', zakonczona: 'Zakończona', archiwum: 'Archiwum' };
+    const status = d.status || 'lead';
+    const sb = document.getElementById('case-status-badge');
+    sb.className = `case-status-pill s-${status}`;
+    sb.textContent = STATUS_LABELS[status] || status;
+
+    // === PARTY BADGE — secondary status pill ===
     const pb = document.getElementById('case-party-badge');
     const PARTY_LABELS = { individual: 'Cudzoziemiec', employer: 'Pracodawca', other: 'Inna' };
-    const PARTY_COLORS = { individual: 'bg-cyan-900/40 text-cyan-300', employer: 'bg-amber-900/40 text-amber-300', other: 'bg-purple-900/40 text-purple-300' };
+    const PARTY_VARIANT = { individual: 's-zlecona', employer: 's-lead', other: 's-archiwum' };
     if (d.party_type && PARTY_LABELS[d.party_type]) {
         pb.textContent = PARTY_LABELS[d.party_type];
-        pb.className = `badge ${PARTY_COLORS[d.party_type]}`;
+        pb.className = `case-status-pill ${PARTY_VARIANT[d.party_type] || 's-zlecona'}`;
         pb.classList.remove('hidden');
     } else {
         pb.classList.add('hidden');
     }
 
+    // === META TAGS w hero (kategoria, etap, znak sprawy, typ, pracodawca) ===
+    const stageBadge = document.getElementById('case-stage-badge');
     if (d.stage) {
-        document.getElementById('case-stage-badge').textContent = d.stage;
-        document.getElementById('case-stage-badge').classList.remove('hidden');
+        stageBadge.innerHTML = `<i class="ph ph-flag"></i> ${esc(d.stage)}`;
+        stageBadge.classList.remove('hidden');
+    } else {
+        stageBadge.classList.add('hidden');
     }
+    const catBadge = document.getElementById('case-category-badge');
     if (d.category) {
-        document.getElementById('case-category-badge').textContent = d.category;
-        document.getElementById('case-category-badge').classList.remove('hidden');
+        catBadge.innerHTML = `<i class="ph ph-folder"></i> ${esc(d.category)}`;
+        catBadge.classList.remove('hidden');
+    } else {
+        catBadge.classList.add('hidden');
     }
-    document.getElementById('case-number-display').textContent = d.case_number || d.id.slice(0, 8);
-    if (d.znak_sprawy) document.getElementById('case-znak-sprawy').textContent = d.znak_sprawy;
-    if (d.case_type) document.getElementById('case-type-display').textContent = '• ' + d.case_type;
-    if (d.gmp_employers) document.getElementById('case-employer-display').textContent = '• ' + d.gmp_employers.name;
+    document.getElementById('case-number-display').textContent = d.case_number ? `#${d.case_number}` : `#${d.id.slice(0, 8)}`;
+    const znak = document.getElementById('case-znak-sprawy');
+    if (d.znak_sprawy) {
+        znak.textContent = d.znak_sprawy;
+        znak.classList.remove('hidden');
+    } else {
+        znak.classList.add('hidden');
+    }
+    const typeEl = document.getElementById('case-type-display');
+    if (d.case_type) {
+        typeEl.textContent = d.case_type;
+        typeEl.classList.remove('hidden');
+    } else {
+        typeEl.classList.add('hidden');
+    }
+    const empEl = document.getElementById('case-employer-display');
+    if (d.gmp_employers) {
+        empEl.innerHTML = `<i class="ph ph-buildings" style="font-size:11px;opacity:0.7;"></i> ${esc(d.gmp_employers.name)}`;
+        empEl.classList.remove('hidden');
+    } else {
+        empEl.innerHTML = '';
+        empEl.classList.add('hidden');
+    }
 
     // Tags
     if (window.gmpTags) {
@@ -2751,11 +3093,11 @@ function fillForm() {
                 <button class="btn btn-ghost btn-sm" onclick="openClientPicker()" title="Zmień"><i class="ph ph-swap text-xs"></i></button>
             </div>`;
 
-        // Quick contact buttons (w headerze)
+        // Quick contact buttons (w headerze) — okrągłe icon-btn z kolorem
         qc.innerHTML = `
-            ${callUrl ? `<a href="${callUrl}" class="quick-action call" onclick="logContactActivity('call')" title="Zadzwoń"><i class="ph ph-phone-call"></i></a>` : ''}
-            ${waUrl ? `<a href="${waUrl}" target="_blank" class="quick-action wa" onclick="logContactActivity('whatsapp_sent')" title="WhatsApp"><i class="ph ph-whatsapp-logo"></i></a>` : ''}
-            ${mailUrl ? `<a href="${mailUrl}" class="quick-action email" onclick="logContactActivity('email_sent')" title="Email"><i class="ph ph-envelope"></i></a>` : ''}
+            ${callUrl ? `<a href="${callUrl}" class="hero-icon-btn call" onclick="logContactActivity('call')" title="Zadzwoń: ${esc(c.phone)}"><i class="ph ph-phone-call"></i></a>` : ''}
+            ${waUrl ? `<a href="${waUrl}" target="_blank" class="hero-icon-btn wa" onclick="logContactActivity('whatsapp_sent')" title="WhatsApp: ${esc(c.phone)}"><i class="ph ph-whatsapp-logo"></i></a>` : ''}
+            ${mailUrl ? `<a href="${mailUrl}" class="hero-icon-btn email" onclick="logContactActivity('email_sent')" title="Email: ${esc(c.email)}"><i class="ph ph-envelope"></i></a>` : ''}
         `;
     } else {
         cp.innerHTML = `
