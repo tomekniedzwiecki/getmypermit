@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grupy spraw - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+    <script src="components/modals.js" defer></script>
+    <style>
+        .grp-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.005) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            text-decoration: none;
+            transition: border-color 0.15s, transform 0.15s;
+        }
+        .grp-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-1px); }
+        .grp-icon-box {
+            width: 44px; height: 44px;
+            border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+        .grp-info { flex: 1; min-width: 0; }
+        .grp-name { color: #fafafa; font-weight: 600; font-size: 15px; }
+        .grp-meta { color: #71717a; font-size: 12px; margin-top: 3px; }
+        .grp-count {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .grp-count .num { font-size: 22px; font-weight: 600; color: #fafafa; line-height: 1; }
+        .grp-count .lbl { font-size: 10px; text-transform: uppercase; color: #71717a; letter-spacing: 0.06em; margin-top: 4px; }
+
+        .type-pracodawca { background: rgba(245,158,11,0.10); color: #fbbf24; border: 1px solid rgba(245,158,11,0.28); }
+        .type-rodzina { background: rgba(236,72,153,0.10); color: #f9a8d4; border: 1px solid rgba(236,72,153,0.28); }
+        .type-projekt { background: rgba(99,102,241,0.10); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.28); }
+        .type-rozliczenie_zbiorcze { background: rgba(16,185,129,0.10); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.28); }
+        .type-inna { background: rgba(161,161,170,0.12); color: #d4d4d8; border: 1px solid rgba(161,161,170,0.18); }
+
+        .filter-pill {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(255,255,255,0.04);
+            color: #a1a1aa;
+            border: 1px solid rgba(255,255,255,0.06);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .filter-pill:hover { color: #fafafa; border-color: rgba(255,255,255,0.18); }
+        .filter-pill.active { background: rgba(59,130,246,0.18); color: #bfdbfe; border-color: rgba(59,130,246,0.4); }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Grupy spraw</h1>
+                <p class="page-subtitle" id="grp-summary">Ładuję...</p>
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-primary" onclick="openNewGroup()"><i class="ph ph-plus"></i> Nowa grupa</button>
+            </div>
+        </div>
+
+        <!-- Filtry: typ + wyszukiwarka -->
+        <div class="card p-3 mb-4">
+            <div class="flex items-center gap-3 flex-wrap">
+                <div class="relative flex-1 min-w-[280px] max-w-md">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" style="font-size: 14px;"></i>
+                    <input id="f-search" type="text" class="input w-full pl-9" placeholder="Szukaj po nazwie grupy..." autocomplete="off">
+                </div>
+                <div class="flex items-center gap-2 flex-wrap" id="type-filters">
+                    <button class="filter-pill active" data-type="">Wszystkie</button>
+                    <button class="filter-pill" data-type="pracodawca"><i class="ph ph-buildings"></i> Pracodawca</button>
+                    <button class="filter-pill" data-type="rodzina"><i class="ph ph-users-three"></i> Rodzina</button>
+                    <button class="filter-pill" data-type="projekt"><i class="ph ph-folder-notch"></i> Projekt</button>
+                    <button class="filter-pill" data-type="rozliczenie_zbiorcze"><i class="ph ph-coins"></i> Rozliczenie</button>
+                    <button class="filter-pill" data-type="inna"><i class="ph ph-circle"></i> Inna</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista -->
+        <div id="groups-list" class="grid gap-2">
+            <div class="text-zinc-500 text-sm p-6 text-center">Ładuję...</div>
+        </div>
+    </main>
+</div>
+
+<div id="modals-container"></div>
+
+<script>
+const TYPE_LABELS = {
+    pracodawca: 'Pracodawca',
+    rodzina: 'Rodzina',
+    projekt: 'Projekt',
+    rozliczenie_zbiorcze: 'Rozliczenie zbiorcze',
+    inna: 'Inna',
+};
+const TYPE_ICONS = {
+    pracodawca: 'ph-buildings',
+    rodzina: 'ph-users-three',
+    projekt: 'ph-folder-notch',
+    rozliczenie_zbiorcze: 'ph-coins',
+    inna: 'ph-circle',
+};
+
+let allGroups = [];
+let activeType = '';
+let activeSearch = '';
+
+function esc(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.addEventListener('gmp-auth-ready', loadAll);
+
+async function loadAll() {
+    // Pobieramy grupy + zliczamy członków per grupa (dwa zapytania bo PostgREST nie agreguje przez relację)
+    const [{ data: groups, error: gErr }, { data: members, error: mErr }] = await Promise.all([
+        db.from('gmp_case_groups')
+            .select('id, name, type, employer_id, assigned_to, is_active, created_at, employer:gmp_employers!employer_id(id, name)')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false }),
+        db.from('gmp_case_group_members').select('group_id'),
+    ]);
+    if (gErr) {
+        document.getElementById('groups-list').innerHTML = `<div class="text-red-400">${esc(gErr.message)}</div>`;
+        return;
+    }
+    // Map countów
+    const counts = {};
+    (members || []).forEach(m => { counts[m.group_id] = (counts[m.group_id] || 0) + 1; });
+    allGroups = (groups || []).map(g => ({ ...g, member_count: counts[g.id] || 0 }));
+
+    document.getElementById('grp-summary').textContent =
+        `${allGroups.length} grup · ${allGroups.reduce((s, g) => s + g.member_count, 0)} przypiętych spraw`;
+
+    bindFilters();
+    renderList();
+}
+
+function bindFilters() {
+    document.querySelectorAll('#type-filters .filter-pill').forEach(b => {
+        b.addEventListener('click', () => {
+            activeType = b.dataset.type;
+            document.querySelectorAll('#type-filters .filter-pill').forEach(x => x.classList.toggle('active', x.dataset.type === activeType));
+            renderList();
+        });
+    });
+    document.getElementById('f-search').addEventListener('input', e => {
+        activeSearch = e.target.value.trim().toLowerCase();
+        renderList();
+    });
+}
+
+function renderList() {
+    const list = document.getElementById('groups-list');
+    let filtered = allGroups;
+    if (activeType) filtered = filtered.filter(g => g.type === activeType);
+    if (activeSearch) filtered = filtered.filter(g => g.name.toLowerCase().includes(activeSearch) || (g.employer?.name || '').toLowerCase().includes(activeSearch));
+
+    if (!filtered.length) {
+        list.innerHTML = '<div class="text-zinc-500 text-sm p-6 text-center">Brak grup pasujących do filtrów.</div>';
+        return;
+    }
+
+    // Sortowanie: największe pierwsze (dużo członków = ważniejsze)
+    filtered.sort((a, b) => b.member_count - a.member_count);
+
+    list.innerHTML = filtered.map(g => {
+        const ico = TYPE_ICONS[g.type] || 'ph-circle';
+        return `
+            <a href="group.html?id=${g.id}" class="grp-card">
+                <div class="grp-icon-box type-${g.type}"><i class="ph ${ico}"></i></div>
+                <div class="grp-info">
+                    <div class="grp-name">${esc(g.name)}</div>
+                    <div class="grp-meta">
+                        ${TYPE_LABELS[g.type] || g.type}
+                        ${g.employer ? ` · pracodawca <a href="employer.html?id=${g.employer.id}" onclick="event.stopPropagation()" class="text-blue-400 hover:underline">${esc(g.employer.name)}</a>` : ''}
+                    </div>
+                </div>
+                <div class="grp-count">
+                    <div class="num">${g.member_count}</div>
+                    <div class="lbl">${g.member_count === 1 ? 'sprawa' : 'spraw'}</div>
+                </div>
+            </a>
+        `;
+    }).join('');
+}
+
+function openNewGroup() {
+    openModal(`
+        <div class="modal-card" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold text-white">Nowa grupa spraw</h3>
+                <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body p-5 space-y-3">
+                <div>
+                    <label>Nazwa</label>
+                    <input id="ng-name" class="input w-full" placeholder="np. Rodzina Kowalskich, Projekt 2026 Q3" autofocus>
+                </div>
+                <div>
+                    <label>Typ</label>
+                    <select id="ng-type" class="input w-full">
+                        <option value="rodzina">Rodzina</option>
+                        <option value="pracodawca">Pracodawca</option>
+                        <option value="projekt">Projekt</option>
+                        <option value="rozliczenie_zbiorcze">Rozliczenie zbiorcze</option>
+                        <option value="inna">Inna</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Notatki (opcjonalnie)</label>
+                    <textarea id="ng-notes" class="input w-full" rows="2"></textarea>
+                </div>
+                <div class="text-xs text-zinc-500">Po utworzeniu dodawaj sprawy z karty sprawy → tab Dane → sekcja "Grupy spraw" → "Dodaj do grupy".</div>
+            </div>
+            <div class="modal-footer flex gap-2 justify-end p-4 border-t border-white/5">
+                <button class="btn btn-ghost" onclick="closeModal()">Anuluj</button>
+                <button class="btn btn-primary" onclick="saveNewGroup()">Utwórz</button>
+            </div>
+        </div>
+    `);
+}
+
+function openModal(html) {
+    let c = document.getElementById('modals-container');
+    if (!c) { c = document.createElement('div'); c.id = 'modals-container'; document.body.appendChild(c); }
+    c.innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()"><div class="modal-content">${html}</div></div>`;
+}
+function closeModal() {
+    const c = document.getElementById('modals-container');
+    if (c) c.innerHTML = '';
+}
+window.openModal = openModal;
+window.closeModal = closeModal;
+
+async function saveNewGroup() {
+    const name = document.getElementById('ng-name').value.trim();
+    const type = document.getElementById('ng-type').value;
+    const notes = document.getElementById('ng-notes').value.trim() || null;
+    if (!name) { toast.warning('Nazwa wymagana'); return; }
+    const { data, error } = await db.from('gmp_case_groups')
+        .insert({ name, type, notes, is_active: true, created_by: window.currentStaff?.id || null })
+        .select('id').single();
+    if (error) { toast.error(error.message); return; }
+    toast.success('Grupa utworzona');
+    closeModal();
+    location.href = `group.html?id=${data.id}`;
+}
+</script>
+<script src="components/sidebar.js" data-active="groups"></script>
+</body>
+</html>
