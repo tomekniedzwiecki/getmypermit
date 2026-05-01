@@ -207,6 +207,26 @@ async function openClientDetail(id) {
         db.from('gmp_trusted_profile_credentials').select('id, notes, created_at').eq('client_id', id).maybeSingle(),
     ]);
 
+    // Etap V — Pobierz grupy spraw tego klienta (przez jego sprawy)
+    let clientGroups = [];
+    if (cases?.length) {
+        const caseIds = cases.map(c => c.id);
+        const { data: members } = await db.from('gmp_case_group_members')
+            .select('case_id, role_in_group, group:gmp_case_groups(id, name, type, is_active)')
+            .in('case_id', caseIds);
+        const groupMap = new Map();
+        (members || []).forEach(m => {
+            if (!m.group || !m.group.is_active) return;
+            if (!groupMap.has(m.group.id)) {
+                groupMap.set(m.group.id, { ...m.group, case_ids: new Set(), roles: new Set() });
+            }
+            const entry = groupMap.get(m.group.id);
+            entry.case_ids.add(m.case_id);
+            if (m.role_in_group) entry.roles.add(m.role_in_group);
+        });
+        clientGroups = [...groupMap.values()];
+    }
+
     if (error || !client) {
         document.getElementById('cl-loading').innerHTML = `<div class="text-red-400">Nie znaleziono klienta: ${esc(error?.message || '')}</div>`;
         return;
@@ -263,8 +283,32 @@ async function openClientDetail(id) {
                     <div class="card-body text-sm">
                         ${client.gmp_employers ? `
                             <div class="font-medium text-white">${esc(client.gmp_employers.name)}</div>
-                            <a href="employers.html?id=${client.gmp_employers.id}" class="text-blue-400 text-xs hover:underline">Zobacz kartotekę →</a>
+                            <a href="employer.html?id=${client.gmp_employers.id}" class="text-blue-400 text-xs hover:underline">Zobacz kartotekę →</a>
                         ` : '<div class="text-zinc-500">—</div>'}
+                    </div>
+                </section>
+
+                <!-- Etap V — Grupy spraw klienta (przez jego sprawy) -->
+                <section class="card">
+                    <div class="card-header">Grupy spraw <span class="text-xs text-zinc-500 font-normal ml-2">${clientGroups.length}</span></div>
+                    <div class="card-body text-sm space-y-2">
+                        ${clientGroups.length === 0 ? '<div class="text-zinc-500 text-xs">Klient nie należy do żadnej grupy.<br/><span class="text-zinc-600">Aby dodać do grupy, otwórz sprawę klienta → tab Dane → sekcja Grupy spraw.</span></div>' :
+                        clientGroups.map(g => {
+                            const TYPE_ICONS = { pracodawca: 'ph-buildings', rodzina: 'ph-users-three', projekt: 'ph-folder-notch', rozliczenie_zbiorcze: 'ph-coins', inna: 'ph-circle' };
+                            const TYPE_LABELS = { pracodawca: 'Pracodawca', rodzina: 'Rodzina', projekt: 'Projekt', rozliczenie_zbiorcze: 'Rozliczenie', inna: 'Inna' };
+                            const TYPE_COLORS = { pracodawca: 'bg-amber-500/10 text-amber-300 border-amber-500/25', rodzina: 'bg-pink-500/10 text-pink-300 border-pink-500/25', projekt: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25', rozliczenie_zbiorcze: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25', inna: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/25' };
+                            const role = [...g.roles].join(', ');
+                            const cnt = g.case_ids.size;
+                            return `
+                                <a href="groups.html?id=${g.id}" class="flex items-center gap-2 p-2 rounded border ${TYPE_COLORS[g.type] || TYPE_COLORS.inna} hover:opacity-80">
+                                    <i class="ph ${TYPE_ICONS[g.type]}"></i>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-medium truncate">${esc(g.name)}</div>
+                                        <div class="text-[10px] opacity-75">${TYPE_LABELS[g.type]}${role ? ` · ${esc(role)}` : ''}${cnt > 1 ? ` · ${cnt} spraw klienta` : ''}</div>
+                                    </div>
+                                </a>
+                            `;
+                        }).join('')}
                     </div>
                 </section>
 

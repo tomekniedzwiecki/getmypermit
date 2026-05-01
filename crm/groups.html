@@ -503,6 +503,7 @@ async function renderDetail(id) {
 
         <div class="det-tabs">
             <button class="det-tab active" data-tab="cases"><i class="ph ph-folders"></i> Sprawy <span class="det-tab-count" id="dc-cases">${g.member_count}</span></button>
+            <button class="det-tab" data-tab="clients"><i class="ph ph-users"></i> Cudzoziemcy <span class="det-tab-count" id="dc-clients">—</span></button>
             <button class="det-tab" data-tab="docs"><i class="ph ph-file"></i> Dokumenty <span class="det-tab-count" id="dc-docs">—</span></button>
             <button class="det-tab" data-tab="tasks"><i class="ph ph-check-square"></i> Zadania <span class="det-tab-count" id="dc-tasks">—</span></button>
         </div>
@@ -511,6 +512,7 @@ async function renderDetail(id) {
             <div class="det-pane active" data-pane="cases" id="pane-cases">
                 <div class="text-zinc-500 text-sm">Ładuję sprawy...</div>
             </div>
+            <div class="det-pane" data-pane="clients" id="pane-clients"></div>
             <div class="det-pane" data-pane="docs" id="pane-docs"></div>
             <div class="det-pane" data-pane="tasks" id="pane-tasks"></div>
         </div>
@@ -522,12 +524,68 @@ async function renderDetail(id) {
             const name = btn.dataset.tab;
             detail.querySelectorAll('.det-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
             detail.querySelectorAll('.det-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
+            if (name === 'clients') loadClients(id);
             if (name === 'docs') loadDocs(id);
             if (name === 'tasks') loadTasks(id);
         });
     });
 
     await loadCases(id);
+}
+
+// === Tab Cudzoziemcy: distinct klienci ze spraw grupy ===
+async function loadClients(groupId) {
+    const { data, error } = await db.from('gmp_case_group_members')
+        .select(`role_in_group, case:gmp_cases(
+            id, case_number, status,
+            client:gmp_clients(id, first_name, last_name, nationality, phone, email)
+        )`)
+        .eq('group_id', groupId);
+    const pane = document.getElementById('pane-clients');
+    const cnt = document.getElementById('dc-clients');
+    if (error) { pane.innerHTML = `<div class="text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    // Distinct po client.id, ale agreguje liczba spraw + role_in_group + statusy spraw
+    const map = new Map();
+    (data || []).forEach(m => {
+        const cl = m.case?.client;
+        if (!cl) return;
+        const key = cl.id;
+        if (!map.has(key)) {
+            map.set(key, {
+                ...cl,
+                cases_count: 0,
+                roles: new Set(),
+                statuses: new Set(),
+                latest_case_id: m.case.id,
+            });
+        }
+        const entry = map.get(key);
+        entry.cases_count++;
+        if (m.role_in_group) entry.roles.add(m.role_in_group);
+        if (m.case.status) entry.statuses.add(m.case.status);
+    });
+    const clients = [...map.values()];
+    if (cnt) cnt.textContent = clients.length;
+    if (!clients.length) { pane.innerHTML = '<div class="text-zinc-500 text-sm">Brak cudzoziemców w tej grupie.</div>'; return; }
+    pane.innerHTML = clients.map(c => {
+        const initials = ((c.first_name?.[0] || '') + (c.last_name?.[0] || '')).toUpperCase() || '?';
+        const role = [...c.roles].join(', ');
+        return `
+            <a href="clients.html?id=${c.id}" class="case-row">
+                <div class="case-row-av">${esc(initials)}</div>
+                <div class="case-row-info">
+                    <div class="case-row-name">${esc(c.last_name)} ${esc(c.first_name)}</div>
+                    <div class="case-row-meta">
+                        ${c.nationality ? esc(c.nationality) : ''}
+                        ${c.cases_count > 0 ? ` · ${c.cases_count} ${c.cases_count === 1 ? 'sprawa' : c.cases_count < 5 ? 'sprawy' : 'spraw'}` : ''}
+                        ${role ? ` · <span class="text-zinc-400">${esc(role)}</span>` : ''}
+                        ${c.phone ? ` · <span class="font-mono text-zinc-400">${esc(c.phone)}</span>` : ''}
+                    </div>
+                </div>
+                <span class="case-row-status">${c.cases_count}</span>
+            </a>
+        `;
+    }).join('');
 }
 
 async function loadCases(groupId) {
