@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfiguracja 2FA - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="components/layout.css">
+    <meta name="x-sentry-dsn" content="https://6f0737fc66f36bbdc9806377bee380b8@o4511314588205056.ingest.de.sentry.io/4511314611667024">
+    <script src="components/sentry.js"></script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+    <script src="components/mfa.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0a0a14; color: #e5e7eb; min-height: 100vh; }
+        .container { max-width: 560px; margin: 60px auto; padding: 0 20px; }
+        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 32px; }
+        h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+        .subtitle { color: #94a3b8; margin-bottom: 28px; font-size: 14px; }
+        .step { margin-bottom: 24px; padding: 16px; background: rgba(99,102,241,0.05); border-left: 3px solid #6366f1; border-radius: 8px; }
+        .step-num { font-weight: 700; color: #a5b4fc; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; }
+        .step-title { font-weight: 600; margin: 6px 0 8px; font-size: 16px; }
+        .step-desc { color: #cbd5e1; font-size: 14px; line-height: 1.6; }
+        #qr-container { background: white; padding: 16px; border-radius: 10px; display: inline-block; margin: 12px 0; }
+        #qr-container svg { width: 200px; height: 200px; display: block; }
+        .secret-box { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px; word-break: break-all; margin: 8px 0; user-select: all; cursor: text; }
+        .input-totp { width: 100%; padding: 12px 16px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); border-radius: 10px; color: white; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.3em; text-align: center; margin: 12px 0; }
+        .input-totp:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+        .btn { padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; border: 0; font-size: 14px; transition: all 0.15s; }
+        .btn-primary { background: #6366f1; color: white; width: 100%; }
+        .btn-primary:hover { background: #4f46e5; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-danger { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .btn-secondary { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); }
+        .msg { padding: 12px 16px; border-radius: 10px; margin: 12px 0; font-size: 14px; }
+        .msg-error { background: rgba(239,68,68,0.1); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .msg-success { background: rgba(34,197,94,0.1); color: #86efac; border: 1px solid rgba(34,197,94,0.3); }
+        .factor-row { display: flex; align-items: center; justify-content: space-between; padding: 14px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; }
+        .factor-info { flex: 1; }
+        .factor-name { font-weight: 600; }
+        .factor-status { font-size: 12px; color: #94a3b8; }
+        .factor-status.verified { color: #86efac; }
+        .factor-status.unverified { color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="dashboard.html" style="color: #94a3b8; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px;">
+            <i class="ph ph-arrow-left"></i> Powrót do dashboardu
+        </a>
+
+        <div class="card">
+            <h1><i class="ph ph-shield-check" style="color:#a5b4fc"></i> Uwierzytelnianie dwuskładnikowe (2FA)</h1>
+            <p class="subtitle">Zabezpiecz swoje konto kodem TOTP z aplikacji jak Authy, Google Authenticator lub 1Password.</p>
+
+            <div id="msg" style="display:none"></div>
+
+            <!-- Lista istniejących faktorów -->
+            <div id="factors-section" style="margin-bottom: 28px;">
+                <h3 style="margin-bottom: 12px; font-weight: 600;">Twoje aktywne metody:</h3>
+                <div id="factors-list">
+                    <div style="color:#94a3b8; padding: 14px; text-align: center; font-size: 13px;">Ładowanie...</div>
+                </div>
+            </div>
+
+            <!-- Enrollment (ukryty domyślnie, pojawia się gdy user kliknie "Dodaj nowy") -->
+            <div id="enroll-section" style="display:none">
+                <div class="step">
+                    <div class="step-num">Krok 1</div>
+                    <div class="step-title">Zeskanuj QR z aplikacji</div>
+                    <div class="step-desc">Otwórz Authy / Google Authenticator / 1Password / Bitwarden i zeskanuj kod QR poniżej.</div>
+                    <div id="qr-container"></div>
+                    <div class="step-desc">Nie możesz zeskanować? Wpisz ręcznie ten kod:</div>
+                    <div class="secret-box" id="secret"></div>
+                </div>
+
+                <div class="step">
+                    <div class="step-num">Krok 2</div>
+                    <div class="step-title">Wpisz 6-cyfrowy kod z aplikacji</div>
+                    <input type="text" class="input-totp" id="totp-code" placeholder="000000" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
+                    <button class="btn btn-primary" id="verify-btn">Weryfikuj i włącz 2FA</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="start-enroll-btn" style="margin-top: 12px;">
+                <i class="ph ph-plus"></i> Dodaj nową metodę 2FA
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentFactorId = null;
+
+        function showMsg(text, type) {
+            const el = document.getElementById('msg');
+            el.textContent = text;
+            el.className = 'msg msg-' + type;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 6000);
+        }
+
+        async function loadFactors() {
+            try {
+                const factors = await window.gmpMfa.listFactors();
+                const container = document.getElementById('factors-list');
+                if (!factors.length) {
+                    container.innerHTML = '<div style="color:#94a3b8; padding: 14px; text-align: center; font-size: 13px;">Brak aktywnych metod 2FA. Dodaj poniżej.</div>';
+                    return;
+                }
+                container.innerHTML = factors.map(f => `
+                    <div class="factor-row">
+                        <div class="factor-info">
+                            <div class="factor-name">${f.friendly_name || 'TOTP'}</div>
+                            <div class="factor-status ${f.status}">${f.status === 'verified' ? '✓ Aktywne' : '⚠ Niezweryfikowane'} · dodano ${new Date(f.created_at).toLocaleDateString('pl-PL')}</div>
+                        </div>
+                        <button class="btn btn-danger" data-factor-id="${f.id}" data-action="unenroll">Usuń</button>
+                    </div>
+                `).join('');
+                container.querySelectorAll('[data-action="unenroll"]').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!confirm('Usunąć tę metodę 2FA? Po usunięciu kolejne logowanie nie będzie wymagało kodu.')) return;
+                        try {
+                            await window.gmpMfa.unenroll(btn.dataset.factorId);
+                            showMsg('Metoda usunięta', 'success');
+                            loadFactors();
+                        } catch (e) {
+                            showMsg('Błąd: ' + e.message, 'error');
+                        }
+                    });
+                });
+            } catch (e) {
+                document.getElementById('factors-list').innerHTML = '<div class="msg msg-error">Błąd ładowania: ' + e.message + '</div>';
+            }
+        }
+
+        document.getElementById('start-enroll-btn').addEventListener('click', async () => {
+            try {
+                const result = await window.gmpMfa.enroll();
+                currentFactorId = result.factorId;
+                document.getElementById('qr-container').innerHTML = result.qrCodeSvg;
+                document.getElementById('secret').textContent = result.secret;
+                document.getElementById('enroll-section').style.display = 'block';
+                document.getElementById('start-enroll-btn').style.display = 'none';
+                document.getElementById('totp-code').focus();
+            } catch (e) {
+                showMsg('Nie udało się rozpocząć: ' + e.message, 'error');
+            }
+        });
+
+        document.getElementById('verify-btn').addEventListener('click', async () => {
+            const code = document.getElementById('totp-code').value.trim();
+            if (!/^[0-9]{6}$/.test(code)) {
+                showMsg('Wpisz dokładnie 6 cyfr', 'error');
+                return;
+            }
+            try {
+                await window.gmpMfa.verifyEnrollment(currentFactorId, code);
+                showMsg('✓ 2FA włączone! Przy następnym logowaniu poproszę o kod.', 'success');
+                document.getElementById('enroll-section').style.display = 'none';
+                document.getElementById('start-enroll-btn').style.display = 'block';
+                document.getElementById('totp-code').value = '';
+                loadFactors();
+            } catch (e) {
+                showMsg('Nieprawidłowy kod: ' + e.message, 'error');
+            }
+        });
+
+        // Auto-submit gdy 6 cyfr wpisane
+        document.getElementById('totp-code').addEventListener('input', (e) => {
+            if (e.target.value.length === 6) {
+                document.getElementById('verify-btn').click();
+            }
+        });
+
+        document.addEventListener('gmp-auth-ready', () => loadFactors());
+    </script>
+</body>
+</html>

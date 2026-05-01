@@ -21,6 +21,7 @@
     <script src="components/sentry.js"></script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js" data-require-auth="false"></script>
+    <script src="components/mfa.js"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <style>
         body {
@@ -446,6 +447,26 @@
                 </div>
 
                 <div id="msg" class="msg"></div>
+
+                <!-- 2FA TOTP challenge (ukryty domyślnie, pokazuje się gdy AAL2 wymagany) -->
+                <div id="mfa-challenge" style="display:none; margin-top: 24px;">
+                    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">
+                        <i class="ph ph-shield-check" style="color:#a5b4fc"></i> Kod weryfikacyjny 2FA
+                    </h3>
+                    <p style="font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 12px;">
+                        Otwórz aplikację (Authy/Google Auth) i wpisz 6-cyfrowy kod.
+                    </p>
+                    <input type="text" id="mfa-code" class="field-input" maxlength="6" pattern="[0-9]{6}"
+                           inputmode="numeric" autocomplete="one-time-code"
+                           placeholder="000000"
+                           style="text-align:center; letter-spacing: 0.3em; font-family: monospace; font-size: 18px;">
+                    <button type="button" id="mfa-verify-btn" class="btn-submit" style="margin-top: 12px;">
+                        Zweryfikuj kod
+                    </button>
+                    <button type="button" id="mfa-cancel-btn" class="link" style="margin-top: 12px; display: block; text-align: center; width: 100%;">
+                        Anuluj i zaloguj inne konto
+                    </button>
+                </div>
             </div>
         </main>
 
@@ -570,6 +591,15 @@
                     if ($('#remember').checked) localStorage.setItem('gmp_remember_email', email);
                     else localStorage.removeItem('gmp_remember_email');
                 } catch (_) {}
+
+                // 2FA challenge - jeśli user ma TOTP i AAL=aal1, wymagamy kodu
+                const needsMfa = await window.gmpMfa.needsChallenge();
+                if (needsMfa) {
+                    setLoading(false);
+                    showMfaChallenge();
+                    return;
+                }
+
                 showMsg('Zalogowano. Przekierowanie…', 'success');
                 const params = new URLSearchParams(window.location.search);
                 const returnTo = safeReturnTo(params.get('return'));
@@ -578,6 +608,54 @@
                 showMsg(err.message || 'Błąd logowania');
                 setLoading(false);
             }
+        });
+
+        // === 2FA challenge UI ===
+        function showMfaChallenge() {
+            $('#login-form').style.display = 'none';
+            document.querySelector('.alt-auth').style.display = 'none';
+            $('#mfa-challenge').style.display = 'block';
+            $('#mfa-code').focus();
+        }
+
+        function hideMfaChallenge() {
+            $('#login-form').style.display = '';
+            document.querySelector('.alt-auth').style.display = '';
+            $('#mfa-challenge').style.display = 'none';
+            $('#mfa-code').value = '';
+        }
+
+        async function submitMfaCode() {
+            const code = $('#mfa-code').value.trim();
+            if (!/^[0-9]{6}$/.test(code)) {
+                showMsg('Wpisz dokładnie 6 cyfr');
+                return;
+            }
+            $('#mfa-verify-btn').disabled = true;
+            try {
+                await window.gmpMfa.challengeAndVerify(code);
+                showMsg('Zweryfikowano. Przekierowanie…', 'success');
+                const params = new URLSearchParams(window.location.search);
+                const returnTo = safeReturnTo(params.get('return'));
+                setTimeout(() => window.location.href = returnTo, 400);
+            } catch (err) {
+                showMsg('Nieprawidłowy kod 2FA. Spróbuj ponownie.');
+                $('#mfa-code').value = '';
+                $('#mfa-code').focus();
+                $('#mfa-verify-btn').disabled = false;
+            }
+        }
+
+        $('#mfa-verify-btn').addEventListener('click', submitMfaCode);
+        $('#mfa-code').addEventListener('input', (e) => {
+            if (e.target.value.length === 6) submitMfaCode();
+        });
+        $('#mfa-cancel-btn').addEventListener('click', async () => {
+            await window.supabaseClient.auth.signOut();
+            hideMfaChallenge();
+            $('#email').value = '';
+            $('#password').value = '';
+            $('#email').focus();
         });
 
         $('#magic-link-btn').addEventListener('click', async () => {

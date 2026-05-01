@@ -57,6 +57,12 @@
       ]
     },
     {
+      label: 'BEZPIECZEŃSTWO',
+      items: [
+        { href: 'mfa-setup.html', icon: 'ph-shield-check', color: 'text-emerald-400', label: 'Uwierzytelnianie 2FA', id: 'mfa-setup' },
+      ]
+    },
+    {
       label: 'SUPER ADMIN',
       ownerOnly: true,
       items: [
