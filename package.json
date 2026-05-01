@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "tailwindcss -i ./src/tailwind.input.css -o ./crm/components/tailwind.css --minify && cp ./crm/components/tailwind.css ./components/tailwind.css",
+    "watch:css": "tailwindcss -i ./src/tailwind.input.css -o ./crm/components/tailwind.css --watch",
     "deploy:permit-lead-save": "npx supabase functions deploy permit-lead-save --project-ref gfwsdrbywgmceateubyq --no-verify-jwt",
     "deploy:lead-fallback-replay": "npx supabase functions deploy lead-fallback-replay --project-ref gfwsdrbywgmceateubyq --no-verify-jwt",
     "deploy:lead-fallback": "npx supabase functions deploy permit-lead-save lead-fallback-replay --project-ref gfwsdrbywgmceateubyq --no-verify-jwt"
@@ -24,5 +26,8 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
   }
 }
