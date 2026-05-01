@@ -227,7 +227,7 @@ async function loadGroup() {
     }
     try {
         const { data: g, error } = await db.from('gmp_case_groups')
-            .select('*, employer:gmp_employers(id, name, nip), assigned:gmp_staff!assigned_to(id, full_name)')
+            .select('*, employer:gmp_employers!employer_id(id, name, nip), assigned:gmp_staff!assigned_to(id, full_name)')
             .eq('id', groupId)
             .single();
         if (error) throw error;
@@ -319,7 +319,7 @@ async function loadMembers() {
 
 async function loadDocuments() {
     const { data, error, count } = await db.from('gmp_documents')
-        .select('id, name, document_type, file_size, created_at, storage_path', { count: 'exact' })
+        .select('id, name, doc_type, file_size, created_at, storage_path', { count: 'exact' })
         .eq('group_id', groupId)
         .order('created_at', { ascending: false });
     if (error) {
@@ -337,7 +337,7 @@ async function loadDocuments() {
             <i class="ph ph-file text-zinc-400 text-xl"></i>
             <div class="flex-1 min-w-0">
                 <div class="text-sm text-white truncate">${esc(d.name)}</div>
-                <div class="text-xs text-zinc-500">${esc(d.document_type || '')} · ${fmtDate(d.created_at)}</div>
+                <div class="text-xs text-zinc-500">${esc(d.doc_type || '')} · ${fmtDate(d.created_at)}</div>
             </div>
         </div>
     `).join('');
@@ -345,7 +345,7 @@ async function loadDocuments() {
 
 async function loadTasks() {
     const { data, error, count } = await db.from('gmp_tasks')
-        .select('id, title, status, due_date, gmp_staff(full_name)', { count: 'exact' })
+        .select('id, title, status, due_date, gmp_staff!assigned_to(full_name)', { count: 'exact' })
         .eq('group_id', groupId)
         .order('due_date', { ascending: true, nullsFirst: false });
     if (error) {
