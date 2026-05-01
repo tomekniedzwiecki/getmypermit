@@ -85,6 +85,19 @@ const ACTION_LABELS = {
 function esc(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmtDt(d) { if (!d) return ''; try { return new Date(d).toLocaleString('pl-PL'); } catch { return d; } }
 
+// === MODALS — local helpers (modals.js eksportuje gmpModal, ale tu chcemy prosty openModal) ===
+function openModal(html) {
+    let c = document.getElementById('modals-container');
+    if (!c) { c = document.createElement('div'); c.id = 'modals-container'; document.body.appendChild(c); }
+    c.innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()"><div class="modal-content">${html}</div></div>`;
+}
+function closeModal() {
+    const c = document.getElementById('modals-container');
+    if (c) c.innerHTML = '';
+}
+window.openModal = openModal;
+window.closeModal = closeModal;
+
 document.addEventListener('gmp-auth-ready', loadAll);
 
 async function loadAll() {
@@ -322,14 +335,10 @@ async function saveNewStep(flowId, stepOrder) {
 async function runExecutorNow() {
     toast.info('Wywołuję executor...');
     try {
-        const { data: { session } } = await db.auth.getSession();
-        const r = await fetch(`${SUPABASE_URL}/functions/v1/automation-executor`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${session?.access_token || SUPABASE_ANON_KEY}` },
-        });
-        const j = await r.json();
-        if (j.error) { toast.error(j.error); return; }
-        toast.success(`Processed: ${j.processed}, success: ${j.succeeded}, failed: ${j.failed}`);
+        const { data, error } = await db.functions.invoke('automation-executor');
+        if (error) { toast.error(error.message); return; }
+        if (data?.error) { toast.error(data.error); return; }
+        toast.success(`Processed: ${data?.processed ?? 0}, success: ${data?.succeeded ?? 0}, failed: ${data?.failed ?? 0}`);
         await Promise.all([loadStats(), loadRecentExecutions()]);
     } catch (e) {
         toast.error(e.message);
