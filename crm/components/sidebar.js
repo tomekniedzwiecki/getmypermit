@@ -60,6 +60,7 @@
       ownerOnly: true,
       items: [
         { href: 'admin.html', icon: 'ph-shield-star', color: 'text-indigo-400', label: 'Super admin', id: 'admin' },
+        { href: 'automations.html', icon: 'ph-robot', color: 'text-emerald-400', label: 'Automatyzacje', id: 'automations' },
       ]
     },
   ];
