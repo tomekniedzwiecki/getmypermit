@@ -161,6 +161,18 @@
                 <button class="emp-tab" data-tab="alerts"><i class="ph ph-bell-ringing"></i> Alerty <span class="emp-tab-count" id="cnt-alerts">—</span></button>
             </div>
 
+            <!-- SEARCH BAR — filtruje aktywny tab po imieniu/nazwisku/numerze sprawy/etc -->
+            <div class="mb-4 flex items-center gap-3">
+                <div class="relative flex-1 max-w-md">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" style="font-size: 14px;"></i>
+                    <input id="emp-search" type="text" class="input w-full pl-9" placeholder="Szukaj w aktywnym tabie: imię, nazwisko, nr sprawy, znak..." autocomplete="off">
+                    <button id="emp-search-clear" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white p-1" onclick="clearSearch()" title="Wyczyść">
+                        <i class="ph ph-x" style="font-size: 14px;"></i>
+                    </button>
+                </div>
+                <span id="emp-search-result" class="text-xs text-zinc-500"></span>
+            </div>
+
             <div class="emp-pane active" data-pane="cases">
                 <div id="cases-list" class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));"></div>
             </div>
@@ -460,8 +472,56 @@ function bindTabs() {
             if (name === 'checklist') loadChecklist();
             if (name === 'docs') loadDocs();
             if (name === 'alerts') loadAlerts();
+            // Re-apply search jeśli aktywny
+            applySearch();
         });
     });
+
+    // Search input — filtruje karty w aktywnym pane (case-insensitive)
+    const input = document.getElementById('emp-search');
+    if (input) {
+        input.addEventListener('input', applySearch);
+        input.addEventListener('keydown', e => { if (e.key === 'Escape') clearSearch(); });
+    }
+}
+
+function applySearch() {
+    const q = (document.getElementById('emp-search')?.value || '').trim().toLowerCase();
+    const clearBtn = document.getElementById('emp-search-clear');
+    const result = document.getElementById('emp-search-result');
+    clearBtn?.classList.toggle('hidden', q.length === 0);
+
+    const activePane = document.querySelector('.emp-pane.active');
+    if (!activePane) return;
+
+    // Wszystkie items — zarówno karty (.row-card) jak i wiersze (.flex.items-center)
+    const items = activePane.querySelectorAll('.row-card, [class*="rounded-lg"][class*="flex"]');
+    let visible = 0, total = 0;
+    items.forEach(el => {
+        // Pomijaj wrappery — tylko elementy które wyglądają jak items (mają nazwę/tekst)
+        if (!el.textContent || el.querySelector('.row-card')) return;
+        total++;
+        if (!q) {
+            el.style.display = '';
+            visible++;
+            return;
+        }
+        const txt = el.textContent.toLowerCase();
+        const match = txt.includes(q);
+        el.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+
+    if (result) {
+        result.textContent = q ? `${visible} z ${total} pasuje` : '';
+    }
+}
+
+function clearSearch() {
+    const input = document.getElementById('emp-search');
+    if (input) input.value = '';
+    applySearch();
+    input?.focus();
 }
 </script>
 <script src="components/sidebar.js" data-active="employers"></script>
