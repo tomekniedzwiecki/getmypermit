@@ -996,6 +996,39 @@
             .tag-chip { padding: 5px 10px 5px 8px !important; font-size: 12px; }
         }
 
+        /* === Etap V — Sekcja "Grupy" w karcie sprawy === */
+        .case-groups-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.015);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+        .case-groups-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .case-group-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .case-group-chip:hover { transform: translateY(-1px); filter: brightness(1.15); }
+        .case-group-chip .ph { font-size: 13px; }
+
         /* === Pawel v3.2 — Sekcja "Co teraz" — STARE STYLE USUNIĘTE.
            Nowe style w bloku ".next-steps" wcześniej (linie ~430+). === */
         .flash-highlight {
@@ -1507,6 +1540,17 @@
 
                     <!-- DANE TAB -->
                     <div class="tab-panel hidden" data-panel="data">
+                        <!-- Etap V — Grupy spraw (pracodawca/rodzina/projekt) -->
+                        <section class="module-card mb-4">
+                            <div class="module-card-header">
+                                <span><i class="ph ph-users-three text-amber-400 mr-1"></i>Grupy spraw</span>
+                                <span class="text-xs text-zinc-500">Etap V — łącz powiązane sprawy (pracodawca, rodzina, projekt)</span>
+                            </div>
+                            <div id="case-groups-section" class="p-3">
+                                <div class="text-zinc-500 text-sm">Ładuję...</div>
+                            </div>
+                        </section>
+
                         <!-- Pawel v3.2 § II-C — Role w sprawie -->
                         <section class="module-card mb-4">
                             <div class="module-card-header">
@@ -1767,6 +1811,7 @@ import { renderDocumentGenerator } from './components/document-generator.js';
 import { renderChecklist, loadChecklist } from './components/checklist-renderer.js';
 import { renderRoleAssignments } from './components/role-editor.js';
 import { renderESubmission } from './components/e-submission-section.js';
+import { renderCaseGroups, openAddGroupModal, _saveAddGroup, removeFromGroup } from './components/case-groups.js';
 window.gmp = window.gmp || {};
 window.gmp.renderESubmission = renderESubmission;
 window.gmp.applyConditionalModules = applyConditionalModules;
@@ -1777,6 +1822,10 @@ window.gmp.renderDocumentGenerator = renderDocumentGenerator;
 window.gmp.renderChecklist = renderChecklist;
 window.gmp.loadChecklist = loadChecklist;
 window.gmp.renderRoleAssignments = renderRoleAssignments;
+window.gmp.renderCaseGroups = (cid, sb, sel) => renderCaseGroups(cid, sb, sel);
+window.gmp.openAddGroupModal = (cid) => openAddGroupModal(cid, window.db || window.supabase);
+window.gmp._saveAddGroup = (cid) => _saveAddGroup(cid, window.db || window.supabase);
+window.gmp.removeFromGroup = (cid, gid) => removeFromGroup(cid, gid, window.db || window.supabase);
 window.dispatchEvent(new Event('gmp-modules-ready'));
 </script>
 
@@ -1930,6 +1979,9 @@ function switchTab(name) {
     if (name === 'data' && !tabsLoaded.data) {
         if (window.gmp?.renderRoleAssignments && caseData) {
             window.gmp.renderRoleAssignments(caseData, db, '#role-assignments-section');
+        }
+        if (window.gmp?.renderCaseGroups && caseId) {
+            window.gmp.renderCaseGroups(caseId, db, '#case-groups-section');
         }
         tabsLoaded.data = true;
     }

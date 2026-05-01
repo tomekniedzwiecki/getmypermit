@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Grupa spraw - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+    <script src="components/modals.js" defer></script>
+    <style>
+        .grp-header {
+            background: linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.005) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 18px 22px;
+            margin-bottom: 16px;
+        }
+        .grp-type-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px 3px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        .grp-type-pill::before {
+            content: '';
+            width: 5px; height: 5px; border-radius: 50%;
+            background: currentColor;
+        }
+        .grp-type-pracodawca { background: rgba(245,158,11,0.10); color: #fbbf24; border-color: rgba(245,158,11,0.28); }
+        .grp-type-rodzina { background: rgba(236,72,153,0.10); color: #f9a8d4; border-color: rgba(236,72,153,0.28); }
+        .grp-type-projekt { background: rgba(99,102,241,0.10); color: #a5b4fc; border-color: rgba(99,102,241,0.28); }
+        .grp-type-rozliczenie_zbiorcze { background: rgba(16,185,129,0.10); color: #6ee7b7; border-color: rgba(16,185,129,0.28); }
+        .grp-type-inna { background: rgba(161,161,170,0.12); color: #d4d4d8; border-color: rgba(161,161,170,0.18); }
+
+        .grp-tabs {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 16px;
+        }
+        .grp-tab {
+            padding: 12px 18px 14px;
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: transparent;
+            color: #71717a;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: color 0.15s, border-color 0.15s;
+            font-family: inherit;
+            margin-bottom: -1px;
+        }
+        .grp-tab:hover { color: #d4d4d8; }
+        .grp-tab.active { color: #fafafa; border-bottom-color: #f59e0b; }
+        .grp-tab .ph { font-size: 15px; opacity: 0.85; }
+        .grp-tab-count {
+            background: rgba(255,255,255,0.05);
+            padding: 1px 7px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #71717a;
+        }
+        .grp-tab.active .grp-tab-count { background: rgba(245,158,11,0.18); color: #fbbf24; }
+
+        .member-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.005) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            text-decoration: none;
+            transition: border-color 0.15s, transform 0.15s;
+        }
+        .member-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-1px); }
+        .member-av {
+            width: 38px; height: 38px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: #fff;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #6366f1, #4338ca);
+        }
+        .member-info { flex: 1; min-width: 0; }
+        .member-name { color: #fafafa; font-weight: 500; font-size: 14px; }
+        .member-meta { color: #71717a; font-size: 11px; margin-top: 2px; }
+        .member-status {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(16,185,129,0.10);
+            color: #34d399;
+            border: 1px solid rgba(16,185,129,0.22);
+        }
+        .member-status.s-zakonczona { background: rgba(161,161,170,0.12); color: #d4d4d8; border-color: rgba(161,161,170,0.18); }
+        .member-status.s-archiwum { background: rgba(75,85,99,0.18); color: #a1a1aa; border-color: rgba(75,85,99,0.25); }
+        .member-status.s-lead { background: rgba(245,158,11,0.10); color: #fbbf24; border-color: rgba(245,158,11,0.22); }
+        .member-status.s-zlecona { background: rgba(99,102,241,0.10); color: #a5b4fc; border-color: rgba(99,102,241,0.22); }
+
+        .grp-pane { display: none; }
+        .grp-pane.active { display: block; }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="app-main" id="main-content">
+        <div id="grp-loading" class="p-8 text-center text-zinc-500">
+            <div class="spinner-lg mx-auto mb-3"></div>
+            Ładuję grupę...
+        </div>
+
+        <div id="grp-error" class="hidden card p-6 text-red-300"></div>
+
+        <div id="grp-content" class="hidden">
+            <!-- Breadcrumb -->
+            <nav class="flex items-center gap-2 text-xs text-zinc-500 mb-4">
+                <a href="dashboard.html" class="hover:text-zinc-300"><i class="ph ph-house"></i></a>
+                <span class="opacity-60">/</span>
+                <a href="cases.html" class="hover:text-zinc-300">Sprawy</a>
+                <span class="opacity-60">/</span>
+                <span class="text-zinc-300">Grupa</span>
+                <span class="opacity-60">·</span>
+                <span class="font-mono text-zinc-400" id="grp-id-short">—</span>
+            </nav>
+
+            <!-- HEADER -->
+            <div class="grp-header">
+                <div class="flex items-start justify-between gap-4 flex-wrap mb-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3 flex-wrap mb-2">
+                            <h1 class="text-2xl font-semibold text-white" id="grp-name">—</h1>
+                            <span class="grp-type-pill" id="grp-type">—</span>
+                        </div>
+                        <div class="text-xs text-zinc-500 flex items-center gap-3 flex-wrap">
+                            <span><i class="ph ph-users"></i> <span id="grp-members-count">0</span> spraw</span>
+                            <span id="grp-employer-info" class="hidden"></span>
+                            <span id="grp-assigned-info" class="hidden"></span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-ghost btn-sm" onclick="alert('TODO: edit group')"><i class="ph ph-pencil"></i> Edytuj</button>
+                    </div>
+                </div>
+                <div class="text-sm text-zinc-300" id="grp-notes"></div>
+            </div>
+
+            <!-- TABS -->
+            <div class="grp-tabs">
+                <button class="grp-tab active" data-tab="members"><i class="ph ph-users-three"></i> Sprawy <span class="grp-tab-count" id="grp-cnt-members">—</span></button>
+                <button class="grp-tab" data-tab="documents"><i class="ph ph-file"></i> Dokumenty wspólne <span class="grp-tab-count" id="grp-cnt-docs">—</span></button>
+                <button class="grp-tab" data-tab="tasks"><i class="ph ph-check-square"></i> Zadania grupowe <span class="grp-tab-count" id="grp-cnt-tasks">—</span></button>
+            </div>
+
+            <!-- PANES -->
+            <div class="grp-pane active" data-pane="members">
+                <div id="grp-members-list" class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+                    <div class="text-zinc-500 text-sm">Ładuję sprawy...</div>
+                </div>
+            </div>
+
+            <div class="grp-pane" data-pane="documents">
+                <div class="card p-4">
+                    <div id="grp-documents-list" class="space-y-2">
+                        <div class="text-zinc-500 text-sm">Ładuję dokumenty...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grp-pane" data-pane="tasks">
+                <div class="card p-4">
+                    <div id="grp-tasks-list" class="space-y-2">
+                        <div class="text-zinc-500 text-sm">Ładuję zadania...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="modals-container"></div>
+
+<script>
+const TYPE_LABELS = {
+    pracodawca: 'Pracodawca',
+    rodzina: 'Rodzina',
+    projekt: 'Projekt',
+    rozliczenie_zbiorcze: 'Rozliczenie zbiorcze',
+    inna: 'Inna',
+};
+const STATUS_LABELS = { lead: 'Lead', zlecona: 'Zlecona', aktywna: 'Aktywna', zakonczona: 'Zakończona', archiwum: 'Archiwum' };
+
+const params = new URLSearchParams(location.search);
+const groupId = params.get('id');
+let groupData = null;
+let members = [];
+
+function esc(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('pl-PL'); } catch { return d; } }
+
+document.addEventListener('gmp-auth-ready', loadGroup);
+
+async function loadGroup() {
+    if (!groupId) {
+        showError('Brak ID grupy w URL');
+        return;
+    }
+    try {
+        const { data: g, error } = await db.from('gmp_case_groups')
+            .select('*, employer:gmp_employers(id, name, nip), assigned:gmp_staff!assigned_to(id, full_name)')
+            .eq('id', groupId)
+            .single();
+        if (error) throw error;
+        groupData = g;
+        document.title = `${g.name} - Grupa - GetMyPermit CRM`;
+        renderHeader(g);
+        await Promise.all([
+            loadMembers(),
+            loadDocuments(),
+            loadTasks(),
+        ]);
+        document.getElementById('grp-loading').classList.add('hidden');
+        document.getElementById('grp-content').classList.remove('hidden');
+        bindTabs();
+    } catch (e) {
+        console.error('[group] load error:', e);
+        showError('Nie udało się załadować grupy: ' + (e.message || e));
+    }
+}
+
+function showError(msg) {
+    document.getElementById('grp-loading').classList.add('hidden');
+    const el = document.getElementById('grp-error');
+    el.classList.remove('hidden');
+    el.textContent = msg;
+}
+
+function renderHeader(g) {
+    document.getElementById('grp-name').textContent = g.name;
+    document.getElementById('grp-id-short').textContent = '#' + g.id.slice(0, 8);
+    const typeEl = document.getElementById('grp-type');
+    typeEl.className = `grp-type-pill grp-type-${g.type}`;
+    typeEl.textContent = TYPE_LABELS[g.type] || g.type;
+    if (g.notes) document.getElementById('grp-notes').textContent = g.notes;
+    if (g.employer) {
+        const empEl = document.getElementById('grp-employer-info');
+        empEl.innerHTML = `<i class="ph ph-buildings"></i> Pracodawca: <a href="employers.html?id=${g.employer.id}" class="text-blue-400 hover:underline">${esc(g.employer.name)}</a>${g.employer.nip ? ` <span class="text-zinc-600 font-mono">(NIP: ${esc(g.employer.nip)})</span>` : ''}`;
+        empEl.classList.remove('hidden');
+    }
+    if (g.assigned) {
+        const asgEl = document.getElementById('grp-assigned-info');
+        asgEl.innerHTML = `<i class="ph ph-user-circle"></i> Opiekun: <span class="text-zinc-300">${esc(g.assigned.full_name)}</span>`;
+        asgEl.classList.remove('hidden');
+    }
+}
+
+async function loadMembers() {
+    const { data, error } = await db.from('gmp_case_group_members')
+        .select(`role_in_group, added_at, case:gmp_cases(
+            id, case_number, status, stage, kind, category, znak_sprawy,
+            client:gmp_clients(first_name, last_name, nationality)
+        )`)
+        .eq('group_id', groupId);
+    if (error) {
+        console.warn('[group] members error:', error);
+        return;
+    }
+    members = (data || []).filter(m => m.case);
+    document.getElementById('grp-members-count').textContent = members.length;
+    document.getElementById('grp-cnt-members').textContent = members.length;
+
+    const list = document.getElementById('grp-members-list');
+    if (members.length === 0) {
+        list.innerHTML = '<div class="text-zinc-500 text-sm col-span-full">Brak spraw w tej grupie.</div>';
+        return;
+    }
+    list.innerHTML = members.map(m => {
+        const c = m.case;
+        const cl = c.client;
+        const clientName = cl ? `${cl.last_name} ${cl.first_name}` : '(bez klienta)';
+        const initials = cl ? ((cl.first_name?.[0] || '') + (cl.last_name?.[0] || '')).toUpperCase() : '?';
+        const status = c.status || 'lead';
+        return `
+            <a href="case.html?id=${c.id}" class="member-card">
+                <div class="member-av">${esc(initials)}</div>
+                <div class="member-info">
+                    <div class="member-name">${esc(clientName)}</div>
+                    <div class="member-meta">
+                        ${c.case_number ? `#${esc(c.case_number)}` : ''}
+                        ${c.stage ? ` · ${esc(c.stage)}` : ''}
+                        ${m.role_in_group ? ` · <span class="text-zinc-400">${esc(m.role_in_group)}</span>` : ''}
+                    </div>
+                </div>
+                <span class="member-status s-${status}">${STATUS_LABELS[status] || status}</span>
+            </a>
+        `;
+    }).join('');
+}
+
+async function loadDocuments() {
+    const { data, error, count } = await db.from('gmp_documents')
+        .select('id, name, document_type, file_size, created_at, storage_path', { count: 'exact' })
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: false });
+    if (error) {
+        console.warn('[group] docs error:', error);
+        return;
+    }
+    document.getElementById('grp-cnt-docs').textContent = count || 0;
+    const list = document.getElementById('grp-documents-list');
+    if (!data || data.length === 0) {
+        list.innerHTML = '<div class="text-zinc-500 text-sm">Brak dokumentów wspólnych dla tej grupy. Aby dodać dokument, użyj sekcji Dokumenty w karcie sprawy i przypisz go do grupy.</div>';
+        return;
+    }
+    list.innerHTML = data.map(d => `
+        <div class="flex items-center gap-3 p-3 rounded-lg" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+            <i class="ph ph-file text-zinc-400 text-xl"></i>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm text-white truncate">${esc(d.name)}</div>
+                <div class="text-xs text-zinc-500">${esc(d.document_type || '')} · ${fmtDate(d.created_at)}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadTasks() {
+    const { data, error, count } = await db.from('gmp_tasks')
+        .select('id, title, status, due_date, gmp_staff(full_name)', { count: 'exact' })
+        .eq('group_id', groupId)
+        .order('due_date', { ascending: true, nullsFirst: false });
+    if (error) {
+        console.warn('[group] tasks error:', error);
+        return;
+    }
+    document.getElementById('grp-cnt-tasks').textContent = count || 0;
+    const list = document.getElementById('grp-tasks-list');
+    if (!data || data.length === 0) {
+        list.innerHTML = '<div class="text-zinc-500 text-sm">Brak zadań grupowych. Aby utworzyć zadanie grupowe, użyj sekcji Zadania w karcie sprawy i przypisz je do grupy.</div>';
+        return;
+    }
+    list.innerHTML = data.map(t => `
+        <div class="flex items-center gap-3 p-3 rounded-lg" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+            <i class="ph ph-${t.status === 'done' ? 'check-square text-emerald-400' : 'square text-zinc-500'} text-xl"></i>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm text-white truncate">${esc(t.title)}</div>
+                <div class="text-xs text-zinc-500">${t.due_date ? fmtDate(t.due_date) + ' · ' : ''}${esc(t.gmp_staff?.full_name || '—')}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function bindTabs() {
+    document.querySelectorAll('.grp-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const name = btn.dataset.tab;
+            document.querySelectorAll('.grp-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+            document.querySelectorAll('.grp-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
+        });
+    });
+}
+</script>
+</body>
+</html>
