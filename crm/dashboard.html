@@ -346,6 +346,14 @@
                 <div class="kpi-value" id="k-upcoming">—</div>
                 <div class="kpi-sub" id="k-upcoming-sub">do zapłaty wkrótce</div>
             </a>
+            <!-- Etap IV.6 (E4) — Sukces decyzji ostatnich 90 dni -->
+            <a href="cases.html?preset=zakonczone_90d" class="kpi kpi--emerald" id="kpi-success-decision">
+                <div class="kpi-glow"></div>
+                <div class="kpi-icon"><i class="ph ph-check-circle"></i></div>
+                <div class="kpi-label">Sukces decyzji 90 dni</div>
+                <div class="kpi-value" id="k-success-pct">—</div>
+                <div class="kpi-sub" id="k-success-sub">brak danych</div>
+            </a>
         </div>
 
         <!-- ============ DZIS ============ -->
@@ -711,6 +719,24 @@ async function loadKPIs() {
             }
         } catch (e) { console.warn('[upcoming KPI] view może nie istnieć:', e); }
     }
+
+    // === Etap IV.6 (E4) — Sukces decyzji ostatnich 90 dni ===
+    // Widoczne dla wszystkich (nie zawiera danych finansowych)
+    try {
+        const { data: kpi, error } = await db.from('gmp_case_dashboard_kpi').select('*').single();
+        if (!error && kpi) {
+            const pctEl = document.getElementById('k-success-pct');
+            const subEl = document.getElementById('k-success-sub');
+            if (kpi.decyzje_90d > 0) {
+                pctEl.textContent = (kpi.sukces_pct ?? 0) + '%';
+                subEl.innerHTML = `<i class="ph ph-check"></i> ${kpi.pozytywne_90d} z ${kpi.decyzje_90d} decyzji` +
+                    (kpi.negatywne_90d > 0 ? ` <span class="muted">· ${kpi.negatywne_90d} odmów</span>` : '');
+            } else {
+                pctEl.textContent = '—';
+                subEl.innerHTML = '<span class="muted">brak decyzji w 90 dniach</span>';
+            }
+        }
+    } catch (e) { console.warn('[success KPI] view może nie istnieć:', e); }
 }
 
 // ============ DZIS BAR + TIMELINE ============

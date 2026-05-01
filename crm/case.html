@@ -1186,6 +1186,8 @@
                             <span class="meta-mono hidden" id="case-znak-sprawy"></span>
                             <span class="hidden" id="case-type-display"></span>
                             <span id="case-employer-display"></span>
+                            <!-- Etap IV.4 — Badge dni od przystąpienia (żółty 90-180, czerwony >180) -->
+                            <span class="meta-tag hidden" id="case-days-since-joined" title="Dni od daty przystąpienia"></span>
                         </div>
                         <div id="case-tags" class="mt-2"></div>
                     </div>
@@ -1652,6 +1654,65 @@
                                 <div><label>Skarga (data)</label><input type="date" class="input w-full" data-field="skarga_date"></div>
                                 <div><label>Termin odpowiedzi (sprawy inne)</label><input type="date" class="input w-full" data-field="deadline_response"></div>
                                 <div><label>Termin rozprawy (sprawy inne)</label><input type="date" class="input w-full" data-field="deadline_hearing"></div>
+                            </div>
+                        </section>
+
+                        <!-- Etap IV — Dane proceduralne (Pawel pkt 8/9 + B7)
+                             Conditional: tylko dla przystąpień i przejęć (kind LIKE 'przystapienie%' OR kind = 'przejeta_*') -->
+                        <section class="module-card mb-4" data-show-when="kind:przystapienie_*|przejeta_do_dalszego_prowadzenia">
+                            <div class="module-card-header">
+                                <span><i class="ph ph-clipboard-text text-amber-400 mr-1"></i>Dane proceduralne (przystąpienie / przejęcie)</span>
+                                <span class="text-xs text-zinc-500">Etap IV — Pawel pkt 8/9</span>
+                            </div>
+                            <div class="p-4 grid grid-cols-2 gap-3">
+                                <div>
+                                    <label>Status braków formalnych</label>
+                                    <select class="input w-full" data-field="braki_formalne_status">
+                                        <option value="">— wybierz —</option>
+                                        <option value="brak">Brak</option>
+                                        <option value="sa">Są braki</option>
+                                        <option value="uzupelnione">Uzupełnione</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Status odcisków</label>
+                                    <select class="input w-full" data-field="odciski_status">
+                                        <option value="">— wybierz —</option>
+                                        <option value="nie_dotyczy">Nie dotyczy</option>
+                                        <option value="do_pobrania">Do pobrania</option>
+                                        <option value="pobrane">Pobrane</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Status opłaty urzędowej</label>
+                                    <select class="input w-full" data-field="oplata_status">
+                                        <option value="">— wybierz —</option>
+                                        <option value="brak">Brak</option>
+                                        <option value="wniesiona">Wniesiona</option>
+                                        <option value="do_zwrotu">Do zwrotu</option>
+                                    </select>
+                                </div>
+                                <div></div>
+
+                                <div><label>Data uzupełnienia odcisków</label><input type="date" class="input w-full" data-field="date_fingerprints"></div>
+                                <div><label>Data wezwania urzędu</label><input type="date" class="input w-full" data-field="date_summon"></div>
+                                <div><label>Data wydania decyzji</label><input type="date" class="input w-full" data-field="date_decision"></div>
+                                <div>
+                                    <label>Wynik decyzji</label>
+                                    <select class="input w-full" data-field="decision_outcome">
+                                        <option value="">— brak —</option>
+                                        <option value="pozytywna">✓ Pozytywna</option>
+                                        <option value="negatywna">✗ Negatywna</option>
+                                        <option value="czesciowo_pozytywna">~ Częściowo pozytywna</option>
+                                        <option value="umorzenie">Umorzenie</option>
+                                        <option value="odmowa">Odmowa</option>
+                                        <option value="inna">Inna</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <label>Notatki / uzasadnienie decyzji</label>
+                                    <textarea class="input w-full" rows="2" data-field="decision_outcome_notes" placeholder="Opcjonalne — uzasadnienie wyniku decyzji"></textarea>
+                                </div>
                             </div>
                         </section>
 
@@ -3049,6 +3110,28 @@ function fillForm() {
     } else {
         empEl.innerHTML = '';
         empEl.classList.add('hidden');
+    }
+
+    // === Etap IV.4 — Badge dni od przystąpienia (żółty 90-180, czerwony >180) ===
+    const daysEl = document.getElementById('case-days-since-joined');
+    if (daysEl && d.date_joined) {
+        const days = Math.floor((Date.now() - new Date(d.date_joined).getTime()) / 86400000);
+        let tone = '';
+        let style = '';
+        if (days > 180) {
+            tone = 'danger';
+            style = 'background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.28); color: #fca5a5;';
+        } else if (days >= 90) {
+            tone = 'warn';
+            style = 'background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.22); color: #fbbf24;';
+        }
+        daysEl.style.cssText = style;
+        daysEl.innerHTML = `<i class="ph ph-clock"></i> ${days} dni`;
+        daysEl.title = `Od daty przystąpienia (${fmt.date(d.date_joined)})${tone === 'danger' ? ' — sprawdź czy nie utknęła' : ''}`;
+        daysEl.classList.remove('hidden');
+    } else if (daysEl) {
+        daysEl.classList.add('hidden');
+        daysEl.style.cssText = '';
     }
 
     // Tags
