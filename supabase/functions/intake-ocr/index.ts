@@ -67,6 +67,18 @@ Deno.serve(async (req) => {
             return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 403, headers: { ...cors, 'Content-Type': 'application/json' } });
         }
 
+        // MAJ-CR-2 fix 2026-05-02: tylko aktywne intake mogą OCR-ować
+        if (intake.status !== 'invited' && intake.status !== 'in_progress') {
+            return new Response(JSON.stringify({ error: 'Intake not active', status: intake.status }), { status: 403, headers: { ...cors, 'Content-Type': 'application/json' } });
+        }
+
+        // MAJ-CR-1 fix 2026-05-02: storage_path MUSI zaczynać się od `${intake_token}/`,
+        // inaczej atakujący ze swoim tokenem mógłby OCR-ować cudze paszporty.
+        const expectedPrefix = `${intake_token}/`;
+        if (!storage_path.startsWith(expectedPrefix) || storage_path.includes('..')) {
+            return new Response(JSON.stringify({ error: 'storage_path not owned by token' }), { status: 403, headers: { ...cors, 'Content-Type': 'application/json' } });
+        }
+
         // Get signed URL for the storage object
         const { data: signed } = await db.storage.from('intake-docs').createSignedUrl(storage_path, 300);
         if (!signed?.signedUrl) {

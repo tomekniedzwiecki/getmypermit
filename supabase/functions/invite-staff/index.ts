@@ -16,6 +16,17 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
+// MAJ-CR-4 fix 2026-05-02: whitelist origins dla recovery link redirectTo,
+// inaczej atakujący wysyłając Origin: evil.com dostaje recovery link wskazujący na jego domenę.
+const ALLOWED_REDIRECT_ORIGINS: ReadonlyArray<string> = [
+    'https://crm.getmypermit.pl',
+    'https://getmypermit.pl',
+    'https://tn-crm.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+];
+const DEFAULT_REDIRECT_ORIGIN = 'https://crm.getmypermit.pl';
+
 const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -90,14 +101,21 @@ Deno.serve(async (req) => {
         userId = newUser.user.id;
     }
 
-    // 2. Powiaz z gmp_staff
+    // 2. Powiaz z gmp_staff (MAJ-CR-3 fix 2026-05-02: dwa osobne query zamiast .or() z wartościami od usera,
+    //    inaczej `,` lub `(` w full_name wstrzykiwał dodatkowe filtry do PostgREST).
     if (body.staff_id) {
         await admin.from('gmp_staff').update({ user_id: userId, email, role }).eq('id', body.staff_id);
     } else {
-        const { data: match } = await admin.from('gmp_staff')
-            .select('id')
-            .or(`email.eq.${email},full_name.ilike.${fullName}`)
-            .maybeSingle();
+        let match: { id: string } | null = null;
+        const byEmail = await admin.from('gmp_staff').select('id').eq('email', email).maybeSingle();
+        if (byEmail.data) {
+            match = byEmail.data;
+        } else {
+            // ilike pattern - escape % i _ w fullName żeby user nie mógł wildcardować
+            const safeName = fullName.replace(/[%_\\]/g, m => '\\' + m);
+            const byName = await admin.from('gmp_staff').select('id').ilike('full_name', safeName).maybeSingle();
+            if (byName.data) match = byName.data;
+        }
         if (match) {
             await admin.from('gmp_staff').update({ user_id: userId, email, role }).eq('id', match.id);
         } else {
@@ -128,7 +146,9 @@ Deno.serve(async (req) => {
     }
 
     // 3b. Tryb 'link' — wygeneruj link do ustawienia hasla
-    const origin = req.headers.get('origin') || 'https://crm.getmypermit.pl';
+    // MAJ-CR-4 fix: whitelist origin (jeśli atakujący wyśle Origin: evil.com, fallback do default).
+    const reqOrigin = req.headers.get('origin') || '';
+    const origin = ALLOWED_REDIRECT_ORIGINS.includes(reqOrigin) ? reqOrigin : DEFAULT_REDIRECT_ORIGIN;
     const redirectTo = `${origin}/reset-password.html`;
 
     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({

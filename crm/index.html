@@ -16,6 +16,8 @@
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } }
     </script>
+    <meta name="x-sentry-dsn" content="https://6f0737fc66f36bbdc9806377bee380b8@o4511314588205056.ingest.de.sentry.io/4511314611667024">
+    <script src="components/sentry.js"></script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js" data-require-auth="false"></script>
     <style>
@@ -451,12 +453,26 @@
     </div>
 
     <script>
+        // CRIT-PENTEST-1 fix: whitelist returnTo do same-origin .html
+        function safeReturnTo(value, fallback) {
+            fallback = fallback || 'dashboard.html';
+            if (!value || typeof value !== 'string') return fallback;
+            if (/^[a-z][a-z0-9+.\-]*:/i.test(value)) return fallback;
+            if (value.startsWith('//') || value.startsWith('\\')) return fallback;
+            let decoded;
+            try { decoded = decodeURIComponent(value); } catch (_) { return fallback; }
+            if (/^[a-z][a-z0-9+.\-]*:/i.test(decoded) || decoded.startsWith('//') || decoded.startsWith('\\')) return fallback;
+            var cleaned = value.replace(/^\/+/, '');
+            if (!/^[A-Za-z0-9_\-]+\.html(\?[A-Za-z0-9_\-=&%.]*)?(#[A-Za-z0-9_\-]*)?$/.test(cleaned)) return fallback;
+            return cleaned;
+        }
+
         // Redirect, jeśli już zalogowany
         (async () => {
             const session = await window.gmpAuth.getSession();
             if (session) {
                 const params = new URLSearchParams(window.location.search);
-                const returnTo = params.get('return') || 'dashboard.html';
+                const returnTo = safeReturnTo(params.get('return'));
                 window.location.href = returnTo;
             }
         })();
@@ -543,7 +559,7 @@
                 } catch (_) {}
                 showMsg('Zalogowano. Przekierowanie…', 'success');
                 const params = new URLSearchParams(window.location.search);
-                const returnTo = params.get('return') || 'dashboard.html';
+                const returnTo = safeReturnTo(params.get('return'));
                 setTimeout(() => window.location.href = returnTo, 400);
             } catch (err) {
                 showMsg(err.message || 'Błąd logowania');

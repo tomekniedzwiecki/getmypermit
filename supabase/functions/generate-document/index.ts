@@ -37,13 +37,29 @@ interface GenerateRequest {
     save_to_documents?: boolean;
 }
 
-const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// MAJ-PENTEST-3 fix 2026-05-02: CORS whitelist (admin endpoint, nie public).
+// Zamiast wildcard `*`, odsyłamy ACAO=<origin> tylko dla naszych domen.
+const ALLOWED_ORIGINS: ReadonlyArray<string> = [
+    "https://crm.getmypermit.pl",
+    "https://getmypermit.pl",
+    "https://tn-crm.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+];
+
+function corsFor(req: Request): Record<string, string> {
+    const origin = req.headers.get("origin") || "";
+    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    return {
+        "Access-Control-Allow-Origin": allowed,
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Vary": "Origin",
+    };
+}
 
 Deno.serve(async (req) => {
+    const corsHeaders = corsFor(req);
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
     }

@@ -1041,7 +1041,17 @@
         // ===========================================
         const SUPABASE_URL = 'https://gfwsdrbywgmceateubyq.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmd3NkcmJ5d2dtY2VhdGV1YnlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0Mzg1MjksImV4cCI6MjA5MjAxNDUyOX0.Qnn4MbtfApJ8sVwkpXNqNoHCBcGymS2U04kRLIVRta0';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // CRIT-NEW-2 fix 2026-05-02: token z URL przekazujemy w nagłówku X-Offer-Token,
+        // RLS na gmp_client_offers wymaga tego nagłówka.
+        const __OFFER_TOKEN_FROM_URL = (() => {
+            const sp = new URLSearchParams(location.search);
+            return sp.get('token') || sp.get('t') || '';
+        })();
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY,
+            __OFFER_TOKEN_FROM_URL
+                ? { global: { headers: { 'X-Offer-Token': __OFFER_TOKEN_FROM_URL } } }
+                : undefined
+        );
 
         const TABLE_CLIENT_OFFERS = 'gmp_client_offers';
         const TABLE_OFFERS = 'gmp_offers';

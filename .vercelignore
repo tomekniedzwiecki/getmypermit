@@ -4,6 +4,17 @@ dane_od_pawla/
 CRM.docx
 scripts/
 .env
+.env.*
 node_modules/
 supabase/
 docs/
+package.json
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.git/
+README.md
+*.md
+PAWEL_ROADMAP*.md
+BEZPIECZENSTWO_RODO_DO_NAPRAWY.md
+tool-results/

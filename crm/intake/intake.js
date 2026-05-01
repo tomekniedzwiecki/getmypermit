@@ -3,7 +3,17 @@
 
 const SUPABASE_URL = 'https://gfwsdrbywgmceateubyq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmd3NkcmJ5d2dtY2VhdGV1YnlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0Mzg1MjksImV4cCI6MjA5MjAxNDUyOX0.Qnn4MbtfApJ8sVwkpXNqNoHCBcGymS2U04kRLIVRta0';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// BLK-2/BLK-3 fix 2026-05-02: token z URL przekazujemy w nagłówku X-Intake-Token,
+// RLS na gmp_intake_tokens i gmp_intake_documents wymaga tego nagłówka.
+const __INTAKE_TOKEN_FROM_URL = (() => {
+    const sp = new URLSearchParams(location.search);
+    return sp.get('t') || sp.get('token') || '';
+})();
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY,
+    __INTAKE_TOKEN_FROM_URL
+        ? { global: { headers: { 'X-Intake-Token': __INTAKE_TOKEN_FROM_URL } } }
+        : undefined
+);
 
 // Nowa struktura: 15 mikro-ekranów (0..16)
 // 0=welcome, 1=name, 2=birth/nationality, 3=passport upload, 4=passport details,
