@@ -1,24 +1,43 @@
-# RAPORT AUDYTU WDROŻENIA — GetMyPermit CRM
+# RAPORT AUDYTU PRE-LAUNCH — GetMyPermit CRM
 
 **Data wykonania:** 2026-MM-DD
 **Wykonał:** Claude (sesja audytowa)
 **Czas pracy:** XX godzin (XX sesji)
-**Spec źródłowa:** `PAWEL_ROADMAP_v3.md` v3.2 (lokalnie)
-**Plan audytu:** `docs/AUDYT_PLAN.md`
+**Spec źródłowa:** `docs/spec/PAWEL_ROADMAP_v3.md` v3.2 (lokalnie)
+**Plan audytu:** `docs/AUDYT_PLAN.md` (13 sekcji)
+
+---
+
+## 🚦 GO / NO-GO DECISION
+
+> **KLUCZOWE: czy system jest gotowy na produkcyjne wdrożenie?**
+
+**Decyzja:** ⬜ GO  /  ⬜ NO-GO  /  ⬜ GO z warunkami
+
+**Uzasadnienie (2-3 zdania):** ___
+
+**Blokery (jeśli NO-GO):** lista bugów priorytetu Blocker — patrz sekcja "Lista bugów" niżej.
+
+**Warunki (jeśli GO z warunkami):** lista zadań DO ZROBIENIA przed/podczas go-live (np. "PZ encryption MUSI być wdrożone najpóźniej dzień przed pierwszym wpisem do gmp_trusted_profile_credentials").
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-> Wypełnić po skończonym audycie. 5-10 zdań.
+> Wypełnić po skończonym audycie. 8-15 zdań.
 
-- Total findings: ___ (Critical: __, Major: __, Minor: __)
-- Spec compliance: __% (DoD wykonane: __ z __)
-- Pre-conditions status: __ z 3 (z czego krytyczne: __)
-- Performance status: ___ (avg page load __ms, slowest endpoint ___)
-- RODO compliance: ___ (PZ encryption: ___, audit log sanitization: ___)
-- Top 3 critical to fix: 1) ___, 2) ___, 3) ___
-- Recommended next sprint: ___ items, est ___ days
+- **Total findings:** ___ (Blocker: __, Critical: __, Major: __, Minor: __)
+- **Spec compliance Pawła:** __% (DoD wykonane: __ z __)
+- **Pre-conditions status:** __ z 3 (krytyczne braki: ___)
+- **Security score:** __ /10 (OWASP Top 10 pass: __ / 10, RLS coverage: __%)
+- **Performance status:** avg page load __ ms, slowest query ___ ms
+- **RODO compliance:** ___ (PZ encryption: ___, audit log sanitization: ___, GDPR endpoints: ___)
+- **Backwards compatibility:** __ regresji wykrytych
+- **Production readiness:** __ z __ punktów checklist (sekcja 13)
+- **Top 3 BLOCKER do fix:** 1) ___, 2) ___, 3) ___
+- **Top 3 critical (po blockers):** 1) ___, 2) ___, 3) ___
+- **Recommended pre-launch sprint:** ___ items, est ___ days
+- **Recommended follow-up (post-launch):** ___ items, est ___ days
 
 ---
 
@@ -277,36 +296,159 @@ Krytyczne brakujące: ___
 
 ---
 
-## 8. AUDYT BEZPIECZEŃSTWA
+## 8. AUDYT BEZPIECZEŃSTWA — PRIORYTET KRYTYCZNY
 
-### 8.1 RLS test (4 role)
+### 8.1 RLS coverage
 
-| Rola | Sidebar pages | Cases visible | Audit log access | PZ creds access | Status |
-|------|---------------|---------------|------------------|-----------------|--------|
-| anon | __ pages | __ rows | ⬜ | ⬜ | ⬜ |
-| staff | __ pages | __ rows | ⬜ | ⬜ | ⬜ |
-| admin | __ pages | __ rows | ⬜ | ⬜ | ⬜ |
-| owner | __ pages | __ rows | ⬜ | ⬜ | ⬜ |
+```
+Wszystkie tabele gmp_* z RLS enabled: __ z __
+Tabele BEZ RLS: ___ (KRYTYCZNE jeśli > 0)
+Tabele bez ŻADNEJ policy: ___
+```
 
-### 8.2 JWT verification per edge function
+### 8.1.1 Anonymous access test
 
-> Patrz tabela w sekcji 6.
+| Tabela | Anon SELECT | Pass? |
+|--------|-------------|-------|
+| gmp_cases | __ rows | ⬜ |
+| gmp_clients | __ rows | ⬜ |
+| gmp_audit_log | __ rows | ⬜ |
+| gmp_trusted_profile_credentials | __ rows | ⬜ |
+| gmp_payments | __ rows | ⬜ |
 
-### 8.3 Audit log sanitization
+### 8.1.2 Special tables policies
 
-Test: UPDATE `gmp_cases` z PESEL → sprawdź `gmp_audit_log`:
-- PESEL pokazany w cleartext: ⬜ (BAD)
-- PESEL wymazany / zhashowany: ⬜ (GOOD)
+| Tabela | Wymagana policy | Faktyczna | Pass |
+|--------|-----------------|-----------|------|
+| gmp_audit_log | tylko admin SELECT, append-only | ___ | ⬜ |
+| gmp_trusted_profile_credentials | log access przy każdym SELECT | ___ | ⬜ |
+| gmp_intake_tokens | token-based, anon access | ___ | ⬜ |
 
-### 8.4 RODO compliance
+### 8.2 JWT verification
 
-| Wymaganie | Status | Notatki |
-|-----------|--------|---------|
-| Soft delete klienta | ⬜ | |
-| Eksport danych klienta (GDPR) | ⬜ | |
-| Right to be forgotten | ⬜ | |
-| Zgody RODO zapisane (consents) | ⬜ | |
-| PZ encryption | ⬜ | |
+| Funkcja | Powinno | Faktyczne | Test 401 bez auth | Pass |
+|---------|---------|-----------|-------------------|------|
+| generate-document | --verify-jwt | ___ | ⬜ | ⬜ |
+| case-startup-pack | --verify-jwt | ___ | ⬜ | ⬜ |
+| import-employer-workers | --verify-jwt | ___ | ⬜ | ⬜ |
+| automation-executor | --no-verify-jwt | ___ | n/a | ⬜ |
+| intake-ocr | --no-verify-jwt | ___ | n/a | ⬜ |
+| invite-staff | --verify-jwt + admin check | ___ | ⬜ | ⬜ |
+| delete-staff | --verify-jwt + admin check | ___ | ⬜ | ⬜ |
+| permit-lead-save | --no-verify-jwt + rate limit | ___ | n/a | ⬜ |
+
+### 8.3 OWASP Top 10 (2021)
+
+| Kategoria | Status | Findings |
+|-----------|--------|----------|
+| A01 Broken Access Control | ⬜ | |
+| A02 Cryptographic Failures (PZ encryption!) | ⬜ | |
+| A03 Injection (SQL/XSS) | ⬜ | |
+| A04 Insecure Design | ⬜ | |
+| A05 Security Misconfiguration | ⬜ | |
+| A06 Vulnerable Components (npm audit) | ⬜ | |
+| A07 Authentication Failures | ⬜ | |
+| A08 Software/Data Integrity | ⬜ | |
+| A09 Logging Failures | ⬜ | |
+| A10 SSRF | ⬜ | |
+
+**Score:** __ /10 OWASP categories pass
+
+### 8.4 Audit log sanitization
+
+Test: UPDATE `gmp_cases` z PESEL `90010112345` →
+- diff_data zawiera PESEL plaintext: ⬜ (BAD — BLOCKER!)
+- diff_data wymazany/zhashowany: ⬜ (GOOD)
+
+Test passwordów / secrets:
+- ⬜ password nie w log
+- ⬜ passport_number nie w log
+- ⬜ secret_* nie w log
+
+### 8.5 RODO/GDPR compliance
+
+| Wymaganie | Status | Endpoint / mechanizm | Notatki |
+|-----------|--------|---------------------|---------|
+| Right to access (export danych) | ⬜ | ___ | |
+| Right to erasure (zapomnienie) | ⬜ | ___ | |
+| Right to rectification | ⬜ | UPDATE działa, audit log | |
+| Data portability | ⬜ | format ___ | |
+| Consent management | ⬜ | gmp_clients.consents jsonb? | |
+| Pseudonimizacja PESEL w UI | ⬜ | maska XXX-XXX-X1234? | |
+| Procedura naruszenia danych | ⬜ | dokument? | |
+| Cookie banner | ⬜ | landing | |
+
+### 8.6 Secrets management
+
+| Check | Status |
+|-------|--------|
+| .env w .gitignore | ⬜ |
+| `grep -r SUPABASE_SERVICE_ROLE_KEY` poza .env/scripts | ⬜ (musi 0) |
+| Vercel env vars set | ⬜ |
+| Supabase secrets set | ⬜ |
+| Brak hardcoded credentials | ⬜ |
+
+### 8.7 CORS
+
+| Endpoint | Allow-Origin | Pass |
+|----------|--------------|------|
+| edge functions | ___ | ⬜ |
+| PostgREST | ___ | ⬜ |
+
+### 8.8 Input validation
+
+| Pole | Walidacja | XSS test | Pass |
+|------|-----------|----------|------|
+| PESEL | 11 cyfr + checksum | n/a | ⬜ |
+| NIP | 10 cyfr + checksum | n/a | ⬜ |
+| Email | regex | n/a | ⬜ |
+| Notes (free text) | escape przed render | `<script>alert(1)</script>` test | ⬜ |
+| Search inputs | escape | `' OR 1=1--` test | ⬜ |
+
+### 8.9 Permissions per role (4 role)
+
+| Rola | Sidebar | Cases visible | Audit log | PZ creds | Delete | Admin features | Status |
+|------|---------|---------------|-----------|----------|--------|----------------|--------|
+| anon | __ stron | __ rows | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| staff | __ stron | __ rows | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| admin | __ stron | __ rows | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| owner | __ stron | __ rows | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+
+#### 8.9.2 IDOR test
+- Staff A próbuje `?id=<UUID staff B sprawy>` → wynik: ⬜
+
+### 8.10 Penetration test results
+
+| Atak | Test | Pass |
+|------|------|------|
+| SQL injection w search | `' OR 1=1--` | ⬜ |
+| XSS reflected (URL params) | `?id=<script>alert(1)</script>` | ⬜ |
+| XSS stored (notes) | `<img src=x onerror=alert(1)>` | ⬜ |
+| CSRF | SameSite cookie? | ⬜ |
+| Clickjacking | X-Frame-Options? | ⬜ |
+| Open redirect | `?redirect=evil.com` | ⬜ |
+| Session fixation | new session ID po login? | ⬜ |
+| Information disclosure | error 500 stack trace? .env dostępny? | ⬜ |
+| Brute force login | 10 failed → lock? | ⬜ |
+
+### 8.11 Backup + recovery
+
+| Check | Status |
+|-------|--------|
+| Auto-backup włączony | ⬜ |
+| Retention min 7 dni | ⬜ |
+| Test restore wykonany | ⬜ |
+| RTO estimate | ___ minut |
+| RPO estimate | ___ godzin |
+
+### 8.12 Monitoring + alerting
+
+| Check | Status |
+|-------|--------|
+| Error tracking (Sentry?) | ⬜ |
+| Uptime monitor | ⬜ |
+| Database metrics alert | ⬜ |
+| On-call procedure | ⬜ |
 
 ---
 
@@ -363,7 +505,266 @@ Test: UPDATE `gmp_cases` z PESEL → sprawdź `gmp_audit_log`:
 
 ---
 
+## 11. PRE-V3 FEATURES
+
+### 11.1 Landing page
+
+| Strona | Ładuje | Brak errors | Mobile OK | Linki OK | SEO OK | Status |
+|--------|--------|-------------|-----------|----------|--------|--------|
+| index.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| lawyers.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| calendar.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| availability.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| lead.html (public) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| offers.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| client-offer.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| client-offers.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| polityka-prywatnosci.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| regulamin.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+
+**index.html:**
+- Page weight: ___ KB
+- Time to load (3G): ___ s
+- ebook.pdf download flow: ⬜
+- tracking.js firing: ⬜
+
+### 11.2 Leads system
+
+| Test | Status | Notatki |
+|------|--------|---------|
+| Form na index.html → permit-lead-save → permit_leads | ⬜ | |
+| Lead widoczny w crm/leads.html | ⬜ | |
+| Qualification checklist w lead.html | ⬜ | |
+| Convert to case → gmp_cases utworzony | ⬜ | |
+| Spam protection (rate limit) | ⬜ | |
+| Walidacja form | ⬜ | |
+| Dedup (ten sam email/phone) | ⬜ | |
+| UTM params zapisane | ⬜ | |
+
+### 11.3 Integracje zewnętrzne
+
+| Integracja | Status | Notatki |
+|------------|--------|---------|
+| Resend mail | ⬜ | SPF: ___, DKIM: ___, DMARC: ___ |
+| Google Analytics / Meta Pixel | ⬜ | |
+| Cookie banner / RODO consent | ⬜ | |
+| Supabase Storage buckets | ⬜ | document-templates, case-documents |
+
+### 11.4 Calendar / Availability
+
+| Test | Status |
+|------|--------|
+| Public availability anon access | ⬜ |
+| Booking flow → email confirmation | ⬜ |
+| Conflict detection | ⬜ |
+
+### 11.5 Client offers
+
+| Test | Status |
+|------|--------|
+| Generate offer z CRM | ⬜ |
+| Klient otrzymuje link | ⬜ |
+| Akceptacja/odrzucenie | ⬜ |
+| Status syncuje się w CRM | ⬜ |
+
+### 11.6 Pre-v3 strony CRM
+
+| Strona | Ładuje | Filtry | Search | Bulk actions | Status |
+|--------|--------|--------|--------|--------------|--------|
+| dashboard.html | ⬜ | n/a | n/a | n/a | ⬜ |
+| clients.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| employers.html | ⬜ | ⬜ | ⬜ | n/a | ⬜ |
+| payments.html | ⬜ | ⬜ | n/a | ⬜ | ⬜ |
+| invoices.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| receivables.html | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| tasks.html | ⬜ | ⬜ | n/a | ⬜ | ⬜ |
+| appointments.html | ⬜ | ⬜ | n/a | n/a | ⬜ |
+| submissions.html | ⬜ | ⬜ | n/a | n/a | ⬜ |
+| work-permits.html | ⬜ | ⬜ | n/a | n/a | ⬜ |
+| analytics.html | ⬜ | n/a | n/a | n/a | ⬜ |
+| staff.html | ⬜ | n/a | ⬜ | ⬜ | ⬜ |
+| admin.html | ⬜ | ⬜ | n/a | n/a | ⬜ |
+| alerts.html | ⬜ | n/a | n/a | n/a | ⬜ |
+| templates.html | ⬜ | n/a | ⬜ | n/a | ⬜ |
+
+---
+
+## 12. BACKWARDS COMPATIBILITY
+
+### 12.1 Schema changes — stare dane wciąż działają
+
+| Zmiana | Test | Status |
+|--------|------|--------|
+| gmp_tasks.case_id NULLABLE | Stare zadania mają case_id | ⬜ |
+| gmp_documents.case_id NULLABLE | Stare dokumenty OK | ⬜ |
+| Nowe enum values | Stare values w bazie | ⬜ |
+| legal_stay_status backfill | Wszystkie wiersze | ⬜ |
+| Triggery auto-fill | Stare UPDATE działa | ⬜ |
+
+### 12.2 RPC + triggery z starymi danymi
+
+| Funkcja | Działa dla starych | Status |
+|---------|---------------------|--------|
+| gmp_get_next_steps | ⬜ | |
+| gmp_instantiate_checklist | ⬜ | |
+| Triggery na gmp_cases UPDATE (10+) | ⬜ | |
+
+### 12.3 Edge functions API contract
+
+| Funkcja | Contract zachowany | Status |
+|---------|-------------------|--------|
+| permit-lead-save | ⬜ | |
+| lead-fallback-replay | ⬜ | |
+| intake-ocr | ⬜ | |
+
+### 12.4 Browser compatibility
+
+| Browser | Test | Status |
+|---------|------|--------|
+| Chrome / Edge | ⬜ | |
+| Safari (macOS) | ⬜ | |
+| Firefox | ⬜ | |
+| Mobile Safari iOS | ⬜ | |
+| Mobile Chrome Android | ⬜ | |
+
+**Specific issues:**
+- ESM imports w case.html (Safari ≥ 14): ⬜
+- backdrop-filter (Firefox fallback): ⬜
+- :has() selector (Safari 15.4+): ⬜
+
+### 12.5 URL backwards compatibility
+
+| Test | Status |
+|------|--------|
+| Stare bookmarki ?id= działają | ⬜ |
+| ?preset= działają | ⬜ |
+| Hash navigation działa | ⬜ |
+
+---
+
+## 13. PRODUCTION READINESS CHECKLIST
+
+### 13.1 Infrastruktura
+
+| Check | Status | Notatki |
+|-------|--------|---------|
+| Vercel plan limits OK | ⬜ | |
+| Supabase plan limits OK | ⬜ | |
+| DNS crm.getmypermit.pl → Vercel | ⬜ | |
+| SSL A+ na ssllabs.com | ⬜ | |
+| CDN aktywny | ⬜ | |
+| DB auto-backup włączony | ⬜ | retention ___ dni |
+| Test restore wykonany | ⬜ | |
+
+### 13.2 Środowiska
+
+| Check | Status |
+|-------|--------|
+| Production isolation (osobne projekty) | ⬜ |
+| Brak test data na prod | ⬜ |
+| Test data tylko staging/dev | ⬜ |
+
+### 13.3 Performance pod obciążeniem
+
+| Test | Wynik | Pass |
+|------|-------|------|
+| Load test 50 users | ___ | ⬜ |
+| Stress test 200 users | ___ | ⬜ |
+| Connection pool config | ⬜ | |
+| Edge fn cold start < 1s | ___ ms | ⬜ |
+| Page load p95 < 3s na 3G | ___ ms | ⬜ |
+| TTFB < 500ms | ___ ms | ⬜ |
+
+### 13.4 Security pre-launch
+
+| Check | Status |
+|-------|--------|
+| Wszystkie checki sekcja 8 pass | ⬜ |
+| PZ encryption (BLOKER jeśli > 0 wpisów) | ⬜ |
+| npm audit: 0 high/critical | ⬜ |
+| Secrets rotation w 30 dni | ⬜ |
+| Pen test basic checki | ⬜ |
+| GDPR DPIA | ⬜ |
+
+### 13.5 Monitoring + Alerting
+
+| Check | Status |
+|-------|--------|
+| Error tracking zainstalowany | ⬜ Tool: ___ |
+| Uptime monitor | ⬜ Tool: ___ |
+| DB metrics alerts | ⬜ |
+| On-call procedure | ⬜ Person: ___ |
+
+### 13.6 Disaster recovery
+
+| Check | Status |
+|-------|--------|
+| Recovery procedure w docs/runbooks/ | ⬜ |
+| Contact list | ⬜ |
+| Rollback plan testowany | ⬜ |
+| Point-in-time recovery test | ⬜ |
+
+### 13.7 Legal / Compliance
+
+| Check | Status |
+|-------|--------|
+| Polityka prywatności aktualna | ⬜ |
+| Regulamin aktualny | ⬜ |
+| Cookie banner + opt-out | ⬜ |
+| Email footer (firma + unsubscribe) | ⬜ |
+| Procedury naruszenia danych | ⬜ |
+
+### 13.8 Komunikacja użytkowników
+
+| Check | Status |
+|-------|--------|
+| User onboarding test | ⬜ |
+| Help/FAQ aktualne | ⬜ |
+| Email confirmations | ⬜ |
+| In-app notyfikacje | ⬜ |
+| Status page | ⬜ |
+
+### 13.9 Operacyjne
+
+| Check | Status |
+|-------|--------|
+| Runbooks dla typowych problemów | ⬜ |
+| Schedule rotation kluczy | ⬜ |
+| Logs retention strategy | ⬜ |
+| Off-site backup | ⬜ |
+
+### 13.10 Go-live checklist (dzień przed)
+
+| Check | Status |
+|-------|--------|
+| Wszystkie blockery naprawione | ⬜ |
+| Pre-conditions DONE | ⬜ |
+| Backup przed go-live (snapshot) | ⬜ |
+| Vercel deploy zafiksowany | ⬜ commit: ___ |
+| DNS propagacja sprawdzona | ⬜ |
+| Monitoring włączony | ⬜ |
+| Team poinformowany | ⬜ |
+| Rollback komenda gotowa | ⬜ |
+| Komunikat dla pierwszych userów | ⬜ |
+
+**Go-live ready:** ⬜ TAK / ⬜ NIE
+
+---
+
 ## LISTA BUGÓW (sorted by priority)
+
+### BLOCKER (___)
+
+> Uniemożliwia go-live. NAJPILNIEJSZE.
+
+#### [BLK-1] Tytuł
+**Gdzie:** ___
+**Problem:** ___
+**Reprodukcja:** ___
+**Spec source:** ___
+**Estymacja fix:** ___
+**Sugerowany fix:** ___
+**Wpływ na go-live:** OPÓŹNIA / WYMUSZA WORKAROUND / etc.
 
 ### CRITICAL (___)
 
@@ -420,14 +821,19 @@ Test: UPDATE `gmp_cases` z PESEL → sprawdź `gmp_audit_log`:
 
 ## FINAL CHECKLIST przed wysłaniem raportu
 
-- [ ] Wszystkie sekcje 1-10 wypełnione (nie tylko ⬜)
+- [ ] **Go/No-Go decision** podjęta i uzasadniona (sekcja na początku)
+- [ ] Wszystkie sekcje 1-13 wypełnione (nie tylko ⬜)
+- [ ] Sekcja 8 (Security) — wszystkie OWASP Top 10 sprawdzone
+- [ ] Sekcja 13 (Production readiness) — go-live checklist przeszła
 - [ ] Lista bugów ma estymacje czasu dla każdego
-- [ ] Top 3 critical w Executive Summary
+- [ ] Wszystkie BLOCKER bugi w Executive Summary
 - [ ] Performance metryki zmierzone (nie ___ )
 - [ ] Pre-condition 2 (PZ encryption) sprawdzone konkretnie
 - [ ] Status compliance % wyliczony
+- [ ] Pen test (sekcja 8.10) wykonany
+- [ ] Browser compat (sekcja 12.4) testowany na realnych device'ach
 - [ ] Plik nazwany `AUDYT_RAPORT_2026-MM-DD.md`
-- [ ] Commit + push
+- [ ] Commit + push (raport może być commited bo nie zawiera wrażliwych danych — chyba że dodajesz konkretne fragmenty z gmp_clients)
 
 ---
 

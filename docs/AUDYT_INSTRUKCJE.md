@@ -1,7 +1,14 @@
-# INSTRUKCJE WYKONANIA AUDYTU
+# INSTRUKCJE WYKONANIA AUDYTU PRE-LAUNCH
 
 **Dla:** Claude (nowa sesja)
-**Cel:** Wypełnić `AUDYT_RAPORT_TEMPLATE.md` na podstawie planu w `AUDYT_PLAN.md`.
+**Cel:** Wypełnić `AUDYT_RAPORT_TEMPLATE.md` na podstawie planu w `AUDYT_PLAN.md` (13 sekcji). **System idzie wkrótce live** — audyt MUSI wyłapać wszystko, żeby uniknąć hot-fixów na produkcji.
+
+**Priorytet sekcji:**
+1. **Najwyższy:** sekcja 8 (Security) + sekcja 13 (Production readiness) + Pre-conditions
+2. **Wysoki:** sekcje 1-4 (Spec Pawła)
+3. **Średni:** sekcje 5-7 (DB/edge fn/UI)
+4. **Niski:** sekcje 9-10 (Performance/mobile) — można dopolerować po launch
+5. **Sanity:** sekcje 11-12 (Pre-v3/Compatibility) — sprawdzenie regresji
 
 ---
 
@@ -51,29 +58,40 @@ Zapisz w memory (auto memory):
 
 ## STRATEGIA AUDYTU — jak zorganizować pracę
 
-### Sesje pracy (5-7 sesji × 2-3h)
+### Sesje pracy (8-10 sesji × 2-3h, total 18-25h)
 
 | Sesja | Sekcje planu | Czas | Output |
 |-------|--------------|------|--------|
-| 1 | Setup + sekcja 1 (wymagania Pawła) + sekcja 4 (pre-conditions) | 2h | Tabela "Status wymagań Pawła" |
-| 2 | Sekcja 2 (DoD etapów 0.5-III) | 3h | Status 6 etapów |
-| 3 | Sekcja 2 (DoD etapów IV-VII) + sekcja 3 (cross-checks) | 3h | Status 4 etapów + A/B/C/D/E checks |
-| 4 | Sekcja 5 (DB) + sekcja 6 (edge functions) | 2h | Audit DB schema + edge fn |
-| 5 | Sekcja 7 (UI/UX) — pierwsza połowa stron | 3h | Per-page report (15 stron) |
-| 6 | Sekcja 7 — druga połowa stron + sekcja 10 (mobile/a11y) | 3h | Per-page report + mobile |
-| 7 | Sekcja 8 (security) + sekcja 9 (performance) + finalize raport | 2h | Final raport + rekomendacje |
+| 1 | Setup + Sekcja 8.1-8.5 (RLS + JWT + audit log + RODO + permissions) | 3h | Security baseline check |
+| 2 | Sekcja 8.6-8.12 (OWASP Top 10 + secrets + pen test + backup + monitoring) | 3h | Pełen security audit |
+| 3 | Sekcja 4 (pre-conditions) + Sekcja 1 (wymagania Pawła) | 2h | Status wymagań |
+| 4 | Sekcja 2 (DoD etapów 0.5-III) | 3h | Status 6 etapów |
+| 5 | Sekcja 2 (DoD etapów IV-VII) + Sekcja 3 (cross-checks A/B/C/D/E) | 3h | Status 4 etapów + cross-checks |
+| 6 | Sekcja 5 (DB schema/triggery/RLS/cron) + Sekcja 6 (edge functions) | 2h | Tech audit DB+edge |
+| 7 | Sekcja 7 (UI/UX) — strony CRM v3 (case, employer, group, automations) | 3h | Per-page CRM v3 |
+| 8 | Sekcja 7 — pre-v3 strony CRM (clients, leads, payments, etc.) + Sekcja 11.6 | 3h | Per-page pre-v3 |
+| 9 | Sekcja 9 (performance) + Sekcja 10 (mobile/a11y) + Sekcja 11.1-11.5 (landing/leads/integracje) | 3h | Performance + mobile + landing |
+| 10 | Sekcja 12 (compatibility) + Sekcja 13 (production readiness) + Go/No-Go decision + finalize raport | 3h | **Final raport z Go/No-Go** |
 
-**TOTAL:** 18h (z buffer; realnie 12-15h jeśli sprawnie).
+**TOTAL:** 28h (z buffer; realnie 18-22h jeśli sprawnie).
 
-### Kolejność WAŻNA
+**WAŻNE:** Sesje 1-2 (Security) MUSZĄ być pierwsze. Każdy security blocker wstrzyma launch — lepiej wiedzieć od razu.
 
-**Najpierw DB i edge functions** (sekcje 5-6) — bo są fundamentem. Bez tego UI testy będą failować z niezrozumiałych powodów.
+### Kolejność WAŻNA (pre-launch)
 
-**Potem cross-checks** (sekcja 3) — bo dotyczą działania end-to-end.
+**1. NAJPIERW SECURITY (sesje 1-2)** — bo każdy blocker wstrzyma launch. Lepiej wykryć w sesji 1 niż w sesji 9.
 
-**Potem UI** (sekcja 7) — najwięcej pracy, ale dobrze podzielić.
+**2. POTEM Pre-conditions + Wymagania Pawła (sesja 3)** — fundament spec.
 
-**Na końcu performance + a11y** — wymagają działającego systemu.
+**3. POTEM DoD etapów + cross-checks (sesje 4-5)** — co miało być wdrożone.
+
+**4. POTEM DB i edge functions (sesja 6)** — techniczne fundamenty.
+
+**5. POTEM UI per strona (sesje 7-8)** — najwięcej pracy, ale dobrze podzielić.
+
+**6. POTEM performance + mobile + landing (sesja 9)** — wymagają działającego systemu.
+
+**7. NA KOŃCU Compatibility + Production readiness + Go/No-Go (sesja 10)** — synteza wszystkiego.
 
 ---
 
@@ -187,28 +205,53 @@ vercel alias ls | grep crm.getmypermit
 
 ---
 
-## RÓŻNICOWANIE BUGÓW — priorytety
+## RÓŻNICOWANIE BUGÓW — priorytety (4 poziomy pre-launch)
+
+### BLOCKER (NEW dla pre-launch)
+**Definicja:** uniemożliwia go-live. Launch musi być opóźniony lub zablokowany.
+
+- RLS bypass — anon widzi dane klientów / wszystkie sprawy
+- Missing JWT verification na sensitive edge function
+- PZ encryption brak przy > 0 wpisów (RODO violation)
+- Hardcoded credentials w repo (SUPABASE_SERVICE_ROLE_KEY exposed)
+- SQL injection / XSS reflected na production endpoint
+- Brak SSL / niedziała HTTPS
+- Brak DB backup / nie testowany restore
+- Audit log writeable / można usunąć (tampering)
+- Strona produkcyjna (index.html) crashuje / 500
+- Lead form nie zapisuje (utrata leadów)
 
 ### CRITICAL
-- Funkcja zwraca błąd HTTP 500
-- Strona się nie ładuje (white screen, crash)
-- Dane się nie zapisują (UPDATE/INSERT failuje)
-- Bezpieczeństwo (RLS bypass, missing JWT verification)
-- Naruszenie RODO (PZ niezaszyfrowany przy >0 wpisów)
+**Definicja:** blokuje funkcję, fix natychmiast po launch (1-2 dni).
+
+- Funkcja zwraca błąd HTTP 500 dla niektórych przypadków
+- Strona CRM (nie publiczna) się nie ładuje
+- Dane się nie zapisują w specyficznych warunkach (UPDATE/INSERT failuje)
+- Brak walidacji po stronie serwera (tylko JS, można bypass)
+- Email confirmation nie wysyłany (klient nie wie co się dzieje)
+- IDOR — dostęp do nie-swoich obiektów (jeśli per-user RLS planowany)
+- Performance bad — strona ładuje > 5s
 
 ### MAJOR
+**Definicja:** psuje UX, fix w 1-2 tyg.
+
 - Funkcja działa ale niepoprawnie (zła kolumna, zły status)
 - UI element nie reaguje na klik
-- Filtr nie filtruje
-- Search nie znajduje
+- Filtr nie filtruje, search nie znajduje
 - Conditional UI pokazuje co nie powinno
+- Mobile broken layout (>700px nadal niereagujący)
+- Brak fallback dla starszych browserów
 
 ### MINOR
-- Kosmetyka (zły kolor, alignment)
+**Definicja:** kosmetyka, można odłożyć (post-launch backlog).
+
+- Zły kolor, alignment
 - Brak tooltipa
 - Mała responsywność (overflow przy 320px)
-- Inline styles zamiast Tailwind
+- Inline styles zamiast Tailwind (refactor)
 - Console warning (nie error)
+- Ruchanie nazw zmiennych
+- Drobne typo
 
 ---
 

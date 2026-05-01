@@ -1,27 +1,37 @@
 # PLAN AUDYTU WDROŻENIA — GetMyPermit CRM
 
-**Cel:** Kompletna weryfikacja czy wdrożenie odpowiada wymaganiom z dokumentu Pawła (zaadaptowanym w `PAWEL_ROADMAP_v3.md` v3.2).
+**Cel:** Pełen pre-launch audyt — weryfikacja zgodności ze spec Pawła (v3.2) + wszystkich features pre-v3 + production-readiness przed go-live.
 
-**Estymowany czas:** 12-18 godzin pracy (5-7 sesji po 2-3h każda).
+**Kontekst:** System idzie wkrótce live. Audyt **musi** wyłapać wszystko, co miałoby zostać poprawione na hot-fix po wdrożeniu produkcyjnym.
 
-**Spec źródłowa:** `PAWEL_ROADMAP_v3.md` (3500+ linii, w gitignore — nie commited, czytaj lokalnie).
+**Estymowany czas:** 18-25 godzin pracy (8-10 sesji po 2-3h każda).
 
-**Wynik:** wypełniony `AUDYT_RAPORT_TEMPLATE.md` z findings + lista bugów + lista improvements.
+**Spec źródłowa:** `docs/spec/PAWEL_ROADMAP_v3.md` (3500+ linii, w gitignore — local-only).
+
+**Wynik:** wypełniony `AUDYT_RAPORT_TEMPLATE.md` z findings + lista bugów + production go/no-go decision.
 
 ---
 
-## STRUKTURA AUDYTU — 10 SEKCJI
+## STRUKTURA AUDYTU — 13 SEKCJI
 
+### Część A — Spec Pawła (v3.2) — fokus 70%
 1. [Wymagania Pawła — punkt po punkcie](#1-wymagania-pawła)
 2. [DoD każdego etapu (10 etapów)](#2-dod-etapów)
 3. [Cross-checks z review v3.2 (A/B/C/D/E)](#3-cross-checks)
 4. [Pre-conditions](#4-pre-conditions)
+
+### Część B — Audyt techniczny (cały system) — fokus 20%
 5. [Audyt DB schema](#5-audyt-db)
 6. [Audyt edge functions](#6-audyt-edge-functions)
 7. [Audyt UI/UX per strona](#7-audyt-uiux)
 8. [Audyt bezpieczeństwa (RLS, JWT, audit log)](#8-audyt-bezpieczeństwa)
 9. [Audyt performance](#9-audyt-performance)
 10. [Audyt mobile + accessibility](#10-audyt-mobile)
+
+### Część C — Pre-v3 features + production-readiness — fokus 10%
+11. [Pre-v3 features (landing, leady, integracje, payments stara)](#11-pre-v3-features)
+12. [Backwards compatibility](#12-backwards-compatibility)
+13. [Production readiness checklist (pre-launch)](#13-production-readiness)
 
 ---
 
@@ -572,48 +582,225 @@ Krytyczne modale do testowania:
 
 ---
 
-## 8. AUDYT BEZPIECZEŃSTWA
+## 8. AUDYT BEZPIECZEŃSTWA — PRIORYTET KRYTYCZNY
 
-### 8.1 RLS policies
+> **Pre-launch:** każdy bug bezpieczeństwa = blocker go-live. Sekcja 8 ma równy priorytet z spec Pawła. Najpierw security pass, dopiero potem reszta.
 
-Każda tabela `gmp_*` → policy `staff_*` (auth.uid() IS NOT NULL). Niektóre wymagają więcej:
-- `gmp_audit_log` — tylko admin może SELECT?
-- `gmp_trusted_profile_credentials` — z logowaniem dostępu (`gmp_credentials_access_log`)
-- `gmp_intake_tokens` — public access przez token (token jako auth)
+### 8.1 RLS policies (Row-Level Security)
 
-**Test:** logowany staff → SELECT z każdej tabeli zwraca rows. Anon → SELECT z `gmp_cases` zwraca 0 (lub error).
+#### 8.1.1 Coverage check
+**Test:** każda tabela `gmp_*` ma RLS enabled.
+```sql
+SELECT tablename, rowsecurity FROM pg_tables
+WHERE schemaname='public' AND tablename LIKE 'gmp_%' AND rowsecurity=false;
+-- ZWRACA 0 ROWS = pass
+```
 
-### 8.2 JWT verification
+#### 8.1.2 Policy check per tabela
+**Test:** każda tabela RLS ma min. 1 policy (FOR ALL lub osobne SELECT/INSERT/UPDATE/DELETE).
+```sql
+SELECT tablename, COUNT(*) AS policy_cnt
+FROM pg_policies WHERE schemaname='public' AND tablename LIKE 'gmp_%'
+GROUP BY tablename HAVING COUNT(*) = 0;
+-- ZWRACA 0 ROWS = pass
+```
 
-Wszystkie edge functions (poza intake/lead-fallback/automation):
-- `generate-document` → `--verify-jwt` (NIE flag)
-- `case-startup-pack` → `--verify-jwt`
-- `import-employer-workers` → sprawdzić, prawdopodobnie `--no-verify-jwt` (cli call)
-- `delete-staff` → sprawdzić permission check
+#### 8.1.3 Anonymous access check
+**Test:** anon role nie widzi danych klientów/spraw.
+```sql
+SET ROLE anon;
+SELECT COUNT(*) FROM gmp_cases;       -- powinno: 0 lub permission denied
+SELECT COUNT(*) FROM gmp_clients;     -- powinno: 0
+SELECT COUNT(*) FROM gmp_audit_log;   -- powinno: 0
+RESET ROLE;
+```
 
-### 8.3 Audit log sanitization
+#### 8.1.4 Special tables — surowsze policies
+- **`gmp_audit_log`** — tylko admin/owner może SELECT. Test: staff (nie-admin) → SELECT zwraca 0.
+- **`gmp_trusted_profile_credentials`** — każdy SELECT loguje do `gmp_credentials_access_log` (kto/kiedy/co). Test: SELECT → sprawdź log.
+- **`gmp_intake_tokens`** — public access przez token jako auth (intake form bez logowania). Test: anon z prawidłowym token → 200, bez tokenu → 401.
+- **`gmp_e_submission_attachments`** — tylko właściciel sprawy + admin.
 
-Trigger `gmp_audit_sanitize` przed insertem do `gmp_audit_log`:
-- Usuwa pola PESEL, passport_number, password, secret_*
+#### 8.1.5 Cross-row leakage
+**Test:** staff A widzi tylko swoje sprawy? Albo wszystkie? (zależy od specyfikacji)
+- Jeśli "wszystkie" — OK, current default.
+- Jeśli "tylko swoje" (pkt Pawła? sprawdzić!) — to RLS musi filtrować po `assigned_to = auth.uid()`.
 
-**Test:** UPDATE `gmp_cases` z PESEL → sprawdź `gmp_audit_log` że PESEL wymazany.
+### 8.2 JWT verification edge functions
 
-### 8.4 RODO compliance
+Per funkcja sprawdź flag `--verify-jwt` vs `--no-verify-jwt`:
 
-- Usunięcie klienta → cascade delete? Lub soft delete?
-- Eksport danych klienta (right to access) — endpoint?
-- Zapomnienie (right to be forgotten) — endpoint?
-- Zgody RODO — gdzie zapisane (`consents` jsonb na gmp_clients?)
+| Funkcja | Powinno mieć | Powód |
+|---------|--------------|-------|
+| `generate-document` | `--verify-jwt` (default) | Wewnętrzna, user JWT (A3) |
+| `case-startup-pack` | `--verify-jwt` | Wewnętrzna |
+| `import-employer-workers` | `--verify-jwt` | Wewnętrzna |
+| `automation-executor` | `--no-verify-jwt` | Cron / public callable |
+| `intake-ocr` | `--no-verify-jwt` | Token-based auth |
+| `invite-staff` | `--verify-jwt` | Admin only |
+| `delete-staff` | `--verify-jwt` + admin check w kodzie | Destructive |
+| `lead-fallback-replay` | `--no-verify-jwt` | Background |
+| `permit-lead-save` | `--no-verify-jwt` | Public form (rate-limit!) |
 
-### 8.5 Permissions per role
+**Test:** `npx supabase functions list --project-ref gfwsdrbywgmceateubyq` → sprawdź flagi. Spróbuj POST bez tokena na każdą `--verify-jwt` → musi 401.
 
-Test 4 ról:
-1. **anon** (bez logowania) — nic poza intake
-2. **staff** — wszystko poza admin features
-3. **admin** — admin.html + staff management + audit log
-4. **owner** (Tomek + Maciek) — automatyzacje + super admin
+### 8.3 OWASP Top 10 (2021)
 
-**Test:** zaloguj jako każda rola → sprawdź co jest dostępne (sidebar links + page access).
+#### A01 — Broken Access Control
+- [ ] RLS pokrywa wszystko (pkt 8.1)
+- [ ] IDOR: spróbuj `?id=<UUID innego klienta>` w case.html jako staff → musi pokazać (jeśli wszyscy widzą wszystko) lub 403 (jeśli per-user)
+- [ ] Force browse: anon → `crm/admin.html` → musi redirect do login
+
+#### A02 — Cryptographic Failures
+- [ ] **PZ credentials encrypted** (pgsodium) — `gmp_trusted_profile_credentials.password` nie w plaintext. Test: SELECT raw → musi być binary/encrypted.
+- [ ] HTTPS wymuszone (Vercel auto, ale sprawdź `https://crm.getmypermit.pl` redirect z http)
+- [ ] Hasła Supabase Auth — bcrypt/argon2 (Supabase default, sprawdzić)
+
+#### A03 — Injection
+- [ ] **SQL injection** — wszystkie queries przez PostgREST/Supabase client (parametrized). Sprawdź czy nie ma `db.from('...').select(\`raw ${input}\`)` (template literals z user input → bug).
+- [ ] **XSS** — wszystkie user input escapowane (`escapeHtml()` przed innerHTML). Sprawdź czy każdy `innerHTML = ${...}` ma escape.
+- [ ] **Command injection** — edge functions: czy używają `Deno.run` z user input? (raczej nie, ale sprawdź).
+
+#### A04 — Insecure Design
+- [ ] Walidacja po stronie serwera (PostgREST CHECK constraints, triggery), nie tylko po stronie klienta
+- [ ] Rate limiting na publicznych endpointach (permit-lead-save — Supabase Edge Function ma built-in?)
+
+#### A05 — Security Misconfiguration
+- [ ] Default credentials zmienione (Supabase password, Vercel root)
+- [ ] Error messages nie ujawniają stack traces userowi (production mode)
+- [ ] CORS — sprawdzić czy nie ma `*` na sensitive endpoints
+- [ ] Dev tools / debug routes nie dostępne na prod
+
+#### A06 — Vulnerable Components
+- [ ] `npm audit` w `package.json` → 0 high/critical
+- [ ] `npm outdated` → krytyczne deps są aktualne
+- [ ] Supabase wersja — current LTS
+- [ ] Cdn.tailwindcss.com — production CDN to anti-pattern (warning w konsoli) → migrate do build-time Tailwind przed go-live (lub akceptować ryzyko CDN)
+
+#### A07 — Authentication Failures
+- [ ] Session expiry działa (JWT expires_in respect)
+- [ ] Refresh token mechanism (auto-refresh w Supabase client)
+- [ ] Logout invaliduje session (clearLocalStorage + supabase.auth.signOut)
+- [ ] Brute force protection (Supabase Auth ma built-in; sprawdź czy jest enabled w dashboard)
+- [ ] Password reset flow działa (forgot-password.html → email → reset-password.html)
+- [ ] Magic link expiry (default 60min Supabase)
+
+#### A08 — Software/Data Integrity
+- [ ] Audit log append-only (`gmp_audit_log` — czy ma INSERT-only policy + brak DELETE/UPDATE?)
+- [ ] Critical changes logged (UPDATE gmp_cases.status → audit_log entry)
+- [ ] CI/CD trustworthy (Vercel auto-deploy z github master — kto może push? branch protection?)
+
+#### A09 — Logging Failures
+- [ ] Failed login attempts logged (Supabase Auth ma w dashboard)
+- [ ] Critical actions logged (delete case, delete client, update payment, password reset)
+- [ ] Sensitive data NIE logowane (`gmp_audit_sanitize` trigger — pkt 8.4)
+- [ ] Log retention policy (Supabase ma swoje, sprawdź)
+
+#### A10 — Server-Side Request Forgery (SSRF)
+- [ ] Edge functions nie robią `fetch(userInputUrl)` bez whitelisty
+- [ ] Webhooks (np. Resend) — z weryfikacją podpisu
+
+### 8.4 Audit log sanitization
+
+Trigger `gmp_audit_sanitize` przed insertem do `gmp_audit_log` musi usunąć:
+- PESEL (11 cyfr)
+- passport_number / nr_paszportu
+- password / secret_*
+- credit_card_number / iban (jeśli kiedyś będą)
+
+**Test:**
+```sql
+UPDATE gmp_cases SET notes = 'PESEL klienta: 90010112345' WHERE id = '...';
+SELECT diff_data FROM gmp_audit_log WHERE entity_id = '...' ORDER BY created_at DESC LIMIT 1;
+-- diff_data NIE może zawierać "90010112345"
+```
+
+### 8.5 RODO/GDPR compliance
+
+| Wymaganie | Implementacja | Test |
+|-----------|--------------|------|
+| Right to access | Endpoint export danych klienta | `GET /export-client-data?id=X` zwraca JSON z wszystkim |
+| Right to erasure | Soft delete + retention period | `DELETE /client/X` ustawia deleted_at; cron usuwa po N dni |
+| Right to rectification | UPDATE działa, audit log pokazuje zmianę | Sprawdź |
+| Data portability | Export w ustrukturyzowanym formacie (JSON/CSV) | jw |
+| Consent management | Pole `consents` jsonb na klientach | Sprawdź czy jest |
+| Data minimization | Nie przechowujemy zbędnych pól | Audit listy pól vs faktyczne użycie |
+| Pseudonimizacja | PESEL maskowany w UI (XXX-XXX-X1234)? | Sprawdź czy jest gdzieś |
+| Notyfikacja o naruszeniu | Procedura w razie wycieku | Dokument? |
+
+### 8.6 Secrets management
+
+- [ ] `.env` w `.gitignore` (sprawdzone)
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` nie w żadnym pliku w repo (`grep -r 'SUPABASE_SERVICE_ROLE_KEY' --include="*.html" --include="*.js" --include="*.mjs"` poza scripts/.env)
+- [ ] Vercel env vars ustawione (sprawdź `vercel env ls`)
+- [ ] Supabase secrets dla edge functions (RESEND_API_KEY, etc. — `supabase secrets list`)
+- [ ] Brak hardcoded credentials w kodzie
+
+### 8.7 CORS configuration
+
+- [ ] Edge functions CORS allow tylko `https://crm.getmypermit.pl` (lub `*` jeśli public)
+- [ ] PostgREST CORS — Supabase default
+- [ ] Vercel headers (vercel.json) — bez wildcardów na sensitive
+
+### 8.8 Input validation + sanitization
+
+| Pole | Walidacja | Sanityzacja |
+|------|-----------|-------------|
+| PESEL | 11 cyfr + checksum (`validators.js`) | strip non-digits |
+| NIP | 10 cyfr + checksum | strip non-digits |
+| Phone | format PL (+48...) | normalize |
+| Email | regex + domain check | lowercase |
+| URL | https only? | validate scheme |
+| Date | YYYY-MM-DD format | reject jeśli nieprawidłowa |
+| Free text (notes, descriptions) | max length | escapeHtml przed render |
+
+**Test:** wpisz `<script>alert(1)</script>` w pole notatki → po reload widać tekst, NIE alert.
+
+### 8.9 Permissions per role (4 role)
+
+#### 8.9.1 Test każdej roli
+
+| Rola | Sidebar dostęp | Cases visible | Audit log | PZ creds | Delete case | Admin features |
+|------|---------------|---------------|-----------|----------|-------------|----------------|
+| anon | tylko intake | 0 | ❌ | ❌ | ❌ | ❌ |
+| staff | wszystkie poza admin/automatyzacje | wszystkie (lub własne) | ❌ | log access | tylko własne (sprawdzić) | ❌ |
+| admin | wszystkie | wszystkie | ✅ | ✅ z log | ✅ | ✅ admin.html |
+| owner | wszystkie + super admin | wszystkie | ✅ | ✅ z log | ✅ | ✅ + automations |
+
+**Test E2E:** zaloguj jako każda rola, sprawdź visibility sidebara + dostępność stron.
+
+#### 8.9.2 IDOR (Insecure Direct Object Reference)
+- Staff A → próbuje otworzyć `case.html?id=<UUID sprawy staff B>`
+- Powinno: pokazać (jeśli wszyscy widzą wszystko) lub 403/redirect (jeśli per-staff RLS)
+
+### 8.10 Penetration test checklist
+
+Test najczęstszych ataków:
+- [ ] **SQL injection** w search inputach — wpisz `' OR 1=1--` → musi nie zwrócić wszystkiego
+- [ ] **XSS reflected** w URL params — `?id=<script>alert(1)</script>` → musi nie wykonać
+- [ ] **XSS stored** w notatkach/komentarzach — wpisz `<img src=x onerror=alert(1)>` → po reload nie alert
+- [ ] **CSRF** — czy SameSite=Strict na cookies? Czy state-changing requests wymagają tokenu?
+- [ ] **Clickjacking** — X-Frame-Options: DENY (lub frame-ancestors w CSP)
+- [ ] **Open redirect** — `?redirect=https://evil.com` → musi redirect tylko na whitelist domains
+- [ ] **Session fixation** — po logowaniu nowy session ID
+- [ ] **Information disclosure** — error 500 bez stack trace; brak `.git`, `.env`, `package.json` dostępne na prod
+- [ ] **Brute force** — 10 failed login → temporary lock?
+
+### 8.11 Backup + recovery
+
+- [ ] Supabase auto-backup (codzienny snapshot) — sprawdź w dashboard
+- [ ] Test restore (raz przed go-live) — czy backup się da rzeczywiście przywrócić?
+- [ ] Recovery time estimate (RTO) — jak długo przywracanie z backupu?
+- [ ] Recovery point estimate (RPO) — ile danych można stracić maksymalnie? (Supabase typowo < 24h)
+
+### 8.12 Monitoring + alerting
+
+- [ ] Supabase logs dostępne (queries, edge functions, auth)
+- [ ] Vercel logs dostępne (deployment, runtime)
+- [ ] Error tracking (Sentry?) — chwilowo brak, sprawdź
+- [ ] Uptime monitoring (UptimeRobot/StatusCake?) — chwilowo brak
+- [ ] Alert na 5xx errors (kto dostaje, kanałem jakim?)
+- [ ] Alert na nagły spike kosztów (Supabase, Vercel)
 
 ---
 
@@ -709,23 +896,280 @@ Sprawdź dla głównych stron:
 
 ---
 
+## 11. PRE-V3 FEATURES
+
+> Features istniejące przed roadmapą v3.2. Audyt sprawdza CZY DZIAŁAJĄ (sanity), nie weryfikuje wobec spec Pawła v3.
+
+### 11.1 Landing page (publiczna)
+
+**Strony w root:** `index.html`, `lawyers.html`, `calendar.html`, `availability.html`, `lead.html`, `offers.html`, `client-offer.html`, `client-offers.html`, `polityka-prywatnosci.html`, `regulamin.html`.
+
+**Test per strona:**
+- [ ] Strona ładuje się publicznie (anon access)
+- [ ] Brak console errors / network 4xx/5xx
+- [ ] Mobile responsywny (375px / 390px)
+- [ ] Wszystkie linki działają (nie 404)
+- [ ] CTA buttons → kierują do leada/forma
+- [ ] SEO: `<title>`, `<meta description>`, `<meta og:*>` ustawione
+- [ ] Czas ładowania < 3s (Lighthouse)
+
+**Special cases:**
+- [ ] `index.html` (491KB) — bardzo duży plik. Test: page weight, czas ładowania na 3G.
+- [ ] `ebook.pdf` download — flow: kliknij CTA → captures lead → ściąga PDF
+- [ ] `tracking.js` — Google Analytics / FB Pixel działają, conversion events firing
+
+### 11.2 Leads system
+
+**Komponenty:**
+- Form na `index.html` / `lead.html` zbiera lead
+- Edge function `permit-lead-save` zapisuje do `permit_leads` + `gmp_leads_overview` view
+- `crm/leads.html` lista leadów + filtry
+- `crm/leads-pipeline.html` — kanban
+- `crm/lead.html` — detail leada + qualification + conversion to case
+
+**Test E2E flow:**
+1. Anon → wypełnia form na index.html
+2. POST → permit-lead-save → status 200
+3. Staff → loguje się → leads.html → widzi nowy lead
+4. Klik lead → lead.html → qualification checklist
+5. Convert to case → RPC `gmp_convert_lead_to_case` → tworzy `gmp_cases` z `client_id`
+6. Lead status = 'converted'
+
+**Test edge cases:**
+- [ ] Spam — wielokrotne POST z tego samego IP w krótkim czasie → rate limit?
+- [ ] Walidacja: pusty form, niepoprawny email, niepoprawny phone
+- [ ] Dedup: ten sam phone/email → znajdź istniejący lead lub stwórz nowy?
+- [ ] Lead capture w kontekście kampanii (UTM params zapisywane?)
+
+### 11.3 Integracje zewnętrzne
+
+#### 11.3.1 Resend (email)
+- [ ] Konto Resend skonfigurowane, domain verified
+- [ ] SPF, DKIM, DMARC dla `crm.getmypermit.pl` lub `getmypermit.pl`
+- [ ] Test wysyłki email (jeśli edge function `send-email` istnieje)
+- [ ] Webhook handling (resend-webhook?) — czy istnieje?
+- [ ] Email templates — istnieją? gdzie?
+
+#### 11.3.2 Tracking (Google Analytics / Meta Pixel)
+- [ ] `tracking.js` ustawia poprawne IDs
+- [ ] Conversion events firing przy: lead form submit, ebook download, CTA clicks
+- [ ] Cookie banner (RODO/GDPR) — istnieje? Wymaga zgody przed tracking?
+
+#### 11.3.3 Supabase Storage
+- [ ] Bucket `document-templates` (private, 5MB max, DOCX only)
+- [ ] Bucket `case-documents` (private)
+- [ ] Bucket dla intake (jeśli intake-ocr istnieje)
+- [ ] RLS na storage objects
+
+### 11.4 Calendar / Availability
+
+**Strony:** `calendar.html`, `availability.html`, `appointments.html`.
+
+**Test:**
+- [ ] Public availability page (anon) pokazuje wolne sloty
+- [ ] Booking flow: wybór slotu → form → POST → potwierdzenie email
+- [ ] Calendar staff (CRM) pokazuje wszystkie spotkania
+- [ ] Conflict detection (2 osoby na ten sam slot?)
+
+### 11.5 Client offers
+
+**Strony:** `offers.html`, `client-offer.html`, `client-offers.html`.
+
+**Test:**
+- [ ] Generate offer dla klienta (z CRM)
+- [ ] Klient otrzymuje link do `client-offer.html?token=X`
+- [ ] Klient może zaakceptować/odrzucić
+- [ ] Status offer aktualizuje się w CRM
+
+### 11.6 Pre-v3 strony CRM
+
+Strony które istniały przed v3.2:
+
+| Strona | Co testować |
+|--------|-------------|
+| `dashboard.html` | KPI widgets ładują, linki działają |
+| `clients.html` | Lista, search, edit klienta, nowy klient |
+| `employers.html` | Lista pracodawców, edit |
+| `payments.html` | Historia płatności, filtry, export CSV |
+| `invoices.html` | Lista faktur, status, integracja z Fakturownia? |
+| `receivables.html` | Windykacja, levels 1-5 |
+| `tasks.html` | Lista zadań, filtry, bulk actions |
+| `appointments.html` | Tygodniowy widok, filtry |
+| `submissions.html` | Kolejka wniosków |
+| `work-permits.html` | Pracownicy, eksport |
+| `analytics.html` | Wykresy, year filter |
+| `staff.html` | Lista staff, role management, password reset |
+| `admin.html` | Stats, audit log, integrations |
+| `alerts.html` | 3 zakładki: Inactivity / Employer action / Payment installments |
+| `templates.html` | Note templates + Document templates |
+| `pomoc.html` | Statyczna pomoc |
+
+---
+
+## 12. BACKWARDS COMPATIBILITY
+
+> Czy zmiany v3.2 nie zepsuły rzeczy istniejących wcześniej?
+
+### 12.1 Schema changes — czy stare dane wciąż działają?
+
+| Zmiana | Wpływ | Test |
+|--------|-------|------|
+| `gmp_tasks.case_id NOT NULL → NULL` (D2) | Stare zadania mają case_id NOT NULL — wciąż OK | `SELECT COUNT(*) FROM gmp_tasks WHERE case_id IS NULL` — stare powinny być z case_id |
+| `gmp_documents.case_id NOT NULL → NULL` | Stare dokumenty mają case_id — OK | jw |
+| Nowe enum values (`kind=przejeta_*`, `stage=gotowa_*`) | Stare sprawy mają stare values — OK | `SELECT enum_range(...)` |
+| `gmp_cases.legal_stay_status` (NEW Etap VI) | Backfill 4415 rows — sprawdzone | `SELECT COUNT(*) FROM gmp_cases WHERE legal_stay_status IS NULL` |
+| Trigger auto-fill `legal_stay_status` BEFORE INSERT/UPDATE | Stare INSERT/UPDATE bez tej kolumny → trigger ustawi | Test: UPDATE bez tej kolumny → status auto-set |
+
+### 12.2 RPC + triggery — czy stare wywołania nie failują?
+
+- [ ] `gmp_get_next_steps` — czy obsługuje stare sprawy bez nowych pól?
+- [ ] `gmp_instantiate_checklist` — czy działa dla starych category bez `pawel_group`?
+- [ ] Triggery na `gmp_cases UPDATE` (10+ triggerów) — czy nie blokują UPDATE jeśli brakuje nowych pól?
+
+### 12.3 Edge functions — czy stare API contract zachowane?
+
+- [ ] `permit-lead-save` — input contract (form fields) nie zmieniony
+- [ ] `lead-fallback-replay` — działa jak przed
+- [ ] `intake-ocr` — działa jak przed
+
+### 12.4 UI components — czy stare strony działają?
+
+Per strona z 11.6 — sanity check że nadal się ładuje + filtry/search działają.
+
+### 12.5 Browser compatibility
+
+- [ ] Chrome / Edge (Chromium): ✅ default
+- [ ] Safari (macOS): test na realne urządzenie lub iPad
+- [ ] Firefox: test
+- [ ] Mobile Safari (iOS): test
+- [ ] Mobile Chrome (Android): test
+
+**Specifically test:**
+- ESM imports w `case.html` — Safari < 14 nie obsługuje
+- `backdrop-filter` — fallback dla Firefox?
+- `:has()` selector — używany? Safari 15.4+
+
+### 12.6 URL backwards compatibility
+
+- [ ] Stare bookmarki działają: `?id=`, `?preset=`, hashes
+- [ ] Nie zmieniono ścieżek (np. nie ma redirectów `/case` → `/cases/case`)
+
+---
+
+## 13. PRODUCTION READINESS CHECKLIST (PRE-LAUNCH)
+
+> **Krytyczne przed go-live.** Każdy ❌ = blocker do produkcyjnego puszczenia.
+
+### 13.1 Infrastruktura
+
+- [ ] **Vercel:** plan ma wystarczający limit (functions, bandwidth, builds)
+- [ ] **Supabase:** plan ma wystarczający (DB size, edge function invocations, storage)
+- [ ] **DNS:** `crm.getmypermit.pl` wskazuje na Vercel + SSL działa
+- [ ] **Custom domain SSL:** A+ na ssllabs.com
+- [ ] **CDN:** Vercel Edge Network aktywny
+- [ ] **Database backups:** auto-backup włączony, retention min 7 dni
+- [ ] **Test restore:** raz przed go-live faktycznie przywróć backup do test environment
+
+### 13.2 Środowiska
+
+- [ ] **Production isolation:** prod vs staging vs dev — osobne Supabase project lub osobne schemas?
+- [ ] **Production data sanity:** brak `test_*` rekordów, brak Lorem ipsum, brak placeholder values
+- [ ] **Test data oddzielnie:** `test_pawel_cases.sql` aplikowany tylko na staging/dev, NIE na prod
+
+### 13.3 Performance pod obciążeniem
+
+- [ ] **Load test:** symulacja 50 concurrent users — czy DB nie pada?
+- [ ] **Stress test:** symulacja peak load (200 users) — graceful degradation
+- [ ] **Database connection pool:** Supabase pooler skonfigurowany?
+- [ ] **Edge function cold start:** < 1s na pierwszym request po dłuższej przerwie
+- [ ] **Page load p95** < 3s na 3G
+- [ ] **Time to first byte (TTFB)** < 500ms
+
+### 13.4 Security pre-launch
+
+- [ ] Wszystkie checki z sekcji 8 — pass
+- [ ] **PZ encryption** (B6) — DONE jeśli > 0 wpisów na prod (BLOKER!)
+- [ ] **`npm audit`** — 0 high/critical vulnerabilities
+- [ ] **Secrets rotation** — ostatnie 30 dni? `SUPABASE_SERVICE_ROLE_KEY` nie ujawniony nigdzie
+- [ ] **Penetration test** — basic checki z 8.10 wykonane
+- [ ] **GDPR/RODO** — DPIA (Data Protection Impact Assessment) zrobiony, polityka prywatności aktualna
+
+### 13.5 Monitoring + Alerting
+
+- [ ] **Error tracking** zainstalowany (Sentry / Logflare / Better Stack)
+- [ ] **Uptime monitor** (UptimeRobot / StatusCake) → alert na email/SMS
+- [ ] **Database metrics** alert (high CPU, disk space, slow queries)
+- [ ] **On-call procedure** — kto dostaje alerty po godz. 18, na jakie kanał
+
+### 13.6 Disaster recovery
+
+- [ ] **Recovery procedure** dokumentowana w `docs/runbooks/disaster-recovery.md`
+- [ ] **Contact list** — Vercel support, Supabase support, oncall person
+- [ ] **Rollback plan** — jak cofnąć deploy w razie krytycznego buga (Vercel `vercel rollback`)
+- [ ] **Database point-in-time recovery** test — Supabase ma w pricing tier?
+
+### 13.7 Legal / Compliance
+
+- [ ] **Polityka prywatności** aktualna (`polityka-prywatnosci.html`) — RODO compliant
+- [ ] **Regulamin** aktualny (`regulamin.html`) — odpowiada obecnym usługom
+- [ ] **Cookie banner** + zgody — działa, opt-out działa
+- [ ] **Email footer** — adres firmy + link unsubscribe
+- [ ] **Procedury wewnętrzne** — proces obsługi naruszenia danych (incident response)
+
+### 13.8 Komunikacja użytkowników
+
+- [ ] **User onboarding:** test fresh signup → pierwszy login → wszystko jasne?
+- [ ] **Help/FAQ** (`pomoc.html`) — aktualne dla v3.2
+- [ ] **Email confirmations** — po rejestracji, po zapisie sprawy, po decyzji
+- [ ] **Notyfikacje in-app** (`gmp_notifications`) — działają, dotrzymują czasu
+- [ ] **Status page** dla użytkowników (gdy coś nie działa)
+
+### 13.9 Operacyjne
+
+- [ ] **Runbook dla typowych problemów** (resetowanie hasła, naprawa zablokowanej sprawy, etc.)
+- [ ] **Rotation kluczy** — schedule (np. co 90 dni)
+- [ ] **Logs retention** — Supabase default vs własne archiving
+- [ ] **Backup off-site** (jeśli krytyczne dane → poza Supabase też)
+
+### 13.10 Go-live checklist
+
+Finalna lista do odhaczenia DZIEŃ przed go-live:
+
+- [ ] Wszystkie blockery z audytu naprawione
+- [ ] Wszystkie pre-conditions DONE
+- [ ] Backup przed go-live (snapshot prod DB)
+- [ ] Vercel deploy zafiksowany na konkretny commit
+- [ ] Vercel alias na prod commit
+- [ ] DNS ustawione, propagacja sprawdzona
+- [ ] Monitoring włączony
+- [ ] Team poinformowany (kto na on-call w pierwszych dniach)
+- [ ] Rollback plan przygotowany (komenda gotowa)
+- [ ] Komunikat dla pierwszych użytkowników (Paweł + jego team)
+
+---
+
 ## DELIVERABLES AUDYTU
 
-Po wykonaniu wszystkich 10 sekcji, raport powinien zawierać:
+Po wykonaniu wszystkich 13 sekcji, raport powinien zawierać:
 
-1. **Status per wymaganie Pawła** (✅/⚠/❌) — tabela
-2. **Lista bugów** posortowana po priorytecie:
+1. **Go/No-Go decision** dla launch — czy system gotowy na produkcję? (jasna rekomendacja)
+2. **Status per wymaganie Pawła** (✅/⚠/❌) — tabela
+3. **Security audit results** — lista znalezisk per OWASP Top 10
+4. **Lista bugów** posortowana po priorytecie:
+   - **Blocker** — uniemożliwia go-live (np. PZ niezaszyfrowany przy >0 wpisów, RLS bypass)
    - **Critical** — blokuje funkcję, fix natychmiast
    - **Major** — psuje UX, fix w 1-2 dni
    - **Minor** — kosmetyka, można odłożyć
-3. **Lista brakujących featurów** z roadmapy:
+5. **Lista brakujących featurów** z roadmapy:
    - Co jest w roadmapie a brakuje w implementacji
    - Estymacja czasu na dodanie
-4. **Performance metryki** — tabela z czasami
-5. **Recommended improvements** — sugerowane refactory
-6. **Status pre-conditions** — szczególnie PZ encryption (B6)
+6. **Performance metryki** — tabela z czasami
+7. **Production readiness status** — pre-launch checklist (sekcja 13)
+8. **Backwards compatibility report** — czy nic nie zostało zepsute
+9. **Recommended improvements** — sugerowane refactory (z estymacją)
+10. **Status pre-conditions** — szczególnie PZ encryption (B6)
 
-Format: `docs/AUDYT_RAPORT_TEMPLATE.md` (wypełniony).
+Format: `docs/AUDYT_RAPORT_TEMPLATE.md` (wypełniony jako `AUDYT_RAPORT_2026-MM-DD.md`).
 
 ---
 
