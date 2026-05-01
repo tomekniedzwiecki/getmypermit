@@ -413,16 +413,25 @@ async function loadDocs() {
 async function loadAlerts() {
     if (loaded.alerts) return; loaded.alerts = true;
     if (!employerCaseIds.length) { document.getElementById('cnt-alerts').textContent = 0; return; }
-    const { data, error, count } = await db.from('gmp_case_alerts')
-        .select('id, case_id, inactivity_level, days_inactive, gmp_cases(case_number, gmp_clients(last_name, first_name))', { count: 'exact' })
+    // gmp_case_alerts to VIEW bez FK relacji w PostgREST — fetch w 2 krokach
+    const { data, error } = await db.from('gmp_case_alerts')
+        .select('case_id, case_number, client_id, days_inactive, inactivity_level')
         .in('case_id', employerCaseIds)
         .in('inactivity_level', ['inactive_14', 'inactive_30']);
     if (error) { console.warn(error); return; }
-    document.getElementById('cnt-alerts').textContent = count || 0;
+    const alerts = data || [];
+    document.getElementById('cnt-alerts').textContent = alerts.length;
     const list = document.getElementById('alerts-list');
-    if (!data?.length) { list.innerHTML = '<div class="text-zinc-500 text-sm">Brak alertów. ✓</div>'; return; }
-    list.innerHTML = data.map(a => {
-        const cl = a.gmp_cases?.gmp_clients;
+    if (!alerts.length) { list.innerHTML = '<div class="text-zinc-500 text-sm">Brak alertów. ✓</div>'; return; }
+    // Fetch klientów osobno
+    const clientIds = [...new Set(alerts.map(a => a.client_id).filter(Boolean))];
+    let clientsMap = {};
+    if (clientIds.length) {
+        const { data: cls } = await db.from('gmp_clients').select('id, first_name, last_name').in('id', clientIds);
+        (cls || []).forEach(c => { clientsMap[c.id] = c; });
+    }
+    list.innerHTML = alerts.map(a => {
+        const cl = clientsMap[a.client_id];
         const cn = cl ? `${cl.last_name} ${cl.first_name}` : '(bez klienta)';
         const level = a.inactivity_level === 'inactive_30' ? 'alert' : 'warn';
         const lblLevel = a.inactivity_level === 'inactive_30' ? '30+ dni' : '14+ dni';
@@ -430,7 +439,7 @@ async function loadAlerts() {
             <a href="case.html?id=${a.case_id}" class="row-card">
                 <i class="ph ph-bell-ringing text-amber-400" style="font-size: 22px;"></i>
                 <div class="row-info">
-                    <div class="row-name">${esc(cn)}${a.gmp_cases?.case_number ? ` <span class="text-zinc-500 text-xs">#${esc(a.gmp_cases.case_number)}</span>` : ''}</div>
+                    <div class="row-name">${esc(cn)}${a.case_number ? ` <span class="text-zinc-500 text-xs">#${esc(a.case_number)}</span>` : ''}</div>
                     <div class="row-meta">Brak aktywności: ${a.days_inactive || '?'} dni</div>
                 </div>
                 <span class="row-badge ${level}">${lblLevel}</span>
