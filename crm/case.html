@@ -1102,14 +1102,9 @@
     <div id="sidebar-placeholder"></div>
 
     <main class="app-main" id="main-content">
-        <!-- Breadcrumbs -->
-        <div class="flex items-center gap-2 mb-2 text-xs flex-wrap">
-            <a href="dashboard.html" class="text-zinc-500 hover:text-white">Dashboard</a>
-            <span class="text-zinc-700">/</span>
-            <a href="cases.html" class="text-zinc-500 hover:text-white">Sprawy</a>
-            <span class="text-zinc-700">/</span>
-            <div id="breadcrumb-case" class="text-zinc-300">Ładuję...</div>
-        </div>
+        <!-- Stary breadcrumb usunięty — nowy w case-topbar (REDESIGN 2026-05-01).
+             #breadcrumb-case zachowany jako hidden żeby fillForm() nie crashował. -->
+        <div id="breadcrumb-case" class="hidden"></div>
 
         <div id="case-loading" class="p-8 text-center text-zinc-500">
             <div class="spinner-lg mx-auto mb-3"></div>
