@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GetMyPermit · Panel kancelarii v3</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d9488'/%3E%3Ctext x='16' y='22' font-family='Inter, sans-serif' font-weight='700' font-size='18' fill='white' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E" />
+
+<!-- Phosphor icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+
+<!-- Design system -->
+<link rel="stylesheet" href="../design-system.css" />
+
+<!-- React + Babel standalone -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="data.js"></script>
+
+<!-- Primitives & shared components -->
+<script type="text/babel" src="components/Primitives.jsx"></script>
+<script type="text/babel" src="components/Sidebar.jsx"></script>
+<script type="text/babel" src="components/Modals.jsx"></script>
+<script type="text/babel" src="components/CaseDrawer.jsx"></script>
+<script type="text/babel" src="components/ClientDrawer.jsx"></script>
+<script type="text/babel" src="components/EmployerDrawer.jsx"></script>
+
+<!-- Screens (Tier A — daily workflow) -->
+<script type="text/babel" src="screens/Dashboard.jsx"></script>
+<script type="text/babel" src="screens/CasesList.jsx"></script>
+<script type="text/babel" src="screens/Kanban.jsx"></script>
+<script type="text/babel" src="screens/Tasks.jsx"></script>
+
+<!-- Screens (Tier B — kartoteki) -->
+<script type="text/babel" src="screens/Leads.jsx"></script>
+<script type="text/babel" src="screens/LeadsPipeline.jsx"></script>
+<script type="text/babel" src="screens/Alerts.jsx"></script>
+<script type="text/babel" src="screens/Calendar.jsx"></script>
+<script type="text/babel" src="screens/Submissions.jsx"></script>
+<script type="text/babel" src="screens/ClientsList.jsx"></script>
+<script type="text/babel" src="screens/EmployersList.jsx"></script>
+<script type="text/babel" src="screens/Groups.jsx"></script>
+<script type="text/babel" src="screens/Staff.jsx"></script>
+
+<!-- Screens (Tier C — finanse) -->
+<script type="text/babel" src="screens/Payments.jsx"></script>
+<script type="text/babel" src="screens/Receivables.jsx"></script>
+<script type="text/babel" src="screens/Invoices.jsx"></script>
+<script type="text/babel" src="screens/Analytics.jsx"></script>
+
+<!-- Screens (Tier D — admin) -->
+<script type="text/babel" src="screens/Admin.jsx"></script>
+<script type="text/babel" src="screens/Templates.jsx"></script>
+<script type="text/babel" src="screens/Automations.jsx"></script>
+
+<!-- Screens (Tier E — public) -->
+<script type="text/babel" src="screens/Login.jsx"></script>
+<script type="text/babel" src="screens/Intake.jsx"></script>
+
+<!-- App root -->
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect } = React;
+
+const ROUTE_BREADCRUMBS = {
+  dashboard:    ['Praca', 'Pulpit'],
+  leads:        ['Praca', 'Leady'],
+  pipeline:     ['Praca', 'Pipeline leadów'],
+  cases:        ['Praca', 'Sprawy'],
+  kanban:       ['Praca', 'Kanban'],
+  tasks:        ['Praca', 'Zadania'],
+  alerts:       ['Praca', 'Alerty'],
+  calendar:     ['Kalendarz', 'Spotkania'],
+  submissions:  ['Kalendarz', 'Kolejka wniosków'],
+  clients:      ['Kartoteki', 'Klienci'],
+  employers:    ['Kartoteki', 'Pracodawcy'],
+  groups:       ['Kartoteki', 'Grupy'],
+  staff:        ['Kartoteki', 'Prawnicy'],
+  templates:    ['Kartoteki', 'Szablony'],
+  payments:     ['Finanse', 'Płatności'],
+  receivables:  ['Finanse', 'Windykacja'],
+  invoices:     ['Finanse', 'Faktury'],
+  analytics:    ['Finanse', 'Analytics'],
+  admin:        ['System', 'Admin'],
+  automations:  ['System', 'Automatyzacje'],
+  login:        ['Auth', 'Logowanie'],
+  intake:       ['Public', 'Formularz klienta'],
+};
+
+function App() {
+  const [route, setRoute] = useState('dashboard');
+  const [drawerCaseId, setDrawerCaseId] = useState(null);
+  const [drawerClientId, setDrawerClientId] = useState(null);
+  const [drawerEmployerId, setDrawerEmployerId] = useState(null);
+  const [modal, setModal] = useState(null); // 'newCase' | 'newClient' | 'cmdk' | null
+  const data = window.GMP_DATA;
+
+  const drawerCase = drawerCaseId && data.cases.find(c => c.id === drawerCaseId);
+  const drawerClient = drawerClientId && data.clients.find(c => c.id === drawerClientId);
+  const drawerEmployer = drawerEmployerId && data.employers.find(e => e.id === drawerEmployerId);
+
+  // Cmd+K
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setModal('cmdk'); }
+      if (e.key === 'Escape') { setModal(null); setDrawerCaseId(null); setDrawerClientId(null); setDrawerEmployerId(null); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Login + Intake renderowane bez shella
+  if (route === 'login')  return <Login onBack={() => setRoute('dashboard')} />;
+  if (route === 'intake') return <Intake onBack={() => setRoute('dashboard')} />;
+
+  const crumbs = ROUTE_BREADCRUMBS[route] || ['Panel'];
+  const onOpenCase = (id) => setDrawerCaseId(id);
+  const onOpenClient = (id) => setDrawerClientId(id);
+  const onOpenEmployer = (id) => setDrawerEmployerId(id);
+  const openModal = (name) => setModal(name);
+  const navTo = (id) => { setRoute(id); window.scrollTo(0, 0); };
+
+  const screenProps = { data, onOpenCase, onOpenClient, onOpenEmployer, openModal, navTo };
+
+  return (
+    <div className="app">
+      <Sidebar active={route} onNav={navTo} onOpenLogin={() => setRoute('login')} onOpenIntake={() => setRoute('intake')} />
+      <main className="main">
+        <div className="topbar">
+          <div className="breadcrumbs">
+            <i className="ph ph-scales" style={{ fontSize: 14, color: 'var(--accent)' }}></i>
+            <span>Kancelaria GetMyPermit</span>
+            <i className="ph ph-caret-right" style={{ fontSize: 10, color: 'var(--fg-faint)' }}></i>
+            <span>{crumbs[0]}</span>
+            <i className="ph ph-caret-right" style={{ fontSize: 10, color: 'var(--fg-faint)' }}></i>
+            <strong>{crumbs[1]}</strong>
+          </div>
+          <div className="topbar-search" onClick={() => openModal('cmdk')}>
+            <i className="ph ph-magnifying-glass"></i>
+            <input placeholder="Szukaj sprawy, klienta, pracodawcy…" readOnly />
+            <span className="kbd">⌘K</span>
+          </div>
+          <button className="icon-btn" title="Pomoc"><i className="ph ph-question"></i></button>
+          <button className="icon-btn" title="Powiadomienia" onClick={() => navTo('alerts')}>
+            <i className="ph ph-bell"></i><span className="dot"></span>
+          </button>
+        </div>
+
+        {route === 'dashboard'   && <Dashboard {...screenProps} />}
+        {route === 'leads'       && <Leads {...screenProps} />}
+        {route === 'pipeline'    && <LeadsPipeline {...screenProps} />}
+        {route === 'cases'       && <CasesList {...screenProps} />}
+        {route === 'kanban'      && <Kanban {...screenProps} />}
+        {route === 'tasks'       && <Tasks {...screenProps} />}
+        {route === 'alerts'      && <Alerts {...screenProps} />}
+        {route === 'calendar'    && <Calendar {...screenProps} />}
+        {route === 'submissions' && <Submissions {...screenProps} />}
+        {route === 'clients'     && <ClientsList {...screenProps} />}
+        {route === 'employers'   && <EmployersList {...screenProps} />}
+        {route === 'groups'      && <Groups {...screenProps} />}
+        {route === 'staff'       && <Staff {...screenProps} />}
+        {route === 'templates'   && <Templates {...screenProps} />}
+        {route === 'payments'    && <Payments {...screenProps} />}
+        {route === 'receivables' && <Receivables {...screenProps} />}
+        {route === 'invoices'    && <Invoices {...screenProps} />}
+        {route === 'analytics'   && <Analytics {...screenProps} />}
+        {route === 'admin'       && <Admin {...screenProps} />}
+        {route === 'automations' && <Automations {...screenProps} />}
+      </main>
+
+      {drawerCase     && <CaseDrawer     caseItem={drawerCase}     data={data} onClose={() => setDrawerCaseId(null)} />}
+      {drawerClient   && <ClientDrawer   client={drawerClient}     data={data} onClose={() => setDrawerClientId(null)} onOpenCase={onOpenCase} />}
+      {drawerEmployer && <EmployerDrawer employer={drawerEmployer} data={data} onClose={() => setDrawerEmployerId(null)} onOpenCase={onOpenCase} />}
+
+      {modal === 'newCase'   && <NewCaseModal data={data} onClose={() => setModal(null)} />}
+      {modal === 'newClient' && <NewClientModal data={data} onClose={() => setModal(null)} />}
+      {modal === 'cmdk'      && <CommandPalette data={data} onClose={() => setModal(null)} navTo={(r) => { navTo(r); setModal(null); }} onOpenCase={(id) => { onOpenCase(id); setModal(null); }} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
