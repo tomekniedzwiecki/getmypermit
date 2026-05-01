@@ -308,65 +308,211 @@
             .hero-actions-sep { display: none; }
             .hero-primary-btn { flex: 1.4; justify-content: center; }
         }
+        /* === TABS — clean underline (Linear/HubSpot style) === */
         .case-tabs {
             display: flex;
-            gap: 4px;
-            padding: 6px;
+            align-items: stretch;
+            gap: 0;
+            padding: 0 2rem;
             margin: 0;
-            border: 1px solid rgba(255,255,255,0.06);
-            background: rgba(10,10,12,0.6);
-            border-radius: 12px;
+            background: transparent;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            border-top: 1px solid rgba(255,255,255,0.04);
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
+            scrollbar-width: none;
+            position: sticky;
+            top: 0;
+            z-index: 15;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
+        .case-tabs::-webkit-scrollbar { display: none; }
         .case-tab {
             flex: 0 0 auto;
-            padding: 10px 14px;
-            border: 1px solid transparent;
+            padding: 12px 16px 14px;
+            border: none;
+            border-bottom: 2px solid transparent;
             background: transparent;
-            color: #a1a1aa;
+            color: #71717a;
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
-            border-radius: 8px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
             white-space: nowrap;
-            transition: all 0.18s;
+            transition: color 0.15s, border-color 0.15s, background 0.15s;
             font-family: inherit;
+            margin-bottom: -1px;
+            position: relative;
         }
-        .case-tab i { font-size: 16px; opacity: 0.85; }
+        .case-tab i { font-size: 15px; opacity: 0.7; transition: opacity 0.15s, color 0.15s; }
         .case-tab:hover {
-            color: #fafafa;
-            background: rgba(255,255,255,0.03);
+            color: #d4d4d8;
+            background: rgba(255,255,255,0.02);
         }
+        .case-tab:hover i { opacity: 0.95; }
         .case-tab.active {
             color: #fafafa;
-            background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(139,92,246,0.10));
-            border-color: rgba(59,130,246,0.35);
-            box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 4px 14px rgba(59,130,246,0.18);
+            border-bottom-color: #3b82f6;
         }
         .case-tab.active i { opacity: 1; color: #93c5fd; }
+        .case-tab.active::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0; bottom: -1px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6 30%, #3b82f6 70%, transparent);
+            box-shadow: 0 0 12px rgba(59,130,246,0.5);
+        }
         .case-tab-count {
-            background: rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.05);
             padding: 1px 7px;
             border-radius: 999px;
             font-size: 10px;
             font-family: 'JetBrains Mono', monospace;
             color: #71717a;
-            line-height: 1.4;
+            line-height: 1.5;
+            font-weight: 500;
         }
-        .case-tab.active .case-tab-count { background: rgba(59,130,246,0.22); color: #bfdbfe; }
+        .case-tab.active .case-tab-count { background: rgba(59,130,246,0.18); color: #93c5fd; }
         .case-tab .case-tab-label { display: inline; }
-        @media (max-width: 600px) {
-            /* Mobile: tylko ikony w głównym tab-bar — oszczędność miejsca */
-            .case-tabs { gap: 2px; padding: 4px; border-radius: 10px; }
+        @media (max-width: 700px) {
+            .case-tabs { padding: 0 0.5rem; }
+            .case-tab { padding: 11px 12px 13px; gap: 6px; font-size: 12px; }
+            .case-tab i { font-size: 16px; opacity: 0.85; }
+            /* Na mobile pokazujemy tylko ikony dla nieaktywnych — oszczędność miejsca */
             .case-tab .case-tab-label { display: none; }
-            .case-tab i { font-size: 18px; }
-            .case-tab.active .case-tab-label { display: inline; font-size: 11px; }
-            .case-tab { padding: 10px 12px; gap: 4px; }
+            .case-tab.active .case-tab-label { display: inline; font-size: 12px; }
+            .case-tab-count { font-size: 9px; padding: 1px 5px; }
+        }
+
+        /* === "CO TERAZ" — proaktywne podpowiedzi (REDESIGN 2026-05-01)
+           Lokalizacja: pod tabs, nad body. Subtelna sekcja, nie banner.
+           Layout: header label + lista chipów per priority (red/amber/blue) === */
+        .next-steps {
+            margin: 16px 2rem 0;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+        }
+        .next-steps-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding: 0;
+        }
+        .next-steps-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.05));
+            border: 1px solid rgba(245,158,11,0.25);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fbbf24;
+        }
+        .next-steps-icon .ph { font-size: 12px; }
+        .next-steps-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #a1a1aa;
+        }
+        .next-steps-count {
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #71717a;
+            background: rgba(255,255,255,0.04);
+            padding: 1px 7px;
+            border-radius: 999px;
+        }
+        .next-steps-items {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .next-steps-item {
+            display: inline-flex;
+            align-items: stretch;
+            background: linear-gradient(135deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 9px;
+            overflow: hidden;
+            transition: border-color 0.15s, transform 0.15s;
+            font-size: 13px;
+            line-height: 1.3;
+        }
+        .next-steps-item:hover {
+            border-color: rgba(255,255,255,0.14);
+            transform: translateY(-1px);
+        }
+        .next-steps-item .next-steps-item-content {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            min-width: 0;
+        }
+        .next-steps-item .ph {
+            font-size: 14px;
+            flex-shrink: 0;
+            opacity: 0.9;
+        }
+        .next-steps-priority-1 { border-left: 3px solid #ef4444; background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.01)); }
+        .next-steps-priority-1 .next-steps-item-content .ph { color: #fca5a5; }
+        .next-steps-priority-1 .next-steps-label { color: #fca5a5; }
+        .next-steps-priority-2 { border-left: 3px solid #f59e0b; background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(245,158,11,0.01)); }
+        .next-steps-priority-2 .next-steps-item-content .ph { color: #fbbf24; }
+        .next-steps-priority-3 { border-left: 3px solid #3b82f6; background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(59,130,246,0.01)); }
+        .next-steps-priority-3 .next-steps-item-content .ph { color: #93c5fd; }
+        .next-steps-item .next-steps-label-text {
+            color: #e4e4e7;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 320px;
+        }
+        .next-steps-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 0 12px;
+            margin: 0;
+            background: rgba(255,255,255,0.03);
+            border: none;
+            border-left: 1px solid rgba(255,255,255,0.06);
+            color: #a1a1aa;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+        .next-steps-action:hover {
+            background: rgba(59,130,246,0.18);
+            color: #dbeafe;
+        }
+        .next-steps-action .arrow { font-size: 13px; transition: transform 0.15s; }
+        .next-steps-action:hover .arrow { transform: translateX(2px); }
+        .next-steps-empty { color: #71717a; font-size: 12px; }
+        @media (max-width: 700px) {
+            .next-steps { margin: 12px 1rem 0; }
+            .next-steps-items { gap: 6px; }
+            .next-steps-item .next-steps-label-text { max-width: 200px; font-size: 12px; }
+            .next-steps-item .next-steps-item-content { padding: 7px 10px; gap: 6px; }
+            .next-steps-action { padding: 0 10px; font-size: 10px; }
         }
 
         /* === SUB-TABS — używane w panelu Dokumenty + Aktywność === */
@@ -867,107 +1013,8 @@
             .tag-chip { padding: 5px 10px 5px 8px !important; font-size: 12px; }
         }
 
-        /* === Pawel v3.2 — Sekcja "Co teraz" (§ 1.7, B14) ===
-           Kompaktowy alert toolbar — gęste chip-style items, niski profil */
-        .next-steps-banner {
-            position: relative;
-            background:
-                linear-gradient(90deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.02) 40%, transparent 80%),
-                rgba(15,12,8,0.6);
-            border: 1px solid rgba(245, 158, 11, 0.22);
-            border-radius: 10px;
-            padding: 6px 8px 6px 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .next-steps-banner > div:first-child {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin: 0;
-            padding-right: 10px;
-            border-right: 1px solid rgba(245,158,11,0.18);
-            flex-shrink: 0;
-        }
-        .next-steps-banner h3 {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #fcd34d;
-            margin: 0;
-        }
-        .next-steps-banner > div:first-child .ph { font-size: 13px; }
-        #next-steps-list {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex: 1;
-            flex-wrap: wrap;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        .next-steps-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 4px 4px 8px;
-            font-size: 12px;
-            line-height: 1.3;
-            background: rgba(255,255,255,0.025);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 7px;
-            transition: border-color 0.15s, background 0.15s;
-        }
-        .next-steps-item:hover { border-color: rgba(255,255,255,0.10); background: rgba(255,255,255,0.04); }
-        .next-steps-item .ph { font-size: 13px; flex-shrink: 0; opacity: 0.85; }
-        .next-steps-priority-1 { border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.06); }
-        .next-steps-priority-1 .next-steps-label { color: #fca5a5; font-weight: 500; }
-        .next-steps-priority-2 { border-color: rgba(245,158,11,0.22); background: rgba(245,158,11,0.05); }
-        .next-steps-priority-2 .next-steps-label { color: #fde68a; }
-        .next-steps-priority-3 { border-color: rgba(59,130,246,0.20); background: rgba(59,130,246,0.05); }
-        .next-steps-priority-3 .next-steps-label { color: #93c5fd; }
-        .next-steps-label { white-space: nowrap; max-width: 360px; overflow: hidden; text-overflow: ellipsis; }
-        .next-steps-action {
-            padding: 2px 8px 2px 6px;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            color: #cbd5e1;
-            text-decoration: none;
-            border: none;
-            border-left: 1px solid rgba(255,255,255,0.06);
-            border-radius: 0 6px 6px 0;
-            background: rgba(255,255,255,0.02);
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.15s ease;
-            margin: -4px -4px -4px 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 2px;
-            white-space: nowrap;
-        }
-        .next-steps-action::after { content: '→'; font-size: 12px; opacity: 0.7; }
-        .next-steps-action:hover {
-            background: rgba(59, 130, 246, 0.18);
-            color: #dbeafe;
-        }
-        .next-steps-action:active { transform: translateY(1px); }
-        .next-steps-empty { color: #71717a; font-size: 11px; padding: 0; }
-        /* Mobile — items fall to new lines */
-        @media (max-width: 700px) {
-            .next-steps-banner { gap: 6px; padding: 6px 8px; }
-            .next-steps-banner > div:first-child {
-                padding-right: 0;
-                border-right: none;
-                width: 100%;
-            }
-            .next-steps-label { max-width: 200px; }
-        }
+        /* === Pawel v3.2 — Sekcja "Co teraz" — STARE STYLE USUNIĘTE.
+           Nowe style w bloku ".next-steps" wcześniej (linie ~430+). === */
         .flash-highlight {
             animation: flash-bg 1.6s ease-out;
         }
@@ -1168,17 +1215,8 @@
                     </div>
                 </div>
 
-                <!-- "Co teraz" banner (Pawel v3.2 § 1.7, B14) — w headerze, poniżej hero -->
-                <div id="next-steps" class="next-steps-banner mx-8 mb-3 hidden" style="margin-left: 2rem; margin-right: 2rem;">
-                    <div class="flex items-center gap-2 mb-1">
-                        <i class="ph ph-target text-amber-400"></i>
-                        <h3 class="text-sm font-semibold text-amber-200">Co teraz</h3>
-                    </div>
-                    <ul id="next-steps-list" class="space-y-1"></ul>
-                </div>
-
                 <!-- TABS -->
-                <div class="case-tabs mt-2 -mx-8 px-8">
+                <div class="case-tabs">
                     <button class="case-tab active" data-tab="overview"><i class="ph ph-house"></i> <span class="case-tab-label">Przegląd</span></button>
                     <button class="case-tab" data-tab="procedura"><i class="ph ph-list-checks"></i> <span class="case-tab-label">Procedura</span> <span class="case-tab-count" id="cnt-procedura">—</span></button>
                     <button class="case-tab" data-tab="documents"><i class="ph ph-file"></i> <span class="case-tab-label">Dokumenty</span> <span class="case-tab-count" id="cnt-docs">0</span></button>
@@ -1186,6 +1224,18 @@
                     <button class="case-tab" data-tab="activity"><i class="ph ph-pulse"></i> <span class="case-tab-label">Aktywność</span> <span class="case-tab-count" id="cnt-activity">0</span></button>
                     <button class="case-tab" data-tab="data"><i class="ph ph-gear"></i> <span class="case-tab-label">Dane</span></button>
                 </div>
+            </div>
+
+            <!-- "CO TERAZ" — proaktywne podpowiedzi (Pawel v3.2 § 1.7, B14)
+                 Lokalizacja: pod tabami, nad body — widoczne na KAŻDEJ zakładce.
+                 Renderowane przez crm/components/next-step.js -->
+            <div id="next-steps" class="next-steps hidden">
+                <div class="next-steps-head">
+                    <div class="next-steps-icon"><i class="ph ph-target"></i></div>
+                    <div class="next-steps-label">Co teraz</div>
+                    <span class="next-steps-count" id="next-steps-count"></span>
+                </div>
+                <ul id="next-steps-list" class="next-steps-items"></ul>
             </div>
 
             <!-- BODY -->

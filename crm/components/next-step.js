@@ -38,23 +38,30 @@ export async function renderNextSteps(caseId, supabase, targetSelector = '#next-
 
     const steps = await computeNextSteps(caseId, supabase);
     const banner = target.closest('#next-steps');
+    const countEl = document.getElementById('next-steps-count');
 
     if (steps.length === 0) {
-        target.innerHTML = '<li class="next-steps-empty">Brak akcji do wykonania — sprawa wygląda OK.</li>';
-        if (banner) banner.classList.add('next-steps-empty-banner');
+        // Brak akcji — całkowicie ukryj sekcję (clean overview)
+        if (banner) banner.classList.add('hidden');
+        target.innerHTML = '';
+        if (countEl) countEl.textContent = '';
         return;
     }
 
-    if (banner) banner.classList.remove('next-steps-empty-banner');
+    if (banner) banner.classList.remove('hidden');
+    if (countEl) countEl.textContent = steps.length;
+
     target.innerHTML = steps.map((step, idx) => {
         const priorityClass = `next-steps-priority-${step.priority}`;
         const icon = step.icon || 'ph-arrow-right';
         return `
             <li class="next-steps-item ${priorityClass}" data-step-idx="${idx}">
-                <i class="ph ${icon}"></i>
-                <span class="next-steps-label">${escapeHtml(step.label)}</span>
+                <span class="next-steps-item-content">
+                    <i class="ph ${icon}"></i>
+                    <span class="next-steps-label-text">${escapeHtml(step.label)}</span>
+                </span>
                 ${step.action_url
-                    ? `<button class="next-steps-action" type="button" data-action-url="${escapeAttr(step.action_url)}">Otwórz</button>`
+                    ? `<button class="next-steps-action" type="button" data-action-url="${escapeAttr(step.action_url)}">Otwórz <span class="arrow">→</span></button>`
                     : ''}
             </li>
         `;
