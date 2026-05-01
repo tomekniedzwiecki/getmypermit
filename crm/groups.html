@@ -496,6 +496,7 @@ async function renderDetail(id) {
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
                     ${g.employer ? `<a href="employer.html?id=${g.employer.id}" class="btn btn-ghost btn-sm"><i class="ph ph-buildings"></i> ${esc(g.employer.name)}</a>` : ''}
+                    <button class="btn btn-ghost btn-sm" onclick="exportGroupReport('${g.id}')" title="Eksportuj raport zbiorczy DOCX"><i class="ph ph-file-arrow-down"></i> Raport</button>
                     <a href="group.html?id=${g.id}" class="btn btn-ghost btn-sm" title="Otwórz w pełnym widoku"><i class="ph ph-arrow-square-out"></i></a>
                     <button class="btn btn-ghost btn-sm" onclick="deleteGroup('${g.id}', '${esc(g.name)}')" title="Usuń grupę"><i class="ph ph-trash text-red-400"></i></button>
                 </div>
@@ -666,6 +667,31 @@ async function loadTasks(groupId) {
             </div>
         </div>
     `).join('');
+}
+
+async function exportGroupReport(id) {
+    toast.info('Generuję raport...');
+    try {
+        const { data, error } = await db.functions.invoke('generate-group-report', { body: { group_id: id } });
+        if (error) throw new Error(error.message || 'Błąd edge function');
+        if (data?.error) throw new Error(data.error);
+        if (data?.download_url) {
+            window.open(data.download_url, '_blank');
+            toast.success(`Raport wygenerowany (${data.rows} spraw)`);
+        } else if (data?.fallback && data?.file_base64) {
+            const bin = atob(data.file_base64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = data.file_name; a.click();
+            URL.revokeObjectURL(url);
+            toast.success('Raport pobrany');
+        }
+    } catch (e) {
+        toast.error('Błąd: ' + (e.message || e));
+    }
 }
 
 async function deleteGroup(id, name) {

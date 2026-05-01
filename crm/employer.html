@@ -149,6 +149,7 @@
                         </div>
                     </div>
                     <div class="flex gap-2">
+                        <button class="btn btn-secondary btn-sm" onclick="exportLegalityReport()" id="emp-export-btn"><i class="ph ph-file-arrow-down"></i> Raport DOCX</button>
                         <button class="btn btn-secondary btn-sm" onclick="goToGroup()" id="emp-group-btn"><i class="ph ph-users-three"></i> Grupa</button>
                     </div>
                 </div>
@@ -156,6 +157,8 @@
 
             <div class="emp-tabs">
                 <button class="emp-tab active" data-tab="cases"><i class="ph ph-briefcase"></i> Sprawy <span class="emp-tab-count" id="cnt-cases">—</span></button>
+                <button class="emp-tab" data-tab="zalacznik"><i class="ph ph-paperclip"></i> Załącznik nr 1 <span class="emp-tab-count" id="cnt-zalacznik">—</span></button>
+                <button class="emp-tab" data-tab="rozliczenia"><i class="ph ph-calculator"></i> Rozliczenia <span class="emp-tab-count" id="cnt-rozliczenia">—</span></button>
                 <button class="emp-tab" data-tab="workers"><i class="ph ph-user"></i> Cudzoziemcy <span class="emp-tab-count" id="cnt-workers">—</span></button>
                 <button class="emp-tab" data-tab="appts"><i class="ph ph-calendar-blank"></i> Najbliższe terminy <span class="emp-tab-count" id="cnt-appts">—</span></button>
                 <button class="emp-tab" data-tab="checklist"><i class="ph ph-list-checks"></i> Braki dokumentów <span class="emp-tab-count" id="cnt-checklist">—</span></button>
@@ -192,6 +195,13 @@
             </div>
             <div class="emp-pane" data-pane="alerts">
                 <div id="alerts-list" class="space-y-2"></div>
+            </div>
+            <div class="emp-pane" data-pane="zalacznik">
+                <div id="zalacznik-list" class="space-y-2"></div>
+            </div>
+            <div class="emp-pane" data-pane="rozliczenia">
+                <div id="rozliczenia-list" class="space-y-2"></div>
+                <div id="rozliczenia-summary" class="mt-4"></div>
             </div>
         </div>
     </main>
@@ -250,6 +260,48 @@ function showError(msg) {
 }
 
 function goToGroup() { if (groupId) location.href = `group.html?id=${groupId}`; }
+
+async function exportLegalityReport() {
+    const btn = document.getElementById('emp-export-btn');
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner mr-2"></span>Generuję...';
+    try {
+        const { data, error } = await db.functions.invoke('generate-employer-report', {
+            body: { employer_id: empId },
+        });
+        if (error) throw new Error(error.message || 'Błąd edge function');
+        if (data?.error) throw new Error(data.error);
+        if (data?.download_url) {
+            window.open(data.download_url, '_blank');
+            window.toast?.success?.(`Raport wygenerowany (${data.rows} pracowników)`);
+        } else if (data?.fallback && data?.file_base64) {
+            // Fallback gdy storage upload failuje
+            const blob = b64toBlob(data.file_base64, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = data.file_name; a.click();
+            URL.revokeObjectURL(url);
+            window.toast?.success?.('Raport pobrany');
+        } else {
+            window.toast?.warning?.('Brak download_url w odpowiedzi');
+        }
+    } catch (e) {
+        window.toast?.error?.('Błąd: ' + (e.message || e));
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    }
+}
+
+function b64toBlob(b64, type) {
+    const bin = atob(b64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type });
+}
 
 function renderHeader() {
     document.getElementById('emp-name').textContent = emp.name;
@@ -312,7 +364,112 @@ async function loadCases() {
     }).join('');
 }
 
-const loaded = { workers: false, appts: false, checklist: false, docs: false, alerts: false };
+const loaded = { workers: false, appts: false, checklist: false, docs: false, alerts: false, zalacznik: false, rozliczenia: false };
+
+const ZAL_MODEL_LABELS = {
+    pracodawca_pelnomocnictwo: 'Pełnomocnictwo',
+    pracodawca_samodzielnie: 'Samodzielnie',
+    do_ustalenia: 'Do ustalenia',
+};
+const ZAL_MODEL_COLORS = {
+    pracodawca_pelnomocnictwo: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
+    pracodawca_samodzielnie: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25',
+    do_ustalenia: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+};
+
+async function loadZalacznik() {
+    if (loaded.zalacznik) return; loaded.zalacznik = true;
+    if (!employerCaseIds.length) { document.getElementById('cnt-zalacznik').textContent = 0; document.getElementById('zalacznik-list').innerHTML = '<div class="text-zinc-500 text-sm">Brak spraw.</div>'; return; }
+    const { data, error } = await db.from('gmp_e_submission_status')
+        .select('case_id, zalacznik_nr_1_model, zalacznik_nr_1_signed, zalacznik_nr_1_notes, gmp_cases!inner(case_number, client_id, gmp_clients(first_name, last_name))')
+        .in('case_id', employerCaseIds);
+    if (error) { console.warn(error); document.getElementById('zalacznik-list').innerHTML = `<div class="text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    const items = data || [];
+    document.getElementById('cnt-zalacznik').textContent = items.length;
+    const list = document.getElementById('zalacznik-list');
+    if (!items.length) { list.innerHTML = '<div class="text-zinc-500 text-sm">Brak spraw z e-złożeniem dla tego pracodawcy.</div>'; return; }
+    list.innerHTML = items.map(z => {
+        const cl = z.gmp_cases?.gmp_clients;
+        const cn = cl ? `${cl.last_name} ${cl.first_name}` : '(bez klienta)';
+        const model = z.zalacznik_nr_1_model || 'do_ustalenia';
+        const cls = ZAL_MODEL_COLORS[model] || ZAL_MODEL_COLORS.do_ustalenia;
+        return `
+            <a href="case.html?id=${z.case_id}" class="row-card">
+                <i class="ph ph-paperclip text-amber-400" style="font-size: 22px;"></i>
+                <div class="row-info">
+                    <div class="row-name">${esc(cn)}${z.gmp_cases?.case_number ? ` <span class="text-zinc-500 text-xs">#${esc(z.gmp_cases.case_number)}</span>` : ''}</div>
+                    <div class="row-meta">
+                        <span class="px-2 py-0.5 rounded border ${cls}" style="font-size:10px;">Model: ${ZAL_MODEL_LABELS[model] || model}</span>
+                        ${z.zalacznik_nr_1_signed ? '<span class="ml-2 text-emerald-400">✓ podpisany</span>' : '<span class="ml-2 text-zinc-500">⏳ nie podpisany</span>'}
+                        ${z.zalacznik_nr_1_notes ? ` · ${esc(z.zalacznik_nr_1_notes.slice(0, 80))}${z.zalacznik_nr_1_notes.length > 80 ? '…' : ''}` : ''}
+                    </div>
+                </div>
+            </a>
+        `;
+    }).join('');
+}
+
+async function loadRozliczenia() {
+    if (loaded.rozliczenia) return; loaded.rozliczenia = true;
+    if (!employerCaseIds.length) { document.getElementById('cnt-rozliczenia').textContent = 0; document.getElementById('rozliczenia-list').innerHTML = '<div class="text-zinc-500 text-sm">Brak spraw.</div>'; return; }
+    const { data, error } = await db.from('gmp_case_balance')
+        .select('case_id, total_planned, total_paid, balance_due, overdue_installments_count, overdue_installments_amount')
+        .in('case_id', employerCaseIds);
+    if (error) { console.warn(error); document.getElementById('rozliczenia-list').innerHTML = `<div class="text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    const items = data || [];
+    document.getElementById('cnt-rozliczenia').textContent = items.length;
+    const list = document.getElementById('rozliczenia-list');
+    const summary = document.getElementById('rozliczenia-summary');
+    if (!items.length) { list.innerHTML = '<div class="text-zinc-500 text-sm">Brak rozliczeń.</div>'; return; }
+
+    // Summary
+    const sumPlanned = items.reduce((s, r) => s + Number(r.total_planned || 0), 0);
+    const sumPaid = items.reduce((s, r) => s + Number(r.total_paid || 0), 0);
+    const sumBalance = items.reduce((s, r) => s + Number(r.balance_due || 0), 0);
+    const overdueCount = items.reduce((s, r) => s + Number(r.overdue_installments_count || 0), 0);
+    const overdueAmount = items.reduce((s, r) => s + Number(r.overdue_installments_amount || 0), 0);
+    summary.innerHTML = `
+        <div class="card p-4">
+            <h3 class="text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">Podsumowanie pracodawcy</h3>
+            <div class="grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+                <div class="stat-mini"><div class="stat-mini-label">Planowane</div><div class="stat-mini-value">${fmt.money(sumPlanned)}</div></div>
+                <div class="stat-mini"><div class="stat-mini-label">Wpłacone</div><div class="stat-mini-value text-emerald-400">${fmt.money(sumPaid)}</div></div>
+                <div class="stat-mini"><div class="stat-mini-label">Saldo</div><div class="stat-mini-value ${sumBalance > 0 ? 'text-amber-400' : 'text-emerald-400'}">${fmt.money(sumBalance)}</div></div>
+                ${overdueCount > 0 ? `<div class="stat-mini"><div class="stat-mini-label">Po terminie</div><div class="stat-mini-value text-red-400">${overdueCount} rat / ${fmt.money(overdueAmount)}</div></div>` : ''}
+            </div>
+        </div>
+    `;
+
+    // Per case rows — sort by balance desc (najgorsi pierwsze)
+    items.sort((a, b) => Number(b.balance_due || 0) - Number(a.balance_due || 0));
+
+    // Pobierz client names dla wyświetlenia
+    const caseMap = {};
+    employerCases.forEach(c => { caseMap[c.id] = c; });
+
+    list.innerHTML = items.map(r => {
+        const c = caseMap[r.case_id];
+        const cn = c?.client ? `${c.client.last_name} ${c.client.first_name}` : '(bez klienta)';
+        const balanceClass = Number(r.balance_due || 0) > 0 ? 'text-amber-400' : 'text-emerald-400';
+        const overdueLabel = r.overdue_installments_count > 0
+            ? `<span class="row-badge alert">⚠ ${r.overdue_installments_count} po terminie</span>`
+            : '';
+        return `
+            <a href="case.html?id=${r.case_id}" class="row-card">
+                <i class="ph ph-coin text-yellow-400" style="font-size: 22px;"></i>
+                <div class="row-info">
+                    <div class="row-name">${esc(cn)}${c?.case_number ? ` <span class="text-zinc-500 text-xs">#${esc(c.case_number)}</span>` : ''}</div>
+                    <div class="row-meta">
+                        Plan: <span class="font-mono">${fmt.money(r.total_planned)}</span>
+                        · Wpł: <span class="text-emerald-400 font-mono">${fmt.money(r.total_paid)}</span>
+                        · Saldo: <span class="${balanceClass} font-mono">${fmt.money(r.balance_due)}</span>
+                    </div>
+                </div>
+                ${overdueLabel}
+            </a>
+        `;
+    }).join('');
+}
 
 async function loadWorkers() {
     if (loaded.workers) return; loaded.workers = true;
@@ -472,6 +629,8 @@ function bindTabs() {
             if (name === 'workers') loadWorkers();
             if (name === 'appts') loadAppts();
             if (name === 'checklist') loadChecklist();
+            if (name === 'zalacznik') loadZalacznik();
+            if (name === 'rozliczenia') loadRozliczenia();
             if (name === 'docs') loadDocs();
             if (name === 'alerts') loadAlerts();
             // Re-apply search jeśli aktywny
