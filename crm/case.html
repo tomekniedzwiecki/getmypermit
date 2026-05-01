@@ -388,11 +388,14 @@
         /* === BODY: main content (lewy 1fr) + identity aside (prawy 320px) — Attio-style === */
         .case-body {
             display: grid;
+            grid-template-areas: "main aside";
             grid-template-columns: minmax(0, 1fr) 320px;
             gap: 24px;
             padding: 24px 2rem 32px;
             margin: 0;
         }
+        .case-main { grid-area: main; }
+        .case-aside { grid-area: aside; }
         @media (max-width: 1100px) {
             .case-body { grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; padding: 20px 2rem 28px; }
         }
