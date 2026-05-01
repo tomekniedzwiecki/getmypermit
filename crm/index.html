@@ -17,9 +17,11 @@
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } }
     </script>
     <meta name="x-sentry-dsn" content="https://6f0737fc66f36bbdc9806377bee380b8@o4511314588205056.ingest.de.sentry.io/4511314611667024">
+    <meta name="x-turnstile-site-key" content="0x4AAAAAADG9SIOSKAbZGyNT">
     <script src="components/sentry.js"></script>
     <script src="components/supabase.js"></script>
     <script src="components/auth.js" data-require-auth="false"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <style>
         body {
             background: #0a0a14;
@@ -427,6 +429,9 @@
                         <span>Zapamiętaj mój email</span>
                     </label>
 
+                    <!-- Cloudflare Turnstile widget (anti-bot, MAJ-PENTEST-2) -->
+                    <div class="cf-turnstile" data-sitekey="0x4AAAAAADG9SIOSKAbZGyNT" data-theme="dark" data-size="flexible"></div>
+
                     <button type="submit" id="login-btn" class="btn-submit">
                         <span id="login-btn-text">Zaloguj się</span>
                         <span id="login-btn-spinner" class="hidden spinner"></span>
@@ -550,6 +555,14 @@
             hideMsg();
             const email = $('#email').value.trim();
             const password = $('#password').value;
+
+            // Cloudflare Turnstile validation - widget renderuje hidden input cf-turnstile-response
+            const turnstileToken = document.querySelector('input[name="cf-turnstile-response"]')?.value;
+            if (!turnstileToken) {
+                showMsg('Poczekaj aż weryfikacja anty-bot się załaduje, lub odśwież stronę.');
+                return;
+            }
+
             setLoading(true);
             try {
                 await window.gmpAuth.login(email, password);
