@@ -502,17 +502,17 @@ async function renderDetail(id) {
         </div>
 
         <div class="det-tabs">
-            <button class="det-tab active" data-tab="cases"><i class="ph ph-folders"></i> Sprawy <span class="det-tab-count" id="dc-cases">${g.member_count}</span></button>
-            <button class="det-tab" data-tab="clients"><i class="ph ph-users"></i> Cudzoziemcy <span class="det-tab-count" id="dc-clients">—</span></button>
+            <button class="det-tab active" data-tab="clients"><i class="ph ph-users"></i> Cudzoziemcy <span class="det-tab-count" id="dc-clients">—</span></button>
+            <button class="det-tab" data-tab="cases"><i class="ph ph-folders"></i> Sprawy <span class="det-tab-count" id="dc-cases">${g.member_count}</span></button>
             <button class="det-tab" data-tab="docs"><i class="ph ph-file"></i> Dokumenty <span class="det-tab-count" id="dc-docs">—</span></button>
             <button class="det-tab" data-tab="tasks"><i class="ph ph-check-square"></i> Zadania <span class="det-tab-count" id="dc-tasks">—</span></button>
         </div>
 
         <div class="det-body">
-            <div class="det-pane active" data-pane="cases" id="pane-cases">
-                <div class="text-zinc-500 text-sm">Ładuję sprawy...</div>
+            <div class="det-pane active" data-pane="clients" id="pane-clients">
+                <div class="text-zinc-500 text-sm">Ładuję cudzoziemców...</div>
             </div>
-            <div class="det-pane" data-pane="clients" id="pane-clients"></div>
+            <div class="det-pane" data-pane="cases" id="pane-cases"></div>
             <div class="det-pane" data-pane="docs" id="pane-docs"></div>
             <div class="det-pane" data-pane="tasks" id="pane-tasks"></div>
         </div>
@@ -524,13 +524,14 @@ async function renderDetail(id) {
             const name = btn.dataset.tab;
             detail.querySelectorAll('.det-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
             detail.querySelectorAll('.det-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
-            if (name === 'clients') loadClients(id);
+            if (name === 'cases') loadCases(id);
             if (name === 'docs') loadDocs(id);
             if (name === 'tasks') loadTasks(id);
         });
     });
 
-    await loadCases(id);
+    // Domyślnie Cudzoziemcy — najważniejsze "kto jest w grupie", potem ich sprawy
+    await loadClients(id);
 }
 
 // === Tab Cudzoziemcy: distinct klienci ze spraw grupy ===
