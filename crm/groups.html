@@ -15,54 +15,265 @@
     <script src="components/auth.js"></script>
     <script src="components/modals.js" defer></script>
     <style>
-        .grp-card {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.005) 100%);
+        /* SPLIT VIEW: lista po lewej (340px) + detail prawy (1fr) */
+        .grp-split {
+            display: grid;
+            grid-template-columns: 340px minmax(0, 1fr);
+            gap: 16px;
+            height: calc(100vh - 140px);
+            margin: 0;
+        }
+        @media (max-width: 900px) {
+            .grp-split { grid-template-columns: 1fr; height: auto; }
+            .grp-list-pane { height: 50vh; }
+        }
+        .grp-list-pane {
+            background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.005));
             border: 1px solid rgba(255,255,255,0.06);
             border-radius: 12px;
-            text-decoration: none;
-            transition: border-color 0.15s, transform 0.15s;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
-        .grp-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-1px); }
-        .grp-icon-box {
+        .grp-detail-pane {
+            background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.005));
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* === LISTA (lewa) === */
+        .grp-search-bar {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .grp-search-input {
+            position: relative;
+        }
+        .grp-search-input input {
+            width: 100%;
+            padding: 7px 30px 7px 30px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            color: #fafafa;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .grp-search-input input:focus { outline: none; border-color: rgba(59,130,246,0.4); background: rgba(255,255,255,0.05); }
+        .grp-search-input .ph-magnifying-glass {
+            position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+            color: #71717a; font-size: 13px;
+        }
+        .grp-type-filters {
+            display: flex; gap: 4px; flex-wrap: wrap;
+        }
+        .grp-type-pill {
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 500;
+            background: rgba(255,255,255,0.03);
+            color: #a1a1aa;
+            border: 1px solid rgba(255,255,255,0.06);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            line-height: 1.4;
+        }
+        .grp-type-pill .ph { font-size: 11px; }
+        .grp-type-pill:hover { color: #fafafa; border-color: rgba(255,255,255,0.16); }
+        .grp-type-pill.active { background: rgba(59,130,246,0.18); color: #bfdbfe; border-color: rgba(59,130,246,0.4); }
+        .grp-type-pill.active.t-pracodawca { background: rgba(245,158,11,0.18); color: #fbbf24; border-color: rgba(245,158,11,0.4); }
+        .grp-type-pill.active.t-rodzina { background: rgba(236,72,153,0.18); color: #f9a8d4; border-color: rgba(236,72,153,0.4); }
+        .grp-type-pill.active.t-projekt { background: rgba(99,102,241,0.18); color: #a5b4fc; border-color: rgba(99,102,241,0.4); }
+        .grp-type-pill .pill-count {
+            font-size: 10px;
+            opacity: 0.7;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .grp-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 6px 6px;
+        }
+        .grp-list::-webkit-scrollbar { width: 6px; }
+        .grp-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+        .grp-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.1s;
+            border: 1px solid transparent;
+        }
+        .grp-row:hover { background: rgba(255,255,255,0.03); }
+        .grp-row.selected {
+            background: rgba(59,130,246,0.10);
+            border-color: rgba(59,130,246,0.28);
+        }
+        .grp-row-icon {
+            width: 28px; height: 28px;
+            border-radius: 7px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .icon-pracodawca { background: rgba(245,158,11,0.12); color: #fbbf24; }
+        .icon-rodzina { background: rgba(236,72,153,0.12); color: #f9a8d4; }
+        .icon-projekt { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+        .icon-rozliczenie_zbiorcze { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+        .icon-inna { background: rgba(161,161,170,0.14); color: #d4d4d8; }
+
+        .grp-row-name {
+            flex: 1;
+            min-width: 0;
+            font-size: 13px;
+            color: #e4e4e7;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .grp-row.selected .grp-row-name { color: #fafafa; }
+        .grp-row-count {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #71717a;
+            background: rgba(255,255,255,0.04);
+            padding: 1px 7px;
+            border-radius: 999px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+        .grp-row.selected .grp-row-count { background: rgba(59,130,246,0.20); color: #93c5fd; }
+
+        .list-divider {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #52525b;
+            padding: 12px 10px 4px;
+        }
+
+        /* === DETAIL (prawa) === */
+        .det-empty {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; padding: 40px 20px; text-align: center;
+        }
+        .det-empty-icon {
+            width: 72px; height: 72px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.04);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px;
+            color: #52525b;
+            margin-bottom: 16px;
+        }
+
+        .det-header {
+            padding: 18px 22px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+        .det-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+        .det-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .det-title-icon {
             width: 44px; height: 44px;
             border-radius: 11px;
             display: flex; align-items: center; justify-content: center;
             font-size: 22px;
             flex-shrink: 0;
         }
-        .grp-info { flex: 1; min-width: 0; }
-        .grp-name { color: #fafafa; font-weight: 600; font-size: 15px; }
-        .grp-meta { color: #71717a; font-size: 12px; margin-top: 3px; }
-        .grp-count {
-            text-align: right;
-            font-family: 'JetBrains Mono', monospace;
+        .det-name { font-size: 18px; font-weight: 600; color: #fafafa; line-height: 1.2; }
+        .det-type-line { font-size: 12px; color: #71717a; margin-top: 2px; }
+        .det-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: #71717a; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.04); margin-top: 10px; }
+        .det-meta b { color: #d4d4d8; font-weight: 500; }
+
+        .det-tabs {
+            display: flex; gap: 0;
+            padding: 0 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
         }
-        .grp-count .num { font-size: 22px; font-weight: 600; color: #fafafa; line-height: 1; }
-        .grp-count .lbl { font-size: 10px; text-transform: uppercase; color: #71717a; letter-spacing: 0.06em; margin-top: 4px; }
-
-        .type-pracodawca { background: rgba(245,158,11,0.10); color: #fbbf24; border: 1px solid rgba(245,158,11,0.28); }
-        .type-rodzina { background: rgba(236,72,153,0.10); color: #f9a8d4; border: 1px solid rgba(236,72,153,0.28); }
-        .type-projekt { background: rgba(99,102,241,0.10); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.28); }
-        .type-rozliczenie_zbiorcze { background: rgba(16,185,129,0.10); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.28); }
-        .type-inna { background: rgba(161,161,170,0.12); color: #d4d4d8; border: 1px solid rgba(161,161,170,0.18); }
-
-        .filter-pill {
-            padding: 6px 12px;
-            border-radius: 999px;
+        .det-tab {
+            padding: 11px 14px 13px;
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: transparent;
+            color: #71717a;
             font-size: 12px;
             font-weight: 500;
-            background: rgba(255,255,255,0.04);
-            color: #a1a1aa;
-            border: 1px solid rgba(255,255,255,0.06);
             cursor: pointer;
-            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.15s, border-color 0.15s;
+            font-family: inherit;
+            margin-bottom: -1px;
         }
-        .filter-pill:hover { color: #fafafa; border-color: rgba(255,255,255,0.18); }
-        .filter-pill.active { background: rgba(59,130,246,0.18); color: #bfdbfe; border-color: rgba(59,130,246,0.4); }
+        .det-tab:hover { color: #d4d4d8; }
+        .det-tab.active { color: #fafafa; border-bottom-color: #3b82f6; }
+        .det-tab .ph { font-size: 14px; }
+        .det-tab-count { background: rgba(255,255,255,0.05); padding: 1px 6px; border-radius: 999px; font-size: 9px; font-family: 'JetBrains Mono', monospace; color: #71717a; }
+        .det-tab.active .det-tab-count { background: rgba(59,130,246,0.18); color: #93c5fd; }
+
+        .det-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 22px 22px;
+        }
+        .det-pane { display: none; }
+        .det-pane.active { display: block; }
+
+        .case-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 9px;
+            text-decoration: none;
+            margin-bottom: 6px;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .case-row:hover { border-color: rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); }
+        .case-row-av {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #6366f1, #4338ca);
+            flex-shrink: 0;
+        }
+        .case-row-info { flex: 1; min-width: 0; }
+        .case-row-name { font-size: 13px; color: #fafafa; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .case-row-meta { font-size: 11px; color: #71717a; margin-top: 1px; }
+        .case-row-status {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(16,185,129,0.10);
+            color: #34d399;
+            border: 1px solid rgba(16,185,129,0.22);
+            flex-shrink: 0;
+        }
+        .case-row-status.s-zakonczona { background: rgba(161,161,170,0.12); color: #d4d4d8; border-color: rgba(161,161,170,0.18); }
+        .case-row-status.s-archiwum { background: rgba(75,85,99,0.18); color: #a1a1aa; border-color: rgba(75,85,99,0.25); }
+        .case-row-status.s-lead { background: rgba(245,158,11,0.10); color: #fbbf24; border-color: rgba(245,158,11,0.22); }
+        .case-row-status.s-zlecona { background: rgba(99,102,241,0.10); color: #a5b4fc; border-color: rgba(99,102,241,0.22); }
     </style>
 </head>
 <body>
@@ -79,27 +290,35 @@
             </div>
         </div>
 
-        <!-- Filtry: typ + wyszukiwarka -->
-        <div class="card p-3 mb-4">
-            <div class="flex items-center gap-3 flex-wrap">
-                <div class="relative flex-1 min-w-[280px] max-w-md">
-                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" style="font-size: 14px;"></i>
-                    <input id="f-search" type="text" class="input w-full pl-9" placeholder="Szukaj po nazwie grupy..." autocomplete="off">
+        <div class="grp-split">
+            <!-- LEWA: lista -->
+            <div class="grp-list-pane">
+                <div class="grp-search-bar">
+                    <div class="grp-search-input">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input id="f-search" type="text" placeholder="Szukaj grupy..." autocomplete="off">
+                    </div>
+                    <div class="grp-type-filters" id="type-filters">
+                        <button class="grp-type-pill active" data-type="">Wszystkie <span class="pill-count" id="cnt-all">—</span></button>
+                        <button class="grp-type-pill t-pracodawca" data-type="pracodawca"><i class="ph ph-buildings"></i> Pracodawcy <span class="pill-count" id="cnt-pracodawca">—</span></button>
+                        <button class="grp-type-pill t-rodzina" data-type="rodzina"><i class="ph ph-users-three"></i> Rodziny <span class="pill-count" id="cnt-rodzina">—</span></button>
+                        <button class="grp-type-pill t-projekt" data-type="projekt"><i class="ph ph-folder-notch"></i> Projekty <span class="pill-count" id="cnt-projekt">—</span></button>
+                        <button class="grp-type-pill" data-type="inna"><i class="ph ph-circle"></i> Inne <span class="pill-count" id="cnt-inna">—</span></button>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2 flex-wrap" id="type-filters">
-                    <button class="filter-pill active" data-type="">Wszystkie</button>
-                    <button class="filter-pill" data-type="pracodawca"><i class="ph ph-buildings"></i> Pracodawca</button>
-                    <button class="filter-pill" data-type="rodzina"><i class="ph ph-users-three"></i> Rodzina</button>
-                    <button class="filter-pill" data-type="projekt"><i class="ph ph-folder-notch"></i> Projekt</button>
-                    <button class="filter-pill" data-type="rozliczenie_zbiorcze"><i class="ph ph-coins"></i> Rozliczenie</button>
-                    <button class="filter-pill" data-type="inna"><i class="ph ph-circle"></i> Inna</button>
+                <div class="grp-list" id="grp-list">
+                    <div class="text-zinc-500 text-xs p-4 text-center">Ładuję...</div>
                 </div>
             </div>
-        </div>
 
-        <!-- Lista -->
-        <div id="groups-list" class="grid gap-2">
-            <div class="text-zinc-500 text-sm p-6 text-center">Ładuję...</div>
+            <!-- PRAWA: detail -->
+            <div class="grp-detail-pane" id="grp-detail">
+                <div class="det-empty">
+                    <div class="det-empty-icon"><i class="ph ph-users-three"></i></div>
+                    <div class="text-zinc-400 text-sm font-medium">Wybierz grupę z listy</div>
+                    <div class="text-zinc-600 text-xs mt-2">211 grup pracodawców auto-utworzonych z istniejących danych</div>
+                </div>
+            </div>
         </div>
     </main>
 </div>
@@ -121,29 +340,42 @@ const TYPE_ICONS = {
     rozliczenie_zbiorcze: 'ph-coins',
     inna: 'ph-circle',
 };
+const STATUS_LABELS = { lead: 'Lead', zlecona: 'Zlecona', aktywna: 'Aktywna', zakonczona: 'Zakończona', archiwum: 'Archiwum' };
 
 let allGroups = [];
+let selectedId = null;
 let activeType = '';
 let activeSearch = '';
 
 function esc(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('pl-PL'); } catch { return d; } }
+
+function openModal(html) {
+    let c = document.getElementById('modals-container');
+    if (!c) { c = document.createElement('div'); c.id = 'modals-container'; document.body.appendChild(c); }
+    c.innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()"><div class="modal-content">${html}</div></div>`;
+}
+function closeModal() {
+    const c = document.getElementById('modals-container');
+    if (c) c.innerHTML = '';
+}
+window.openModal = openModal;
+window.closeModal = closeModal;
 
 document.addEventListener('gmp-auth-ready', loadAll);
 
 async function loadAll() {
-    // Pobieramy grupy + zliczamy członków per grupa (dwa zapytania bo PostgREST nie agreguje przez relację)
-    const [{ data: groups, error: gErr }, { data: members, error: mErr }] = await Promise.all([
+    const [{ data: groups, error }, { data: members }] = await Promise.all([
         db.from('gmp_case_groups')
-            .select('id, name, type, employer_id, assigned_to, is_active, created_at, employer:gmp_employers!employer_id(id, name)')
+            .select('id, name, type, employer_id, assigned_to, notes, created_at, employer:gmp_employers!employer_id(id, name)')
             .eq('is_active', true)
-            .order('created_at', { ascending: false }),
+            .order('name'),
         db.from('gmp_case_group_members').select('group_id'),
     ]);
-    if (gErr) {
-        document.getElementById('groups-list').innerHTML = `<div class="text-red-400">${esc(gErr.message)}</div>`;
+    if (error) {
+        document.getElementById('grp-list').innerHTML = `<div class="text-red-400 p-4">${esc(error.message)}</div>`;
         return;
     }
-    // Map countów
     const counts = {};
     (members || []).forEach(m => { counts[m.group_id] = (counts[m.group_id] || 0) + 1; });
     allGroups = (groups || []).map(g => ({ ...g, member_count: counts[g.id] || 0 }));
@@ -151,15 +383,29 @@ async function loadAll() {
     document.getElementById('grp-summary').textContent =
         `${allGroups.length} grup · ${allGroups.reduce((s, g) => s + g.member_count, 0)} przypiętych spraw`;
 
+    // Counts per type w pillsach
+    const byType = {};
+    allGroups.forEach(g => { byType[g.type] = (byType[g.type] || 0) + 1; });
+    document.getElementById('cnt-all').textContent = allGroups.length;
+    ['pracodawca', 'rodzina', 'projekt', 'inna'].forEach(t => {
+        const el = document.getElementById('cnt-' + t);
+        if (el) el.textContent = byType[t] || 0;
+    });
+
     bindFilters();
     renderList();
+
+    // Wybierz z URL ?id=X lub pierwszą grupę z największą liczbą spraw
+    const url = new URLSearchParams(location.search);
+    const initial = url.get('id') || (allGroups.slice().sort((a, b) => b.member_count - a.member_count)[0]?.id);
+    if (initial) selectGroup(initial);
 }
 
 function bindFilters() {
-    document.querySelectorAll('#type-filters .filter-pill').forEach(b => {
+    document.querySelectorAll('#type-filters .grp-type-pill').forEach(b => {
         b.addEventListener('click', () => {
             activeType = b.dataset.type;
-            document.querySelectorAll('#type-filters .filter-pill').forEach(x => x.classList.toggle('active', x.dataset.type === activeType));
+            document.querySelectorAll('#type-filters .grp-type-pill').forEach(x => x.classList.toggle('active', x.dataset.type === activeType));
             renderList();
         });
     });
@@ -170,43 +416,216 @@ function bindFilters() {
 }
 
 function renderList() {
-    const list = document.getElementById('groups-list');
+    const list = document.getElementById('grp-list');
     let filtered = allGroups;
     if (activeType) filtered = filtered.filter(g => g.type === activeType);
-    if (activeSearch) filtered = filtered.filter(g => g.name.toLowerCase().includes(activeSearch) || (g.employer?.name || '').toLowerCase().includes(activeSearch));
+    if (activeSearch) filtered = filtered.filter(g =>
+        g.name.toLowerCase().includes(activeSearch) ||
+        (g.employer?.name || '').toLowerCase().includes(activeSearch)
+    );
 
     if (!filtered.length) {
-        list.innerHTML = '<div class="text-zinc-500 text-sm p-6 text-center">Brak grup pasujących do filtrów.</div>';
+        list.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center">Brak grup pasujących do filtrów.</div>';
         return;
     }
 
-    // Sortowanie: największe pierwsze (dużo członków = ważniejsze)
-    filtered.sort((a, b) => b.member_count - a.member_count);
+    // Sortowanie: po liczbie spraw malejąco (top są najważniejsze)
+    filtered.sort((a, b) => b.member_count - a.member_count || a.name.localeCompare(b.name));
 
-    list.innerHTML = filtered.map(g => {
-        const ico = TYPE_ICONS[g.type] || 'ph-circle';
-        return `
-            <a href="group.html?id=${g.id}" class="grp-card">
-                <div class="grp-icon-box type-${g.type}"><i class="ph ${ico}"></i></div>
-                <div class="grp-info">
-                    <div class="grp-name">${esc(g.name)}</div>
-                    <div class="grp-meta">
-                        ${TYPE_LABELS[g.type] || g.type}
-                        ${g.employer ? ` · pracodawca <a href="employer.html?id=${g.employer.id}" onclick="event.stopPropagation()" class="text-blue-400 hover:underline">${esc(g.employer.name)}</a>` : ''}
+    // Grupowanie wizualne per typ jeśli filtr "wszystkie"
+    let html = '';
+    if (!activeType) {
+        const byType = {};
+        filtered.forEach(g => { (byType[g.type] = byType[g.type] || []).push(g); });
+        ['pracodawca', 'rodzina', 'projekt', 'rozliczenie_zbiorcze', 'inna'].forEach(t => {
+            if (!byType[t]) return;
+            html += `<div class="list-divider">${TYPE_LABELS[t]} (${byType[t].length})</div>`;
+            html += byType[t].map(g => renderRow(g)).join('');
+        });
+    } else {
+        html = filtered.map(g => renderRow(g)).join('');
+    }
+    list.innerHTML = html;
+
+    // Bind klików
+    list.querySelectorAll('.grp-row').forEach(row => {
+        row.addEventListener('click', () => selectGroup(row.dataset.id));
+    });
+}
+
+function renderRow(g) {
+    const ico = TYPE_ICONS[g.type] || 'ph-circle';
+    return `
+        <div class="grp-row ${g.id === selectedId ? 'selected' : ''}" data-id="${g.id}">
+            <div class="grp-row-icon icon-${g.type}"><i class="ph ${ico}"></i></div>
+            <div class="grp-row-name" title="${esc(g.name)}">${esc(g.name)}</div>
+            <div class="grp-row-count">${g.member_count}</div>
+        </div>
+    `;
+}
+
+async function selectGroup(id) {
+    selectedId = id;
+    // Update URL bez przeładowania
+    const url = new URL(location.href);
+    url.searchParams.set('id', id);
+    history.replaceState({}, '', url);
+    // Highlight selected w liście
+    document.querySelectorAll('.grp-row').forEach(r => r.classList.toggle('selected', r.dataset.id === id));
+    // Render detail
+    await renderDetail(id);
+}
+
+async function renderDetail(id) {
+    const g = allGroups.find(x => x.id === id);
+    if (!g) return;
+    const detail = document.getElementById('grp-detail');
+    const ico = TYPE_ICONS[g.type] || 'ph-circle';
+
+    detail.innerHTML = `
+        <div class="det-header">
+            <div class="det-title-row">
+                <div class="det-title">
+                    <div class="det-title-icon icon-${g.type}"><i class="ph ${ico}"></i></div>
+                    <div class="min-w-0">
+                        <div class="det-name">${esc(g.name)}</div>
+                        <div class="det-type-line">${TYPE_LABELS[g.type] || g.type}${g.member_count > 0 ? ` · ${g.member_count} ${g.member_count === 1 ? 'sprawa' : g.member_count < 5 ? 'sprawy' : 'spraw'}` : ' · brak spraw'}</div>
                     </div>
                 </div>
-                <div class="grp-count">
-                    <div class="num">${g.member_count}</div>
-                    <div class="lbl">${g.member_count === 1 ? 'sprawa' : 'spraw'}</div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    ${g.employer ? `<a href="employer.html?id=${g.employer.id}" class="btn btn-ghost btn-sm"><i class="ph ph-buildings"></i> ${esc(g.employer.name)}</a>` : ''}
+                    <a href="group.html?id=${g.id}" class="btn btn-ghost btn-sm" title="Otwórz w pełnym widoku"><i class="ph ph-arrow-square-out"></i></a>
+                    <button class="btn btn-ghost btn-sm" onclick="deleteGroup('${g.id}', '${esc(g.name)}')" title="Usuń grupę"><i class="ph ph-trash text-red-400"></i></button>
                 </div>
+            </div>
+            ${g.notes ? `<div class="text-sm text-zinc-300 mt-2">${esc(g.notes)}</div>` : ''}
+        </div>
+
+        <div class="det-tabs">
+            <button class="det-tab active" data-tab="cases"><i class="ph ph-folders"></i> Sprawy <span class="det-tab-count" id="dc-cases">${g.member_count}</span></button>
+            <button class="det-tab" data-tab="docs"><i class="ph ph-file"></i> Dokumenty <span class="det-tab-count" id="dc-docs">—</span></button>
+            <button class="det-tab" data-tab="tasks"><i class="ph ph-check-square"></i> Zadania <span class="det-tab-count" id="dc-tasks">—</span></button>
+        </div>
+
+        <div class="det-body">
+            <div class="det-pane active" data-pane="cases" id="pane-cases">
+                <div class="text-zinc-500 text-sm">Ładuję sprawy...</div>
+            </div>
+            <div class="det-pane" data-pane="docs" id="pane-docs"></div>
+            <div class="det-pane" data-pane="tasks" id="pane-tasks"></div>
+        </div>
+    `;
+
+    // Bind tabs
+    detail.querySelectorAll('.det-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const name = btn.dataset.tab;
+            detail.querySelectorAll('.det-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+            detail.querySelectorAll('.det-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
+            if (name === 'docs') loadDocs(id);
+            if (name === 'tasks') loadTasks(id);
+        });
+    });
+
+    await loadCases(id);
+}
+
+async function loadCases(groupId) {
+    const { data, error } = await db.from('gmp_case_group_members')
+        .select(`role_in_group, case:gmp_cases(
+            id, case_number, status, stage, kind, category,
+            client:gmp_clients(first_name, last_name, nationality)
+        )`)
+        .eq('group_id', groupId);
+    const pane = document.getElementById('pane-cases');
+    if (!pane) return;
+    if (error) { pane.innerHTML = `<div class="text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    const cases = (data || []).filter(m => m.case);
+    if (!cases.length) { pane.innerHTML = '<div class="text-zinc-500 text-sm">Brak spraw w tej grupie.</div>'; return; }
+    pane.innerHTML = cases.map(m => {
+        const c = m.case;
+        const cl = c.client;
+        const name = cl ? `${cl.last_name} ${cl.first_name}` : '(bez klienta)';
+        const initials = cl ? ((cl.first_name?.[0] || '') + (cl.last_name?.[0] || '')).toUpperCase() : '?';
+        const status = c.status || 'lead';
+        return `
+            <a href="case.html?id=${c.id}" class="case-row">
+                <div class="case-row-av">${esc(initials)}</div>
+                <div class="case-row-info">
+                    <div class="case-row-name">${esc(name)}</div>
+                    <div class="case-row-meta">${c.case_number ? `#${esc(c.case_number)}` : ''}${c.stage ? ` · ${esc(c.stage)}` : ''}${m.role_in_group ? ` · ${esc(m.role_in_group)}` : ''}</div>
+                </div>
+                <span class="case-row-status s-${status}">${STATUS_LABELS[status] || status}</span>
             </a>
         `;
     }).join('');
 }
 
+async function loadDocs(groupId) {
+    const { data, error, count } = await db.from('gmp_documents')
+        .select('id, name, doc_type, created_at', { count: 'exact' })
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: false });
+    const pane = document.getElementById('pane-docs');
+    document.getElementById('dc-docs').textContent = count || 0;
+    if (error) { pane.innerHTML = `<div class="text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    if (!data?.length) {
+        pane.innerHTML = '<div class="text-zinc-500 text-sm">Brak dokumentów wspólnych dla tej grupy. Aby dodać dokument do grupy, użyj sekcji Dokumenty w karcie sprawy.</div>';
+        return;
+    }
+    pane.innerHTML = data.map(d => `
+        <div class="case-row" style="cursor: default">
+            <i class="ph ph-file text-zinc-400" style="font-size: 22px; width: 32px; text-align: center;"></i>
+            <div class="case-row-info">
+                <div class="case-row-name">${esc(d.name)}</div>
+                <div class="case-row-meta">${esc(d.doc_type || '—')} · ${fmtDate(d.created_at)}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadTasks(groupId) {
+    const { data, error, count } = await db.from('gmp_tasks')
+        .select('id, title, status, due_date, gmp_staff!assigned_to(full_name)', { count: 'exact' })
+        .eq('group_id', groupId)
+        .order('due_date', { ascending: true, nullsFirst: false });
+    const pane = document.getElementById('pane-tasks');
+    document.getElementById('dc-tasks').textContent = count || 0;
+    if (error) { pane.innerHTML = `<div class="text-red-400 text-sm">${esc(error.message)}</div>`; return; }
+    if (!data?.length) {
+        pane.innerHTML = '<div class="text-zinc-500 text-sm">Brak zadań grupowych.</div>';
+        return;
+    }
+    pane.innerHTML = data.map(t => `
+        <div class="case-row" style="cursor: default">
+            <i class="ph ph-${t.status === 'done' ? 'check-square text-emerald-400' : 'square text-zinc-500'}" style="font-size: 22px; width: 32px; text-align: center;"></i>
+            <div class="case-row-info">
+                <div class="case-row-name">${esc(t.title)}</div>
+                <div class="case-row-meta">${t.due_date ? fmtDate(t.due_date) + ' · ' : ''}${esc(t.gmp_staff?.full_name || '—')}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function deleteGroup(id, name) {
+    if (!confirm(`Usunąć grupę "${name}"? Wszystkie powiązania ze sprawami zostaną usunięte (sprawy zostaną).`)) return;
+    const { error } = await db.from('gmp_case_groups').update({ is_active: false }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto grupę');
+    selectedId = null;
+    history.replaceState({}, '', location.pathname);
+    await loadAll();
+    document.getElementById('grp-detail').innerHTML = `
+        <div class="det-empty">
+            <div class="det-empty-icon"><i class="ph ph-users-three"></i></div>
+            <div class="text-zinc-400 text-sm font-medium">Wybierz grupę z listy</div>
+        </div>
+    `;
+}
+
 function openNewGroup() {
     openModal(`
-        <div class="modal-card" style="max-width: 480px;">
+        <div class="modal-card" style="max-width: 460px;">
             <div class="modal-header">
                 <h3 class="text-lg font-semibold text-white">Nowa grupa spraw</h3>
                 <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="ph ph-x"></i></button>
@@ -214,7 +633,7 @@ function openNewGroup() {
             <div class="modal-body p-5 space-y-3">
                 <div>
                     <label>Nazwa</label>
-                    <input id="ng-name" class="input w-full" placeholder="np. Rodzina Kowalskich, Projekt 2026 Q3" autofocus>
+                    <input id="ng-name" class="input w-full" placeholder="np. Rodzina Kowalskich" autofocus>
                 </div>
                 <div>
                     <label>Typ</label>
@@ -230,7 +649,6 @@ function openNewGroup() {
                     <label>Notatki (opcjonalnie)</label>
                     <textarea id="ng-notes" class="input w-full" rows="2"></textarea>
                 </div>
-                <div class="text-xs text-zinc-500">Po utworzeniu dodawaj sprawy z karty sprawy → tab Dane → sekcja "Grupy spraw" → "Dodaj do grupy".</div>
             </div>
             <div class="modal-footer flex gap-2 justify-end p-4 border-t border-white/5">
                 <button class="btn btn-ghost" onclick="closeModal()">Anuluj</button>
@@ -239,18 +657,6 @@ function openNewGroup() {
         </div>
     `);
 }
-
-function openModal(html) {
-    let c = document.getElementById('modals-container');
-    if (!c) { c = document.createElement('div'); c.id = 'modals-container'; document.body.appendChild(c); }
-    c.innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()"><div class="modal-content">${html}</div></div>`;
-}
-function closeModal() {
-    const c = document.getElementById('modals-container');
-    if (c) c.innerHTML = '';
-}
-window.openModal = openModal;
-window.closeModal = closeModal;
 
 async function saveNewGroup() {
     const name = document.getElementById('ng-name').value.trim();
@@ -263,7 +669,8 @@ async function saveNewGroup() {
     if (error) { toast.error(error.message); return; }
     toast.success('Grupa utworzona');
     closeModal();
-    location.href = `group.html?id=${data.id}`;
+    await loadAll();
+    selectGroup(data.id);
 }
 </script>
 <script src="components/sidebar.js" data-active="groups"></script>
