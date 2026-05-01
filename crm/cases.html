@@ -139,6 +139,12 @@
                     </select>
                 </div>
                 <div>
+                    <label>Grupa</label>
+                    <select id="f-group" class="filter-input w-full">
+                        <option value="">Wszystkie</option>
+                    </select>
+                </div>
+                <div>
                     <label>Metoda złożenia</label>
                     <select id="f-method" class="filter-input w-full">
                         <option value="">Wszystkie</option>
@@ -278,6 +284,7 @@ async function init() {
                 staff: document.getElementById('f-staff').value,
                 department: document.getElementById('f-department').value,
                 employer: document.getElementById('f-employer').value,
+                group: document.getElementById('f-group')?.value || '',
                 method: document.getElementById('f-method').value,
                 date_from: document.getElementById('f-date-from').value,
                 date_to: document.getElementById('f-date-to').value,
@@ -291,6 +298,7 @@ async function init() {
                 document.getElementById('f-staff').value = f.staff || '';
                 document.getElementById('f-department').value = f.department || '';
                 document.getElementById('f-employer').value = f.employer || '';
+                if (document.getElementById('f-group')) document.getElementById('f-group').value = f.group || '';
                 document.getElementById('f-method').value = f.method || '';
                 document.getElementById('f-date-from').value = f.date_from || '';
                 document.getElementById('f-date-to').value = f.date_to || '';
@@ -308,8 +316,9 @@ async function init() {
     loadDraftsBanner();
 
     // Obsluga filtrow
-    ['f-status', 'f-stage', 'f-category', 'f-staff', 'f-department', 'f-employer', 'f-method', 'f-date-from', 'f-date-to'].forEach(id => {
-        document.getElementById(id).addEventListener('change', () => { currentPage = 1; loadCases(); });
+    ['f-status', 'f-stage', 'f-category', 'f-staff', 'f-department', 'f-employer', 'f-group', 'f-method', 'f-date-from', 'f-date-to'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => { currentPage = 1; loadCases(); });
     });
 
     // Presety zakładek
@@ -386,13 +395,15 @@ async function init() {
 }
 
 async function loadFilters() {
-    const [{ data: staff }, { data: depts }, { data: emps }, { data: cats }] = await Promise.all([
+    const [{ data: staff }, { data: depts }, { data: emps }, { data: cats }, { data: groups }] = await Promise.all([
         db.from('gmp_staff').select('id, full_name').eq('is_active', true).order('full_name'),
         db.from('gmp_office_departments').select('id, code, name').order('code'),
         db.from('gmp_employers').select('id, name').order('name').limit(1000),
         // Ładujemy WSZYSTKIE kategorie (łącznie z legacy) — dropdown pokazuje tylko aktywne,
         // ale lista labelek potrzebuje też legacy (żeby stare sprawy miały ładną etykietę zamiast raw code)
         db.from('gmp_case_categories').select('code, label, group_label, is_active').order('sort_order'),
+        // Etap V — grupy spraw (pracodawca/rodzina/projekt/etc)
+        db.from('gmp_case_groups').select('id, name, type').eq('is_active', true).order('name'),
     ]);
     staffList = staff || [];
     deptList = depts || [];
@@ -414,6 +425,17 @@ async function loadFilters() {
         o.value = e.id; o.textContent = e.name;
         empSel.appendChild(o);
     });
+    // Etap V — grupy spraw (Pracodawca: NAME · Rodzina: NAME · ...)
+    const grpSel = document.getElementById('f-group');
+    if (grpSel) {
+        const TYPE_LBL = { pracodawca: 'Pracodawca', rodzina: 'Rodzina', projekt: 'Projekt', rozliczenie_zbiorcze: 'Rozliczenie', inna: 'Inna' };
+        (groups || []).forEach(g => {
+            const o = document.createElement('option');
+            o.value = g.id;
+            o.textContent = `${TYPE_LBL[g.type] || g.type}: ${g.name}`;
+            grpSel.appendChild(o);
+        });
+    }
     // Kategorie z DB (grupowane po group_label) — tylko aktywne w dropdown
     const catSel = document.getElementById('f-category');
     const activeCats = (cats || []).filter(c => c.is_active);
@@ -438,7 +460,7 @@ async function loadFilters() {
 // Wspólna lista pól SELECT dla cases.html — używana w buildQuery i rebuild-after-search
 const CASES_SELECT_COLUMNS = 'id, case_number, znak_sprawy, status, stage, case_type, category, submission_method, date_accepted, date_submitted, date_joined, legal_stay_end_date, date_last_activity, fee_amount, assigned_to, client_id, employer_id, department_id, is_pinned, gmp_clients(last_name, first_name), gmp_employers(name), gmp_staff!assigned_to(full_name), gmp_office_departments(code)';
 
-// Zwraca pre-filtry (clientIdFilter, tagCaseIds) — używane w loadCases i exportCSV
+// Zwraca pre-filtry (clientIdFilter, tagCaseIds, groupCaseIds) — używane w loadCases i exportCSV
 async function resolvePreFilters() {
     const search = document.getElementById('f-search').value.trim();
     let clientIdFilter = null;
@@ -458,7 +480,16 @@ async function resolvePreFilters() {
             .filter(([_, cnt]) => cnt === activeTagFilters.length).map(([id]) => id);
         if (!tagCaseIds.length) tagCaseIds = ['00000000-0000-0000-0000-000000000000']; // wymuś pusty wynik
     }
-    return { search, clientIdFilter, tagCaseIds };
+    // Etap V — filtr Grupa: pre-fetch case IDs z gmp_case_group_members
+    let groupCaseIds = null;
+    const groupId = document.getElementById('f-group')?.value;
+    if (groupId) {
+        const { data: members } = await db.from('gmp_case_group_members')
+            .select('case_id').eq('group_id', groupId);
+        groupCaseIds = (members || []).map(m => m.case_id);
+        if (!groupCaseIds.length) groupCaseIds = ['00000000-0000-0000-0000-000000000000'];
+    }
+    return { search, clientIdFilter, tagCaseIds, groupCaseIds };
 }
 
 function buildQuery() {
@@ -577,6 +608,16 @@ async function loadCases() {
 
     // Tag filter
     if (tagCaseIds) q = q.in('id', tagCaseIds);
+
+    // Etap V — Filtr Grupa (pre-fetched case IDs z gmp_case_group_members)
+    const groupId = document.getElementById('f-group')?.value;
+    if (groupId) {
+        const { data: members } = await db.from('gmp_case_group_members')
+            .select('case_id').eq('group_id', groupId);
+        const groupIds = (members || []).map(m => m.case_id);
+        if (groupIds.length) q = q.in('id', groupIds);
+        else q = q.in('id', ['00000000-0000-0000-0000-000000000000']);
+    }
 
     const from = (currentPage - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;

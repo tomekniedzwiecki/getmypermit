@@ -52,6 +52,16 @@
                     <option value="zlecona">Tylko zlecone</option>
                     <option value="all">Wszystkie</option>
                 </select>
+                <select id="f-group" class="filter-input" style="width: 220px">
+                    <option value="">Wszystkie grupy</option>
+                </select>
+                <select id="f-legal" class="filter-input" style="width: 180px">
+                    <option value="">Cała legalność pobytu</option>
+                    <option value="czerwony">🔴 Czerwony (przeterminowany)</option>
+                    <option value="zolty">🟡 Żółty (≤30 dni)</option>
+                    <option value="zielony">🟢 Zielony (OK)</option>
+                    <option value="brak">⚪ Brak danych</option>
+                </select>
                 <label class="text-xs text-zinc-500 ml-2">
                     <input type="checkbox" id="f-pinned-only"> Tylko przypięte
                 </label>
@@ -276,9 +286,22 @@ async function init() {
     const sel = document.getElementById('f-staff');
     staffList.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.full_name; sel.appendChild(o); });
 
-    ['f-staff', 'f-category', 'f-status', 'f-pinned-only'].forEach(id => {
+    // Etap V — Load groups dropdown (pracodawca/rodzina/projekt)
+    const { data: groups } = await db.from('gmp_case_groups').select('id, name, type').eq('is_active', true).order('name');
+    const grpSel = document.getElementById('f-group');
+    if (grpSel) {
+        const TYPE_LBL = { pracodawca: 'Pracodawca', rodzina: 'Rodzina', projekt: 'Projekt', rozliczenie_zbiorcze: 'Rozliczenie', inna: 'Inna' };
+        (groups || []).forEach(g => {
+            const o = document.createElement('option');
+            o.value = g.id;
+            o.textContent = `${TYPE_LBL[g.type] || g.type}: ${g.name}`;
+            grpSel.appendChild(o);
+        });
+    }
+
+    ['f-staff', 'f-category', 'f-status', 'f-group', 'f-legal', 'f-pinned-only'].forEach(id => {
         const el = document.getElementById(id);
-        el.addEventListener(el.type === 'checkbox' ? 'change' : 'change', load);
+        if (el) el.addEventListener(el.type === 'checkbox' ? 'change' : 'change', load);
     });
 
     // View mode toggle
@@ -299,9 +322,12 @@ async function load() {
     const staffFilter = document.getElementById('f-staff').value;
     const categoryFilter = document.getElementById('f-category').value;
     const statusFilter = document.getElementById('f-status').value;
+    const groupFilter = document.getElementById('f-group')?.value;
     const pinnedOnly = document.getElementById('f-pinned-only').checked;
 
-    let q = db.from('gmp_cases').select('id, case_number, znak_sprawy, status, stage, case_type, category, fee_amount, date_last_activity, is_pinned, inactivity_reason, assigned_to, client_id, gmp_clients(last_name, first_name), gmp_staff!assigned_to(full_name), gmp_employers(name)');
+    const legalFilter = document.getElementById('f-legal')?.value;
+
+    let q = db.from('gmp_cases').select('id, case_number, znak_sprawy, status, stage, case_type, category, fee_amount, date_last_activity, is_pinned, inactivity_reason, assigned_to, client_id, legal_stay_status, legal_stay_end_date, gmp_clients(last_name, first_name), gmp_staff!assigned_to(full_name), gmp_employers(name)');
 
     if (statusFilter === 'aktywna') q = q.eq('status', 'aktywna');
     else if (statusFilter === 'zlecona') q = q.eq('status', 'zlecona');
@@ -309,6 +335,14 @@ async function load() {
     if (staffFilter) q = q.eq('assigned_to', staffFilter);
     if (categoryFilter) q = q.eq('category', categoryFilter);
     if (pinnedOnly) q = q.eq('is_pinned', true);
+    if (legalFilter) q = q.eq('legal_stay_status', legalFilter);
+
+    // Etap V — Filtr Grupa: pre-fetch case IDs
+    if (groupFilter) {
+        const { data: members } = await db.from('gmp_case_group_members').select('case_id').eq('group_id', groupFilter);
+        const groupIds = (members || []).map(m => m.case_id);
+        q = q.in('id', groupIds.length ? groupIds : ['00000000-0000-0000-0000-000000000000']);
+    }
 
     const data = await fetchAll(() => q.order('is_pinned', { ascending: false }).order('date_last_activity', { ascending: false, nullsLast: true }));
 

@@ -41,6 +41,9 @@
             <button class="btn btn-secondary tab-btn" data-type="osobiste_odciski">Odciski</button>
             <button class="btn btn-secondary tab-btn" data-type="osobiste_inne">Inne stawiennictwa</button>
             <div class="flex-1"></div>
+            <select id="f-group" class="filter-input" style="width: 220px; font-size: 12px">
+                <option value="">Wszystkie grupy</option>
+            </select>
             <label class="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
                 <input type="checkbox" id="only-mine-toggle"> Tylko moje
             </label>
@@ -206,6 +209,20 @@ async function init() {
         renderWeek();
     });
 
+    // Etap V (E5) — populate Group dropdown
+    const grpSel = document.getElementById('f-group');
+    if (grpSel) {
+        const { data: groups } = await db.from('gmp_case_groups').select('id, name, type').eq('is_active', true).order('name');
+        const TYPE_LBL = { pracodawca: 'Pracodawca', rodzina: 'Rodzina', projekt: 'Projekt', rozliczenie_zbiorcze: 'Rozliczenie', inna: 'Inna' };
+        (groups || []).forEach(g => {
+            const o = document.createElement('option');
+            o.value = g.id;
+            o.textContent = `${TYPE_LBL[g.type] || g.type}: ${g.name}`;
+            grpSel.appendChild(o);
+        });
+        grpSel.addEventListener('change', renderWeek);
+    }
+
     renderWeek();
     loadOdciski();
 }
@@ -223,12 +240,23 @@ async function renderWeek() {
 
     // Pobierz eventy z gmp_crm_appointments + submissions_queue + gmp_tasks (show_in_calendar)
     const myStaffId = window.currentStaff?.id;
+
+    // Etap V (E5) — Filtr Grupa: pre-fetch case_ids dla wybranej grupy
+    const groupFilter = document.getElementById('f-group')?.value;
+    let groupCaseIds = null;
+    if (groupFilter) {
+        const { data: members } = await db.from('gmp_case_group_members').select('case_id').eq('group_id', groupFilter);
+        groupCaseIds = (members || []).map(m => m.case_id);
+        if (!groupCaseIds.length) groupCaseIds = ['00000000-0000-0000-0000-000000000000'];
+    }
+
     let appointmentsQuery = db.from('gmp_crm_appointments')
         .select('id, appointment_type, scheduled_date, scheduled_time, client_id, case_id, staff_id, title, notes, transport_type, contact_name, gmp_clients(last_name, first_name), gmp_staff!staff_id(full_name)')
         .gte('scheduled_date', currentWeekStart.toISOString().slice(0,10))
         .lt('scheduled_date', end.toISOString().slice(0,10));
     if (typeFilter) appointmentsQuery = appointmentsQuery.eq('appointment_type', typeFilter);
     if (onlyMine && myStaffId) appointmentsQuery = appointmentsQuery.eq('staff_id', myStaffId);
+    if (groupCaseIds) appointmentsQuery = appointmentsQuery.in('case_id', groupCaseIds);
 
     // Zadania z show_in_calendar = true + respekt visibility (private widoczne tylko dla created_by)
     let tasksQuery = db.from('gmp_tasks')
@@ -239,6 +267,7 @@ async function renderWeek() {
         .lt('due_date', end.toISOString().slice(0,10))
         .neq('status', 'done');
     if (onlyMine && myStaffId) tasksQuery = tasksQuery.eq('assigned_to', myStaffId);
+    if (groupCaseIds) tasksQuery = tasksQuery.in('case_id', groupCaseIds);
 
     const [{ data: appts }, { data: subs }, { data: tasks }] = await Promise.all([
         appointmentsQuery,

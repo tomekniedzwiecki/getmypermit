@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatyzacje - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+    <script src="components/modals.js" defer></script>
+    <style>
+        .flow-card { background: linear-gradient(135deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005)); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; }
+        .flow-card.inactive { opacity: 0.55; }
+        .flow-trigger-pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(99,102,241,0.10); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.22); display: inline-flex; align-items: center; gap: 4px; }
+        .step-row { padding: 8px 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px; font-size: 12px; color: #d4d4d8; }
+        .stat-pill { padding: 3px 9px; border-radius: 999px; font-size: 11px; font-family: 'JetBrains Mono', monospace; display: inline-flex; align-items: center; gap: 4px; }
+        .stat-pending { background: rgba(245,158,11,0.10); color: #fbbf24; border: 1px solid rgba(245,158,11,0.22); }
+        .stat-success { background: rgba(16,185,129,0.10); color: #34d399; border: 1px solid rgba(16,185,129,0.22); }
+        .stat-failed { background: rgba(239,68,68,0.10); color: #fca5a5; border: 1px solid rgba(239,68,68,0.22); }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Automatyzacje</h1>
+                <p class="page-subtitle">Etap VII — eventy → akcje (zadania, terminy, powiadomienia)</p>
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="runExecutorNow()"><i class="ph ph-lightning"></i> Wykonaj pending teraz</button>
+                <button class="btn btn-primary" onclick="openNewFlow()"><i class="ph ph-plus"></i> Nowy flow</button>
+            </div>
+        </div>
+
+        <!-- Stats summary -->
+        <div class="grid gap-3 mb-4" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+            <div class="card p-3"><div class="text-xs text-zinc-500 uppercase">Aktywne flowy</div><div class="text-2xl font-mono mt-1" id="stat-active">—</div></div>
+            <div class="card p-3"><div class="text-xs text-zinc-500 uppercase">Pending exec.</div><div class="text-2xl font-mono mt-1 text-amber-400" id="stat-pending">—</div></div>
+            <div class="card p-3"><div class="text-xs text-zinc-500 uppercase">Sukces (24h)</div><div class="text-2xl font-mono mt-1 text-emerald-400" id="stat-success">—</div></div>
+            <div class="card p-3"><div class="text-xs text-zinc-500 uppercase">Błędy (24h)</div><div class="text-2xl font-mono mt-1 text-red-400" id="stat-failed">—</div></div>
+        </div>
+
+        <div id="flow-list" class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));">
+            <div class="text-zinc-500 text-sm col-span-full p-6 text-center">Ładuję...</div>
+        </div>
+
+        <!-- Recent executions -->
+        <div class="mt-6">
+            <h2 class="text-base font-semibold text-white mb-3">Ostatnie wykonania (10)</h2>
+            <div id="exec-list" class="space-y-2"></div>
+        </div>
+    </main>
+</div>
+
+<div id="modals-container"></div>
+
+<script>
+const TRIGGER_LABELS = {
+    stage_changed: 'Zmiana etapu',
+    status_changed: 'Zmiana statusu',
+    decision_received: 'Decyzja urzędu',
+    document_added: 'Nowy dokument',
+    task_overdue: 'Zadanie po terminie',
+    inactivity_alert: 'Alert nieaktywności',
+    legal_stay_expiring: 'Legalność pobytu kończy się',
+    manual: 'Ręczne',
+};
+const ACTION_LABELS = {
+    create_task: 'Utwórz zadanie',
+    create_appointment: 'Utwórz spotkanie',
+    send_notification: 'Wyślij powiadomienie',
+    set_field: 'Ustaw pole sprawy',
+    add_to_group: 'Dodaj do grupy',
+    add_checklist_item: 'Dodaj punkt checklisty',
+};
+
+function esc(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDt(d) { if (!d) return ''; try { return new Date(d).toLocaleString('pl-PL'); } catch { return d; } }
+
+document.addEventListener('gmp-auth-ready', loadAll);
+
+async function loadAll() {
+    await Promise.all([loadFlows(), loadStats(), loadRecentExecutions()]);
+}
+
+async function loadFlows() {
+    const { data: flows, error } = await db.from('gmp_automation_flows')
+        .select('*, steps:gmp_automation_steps(id, step_order, action_type, action_params, delay_seconds)')
+        .order('created_at', { ascending: false });
+    if (error) { document.getElementById('flow-list').innerHTML = `<div class="text-red-400 text-sm col-span-full">${esc(error.message)}</div>`; return; }
+    const list = document.getElementById('flow-list');
+    if (!flows || flows.length === 0) {
+        list.innerHTML = '<div class="text-zinc-500 text-sm col-span-full p-6 text-center">Brak flowów. <button onclick="openNewFlow()" class="text-blue-400 hover:underline">Utwórz pierwszy</button>.</div>';
+        return;
+    }
+    list.innerHTML = flows.map(f => {
+        const steps = (f.steps || []).sort((a, b) => a.step_order - b.step_order);
+        const stepsHtml = steps.length === 0
+            ? '<div class="text-zinc-500 text-xs italic">brak kroków</div>'
+            : steps.map(s => {
+                const params = s.action_params || {};
+                const summary = ACTION_LABELS[s.action_type] || s.action_type;
+                const detail = params.title ? ` · "${esc(params.title)}"` : '';
+                const delay = s.delay_seconds > 0 ? ` (po ${Math.round(s.delay_seconds / 60)}min)` : '';
+                return `<div class="step-row">${s.step_order}. ${esc(summary)}${esc(detail)}${esc(delay)}</div>`;
+            }).join('');
+        return `
+            <div class="flow-card ${!f.is_active ? 'inactive' : ''}">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-base font-semibold text-white">${esc(f.name)}</h3>
+                        ${f.description ? `<div class="text-xs text-zinc-500 mt-0.5">${esc(f.description)}</div>` : ''}
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
+                        <input type="checkbox" ${f.is_active ? 'checked' : ''} onchange="toggleFlow('${f.id}', this.checked)">
+                        ${f.is_active ? 'aktywny' : 'wyłączony'}
+                    </label>
+                </div>
+                <div class="mb-3 flex items-center gap-2 flex-wrap">
+                    <span class="flow-trigger-pill"><i class="ph ph-lightning"></i> ${esc(TRIGGER_LABELS[f.trigger_type] || f.trigger_type)}</span>
+                    ${Object.keys(f.trigger_filter || {}).length ? `<span class="text-xs text-zinc-500 font-mono">${esc(JSON.stringify(f.trigger_filter))}</span>` : ''}
+                </div>
+                <div class="space-y-1.5 mb-3">${stepsHtml}</div>
+                <div class="flex justify-end gap-2">
+                    <button class="btn btn-ghost btn-sm" onclick="addStep('${f.id}')"><i class="ph ph-plus"></i> Krok</button>
+                    <button class="btn btn-ghost btn-sm" onclick="deleteFlow('${f.id}', '${esc(f.name)}')"><i class="ph ph-trash text-red-400"></i></button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function loadStats() {
+    const yest = new Date(Date.now() - 86400000).toISOString();
+    const [{ count: cActive }, { count: cPending }, { count: cSuccess }, { count: cFailed }] = await Promise.all([
+        db.from('gmp_automation_flows').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        db.from('gmp_automation_executions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        db.from('gmp_automation_executions').select('id', { count: 'exact', head: true }).eq('status', 'success').gte('triggered_at', yest),
+        db.from('gmp_automation_executions').select('id', { count: 'exact', head: true }).eq('status', 'failed').gte('triggered_at', yest),
+    ]);
+    document.getElementById('stat-active').textContent = cActive ?? 0;
+    document.getElementById('stat-pending').textContent = cPending ?? 0;
+    document.getElementById('stat-success').textContent = cSuccess ?? 0;
+    document.getElementById('stat-failed').textContent = cFailed ?? 0;
+}
+
+async function loadRecentExecutions() {
+    const { data, error } = await db.from('gmp_automation_executions')
+        .select('id, triggered_at, status, error_message, case_id, flow:gmp_automation_flows(name)')
+        .order('triggered_at', { ascending: false })
+        .limit(10);
+    if (error) { console.warn(error); return; }
+    const list = document.getElementById('exec-list');
+    if (!data?.length) { list.innerHTML = '<div class="text-zinc-500 text-sm">Brak wykonań.</div>'; return; }
+    list.innerHTML = data.map(e => {
+        const sCls = e.status === 'success' ? 'stat-success' : e.status === 'failed' ? 'stat-failed' : 'stat-pending';
+        return `
+            <div class="flex items-center gap-3 p-3 rounded-lg" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                <span class="stat-pill ${sCls}">${e.status}</span>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm text-white truncate">${esc(e.flow?.name || '(brak flow)')}</div>
+                    <div class="text-xs text-zinc-500">${fmtDt(e.triggered_at)}${e.case_id ? ` · <a href="case.html?id=${e.case_id}" class="text-blue-400 hover:underline">sprawa</a>` : ''}${e.error_message ? ` · <span class="text-red-400">${esc(e.error_message)}</span>` : ''}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function toggleFlow(id, isActive) {
+    const { error } = await db.from('gmp_automation_flows').update({ is_active: isActive }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(isActive ? 'Włączony' : 'Wyłączony');
+    await Promise.all([loadFlows(), loadStats()]);
+}
+
+async function deleteFlow(id, name) {
+    if (!confirm(`Usunąć flow "${name}"? Wszystkie kroki i historia wykonań również zostaną usunięte.`)) return;
+    const { error } = await db.from('gmp_automation_flows').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Usunięto');
+    await Promise.all([loadFlows(), loadStats()]);
+}
+
+function openNewFlow() {
+    openModal(`
+        <div class="modal-card" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold text-white">Nowy flow</h3>
+                <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body p-5 space-y-3">
+                <div>
+                    <label>Nazwa</label>
+                    <input id="nf-name" class="input w-full" placeholder="np. Po decyzji pozytywnej — utwórz zadanie 'Wydaj klientowi'">
+                </div>
+                <div>
+                    <label>Opis (opcjonalnie)</label>
+                    <textarea id="nf-desc" class="input w-full" rows="2"></textarea>
+                </div>
+                <div>
+                    <label>Trigger (wyzwalacz)</label>
+                    <select id="nf-trigger" class="input w-full">
+                        ${Object.entries(TRIGGER_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="text-xs text-zinc-500">Po utworzeniu dodasz kroki (akcje) klikając przycisk "Krok" na karcie.</div>
+            </div>
+            <div class="modal-footer flex gap-2 justify-end p-4 border-t border-white/5">
+                <button class="btn btn-ghost" onclick="closeModal()">Anuluj</button>
+                <button class="btn btn-primary" onclick="saveNewFlow()">Utwórz</button>
+            </div>
+        </div>
+    `);
+}
+
+async function saveNewFlow() {
+    const name = document.getElementById('nf-name').value.trim();
+    const description = document.getElementById('nf-desc').value.trim() || null;
+    const trigger_type = document.getElementById('nf-trigger').value;
+    if (!name) { toast.warning('Nazwa wymagana'); return; }
+    const { error } = await db.from('gmp_automation_flows')
+        .insert({ name, description, trigger_type, is_active: false, created_by: window.currentStaff?.id || null });
+    if (error) { toast.error(error.message); return; }
+    toast.success('Flow utworzony — dodaj kroki klikając "Krok"');
+    closeModal();
+    await Promise.all([loadFlows(), loadStats()]);
+}
+
+async function addStep(flowId) {
+    // Pobierz aktualne kroki dla step_order
+    const { data: existing } = await db.from('gmp_automation_steps').select('step_order').eq('flow_id', flowId).order('step_order', { ascending: false }).limit(1);
+    const nextOrder = existing && existing.length ? existing[0].step_order + 1 : 1;
+
+    openModal(`
+        <div class="modal-card" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold text-white">Nowy krok #${nextOrder}</h3>
+                <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body p-5 space-y-3">
+                <div>
+                    <label>Akcja</label>
+                    <select id="ns-action" class="input w-full" onchange="renderActionParams()">
+                        ${Object.entries(ACTION_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
+                    </select>
+                </div>
+                <div id="ns-params"></div>
+                <div>
+                    <label>Opóźnienie (minuty, 0 = natychmiast)</label>
+                    <input id="ns-delay" type="number" class="input w-full" value="0" min="0">
+                </div>
+            </div>
+            <div class="modal-footer flex gap-2 justify-end p-4 border-t border-white/5">
+                <button class="btn btn-ghost" onclick="closeModal()">Anuluj</button>
+                <button class="btn btn-primary" onclick="saveNewStep('${flowId}', ${nextOrder})">Dodaj</button>
+            </div>
+        </div>
+    `);
+    renderActionParams();
+}
+
+function renderActionParams() {
+    const action = document.getElementById('ns-action').value;
+    const target = document.getElementById('ns-params');
+    if (action === 'create_task') {
+        target.innerHTML = `
+            <div><label>Tytuł zadania</label><input id="np-title" class="input w-full" placeholder="np. Sprawdź wniosek"></div>
+            <div><label>Opis</label><textarea id="np-desc" class="input w-full" rows="2"></textarea></div>
+            <div><label>Termin za (dni)</label><input id="np-due" type="number" class="input w-full" value="7" min="0"></div>
+        `;
+    } else if (action === 'create_appointment') {
+        target.innerHTML = `
+            <div><label>Typ spotkania</label><input id="np-type" class="input w-full" value="spotkanie_klient"></div>
+            <div><label>Tytuł</label><input id="np-title" class="input w-full" placeholder="np. Spotkanie z klientem"></div>
+            <div><label>Data (YYYY-MM-DD, opcjonalnie)</label><input id="np-date" type="date" class="input w-full"></div>
+        `;
+    } else if (action === 'send_notification') {
+        target.innerHTML = `
+            <div><label>Tytuł powiadomienia</label><input id="np-title" class="input w-full" placeholder="np. Decyzja przyszła"></div>
+            <div><label>Treść</label><textarea id="np-body" class="input w-full" rows="2"></textarea></div>
+            <div><label>Severity</label><select id="np-severity" class="input w-full"><option>info</option><option>warn</option><option>danger</option></select></div>
+        `;
+    } else if (action === 'set_field') {
+        target.innerHTML = `
+            <div><label>Nazwa pola</label><input id="np-field" class="input w-full" placeholder="np. status"></div>
+            <div><label>Wartość</label><input id="np-value" class="input w-full" placeholder="np. zakonczona"></div>
+        `;
+    } else if (action === 'add_to_group') {
+        target.innerHTML = `<div><label>UUID grupy</label><input id="np-groupid" class="input w-full"></div>`;
+    } else {
+        target.innerHTML = '<div class="text-xs text-zinc-500">(brak parametrów)</div>';
+    }
+}
+
+async function saveNewStep(flowId, stepOrder) {
+    const action_type = document.getElementById('ns-action').value;
+    const delay_seconds = (parseInt(document.getElementById('ns-delay').value, 10) || 0) * 60;
+    const params = {};
+    const get = (id) => document.getElementById(id)?.value;
+    if (action_type === 'create_task') { params.title = get('np-title'); params.description = get('np-desc'); params.due_in_days = parseInt(get('np-due'), 10) || 7; }
+    if (action_type === 'create_appointment') { params.appointment_type = get('np-type'); params.title = get('np-title'); params.scheduled_date = get('np-date'); }
+    if (action_type === 'send_notification') { params.title = get('np-title'); params.body = get('np-body'); params.severity = get('np-severity'); }
+    if (action_type === 'set_field') { params.field = get('np-field'); params.value = get('np-value'); }
+    if (action_type === 'add_to_group') { params.group_id = get('np-groupid'); }
+
+    const { error } = await db.from('gmp_automation_steps')
+        .insert({ flow_id: flowId, step_order: stepOrder, action_type, action_params: params, delay_seconds });
+    if (error) { toast.error(error.message); return; }
+    toast.success('Krok dodany');
+    closeModal();
+    await loadFlows();
+}
+
+async function runExecutorNow() {
+    toast.info('Wywołuję executor...');
+    try {
+        const { data: { session } } = await db.auth.getSession();
+        const r = await fetch(`${SUPABASE_URL}/functions/v1/automation-executor`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session?.access_token || SUPABASE_ANON_KEY}` },
+        });
+        const j = await r.json();
+        if (j.error) { toast.error(j.error); return; }
+        toast.success(`Processed: ${j.processed}, success: ${j.succeeded}, failed: ${j.failed}`);
+        await Promise.all([loadStats(), loadRecentExecutions()]);
+    } catch (e) {
+        toast.error(e.message);
+    }
+}
+</script>
+</body>
+</html>

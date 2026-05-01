@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Pracodawca - GetMyPermit CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+    <link rel="stylesheet" href="components/layout.css">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } } }</script>
+    <script src="components/supabase.js"></script>
+    <script src="components/auth.js"></script>
+    <script src="components/modals.js" defer></script>
+    <style>
+        .emp-header {
+            background: linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.005) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 18px 22px;
+            margin-bottom: 16px;
+        }
+        .emp-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 16px;
+            overflow-x: auto;
+        }
+        .emp-tab {
+            padding: 12px 16px 14px;
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: transparent;
+            color: #71717a;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: color 0.15s, border-color 0.15s;
+            font-family: inherit;
+            margin-bottom: -1px;
+            white-space: nowrap;
+        }
+        .emp-tab:hover { color: #d4d4d8; }
+        .emp-tab.active { color: #fafafa; border-bottom-color: #f59e0b; }
+        .emp-tab .ph { font-size: 15px; opacity: 0.85; }
+        .emp-tab-count {
+            background: rgba(255,255,255,0.05);
+            padding: 1px 7px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #71717a;
+        }
+        .emp-tab.active .emp-tab-count { background: rgba(245,158,11,0.18); color: #fbbf24; }
+        .emp-pane { display: none; }
+        .emp-pane.active { display: block; }
+
+        .row-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.005) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            transition: border-color 0.15s, transform 0.15s;
+            text-decoration: none;
+        }
+        .row-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-1px); }
+        .row-av {
+            width: 36px; height: 36px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #6366f1, #4338ca);
+        }
+        .row-info { flex: 1; min-width: 0; }
+        .row-name { color: #fafafa; font-weight: 500; font-size: 14px; }
+        .row-meta { color: #71717a; font-size: 11px; margin-top: 2px; }
+        .row-badge {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(16,185,129,0.10);
+            color: #34d399;
+            border: 1px solid rgba(16,185,129,0.22);
+        }
+        .row-badge.s-zakonczona { background: rgba(161,161,170,0.12); color: #d4d4d8; border-color: rgba(161,161,170,0.18); }
+        .row-badge.s-archiwum { background: rgba(75,85,99,0.18); color: #a1a1aa; border-color: rgba(75,85,99,0.25); }
+        .row-badge.s-lead { background: rgba(245,158,11,0.10); color: #fbbf24; border-color: rgba(245,158,11,0.22); }
+        .row-badge.s-zlecona { background: rgba(99,102,241,0.10); color: #a5b4fc; border-color: rgba(99,102,241,0.22); }
+        .row-badge.alert { background: rgba(239,68,68,0.10); color: #fca5a5; border-color: rgba(239,68,68,0.22); }
+        .row-badge.warn { background: rgba(245,158,11,0.10); color: #fbbf24; border-color: rgba(245,158,11,0.22); }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 12px; }
+        .stat-mini {
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 9px;
+        }
+        .stat-mini-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 4px; }
+        .stat-mini-value { font-size: 18px; font-weight: 600; color: #fafafa; font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="app-main" id="main-content">
+        <div id="emp-loading" class="p-8 text-center text-zinc-500">
+            <div class="spinner-lg mx-auto mb-3"></div>
+            Ładuję pracodawcę...
+        </div>
+
+        <div id="emp-error" class="hidden card p-6 text-red-300"></div>
+
+        <div id="emp-content" class="hidden">
+            <nav class="flex items-center gap-2 text-xs text-zinc-500 mb-4">
+                <a href="dashboard.html" class="hover:text-zinc-300"><i class="ph ph-house"></i></a>
+                <span class="opacity-60">/</span>
+                <a href="employers.html" class="hover:text-zinc-300">Pracodawcy</a>
+                <span class="opacity-60">/</span>
+                <span class="text-zinc-300" id="emp-bc-name">—</span>
+            </nav>
+
+            <div class="emp-header">
+                <div class="flex items-start justify-between gap-4 flex-wrap">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3 flex-wrap mb-2">
+                            <h1 class="text-2xl font-semibold text-white" id="emp-name">—</h1>
+                            <span class="row-badge" id="emp-cases-badge">— spraw</span>
+                        </div>
+                        <div class="text-xs text-zinc-500 flex items-center gap-3 flex-wrap" id="emp-meta">
+                            <!-- populated by JS -->
+                        </div>
+                        <div class="stat-grid" id="emp-stats">
+                            <!-- populated by JS -->
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-secondary btn-sm" onclick="goToGroup()" id="emp-group-btn"><i class="ph ph-users-three"></i> Grupa</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="emp-tabs">
+                <button class="emp-tab active" data-tab="cases"><i class="ph ph-briefcase"></i> Sprawy <span class="emp-tab-count" id="cnt-cases">—</span></button>
+                <button class="emp-tab" data-tab="workers"><i class="ph ph-user"></i> Cudzoziemcy <span class="emp-tab-count" id="cnt-workers">—</span></button>
+                <button class="emp-tab" data-tab="appts"><i class="ph ph-calendar-blank"></i> Najbliższe terminy <span class="emp-tab-count" id="cnt-appts">—</span></button>
+                <button class="emp-tab" data-tab="checklist"><i class="ph ph-list-checks"></i> Braki dokumentów <span class="emp-tab-count" id="cnt-checklist">—</span></button>
+                <button class="emp-tab" data-tab="docs"><i class="ph ph-file"></i> Dokumenty <span class="emp-tab-count" id="cnt-docs">—</span></button>
+                <button class="emp-tab" data-tab="alerts"><i class="ph ph-bell-ringing"></i> Alerty <span class="emp-tab-count" id="cnt-alerts">—</span></button>
+            </div>
+
+            <div class="emp-pane active" data-pane="cases">
+                <div id="cases-list" class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));"></div>
+            </div>
+            <div class="emp-pane" data-pane="workers">
+                <div id="workers-list" class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));"></div>
+            </div>
+            <div class="emp-pane" data-pane="appts">
+                <div id="appts-list" class="space-y-2"></div>
+            </div>
+            <div class="emp-pane" data-pane="checklist">
+                <div id="checklist-list" class="space-y-2"></div>
+            </div>
+            <div class="emp-pane" data-pane="docs">
+                <div id="docs-list" class="space-y-2"></div>
+            </div>
+            <div class="emp-pane" data-pane="alerts">
+                <div id="alerts-list" class="space-y-2"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="modals-container"></div>
+
+<script>
+const STATUS_LABELS = { lead: 'Lead', zlecona: 'Zlecona', aktywna: 'Aktywna', zakonczona: 'Zakończona', archiwum: 'Archiwum' };
+const params = new URLSearchParams(location.search);
+const empId = params.get('id');
+let emp = null;
+let employerCases = [];
+let employerCaseIds = [];
+let groupId = null;
+
+function esc(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('pl-PL'); } catch { return d; } }
+function initialsOf(first, last) { return ((first?.[0] || '') + (last?.[0] || '')).toUpperCase() || '?'; }
+
+document.addEventListener('gmp-auth-ready', loadEmployer);
+
+async function loadEmployer() {
+    if (!empId) { showError('Brak ID pracodawcy w URL'); return; }
+    try {
+        const { data, error } = await db.from('gmp_employers').select('*').eq('id', empId).single();
+        if (error) throw error;
+        emp = data;
+        document.title = `${emp.name} - Pracodawca - GetMyPermit CRM`;
+        renderHeader();
+        await loadCases();
+        // Reszta lazy-load po klik tabu
+        document.getElementById('emp-loading').classList.add('hidden');
+        document.getElementById('emp-content').classList.remove('hidden');
+        bindTabs();
+        // Sprawdź czy istnieje grupa pracodawcy
+        const { data: groups } = await db.from('gmp_case_groups')
+            .select('id').eq('employer_id', empId).eq('type', 'pracodawca').limit(1);
+        if (groups && groups.length) {
+            groupId = groups[0].id;
+            document.getElementById('emp-group-btn').classList.remove('hidden');
+        } else {
+            document.getElementById('emp-group-btn').classList.add('hidden');
+        }
+    } catch (e) {
+        console.error('[employer] error:', e);
+        showError('Nie udało się załadować: ' + (e.message || e));
+    }
+}
+
+function showError(msg) {
+    document.getElementById('emp-loading').classList.add('hidden');
+    const el = document.getElementById('emp-error');
+    el.classList.remove('hidden');
+    el.textContent = msg;
+}
+
+function goToGroup() { if (groupId) location.href = `group.html?id=${groupId}`; }
+
+function renderHeader() {
+    document.getElementById('emp-name').textContent = emp.name;
+    document.getElementById('emp-bc-name').textContent = emp.name;
+    const meta = [];
+    if (emp.nip) meta.push(`<span class="font-mono"><i class="ph ph-identification-card"></i> NIP: ${esc(emp.nip)}</span>`);
+    if (emp.regon) meta.push(`<span class="font-mono">REGON: ${esc(emp.regon)}</span>`);
+    if (emp.contact_person) meta.push(`<i class="ph ph-user-circle"></i> ${esc(emp.contact_person)}`);
+    if (emp.contact_phone) meta.push(`<a href="tel:${esc(emp.contact_phone)}" class="text-emerald-400 hover:underline"><i class="ph ph-phone"></i> ${esc(emp.contact_phone)}</a>`);
+    if (emp.contact_email) meta.push(`<a href="mailto:${esc(emp.contact_email)}" class="text-blue-400 hover:underline"><i class="ph ph-envelope"></i> ${esc(emp.contact_email)}</a>`);
+    document.getElementById('emp-meta').innerHTML = meta.join('<span class="opacity-50">·</span>');
+}
+
+async function loadCases() {
+    const { data, error, count } = await db.from('gmp_cases')
+        .select('id, case_number, status, stage, kind, category, znak_sprawy, date_decision, decision_outcome, client:gmp_clients(first_name, last_name, nationality)', { count: 'exact' })
+        .eq('employer_id', empId)
+        .order('date_last_activity', { ascending: false, nullsFirst: false });
+    if (error) { console.warn('[employer] cases:', error); return; }
+    employerCases = data || [];
+    employerCaseIds = employerCases.map(c => c.id);
+
+    document.getElementById('cnt-cases').textContent = count || 0;
+    document.getElementById('emp-cases-badge').textContent = `${count || 0} spraw`;
+
+    // Stats card
+    const aktywne = employerCases.filter(c => c.status === 'aktywna').length;
+    const zakonczone = employerCases.filter(c => c.status === 'zakonczona').length;
+    const pozytywne = employerCases.filter(c => c.decision_outcome === 'pozytywna').length;
+    document.getElementById('emp-stats').innerHTML = `
+        <div class="stat-mini"><div class="stat-mini-label">Wszystkie</div><div class="stat-mini-value">${count || 0}</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Aktywne</div><div class="stat-mini-value text-emerald-400">${aktywne}</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Zakończone</div><div class="stat-mini-value">${zakonczone}</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Pozytywne dec.</div><div class="stat-mini-value text-emerald-400">${pozytywne}</div></div>
+    `;
+
+    const list = document.getElementById('cases-list');
+    if (employerCases.length === 0) {
+        list.innerHTML = '<div class="text-zinc-500 text-sm col-span-full">Brak spraw u tego pracodawcy.</div>';
+        return;
+    }
+    list.innerHTML = employerCases.map(c => {
+        const cl = c.client;
+        const clientName = cl ? `${cl.last_name} ${cl.first_name}` : '(bez klienta)';
+        const status = c.status || 'lead';
+        return `
+            <a href="case.html?id=${c.id}" class="row-card">
+                <div class="row-av">${esc(initialsOf(cl?.first_name, cl?.last_name))}</div>
+                <div class="row-info">
+                    <div class="row-name">${esc(clientName)}</div>
+                    <div class="row-meta">
+                        ${c.case_number ? `#${esc(c.case_number)}` : ''}
+                        ${c.stage ? ` · ${esc(c.stage)}` : ''}
+                        ${c.category ? ` · ${esc(c.category)}` : ''}
+                    </div>
+                </div>
+                <span class="row-badge s-${status}">${STATUS_LABELS[status] || status}</span>
+            </a>
+        `;
+    }).join('');
+}
+
+const loaded = { workers: false, appts: false, checklist: false, docs: false, alerts: false };
+
+async function loadWorkers() {
+    if (loaded.workers) return; loaded.workers = true;
+    // Distinct cudzoziemcy z spraw pracodawcy
+    const map = new Map();
+    employerCases.forEach(c => {
+        if (c.client) {
+            const key = `${c.client.last_name}|${c.client.first_name}`;
+            if (!map.has(key)) map.set(key, { ...c.client, casesCount: 0 });
+            map.get(key).casesCount++;
+        }
+    });
+    const workers = [...map.values()];
+    document.getElementById('cnt-workers').textContent = workers.length;
+    const list = document.getElementById('workers-list');
+    if (!workers.length) { list.innerHTML = '<div class="text-zinc-500 text-sm col-span-full">Brak cudzoziemców.</div>'; return; }
+    list.innerHTML = workers.map(w => `
+        <div class="row-card">
+            <div class="row-av">${esc(initialsOf(w.first_name, w.last_name))}</div>
+            <div class="row-info">
+                <div class="row-name">${esc(w.last_name)} ${esc(w.first_name)}</div>
+                <div class="row-meta">${esc(w.nationality || '—')} · ${w.casesCount} ${w.casesCount === 1 ? 'sprawa' : 'spraw'}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadAppts() {
+    if (loaded.appts) return; loaded.appts = true;
+    if (!employerCaseIds.length) { document.getElementById('cnt-appts').textContent = 0; document.getElementById('appts-list').innerHTML = '<div class="text-zinc-500 text-sm">Brak spraw.</div>'; return; }
+    const today = new Date().toISOString().slice(0, 10);
+    const [{ data: appts }, { data: tasks }] = await Promise.all([
+        db.from('gmp_crm_appointments').select('id, scheduled_date, scheduled_time, appointment_type, title, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))').in('case_id', employerCaseIds).gte('scheduled_date', today).order('scheduled_date'),
+        db.from('gmp_tasks').select('id, due_date, title, case_id, gmp_cases(case_number, gmp_clients(last_name, first_name))').in('case_id', employerCaseIds).neq('status', 'done').not('due_date', 'is', null).gte('due_date', today).order('due_date'),
+    ]);
+    const items = [
+        ...(appts || []).map(a => ({ when: a.scheduled_date, time: a.scheduled_time, type: a.appointment_type || 'Termin', label: a.title || a.appointment_type, ico: 'ph-calendar-blank', color: '#a5b4fc', case: a.gmp_cases, case_id: a.case_id })),
+        ...(tasks || []).map(t => ({ when: t.due_date, time: null, type: 'Zadanie', label: t.title, ico: 'ph-check-square', color: '#34d399', case: t.gmp_cases, case_id: t.case_id })),
+    ].sort((a, b) => a.when.localeCompare(b.when));
+    document.getElementById('cnt-appts').textContent = items.length;
+    const list = document.getElementById('appts-list');
+    if (!items.length) { list.innerHTML = '<div class="text-zinc-500 text-sm">Brak nadchodzących terminów.</div>'; return; }
+    list.innerHTML = items.map(it => {
+        const cl = it.case?.gmp_clients;
+        const cn = cl ? `${cl.last_name} ${cl.first_name}` : '';
+        return `
+            <a href="case.html?id=${it.case_id}" class="row-card">
+                <i class="ph ${it.ico}" style="color: ${it.color}; font-size: 22px;"></i>
+                <div class="row-info">
+                    <div class="row-name">${esc(it.label)}</div>
+                    <div class="row-meta">${fmtDate(it.when)}${it.time ? ' ' + it.time.slice(0, 5) : ''} · ${esc(it.type)}${cn ? ' · ' + esc(cn) : ''}${it.case?.case_number ? ' · #' + esc(it.case.case_number) : ''}</div>
+                </div>
+            </a>
+        `;
+    }).join('');
+}
+
+async function loadChecklist() {
+    if (loaded.checklist) return; loaded.checklist = true;
+    if (!employerCaseIds.length) { document.getElementById('cnt-checklist').textContent = 0; document.getElementById('checklist-list').innerHTML = '<div class="text-zinc-500 text-sm">Brak spraw.</div>'; return; }
+    const { data, error } = await db.from('gmp_case_checklists')
+        .select('case_id, status, item_label, gmp_cases(case_number, gmp_clients(last_name, first_name))')
+        .in('case_id', employerCaseIds)
+        .eq('status', 'pending');
+    if (error) { console.warn(error); return; }
+    document.getElementById('cnt-checklist').textContent = (data || []).length;
+    const list = document.getElementById('checklist-list');
+    if (!data?.length) { list.innerHTML = '<div class="text-zinc-500 text-sm">Brak braków — wszyscy klienci mają komplet dokumentów. ✓</div>'; return; }
+    // Group by case
+    const byCase = {};
+    data.forEach(r => { (byCase[r.case_id] = byCase[r.case_id] || { case: r.gmp_cases, items: [] }).items.push(r.item_label); });
+    list.innerHTML = Object.entries(byCase).map(([cid, x]) => {
+        const cl = x.case?.gmp_clients;
+        const cn = cl ? `${cl.last_name} ${cl.first_name}` : '(bez klienta)';
+        return `
+            <a href="case.html?id=${cid}" class="row-card">
+                <i class="ph ph-warning text-amber-400" style="font-size: 22px;"></i>
+                <div class="row-info">
+                    <div class="row-name">${esc(cn)}${x.case?.case_number ? ` <span class="text-zinc-500 text-xs">#${esc(x.case.case_number)}</span>` : ''}</div>
+                    <div class="row-meta">${x.items.length} brak${x.items.length === 1 ? '' : x.items.length < 5 ? 'i' : 'ów'}: ${x.items.slice(0, 3).map(esc).join(', ')}${x.items.length > 3 ? '...' : ''}</div>
+                </div>
+                <span class="row-badge warn">${x.items.length}</span>
+            </a>
+        `;
+    }).join('');
+}
+
+async function loadDocs() {
+    if (loaded.docs) return; loaded.docs = true;
+    if (!employerCaseIds.length) { document.getElementById('cnt-docs').textContent = 0; return; }
+    // Dokumenty z spraw + dokumenty z grupy pracodawcy (jeśli istnieje)
+    let q = db.from('gmp_documents').select('id, name, doc_type, created_at, case_id, group_id, gmp_cases(case_number)', { count: 'exact' });
+    if (groupId) q = q.or(`case_id.in.(${employerCaseIds.join(',')}),group_id.eq.${groupId}`);
+    else q = q.in('case_id', employerCaseIds);
+    q = q.order('created_at', { ascending: false }).limit(100);
+    const { data, error, count } = await q;
+    if (error) { console.warn(error); return; }
+    document.getElementById('cnt-docs').textContent = count || 0;
+    const list = document.getElementById('docs-list');
+    if (!data?.length) { list.innerHTML = '<div class="text-zinc-500 text-sm">Brak dokumentów.</div>'; return; }
+    list.innerHTML = data.map(d => `
+        <div class="row-card">
+            <i class="ph ph-file text-zinc-400" style="font-size: 22px;"></i>
+            <div class="row-info">
+                <div class="row-name">${esc(d.name)}</div>
+                <div class="row-meta">${esc(d.doc_type || '—')} · ${fmtDate(d.created_at)} · ${d.group_id ? '<span class="text-amber-400">grupa</span>' : (d.gmp_cases?.case_number ? '#' + esc(d.gmp_cases.case_number) : 'sprawa')}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadAlerts() {
+    if (loaded.alerts) return; loaded.alerts = true;
+    if (!employerCaseIds.length) { document.getElementById('cnt-alerts').textContent = 0; return; }
+    const { data, error, count } = await db.from('gmp_case_alerts')
+        .select('id, case_id, inactivity_level, days_inactive, gmp_cases(case_number, gmp_clients(last_name, first_name))', { count: 'exact' })
+        .in('case_id', employerCaseIds)
+        .in('inactivity_level', ['inactive_14', 'inactive_30']);
+    if (error) { console.warn(error); return; }
+    document.getElementById('cnt-alerts').textContent = count || 0;
+    const list = document.getElementById('alerts-list');
+    if (!data?.length) { list.innerHTML = '<div class="text-zinc-500 text-sm">Brak alertów. ✓</div>'; return; }
+    list.innerHTML = data.map(a => {
+        const cl = a.gmp_cases?.gmp_clients;
+        const cn = cl ? `${cl.last_name} ${cl.first_name}` : '(bez klienta)';
+        const level = a.inactivity_level === 'inactive_30' ? 'alert' : 'warn';
+        const lblLevel = a.inactivity_level === 'inactive_30' ? '30+ dni' : '14+ dni';
+        return `
+            <a href="case.html?id=${a.case_id}" class="row-card">
+                <i class="ph ph-bell-ringing text-amber-400" style="font-size: 22px;"></i>
+                <div class="row-info">
+                    <div class="row-name">${esc(cn)}${a.gmp_cases?.case_number ? ` <span class="text-zinc-500 text-xs">#${esc(a.gmp_cases.case_number)}</span>` : ''}</div>
+                    <div class="row-meta">Brak aktywności: ${a.days_inactive || '?'} dni</div>
+                </div>
+                <span class="row-badge ${level}">${lblLevel}</span>
+            </a>
+        `;
+    }).join('');
+}
+
+function bindTabs() {
+    document.querySelectorAll('.emp-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const name = btn.dataset.tab;
+            document.querySelectorAll('.emp-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+            document.querySelectorAll('.emp-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
+            // Lazy load
+            if (name === 'workers') loadWorkers();
+            if (name === 'appts') loadAppts();
+            if (name === 'checklist') loadChecklist();
+            if (name === 'docs') loadDocs();
+            if (name === 'alerts') loadAlerts();
+        });
+    });
+}
+</script>
+</body>
+</html>

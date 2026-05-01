@@ -111,7 +111,7 @@ async function loadList() {
 
     tbody.innerHTML = data.map(e => `
         <tr class="clickable" onclick="location.href='employers.html?id=${e.id}'">
-            <td data-label="Nazwa"><span class="text-white">${esc(e.name)}</span></td>
+            <td data-label="Nazwa"><a href="employer.html?id=${e.id}" class="text-white hover:text-blue-400 hover:underline font-medium">${esc(e.name)}</a></td>
             <td data-label="NIP" class="font-mono text-xs text-zinc-400">${esc(e.nip || '')}</td>
             <td data-label="Kontakt" class="text-xs text-zinc-400">${esc(e.contact_person || '')}</td>
             <td data-label="Telefon" class="font-mono text-xs text-zinc-300">${esc(e.contact_phone || '')}</td>

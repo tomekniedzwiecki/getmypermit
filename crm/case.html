@@ -1701,6 +1701,62 @@
                             </div>
                         </section>
 
+                        <!-- Etap VI — Legalność pobytu/pracy (Pawel pkt 11/B6) -->
+                        <section class="module-card mb-4">
+                            <div class="module-card-header">
+                                <span><i class="ph ph-shield-check text-emerald-400 mr-1"></i>Legalność pobytu i pracy</span>
+                                <span class="text-xs text-zinc-500">Etap VI — auto-status z dat końca</span>
+                            </div>
+                            <div class="p-4 space-y-4">
+                                <!-- Pobyt -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs uppercase tracking-wider text-zinc-500 font-semibold">Legalność pobytu</span>
+                                        <span id="legal-stay-status-pill" class="text-xs px-2 py-0.5 rounded-full">—</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label>Data końca legalnego pobytu</label>
+                                            <input type="date" class="input w-full" data-field="legal_stay_end_date">
+                                        </div>
+                                        <div class="text-xs text-zinc-500 self-end pb-2" id="legal-stay-days">
+                                            (status auto-aktualizowany z daty)
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Praca -->
+                                <div class="pt-3 border-t border-zinc-900/50">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs uppercase tracking-wider text-zinc-500 font-semibold">Legalność pracy</span>
+                                        <span id="legal-work-status-pill" class="text-xs px-2 py-0.5 rounded-full">—</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3" id="legal-work-fields">
+                                        <div>
+                                            <label>Podstawa pracy</label>
+                                            <input type="text" class="input w-full" id="lw-basis" placeholder="np. zezwolenie A, OWP, oświadczenie">
+                                        </div>
+                                        <div></div>
+                                        <div>
+                                            <label>Praca OD</label>
+                                            <input type="date" class="input w-full" id="lw-start">
+                                        </div>
+                                        <div>
+                                            <label>Praca DO</label>
+                                            <input type="date" class="input w-full" id="lw-end">
+                                        </div>
+                                        <div class="col-span-2">
+                                            <label>Notatki</label>
+                                            <textarea class="input w-full" rows="2" id="lw-notes" placeholder="Opcjonalne uwagi do legalności pracy"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 flex justify-end">
+                                        <button class="btn btn-secondary btn-sm" id="lw-save"><i class="ph ph-floppy-disk"></i> Zapisz legalność pracy</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
                         <!-- Etap IV — Dane proceduralne (Pawel pkt 8/9 + B7)
                              Conditional: tylko dla przystąpień i przejęć (kind LIKE 'przystapienie%' OR kind = 'przejeta_*') -->
                         <section class="module-card mb-4" data-show-when="kind:przystapienie_*|przejeta_do_dalszego_prowadzenia">
@@ -1983,8 +2039,94 @@ function switchTab(name) {
         if (window.gmp?.renderCaseGroups && caseId) {
             window.gmp.renderCaseGroups(caseId, db, '#case-groups-section');
         }
+        // Etap VI — legalność: render pillsów + load work_legality
+        renderLegalStatus();
+        loadWorkLegality();
         tabsLoaded.data = true;
     }
+}
+
+// ============ Etap VI — Legalność (pobyt + praca) ============
+function renderLegalStatus() {
+    const stayPill = document.getElementById('legal-stay-status-pill');
+    const workPill = document.getElementById('legal-work-status-pill');
+    if (!stayPill || !caseData) return;
+
+    const styles = {
+        zielony:  { bg: 'rgba(16,185,129,0.10)', color: '#34d399', border: 'rgba(16,185,129,0.28)', label: 'Zielony — OK' },
+        zolty:    { bg: 'rgba(245,158,11,0.10)', color: '#fbbf24', border: 'rgba(245,158,11,0.28)', label: 'Żółty — kończy się ≤30 dni' },
+        czerwony: { bg: 'rgba(239,68,68,0.10)', color: '#fca5a5', border: 'rgba(239,68,68,0.28)', label: 'Czerwony — przeterminowany' },
+        brak:     { bg: 'rgba(161,161,170,0.12)', color: '#d4d4d8', border: 'rgba(161,161,170,0.18)', label: 'Brak danych' },
+    };
+    const status = caseData.legal_stay_status || 'brak';
+    const s = styles[status];
+    stayPill.textContent = '● ' + s.label;
+    stayPill.style.cssText = `background:${s.bg}; color:${s.color}; border:1px solid ${s.border};`;
+
+    // Days
+    const daysEl = document.getElementById('legal-stay-days');
+    if (daysEl && caseData.legal_stay_end_date) {
+        const days = Math.floor((new Date(caseData.legal_stay_end_date) - Date.now()) / 86400000);
+        daysEl.textContent = days < 0
+            ? `przeterminowany od ${Math.abs(days)} dni`
+            : days === 0 ? 'kończy się dzisiaj'
+            : `pozostało ${days} dni`;
+    }
+}
+
+async function loadWorkLegality() {
+    if (!caseId) return;
+    const { data, error } = await db.from('gmp_case_work_legality')
+        .select('*').eq('case_id', caseId).maybeSingle();
+    if (error && error.code !== 'PGRST116') console.warn('[work_legality] load:', error);
+
+    const styles = {
+        zielony:  { bg: 'rgba(16,185,129,0.10)', color: '#34d399', border: 'rgba(16,185,129,0.28)', label: 'Zielony — OK' },
+        zolty:    { bg: 'rgba(245,158,11,0.10)', color: '#fbbf24', border: 'rgba(245,158,11,0.28)', label: 'Żółty' },
+        czerwony: { bg: 'rgba(239,68,68,0.10)', color: '#fca5a5', border: 'rgba(239,68,68,0.28)', label: 'Czerwony' },
+        brak:     { bg: 'rgba(161,161,170,0.12)', color: '#d4d4d8', border: 'rgba(161,161,170,0.18)', label: 'Brak' },
+    };
+    const workPill = document.getElementById('legal-work-status-pill');
+    if (workPill) {
+        const s = styles[data?.work_status || 'brak'];
+        workPill.textContent = '● ' + s.label;
+        workPill.style.cssText = `background:${s.bg}; color:${s.color}; border:1px solid ${s.border};`;
+    }
+
+    if (data) {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        set('lw-basis', data.work_basis);
+        set('lw-start', data.work_start_date);
+        set('lw-end', data.work_end_date);
+        set('lw-notes', data.work_notes);
+    }
+
+    // Bind save (idempotent — może już mieć listener)
+    const btn = document.getElementById('lw-save');
+    if (btn && !btn.dataset.bound) {
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', saveWorkLegality);
+    }
+}
+
+async function saveWorkLegality() {
+    if (!caseId) return;
+    const payload = {
+        case_id: caseId,
+        work_basis: document.getElementById('lw-basis')?.value || null,
+        work_start_date: document.getElementById('lw-start')?.value || null,
+        work_end_date: document.getElementById('lw-end')?.value || null,
+        work_notes: document.getElementById('lw-notes')?.value || null,
+        updated_by: window.currentStaff?.id || null,
+    };
+    const { error } = await db.from('gmp_case_work_legality')
+        .upsert(payload, { onConflict: 'case_id' });
+    if (error) {
+        toast.error('Błąd zapisu: ' + error.message);
+        return;
+    }
+    toast.success('Zapisano legalność pracy');
+    await loadWorkLegality(); // re-render status pill
 }
 
 // === SUB-TABS (Pawel v3.2 — 6 zakładek z grupowaniem) ===
