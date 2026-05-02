@@ -1662,23 +1662,54 @@
 })();
 
 // ============================================================
-// Sticky how-it-works progress
+// Sticky how-it-works: scroll-driven active step + smooth scroll on click
 // ============================================================
 (function () {
   const links = document.querySelectorAll('.how-step-link');
   const steps = ['#step-1','#step-2','#step-3','#step-4'].map(s => document.querySelector(s));
-  if (!steps[0] || !('IntersectionObserver' in window)) return;
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        const idx = steps.indexOf(e.target);
-        if (idx === -1) return;
-        links.forEach(l => l.classList.remove('active'));
-        if (links[idx]) links[idx].classList.add('active');
+  if (!steps[0] || !links.length) return;
+
+  // Smooth scroll on click — overrides default jump (works with scroll-margin-top)
+  links.forEach((link) => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
+      if (!href || !href.startsWith('#')) return;
+      const target = document.querySelector(href);
+      if (!target) return;
+      e.preventDefault();
+      const top = target.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({ top, behavior: 'smooth' });
+      history.replaceState(null, '', href);
+    });
+  });
+
+  // Active step = ten, którego top jest najbliżej linii 25% viewport
+  function updateActive() {
+    const lineY = window.innerHeight * 0.28;
+    let activeIdx = 0;
+    let bestDelta = Infinity;
+    steps.forEach((s, i) => {
+      if (!s) return;
+      const r = s.getBoundingClientRect();
+      // Step jest "aktywny" gdy jego top przeszedł linię (delta >= 0)
+      // wybieramy najpóźniejszy taki step
+      const delta = lineY - r.top;
+      if (delta >= 0 && delta < bestDelta) {
+        bestDelta = delta;
+        activeIdx = i;
       }
     });
-  }, { threshold: 0.4, rootMargin: '-20% 0px -40% 0px' });
-  steps.forEach(s => io.observe(s));
+    links.forEach((l, i) => l.classList.toggle('active', i === activeIdx));
+  }
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { updateActive(); ticking = false; });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  updateActive();
 })();
 
 // ============================================================

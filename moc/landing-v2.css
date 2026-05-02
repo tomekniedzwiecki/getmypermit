@@ -1159,8 +1159,8 @@ section { position: relative; }
 }
 .how-sticky {
   display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 80px;
+  grid-template-columns: 260px 1fr;
+  gap: 64px;
   align-items: flex-start;
 }
 .how-left {
@@ -2721,7 +2721,7 @@ section { position: relative; }
 .faq .section-head { max-width: 720px; }
 .faq-grid {
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 260px 1fr;
   gap: 64px;
   align-items: flex-start;
 }
