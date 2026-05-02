@@ -60,6 +60,47 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
+
+/* ============================================================
+   POLISH — selection color, noise texture, scroll progress
+   ============================================================ */
+
+/* Custom text selection — accent indigo zamiast browser default */
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+  text-shadow: none;
+}
+::-moz-selection {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* Subtle grain noise overlay — premium "Linear/Vercel" feel */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+  mix-blend-mode: multiply;
+}
+
+/* Scroll progress bar — cienka linia gradient na top */
+.scroll-progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--emerald) 100%);
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 1px 6px rgba(79,70,229,0.35);
+  transition: width 80ms linear;
+}
 body {
   font-family: var(--font-sans);
   background: var(--bg);
@@ -2661,6 +2702,61 @@ section { position: relative; }
   font-style: italic;
   line-height: 1.4;
   text-wrap: balance;
+}
+.num-meta-inline {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 11.5px;
+  color: var(--fg-faint);
+  display: block;
+  margin-top: 4px;
+}
+
+/* Live counter card — accent gradient na top + tick info */
+.num-card.num-live { position: relative; }
+.num-card.num-live::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--emerald), transparent);
+  opacity: 0.7;
+}
+.num-tick {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--hairline);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ok);
+  letter-spacing: 0.04em;
+  font-feature-settings: 'tnum' 1;
+}
+.live-pulse-tick {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--emerald-bright);
+  position: relative;
+  flex-shrink: 0;
+}
+.live-pulse-tick::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--emerald-bright);
+  opacity: 0.5;
+  animation: pulse 2s ease-out infinite;
+}
+@keyframes liveBlink {
+  0%, 100% { color: var(--fg); }
+  40% { color: var(--ok); }
+}
+.num-card.num-live .num-v.is-blinking {
+  animation: liveBlink 700ms ease-out;
 }
 
 /* ============================================================
