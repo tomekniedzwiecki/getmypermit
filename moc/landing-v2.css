@@ -1159,10 +1159,11 @@ section { position: relative; }
 }
 .how-sticky {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 64px;
-  align-items: flex-start;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 72px;
+  align-items: start;
 }
+.how-right { max-width: 760px; }
 .how-left {
   position: sticky;
   top: 100px;
@@ -2721,14 +2722,16 @@ section { position: relative; }
 .faq .section-head { max-width: 720px; }
 .faq-grid {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 64px;
-  align-items: flex-start;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 72px;
+  align-items: start;
 }
 .faq-side {
   position: sticky;
   top: 100px;
+  align-self: start;
 }
+.faq-list { max-width: 760px; }
 .faq-side .help {
   background: var(--surface);
   border: 1px solid var(--hairline);
