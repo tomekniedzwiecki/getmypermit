@@ -936,14 +936,14 @@ section { position: relative; }
 .bento-cell.hero-cell {
   grid-column: span 8;
   grid-row: span 2;
-  padding: 40px;
-  min-height: 460px;
+  padding: 36px;
+  min-height: 320px;
   display: flex;
   flex-direction: column;
 }
-.bento-cell.tall { grid-column: span 4; grid-row: span 2; min-height: 460px; }
+.bento-cell.tall { grid-column: span 4; grid-row: span 2; min-height: 320px; }
 .bento-cell.half { grid-column: span 6; min-height: 280px; }
-.bento-cell.third { grid-column: span 4; min-height: 280px; }
+.bento-cell.third { grid-column: span 6; min-height: 280px; }
 
 .bento-cell.hero-cell h3 {
   font-size: 32px;
@@ -952,74 +952,59 @@ section { position: relative; }
 .bento-cell.hero-cell p { font-size: 16px; max-width: 480px; }
 
 /* Bento visual: traffic light */
-/* Stat tiles dla hero-cell — pod tekstem, KPI-style */
-.bento-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+/* Distribution bar dla hero-cell — kompaktowa wizualizacja proporcji */
+.bento-distribution {
   margin-top: auto;
-  padding-top: 32px;
-}
-.bento-stat {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--hairline-inv);
-  border-radius: 12px;
-  padding: 18px 18px 16px;
+  padding-top: 28px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  position: relative;
+  gap: 12px;
+}
+.bento-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
   overflow: hidden;
-  transition: background 200ms ease, transform 200ms ease;
-}
-.bento-stat:hover {
   background: rgba(255,255,255,0.06);
-  transform: translateY(-2px);
+  border: 1px solid var(--hairline-inv);
 }
-.bento-stat::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--surface-3);
+.bento-bar .seg {
+  display: block;
+  height: 100%;
+  position: relative;
+  transition: filter 200ms ease;
 }
-.bento-stat.danger::before { background: #ef4444; box-shadow: 0 0 16px rgba(239,68,68,0.5); }
-.bento-stat.warn::before   { background: #f59e0b; box-shadow: 0 0 16px rgba(245,158,11,0.5); }
-.bento-stat.ok::before     { background: var(--emerald-bright); box-shadow: 0 0 16px rgba(16,185,129,0.5); }
-.bento-stat .stat-head {
+.bento-bar .seg-danger { background: #ef4444; box-shadow: 0 0 14px rgba(239,68,68,0.5); }
+.bento-bar .seg-warn   { background: #f59e0b; box-shadow: 0 0 14px rgba(245,158,11,0.5); }
+.bento-bar .seg-ok     { background: var(--emerald-bright); box-shadow: 0 0 14px rgba(16,185,129,0.5); }
+.bento-bar:hover .seg { filter: brightness(1.15); }
+
+.bento-bar-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 12.5px;
+  color: var(--inv-3);
+  font-family: var(--font-mono);
+}
+.bento-bar-labels span {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--inv-3);
+  gap: 6px;
 }
-.bento-stat .stat-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-}
-.bento-stat.danger .stat-dot { background: #ef4444; }
-.bento-stat.warn   .stat-dot { background: #f59e0b; }
-.bento-stat.ok     .stat-dot { background: var(--emerald-bright); }
-.bento-stat strong {
-  font-family: var(--font-display);
-  font-size: 44px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
+.bento-bar-labels strong {
   color: var(--inv);
-  line-height: 1;
+  font-weight: 600;
   font-feature-settings: 'tnum' 1;
 }
-.bento-stat .stat-meta {
-  font-size: 11.5px;
-  color: var(--inv-3);
-  font-family: var(--font-serif);
-  font-style: italic;
-  line-height: 1.4;
+.bento-bar-labels .d {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
+.bento-bar-labels .d.danger { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.6); }
+.bento-bar-labels .d.warn   { background: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.6); }
+.bento-bar-labels .d.ok     { background: var(--emerald-bright); box-shadow: 0 0 8px rgba(16,185,129,0.6); }
 
 /* Legacy traffic light — zachowane na wypadek użycia gdzie indziej */
 .bento-traffic {
@@ -3289,20 +3274,9 @@ body.drawer-open { overflow: hidden; }
   .bento-cell.hero-cell { padding: 28px; min-height: auto; }
   .bento-cell h3 { font-size: 18px; }
   .bento-cell.hero-cell h3 { font-size: 22px; }
-  .bento-stats {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding-top: 24px;
-  }
-  .bento-stat {
-    flex-direction: row;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-  }
-  .bento-stat .stat-head { order: 2; flex: 1; }
-  .bento-stat strong { order: 1; font-size: 32px; min-width: 56px; }
-  .bento-stat .stat-meta { display: none; }
+  .bento-distribution { padding-top: 20px; gap: 10px; }
+  .bento-bar { height: 6px; }
+  .bento-bar-labels { font-size: 11.5px; gap: 4px 14px; }
   /* Hero cell: traffic light z absolute → static, poziomy układ pod tekstem */
   .bento-traffic {
     position: static;

@@ -390,27 +390,16 @@
         <div class="eyebrow"><span class="dot"></span> Dashboard <span class="em" style="color: rgba(251,250,247,0.85);">w pół sekundy</span></div>
         <h3>Czerwone, żółte, zielone. <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400; color: rgba(251,250,247,0.65);">Tak proste.</em></h3>
         <p>147 cudzoziemców, 9 oddziałów, 4 podwykonawców — jeden ekran. Sortuj wg pilności, klikaj wyłącznie czerwone. Zielone same dbają o siebie.</p>
-        <div class="bento-stats">
-          <div class="bento-stat danger">
-            <span class="stat-head">
-              <span class="stat-dot"></span> Pilne
-            </span>
-            <strong>3</strong>
-            <span class="stat-meta">≤ 14 dni · interwencja</span>
+        <div class="bento-distribution">
+          <div class="bento-bar" role="img" aria-label="Rozkład 147 cudzoziemców: 3 pilne, 12 średnie, 132 zgodne">
+            <span class="seg seg-danger" style="flex: 3"></span>
+            <span class="seg seg-warn" style="flex: 12"></span>
+            <span class="seg seg-ok" style="flex: 132"></span>
           </div>
-          <div class="bento-stat warn">
-            <span class="stat-head">
-              <span class="stat-dot"></span> Średnie
-            </span>
-            <strong>12</strong>
-            <span class="stat-meta">15–90 dni · obserwacja</span>
-          </div>
-          <div class="bento-stat ok">
-            <span class="stat-head">
-              <span class="stat-dot"></span> Zgodne
-            </span>
-            <strong>132</strong>
-            <span class="stat-meta">pilnują się same</span>
+          <div class="bento-bar-labels">
+            <span><span class="d danger"></span> <strong>3</strong> pilne</span>
+            <span><span class="d warn"></span> <strong>12</strong> średnich</span>
+            <span><span class="d ok"></span> <strong>132</strong> zgodnych</span>
           </div>
         </div>
       </div>
