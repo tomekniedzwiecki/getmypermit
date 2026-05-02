@@ -1627,7 +1627,7 @@ section { position: relative; }
   display: grid;
   grid-template-columns: minmax(320px, 380px) 1fr;
   gap: 40px;
-  align-items: start;
+  align-items: stretch;
   margin-top: 56px;
 }
 
@@ -1771,6 +1771,9 @@ section { position: relative; }
     0 40px 80px -24px rgba(10,10,10,0.22),
     0 16px 32px -12px rgba(10,10,10,0.10),
     0 4px 8px -4px rgba(10,10,10,0.06);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Browser chrome */
@@ -1844,12 +1847,13 @@ section { position: relative; }
   animation: pulse 2s ease-out infinite;
 }
 
-/* Screen image swap with cross-fade */
+/* Screen image swap with cross-fade — fills stage height */
 .tour-screen-wrap {
   position: relative;
   background: var(--bg);
   overflow: hidden;
-  aspect-ratio: 1440 / 900;
+  flex: 1;
+  min-height: 0;
 }
 .tour-screen-img {
   position: absolute;
@@ -1872,7 +1876,8 @@ section { position: relative; }
   transform: scale(1);
   filter: blur(0);
   pointer-events: auto;
-  position: relative; /* podtrzymuje wysokość kontenera */
+  /* Zostaje absolute (nie relative) — wysokość kontenera dyktowana
+     przez sidebar height (align-items: stretch + flex: 1 na wrap) */
 }
 
 /* Mobile labels — hidden na desktop (controlled by tab nav po lewej) */
@@ -1994,11 +1999,11 @@ section { position: relative; }
   font-weight: 500;
 }
 .compare-row .label small {
-  display: block;
+  display: block !important;
   font-size: 12px;
   color: var(--fg-muted);
   font-weight: 400;
-  margin-top: 2px;
+  margin-top: 4px;
   font-family: var(--font-serif);
   font-style: italic;
 }
@@ -2500,16 +2505,25 @@ section { position: relative; }
 }
 .ribbon {
   position: absolute;
-  top: -10px; left: 50%; transform: translateX(-50%);
-  background: var(--fg);
+  top: -12px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
   color: white;
-  padding: 5px 14px;
+  padding: 6px 14px 6px 12px;
   border-radius: 100px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.2) inset,
+    0 8px 20px -4px rgba(79,70,229,0.45),
+    0 2px 4px rgba(10,10,10,0.10);
 }
+.ribbon i { font-size: 13px; color: #fde047; }
 .price-card header h3 {
   font-family: var(--font-display);
   font-size: 24px;
