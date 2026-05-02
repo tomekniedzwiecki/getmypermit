@@ -36,9 +36,6 @@
 </head>
 <body>
 
-<!-- Scroll progress bar -->
-<div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
-
 <!-- ============================================================ NAV ============================================================ -->
 <nav class="nav" id="nav">
   <div class="nav-inner">
@@ -1601,28 +1598,6 @@
     }, { threshold: 0.25 });
     io.observe(tour);
   }
-})();
-
-// ============================================================
-// Scroll progress bar — cienka linia gradient na top
-// ============================================================
-(function () {
-  const bar = document.getElementById('scroll-progress');
-  if (!bar) return;
-  let ticking = false;
-  function update() {
-    const h = document.documentElement;
-    const max = h.scrollHeight - h.clientHeight;
-    const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
-    bar.style.width = pct + '%';
-    ticking = false;
-  }
-  window.addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(update);
-  }, { passive: true });
-  update();
 })();
 
 // ============================================================

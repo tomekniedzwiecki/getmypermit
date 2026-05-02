@@ -89,18 +89,6 @@ body::before {
   mix-blend-mode: multiply;
 }
 
-/* Scroll progress bar — cienka linia gradient na top */
-.scroll-progress {
-  position: fixed;
-  top: 0; left: 0;
-  height: 3px;
-  width: 0;
-  background: linear-gradient(90deg, var(--accent) 0%, var(--emerald) 100%);
-  z-index: 100;
-  pointer-events: none;
-  box-shadow: 0 1px 6px rgba(79,70,229,0.35);
-  transition: width 80ms linear;
-}
 body {
   font-family: var(--font-sans);
   background: var(--bg);
