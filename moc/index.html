@@ -64,8 +64,27 @@
       <a href="#" class="btn btn-ghost">Zaloguj</a>
       <a href="#cta" class="btn btn-primary">Umów demo</a>
     </div>
+    <button class="nav-burger" id="nav-burger" aria-label="Otwórz menu" aria-expanded="false" aria-controls="mobile-drawer" type="button">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+
+<!-- ============================================================ MOBILE DRAWER ============================================================ -->
+<div class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
+  <div class="mobile-drawer-inner" role="dialog" aria-label="Menu nawigacji">
+    <a href="#produkt" class="m-link">Produkt</a>
+    <a href="#how" class="m-link">Jak działa</a>
+    <a href="#porownanie" class="m-link">Porównanie</a>
+    <a href="#cennik" class="m-link">Cennik</a>
+    <a href="#bezpieczenstwo" class="m-link">Bezpieczeństwo</a>
+    <a href="#wiedza" class="m-link">Wiedza</a>
+    <a href="#faq" class="m-link">FAQ</a>
+    <div class="mobile-drawer-divider"></div>
+    <a href="#" class="btn btn-ghost btn-block">Zaloguj</a>
+    <a href="#cta" class="btn btn-primary btn-block">Umów demo</a>
+  </div>
+</div>
 
 <!-- ============================================================ HERO ============================================================ -->
 <section class="hero">
@@ -1384,6 +1403,48 @@
   }
   slider.addEventListener('input', update);
   update();
+})();
+
+// ============================================================
+// Mobile drawer (hamburger)
+// ============================================================
+(function () {
+  const burger = document.getElementById('nav-burger');
+  const drawer = document.getElementById('mobile-drawer');
+  if (!burger || !drawer) return;
+  const links = drawer.querySelectorAll('a');
+
+  function open() {
+    drawer.classList.add('open');
+    drawer.setAttribute('aria-hidden', 'false');
+    burger.setAttribute('aria-expanded', 'true');
+    burger.setAttribute('aria-label', 'Zamknij menu');
+    document.body.classList.add('drawer-open');
+  }
+  function close() {
+    drawer.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
+    burger.setAttribute('aria-expanded', 'false');
+    burger.setAttribute('aria-label', 'Otwórz menu');
+    document.body.classList.remove('drawer-open');
+  }
+  function toggle() {
+    if (drawer.classList.contains('open')) close(); else open();
+  }
+
+  burger.addEventListener('click', toggle);
+  drawer.addEventListener('click', (e) => { if (e.target === drawer) close(); });
+  links.forEach(a => a.addEventListener('click', close));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer.classList.contains('open')) close();
+  });
+  // Close drawer if user resizes past breakpoint
+  let lastW = window.innerWidth;
+  window.addEventListener('resize', () => {
+    const w = window.innerWidth;
+    if (w !== lastW && w > 900 && drawer.classList.contains('open')) close();
+    lastW = w;
+  });
 })();
 
 // ============================================================
