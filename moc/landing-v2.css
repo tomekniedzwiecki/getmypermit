@@ -1436,6 +1436,125 @@ section { position: relative; }
 }
 
 /* ============================================================
+   PANEL SCREENS
+   ============================================================ */
+.screens {
+  padding: 120px 0;
+  background: var(--bg-2);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+.screens-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.screen-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.screen-card.screen-feature {
+  grid-column: 1 / -1;
+}
+.screen-frame {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 24px 56px -20px rgba(10,10,10,0.18),
+    0 10px 24px -10px rgba(10,10,10,0.10);
+  transition: transform 280ms cubic-bezier(.2,.7,.2,1), box-shadow 280ms ease;
+}
+.screen-card:hover .screen-frame {
+  transform: translateY(-4px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 32px 72px -20px rgba(10,10,10,0.22),
+    0 16px 32px -12px rgba(10,10,10,0.12);
+}
+.screen-chrome {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--hairline);
+}
+.screen-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--surface-3);
+}
+.screen-dot.r { background: #ef4444; }
+.screen-dot.y { background: #f59e0b; }
+.screen-dot.g { background: #10b981; }
+.screen-chrome .screen-url {
+  flex: 1;
+  margin: 0 8px 0 12px;
+  padding: 5px 12px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+.screen-chrome .screen-url i { font-size: 10px; color: var(--ok); }
+.screen-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg);
+}
+.screen-card figcaption {
+  padding: 16px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.screen-card figcaption strong {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.012em;
+}
+.screen-card figcaption span {
+  font-size: 13.5px;
+  color: var(--fg-muted);
+  font-family: var(--font-serif);
+  font-style: italic;
+  line-height: 1.45;
+}
+.screens-cta {
+  margin-top: 56px;
+  padding: 32px 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.screens-cta p {
+  margin: 0;
+  font-size: 16px;
+  color: var(--fg-2);
+  max-width: 540px;
+}
+.screens-cta strong { color: var(--fg); font-weight: 600; }
+
+/* ============================================================
    COMPARISON TABLE
    ============================================================ */
 .compare {
@@ -2816,6 +2935,12 @@ body.drawer-open { overflow: hidden; }
   /* Status strip tightens */
   .status-strip-r { gap: 16px; }
 
+  /* Screens: 1-col na tablet portrait */
+  .screens { padding: 80px 0; }
+  .screens-grid { grid-template-columns: 1fr; gap: 20px; }
+  .screen-card.screen-feature { grid-column: 1; }
+  .screens-cta { padding: 24px 28px; gap: 20px; }
+
   /* Security: tighter gap when stacking */
   .security-grid { gap: 32px; }
 
@@ -2976,6 +3101,30 @@ body.drawer-open { overflow: hidden; }
     background: var(--surface-3);
   }
   .sbadge .seal i { font-size: 24px; }
+
+  /* SCREENS — mobile */
+  .screens { padding: 56px 0; }
+  .screens-grid { gap: 18px; }
+  .screen-card figcaption { padding: 12px 4px 0; }
+  .screen-card figcaption strong { font-size: 15px; }
+  .screen-card figcaption span { font-size: 13px; }
+  .screen-chrome { padding: 8px 10px; gap: 6px; }
+  .screen-dot { width: 8px; height: 8px; }
+  .screen-chrome .screen-url {
+    font-size: 10.5px;
+    padding: 4px 8px;
+    margin: 0 4px 0 8px;
+    max-width: none;
+  }
+  .screens-cta {
+    padding: 24px 22px;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 16px;
+  }
+  .screens-cta p { font-size: 15px; max-width: 100%; }
+  .screens-cta .btn { width: 100%; justify-content: center; }
 
   /* CALCULATOR — stack rows so cyfra ma własną linię */
   .calc { padding: 56px 0; }
