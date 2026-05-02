@@ -310,12 +310,14 @@ section { position: relative; }
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
   border-bottom: 1px solid transparent;
-  transition: all 200ms ease;
+  transition: padding 220ms ease, background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
 }
 .nav.scrolled {
   border-bottom-color: var(--hairline);
-  background: rgba(251, 250, 247, 0.92);
+  background: rgba(251, 250, 247, 0.94);
+  box-shadow: 0 4px 16px -8px rgba(10,10,10,0.08);
 }
+.nav.scrolled .nav-inner { padding-top: 10px; padding-bottom: 10px; }
 .nav-inner {
   max-width: 1320px;
   margin: 0 auto;
