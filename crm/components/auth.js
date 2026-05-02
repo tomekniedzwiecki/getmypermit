@@ -6,6 +6,7 @@
   const requireAuth = script?.getAttribute('data-require-auth') !== 'false';
 
   async function getSession() {
+    if (!window.supabaseClient?.auth) return null;
     const { data, error } = await window.supabaseClient.auth.getSession();
     if (error) console.error('Auth error:', error);
     return data?.session || null;

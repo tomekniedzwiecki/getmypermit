@@ -4,18 +4,33 @@
 const SUPABASE_URL = 'https://gfwsdrbywgmceateubyq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmd3NkcmJ5d2dtY2VhdGV1YnlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0Mzg1MjksImV4cCI6MjA5MjAxNDUyOX0.Qnn4MbtfApJ8sVwkpXNqNoHCBcGymS2U04kRLIVRta0';
 
-// Globalna instancja
-window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storageKey: 'gmp-crm-auth',
-  },
-});
+// Guard: jeśli supabase-js@2 z CDN się nie załadował (network/AdBlocker/timeout),
+// pokaż użytkownikowi komunikat zamiast cichego "createClient undefined" w Sentry.
+if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+  console.error('[gmp] supabase-js@2 nie załadował się z CDN. Sprawdź połączenie.');
+  document.addEventListener('DOMContentLoaded', () => {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fff;padding:14px;text-align:center;font:14px/1.4 system-ui;';
+    banner.innerHTML = 'Błąd ładowania bazy danych. Sprawdź połączenie i odśwież stronę. <button onclick="location.reload()" style="margin-left:12px;padding:4px 12px;background:#fff;color:#7f1d1d;border:none;border-radius:6px;cursor:pointer;font-weight:600">Odśwież</button>';
+    document.body.prepend(banner);
+  });
+  // Stub żeby kod, który dotyka window.db/supabaseClient nie zatrzymał całej strony cascade'em błędów
+  window.supabaseClient = null;
+  window.db = { from: () => ({ select: () => ({ data: null, error: { message: 'Supabase SDK not loaded' } }) }) };
+} else {
+  // Globalna instancja
+  window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: 'gmp-crm-auth',
+    },
+  });
 
-// Helper do zapytań
-window.db = window.supabaseClient;
+  // Helper do zapytań
+  window.db = window.supabaseClient;
+}
 
 // Toast system
 window.toast = (function() {
