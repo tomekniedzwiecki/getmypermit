@@ -1834,6 +1834,9 @@ section { position: relative; }
   position: relative; /* podtrzymuje wysokość kontenera */
 }
 
+/* Mobile labels — hidden na desktop (controlled by tab nav po lewej) */
+.tour-mobile-label { display: none; }
+
 /* ============================================================
    COMPARISON TABLE
    ============================================================ */
@@ -3217,46 +3220,86 @@ body.drawer-open { overflow: hidden; }
   /* Status strip tightens */
   .status-strip-r { gap: 16px; }
 
-  /* Panel tour: stack column, nav nad screen */
+  /* Panel tour MOBILE: stack column, nav UKRYTY,
+     wszystkie 5 ekranów widoczne pod sobą z mini-headerem */
   .panel-tour { padding: 80px 0; }
   .tour {
     grid-template-columns: 1fr;
-    gap: 28px;
-    margin-top: 40px;
+    gap: 0;
+    margin-top: 32px;
   }
-  .tour-nav {
-    position: static;
-    flex-direction: row;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 4px;
-    margin: 0 -20px;
-    padding-left: 20px;
-    padding-right: 20px;
+  /* Sidebar nav cards — niepotrzebny na mobile (mylący horizontal scroll) */
+  .tour-nav { display: none; }
+
+  /* Stage przestaje być fake-browser-frame — czysty stack */
+  .tour-stage { perspective: none; }
+  .tour-stage-glow { display: none; }
+  .tour-stage-frame {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
   }
-  .tour-nav::-webkit-scrollbar { display: none; }
-  .tour-card {
-    flex: 0 0 240px;
-    scroll-snap-align: start;
-    padding: 14px 14px 14px 18px;
-    grid-template-columns: 28px 1fr;
-    gap: 10px;
+  .tour-stage-chrome { display: none; }
+
+  .tour-screen-wrap {
+    position: relative;
+    aspect-ratio: auto;
+    height: auto;
+    background: transparent;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
-  .tour-card .card-num { font-size: 12px; padding-top: 1px; }
-  .tour-card .card-title { font-size: 15px; }
-  .tour-card .card-desc {
-    font-size: 12.5px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+
+  /* Mobile labels — widoczne, każdy nad swoim screenem */
+  .tour-mobile-label {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 24px 0 0;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--fg);
+    text-wrap: pretty;
   }
-  .tour-card .card-url { font-size: 11px; }
-  .chrome-url { max-width: 240px; font-size: 11.5px; }
-  .chrome-meta { display: none; }
+  .tour-mobile-label:first-child { margin-top: 0; }
+  .tour-mobile-label .lbl-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+    background: var(--accent-soft);
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  .tour-mobile-label .lbl-text { font-size: 14.5px; color: var(--fg-2); font-weight: 400; }
+  .tour-mobile-label .lbl-text strong { color: var(--fg); font-weight: 600; font-size: 16px; display: block; margin-bottom: 2px; }
+
+  /* Wszystkie screeny widoczne stack column (overrides absolute layers) */
+  .tour-screen-img,
+  .tour-screen-img.is-active {
+    position: relative;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    opacity: 1;
+    transform: none;
+    filter: none;
+    pointer-events: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow:
+      0 16px 32px -12px rgba(10,10,10,0.14),
+      0 4px 8px -4px rgba(10,10,10,0.06);
+    display: block;
+  }
 
 
   /* Security: tighter gap when stacking */
@@ -3411,14 +3454,15 @@ body.drawer-open { overflow: hidden; }
   .case-cta { flex-direction: column; align-items: stretch; gap: 8px; }
   .case-cta .btn { justify-content: center; }
 
-  /* PANEL TOUR — small mobile */
+  /* PANEL TOUR — small mobile (≤640) */
   .panel-tour { padding: 56px 0; }
-  .tour { margin-top: 32px; gap: 20px; }
-  .tour-card { flex-basis: 220px; padding: 12px 12px 12px 16px; }
-  .tour-stage-frame { border-radius: 12px; }
-  .tour-stage-chrome { padding: 8px 10px; gap: 6px; }
-  .chrome-dot { width: 9px; height: 9px; }
-  .chrome-url { font-size: 11px; padding: 4px 10px; max-width: none; margin: 0 0 0 8px; }
+  .tour { margin-top: 24px; }
+  .tour-screen-wrap { gap: 12px; }
+  .tour-mobile-label { margin-top: 20px; gap: 10px; }
+  .tour-mobile-label .lbl-text { font-size: 13.5px; }
+  .tour-mobile-label .lbl-text strong { font-size: 15px; }
+  .tour-mobile-label .lbl-num { font-size: 11px; padding: 3px 7px; }
+  .tour-screen-img { border-radius: 10px; }
 
   /* SECURITY */
   .security { padding: 56px 0; }
