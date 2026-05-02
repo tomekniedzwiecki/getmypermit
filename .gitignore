@@ -1,39 +1,4 @@
-.vercel
-.env
-.env.local
-.env.*.local
-*.env
-node_modules/
-supabase/.temp/
-
-# Wrazliwe dane - NIGDY na git ani na Vercel
-dane_od_pawla/
-dane_od_pawla/_preview/
-*.numbers
-*.xlsx
-CRM.docx
-
-# Dokumenty planowania CRM - opisuja strukture wrazliwych danych Pawla
-CRM_PLAN.md
-CRM_UI_PLAN.md
-CRM_*_PLAN.md
-PAWEL_*.md
-WDROZENIE_*.md
-AUDYT_*.md
-!docs/AUDYT_*.md
-PLAN_POPRAWEK_*.md
-BEZPIECZENSTWO_*.md
-MAIL_DLA_PAWLA.md
-*_DLA_PAWLA*.md
-BRIEF_COWORKER_*.md
-IMPLEMENTATION_PLAN.md
-IMPROVEMENT_CHECKLIST.md
-KAMPANIA_*.md
-KAMPANIA_*.json
-PLAN_MOBILE_PWA.md
-
-# Spike artifacts — test outputy, nie commitujemy
-_spike_test_template*.docx
-spike_output*.docx
-test_*.docx
-supabase/seed/test_pawel_cases.sql
+# Materiały robocze (wytyczne, prototypy, paczki Claude Design)
+moc/MOC*.pdf
+moc/claude desing projekt/
+moc/moc - panel pracodawcy/
