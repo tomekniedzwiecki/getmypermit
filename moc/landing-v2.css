@@ -146,6 +146,10 @@ a { color: inherit; text-decoration: none; }
   display: inline-block;
 }
 .h-hero .line { display: block; }
+.h-hero .nobreak {
+  white-space: nowrap;
+  display: inline-block;
+}
 /* Hero pierwszy <br/> może wpaść w środek na bardzo wąskim - ukryjmy decoracyjne br */
 @media (max-width: 380px) {
   .h-hero br { display: none; }
