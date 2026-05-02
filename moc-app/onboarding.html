@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Onboarding · Getmypermit Panel pracodawcy</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f46e5'/%3E%3Ctext x='16' y='22' font-family='Inter, sans-serif' font-weight='700' font-size='18' fill='white' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e0e7ff 100%);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    color: #0f172a;
+  }
+  .card {
+    background: white; border-radius: 16px; padding: 40px;
+    width: 100%; max-width: 520px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08); margin: 16px;
+  }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  p { color: #475569; line-height: 1.6; margin: 0 0 18px; font-size: 14px; }
+  .pending-list { list-style: none; padding: 0; margin: 18px 0; }
+  .pending-list li {
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .accept-btn {
+    background: #4f46e5; color: white; border: none; border-radius: 8px;
+    padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .accept-btn:hover { background: #4338ca; }
+  .empty {
+    background: #f8fafc; border-radius: 10px; padding: 24px;
+    text-align: center; color: #64748b;
+  }
+  .signout {
+    background: none; border: 1px solid #e2e8f0; padding: 8px 14px;
+    border-radius: 8px; cursor: pointer; font-size: 13px; color: #475569;
+    margin-top: 18px;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="card" id="card">
+  <h1>Witaj w Getmypermit</h1>
+  <p>Czekasz na pełen dostęp. Poniżej Twoje zaproszenia do firm — kliknij <strong>Zaakceptuj</strong> żeby przejść do panelu.</p>
+
+  <div id="state">
+    <div class="empty">Sprawdzam zaproszenia…</div>
+  </div>
+
+  <button class="signout" id="signout">Wyloguj</button>
+</div>
+
+<script src="lib/supabase.js"></script>
+<script>
+  document.getElementById('signout').addEventListener('click', async () => {
+    await window.db.auth.signOut();
+    window.location.href = '/login.html';
+  });
+
+  (async () => {
+    const { data: { user }, error: userErr } = await window.db.auth.getUser();
+    if (userErr || !user) {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    // Pobierz wszystkie rekordy moc_company_users dla tego usera (w tym pending)
+    const { data, error } = await window.db
+      .from('moc_company_users')
+      .select('id, company_id, role, accepted_at, is_active, company:moc_companies(id, name, slug)')
+      .eq('user_id', user.id)
+      .eq('is_active', true);
+
+    const stateEl = document.getElementById('state');
+    if (error) {
+      stateEl.innerHTML = `<div class="empty" style="color:#dc2626">Błąd: ${error.message}</div>`;
+      return;
+    }
+    if (!data || data.length === 0) {
+      stateEl.innerHTML = '<div class="empty">Brak zaproszeń. Skontaktuj się ze swoją firmą — niech zaproszą Cię w panelu Getmypermit.</div>';
+      return;
+    }
+
+    // Jeśli ma już zaakceptowaną firmę — przekieruj na index
+    const accepted = data.find((r) => r.accepted_at);
+    if (accepted) {
+      window.location.href = '/index.html';
+      return;
+    }
+
+    // Lista pending zaproszeń
+    const pending = data.filter((r) => !r.accepted_at);
+    stateEl.innerHTML = '<ul class="pending-list">' + pending.map((r) => `
+      <li>
+        <div>
+          <strong>${r.company?.name || '?'}</strong>
+          <div style="font-size:12px;color:#64748b">Rola: ${r.role}</div>
+        </div>
+        <button class="accept-btn" data-id="${r.id}">Zaakceptuj</button>
+      </li>
+    `).join('') + '</ul>';
+
+    document.querySelectorAll('.accept-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true; btn.textContent = '...';
+        // UWAGA: RLS blokuje samodzielną zmianę accepted_at — musimy iść przez RPC.
+        // Edge function `moc-accept-invitation` (do napisania w następnej iteracji).
+        // Tymczasowo: ten button TYLKO informuje że trzeba poprosić admina firmy.
+        window.toast.info('Akceptacja zaproszeń odbywa się przez magic link wysyłany przez admina firmy. Skontaktuj się z administratorem.');
+        btn.disabled = false; btn.textContent = 'Zaakceptuj';
+      });
+    });
+  })();
+</script>
+</body>
+</html>

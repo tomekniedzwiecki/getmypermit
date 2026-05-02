@@ -1,4 +1,54 @@
-# Materiały robocze (wytyczne, prototypy, paczki Claude Design)
+# ============================================================
+#  KRYTYCZNE — NIGDY nie wrzucaj tych do publicznego repo
+# ============================================================
+
+# Sekrety + .env
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Dane klientów (PII, RODO)
+dane_od_pawla/
+**/_backup/
+**/_preview/
+
+# Wewnętrzne dokumenty biznesowe (wytyczne, RODO audyty, mail wewn.)
+docs/spec/
+docs/marketing/
 moc/MOC*.pdf
+docs/redesign/Getmypermit*/
+
+# Backend Supabase migrations (mogą zawierać schema info, RLS, seed)
+moc-app/.env*
+moc-supabase/
+supabase/seed/
+supabase/.temp/
+
+# Wszystkie raw spreadsheets
+*.xlsx
+*.docx
+*.numbers
+*.pdf
+
+# ============================================================
+#  Build / dependencies / lokalny config
+# ============================================================
+node_modules/
+.vercel/
+.next/
+.cache/
+dist/
+build/
+
+# Materiały robocze (Claude Design paczki)
 moc/claude desing projekt/
 moc/moc - panel pracodawcy/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

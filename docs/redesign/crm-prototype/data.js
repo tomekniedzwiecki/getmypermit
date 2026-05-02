@@ -163,6 +163,133 @@ window.GMP_DATA = {
     { employerId: "EM-07", workerName: "Phan Thi Lan",          residenceUntil: "2026-09-30", workUntil: "2026-09-30", status: "ok" },
     { employerId: "EM-07", workerName: "Nguyen Van An",         residenceUntil: "2026-08-30", workUntil: "2026-08-30", status: "ok" },
   ],
+
+  // === DASHBOARD-SPECIFIC MOCKS (1:1 z prod dashboard.html) ===
+
+  dashboardKpi: {
+    activeTotal: 184,             // gmp_cases status IN aktywna|zlecona
+    activeNewWeek: 12,            // nowe w ostatnim tygodniu
+    debtRemaining: 23800,         // gmp_collection_overview WHERE status=active
+    debtCount: 9,
+    revenueMonth: 51200,          // gmp_payments fee tego miesiąca
+    revenueTrendPct: 14,          // vs poprzedni miesiąc
+    alertsInactive30: 7,          // gmp_case_alerts inactivity_level=inactive_30
+    upcomingAmount: 18400,        // gmp_upcoming_installments 14d
+    upcomingCount: 6,
+    upcomingUrgent: 2,
+    successPct: 91,               // gmp_case_dashboard_kpi
+    successPositive: 32,
+    successTotal: 35,
+  },
+
+  todayBar: {
+    meetings: 3,
+    fingerprints: 2,
+    tasks: 5,
+    leads24h: 4,
+  },
+
+  alertReasons: {
+    brakPracownika: 4,
+    brakUrzedu: 2,
+    brakKlienta: 3,
+  },
+
+  pipelineCounts: {
+    'lead': 6,
+    'weryfikacja-dokumentow': 18,
+    'zlozenie-wniosku': 14,
+    'osobiste': 22,
+    'po-osobistym': 31,
+    'oczek-decyzji': 67,
+    'odwolanie': 8,
+  },
+
+  inactiveCases: [
+    { caseId: "GMP-2026-00184", clientName: "Mariia Petrenko", phone: "+48 600 123 456", caseNumber: "GMP-2026-00184", stage: "Po osobistym", daysInactive: 28, level: 'inactive_30', reason: 'brak_urzedu',     note: "Wniosek złożony, MUW nie odpowiada od 28 dni" },
+    { caseId: "GMP-2026-00231", clientName: "Mohammad Nazari", phone: "+48 606 789 012", caseNumber: "GMP-2026-00231", stage: "Po osobistym", daysInactive: 25, level: 'inactive_30', reason: 'brak_klienta',    note: "Klient nie dosłał PIT-37 mimo 2 ponagleń" },
+    { caseId: "GMP-2026-00203", clientName: "Nguyen Van An",   phone: "+48 602 345 678", caseNumber: "GMP-2026-00203", stage: "Weryfikacja", daysInactive: 22, level: 'inactive_30', reason: 'brak_pracownika', note: "Asystent miał zweryfikować paszport, brak akcji" },
+    { caseId: "GMP-2026-00210", clientName: "Aslan Berdyev",   phone: "+48 603 456 789", caseNumber: "GMP-2026-00210", stage: "Złożenie", daysInactive: 21, level: 'inactive_20', reason: 'brak_klienta',    note: "Klient nie potwierdził danych zatrudnienia" },
+  ],
+
+  debtTop5: [
+    { rank: 1, caseId: "GMP-2026-00271", clientName: "Mariia Petrenko",  employer: "Polmlek",       lawyerId: "U-01", daysSinceActivity: 102, remaining: 1200, priorityScore: 98 },
+    { rank: 2, caseId: "GMP-2026-00244", clientName: "Adebayo Okafor",   employer: "Castorama",     lawyerId: null,    daysSinceActivity: 75,  remaining: 800,  priorityScore: 84 },
+    { rank: 3, caseId: "GMP-2026-00263", clientName: "Phan Thi Lan",     employer: "Dolina Smaków", lawyerId: "U-02", daysSinceActivity: 38,  remaining: 3800, priorityScore: 76 },
+    { rank: 4, caseId: "GMP-2026-00238", clientName: "Lakshmi Ramanan",  employer: "TransLog 24",   lawyerId: "U-04", daysSinceActivity: 12,  remaining: 640,  priorityScore: 62 },
+    { rank: 5, caseId: "GMP-2026-00203", clientName: "Nguyen Van An",    employer: "Dolina Smaków", lawyerId: "U-01", daysSinceActivity: 8,   remaining: 100,  priorityScore: 51 },
+  ],
+
+  freshLeads: [
+    { id: "LD-A", first: "Andrzej",   last: "Kowalski",       phone: "+48 600 111 222", permitType: "Pobyt czasowy + praca", situation: "Przedłużenie po 3 latach", location: "Wrocław (dolnośląskie)", region: 'in', leadType: 'hot',  status: 'new',       createdAt: "2026-04-30 16:14" },
+    { id: "LD-B", first: "Beata",     last: "Nowicka",        phone: "+48 600 222 333", permitType: "Pakiet 5 cudzoziemców", situation: "Pracodawca, branża handel", location: "Warszawa (mazowieckie)", region: 'out',leadType: 'hot',  status: 'contacted', createdAt: "2026-04-30 11:08" },
+    { id: "LD-C", first: "Cezary",    last: "Lis",            phone: "+48 600 333 444", permitType: "Pobyt rezydenta UE", situation: "Po 5 latach pobytu",    location: "Kraków (małopolskie)",region: 'out',leadType: 'warm', status: 'new',       createdAt: "2026-04-30 09:42" },
+    { id: "LD-D", first: "Dorota",    last: "Woźniak",   phone: "+48 600 444 555", permitType: "Konsultacja",         situation: "Niejasna sytuacja zatrudnienia", location: "Wrocław (dolnośląskie)", region: 'in', leadType: null,   status: 'new',       createdAt: "2026-04-29 17:55" },
+    { id: "LD-E", first: "Edward",    last: "Kamiński",  phone: "+48 600 555 666", permitType: "Zezwolenie typ A",     situation: "3 nowi pracownicy",     location: "Kraków (małopolskie)",region: 'out',leadType: 'warm', status: 'contacted', createdAt: "2026-04-29 14:20" },
+    { id: "LD-F", first: "Filip",     last: "Mazurek",        phone: "+48 600 666 777", permitType: "Karta Polaka",        situation: "Dziadkowie z Wileńszczyzny", location: "Wrocław (dolnośląskie)", region: 'in', leadType: null,   status: 'new',       createdAt: "2026-04-29 10:08" },
+  ],
+
+  revenueMonths: [
+    { m: "Maj '25",  amount: 28400 },
+    { m: "Cze '25",  amount: 31200 },
+    { m: "Lip '25",  amount: 29800 },
+    { m: "Sie '25",  amount: 32100 },
+    { m: "Wrz '25",  amount: 35400 },
+    { m: "Paź '25", amount: 38200 },
+    { m: "Lis '25",  amount: 42100 },
+    { m: "Gru '25",  amount: 39800 },
+    { m: "Sty '26",  amount: 41200 },
+    { m: "Lut '26",  amount: 38600 },
+    { m: "Mar '26",  amount: 44800 },
+    { m: "Kwi '26",  amount: 51200, current: true },
+  ],
+
+  financeStructure: {
+    cash:    { amount: 18400, pct: 36 },
+    transfer:{ amount: 24600, pct: 48 },
+    invoice: { amount: 8200,  pct: 16 },
+    toIssue: 6,
+    adminFees: 12480,
+  },
+
+  newCasesByStaff: [
+    { staffId: "U-01", count: 8 },
+    { staffId: "U-04", count: 7 },
+    { staffId: "U-03", count: 5 },
+    { staffId: "U-06", count: 4 },
+    { staffId: "U-02", count: 3 },
+    { staffId: "U-05", count: 2 },
+  ],
+  newCasesTotal: 29,
+  newCasesAvg: 0.97,
+  newCasesTrendPct: 18,
+
+  teamWorkload: [
+    { staffId: "U-01", active: 38, newMonth: 8, alerts: 3, overdueTasks: 1, loadPct: 92 },
+    { staffId: "U-04", active: 41, newMonth: 7, alerts: 2, overdueTasks: 0, loadPct: 100 },
+    { staffId: "U-03", active: 22, newMonth: 5, alerts: 6, overdueTasks: 2, loadPct: 54 },
+    { staffId: "U-06", active: 19, newMonth: 4, alerts: 4, overdueTasks: 1, loadPct: 46 },
+    { staffId: "U-02", active: 12, newMonth: 3, alerts: 0, overdueTasks: 0, loadPct: 29 },
+    { staffId: "U-05", active: 8,  newMonth: 2, alerts: 1, overdueTasks: 0, loadPct: 19 },
+  ],
+
+  fullActivityFeed: [
+    { id: "FA-01", type: "stage_change",  caseId: "GMP-2026-00184", clientName: "Mariia Petrenko",  content: 'Zmiana etapu z "Osobiste" na "Po osobistym"', authorId: "U-01", at: "2026-04-30 13:20" },
+    { id: "FA-02", type: "payment",       caseId: "GMP-2026-00210", clientName: "Aslan Berdyev",    content: "Klient przekazał opłatę wniosku 440 PLN",     authorId: "U-04", at: "2026-04-30 12:48" },
+    { id: "FA-03", type: "letter_certified", caseId: "GMP-2026-00191", clientName: "Oleksandr Kovalenko", content: "UPO odebrane (list polecony)",                authorId: "U-04", at: "2026-04-30 11:14" },
+    { id: "FA-04", type: "document",      caseId: "GMP-2026-00203", clientName: "Nguyen Van An",    content: "Wgrano paszport (skan, 2.4 MB)",              authorId: "U-03", at: "2026-04-30 10:18" },
+    { id: "FA-05", type: "phone_call",    caseId: "GMP-2026-00184", clientName: "Mariia Petrenko",  content: "Rozmowa z klientką, potwierdzony termin spotkania 5 maja", authorId: "U-01", at: "2026-04-30 09:52" },
+    { id: "FA-06", type: "stage_change",  caseId: "GMP-2026-00275", clientName: "Volodymyr Shevchenko", content: 'Zmiana etapu z "Weryfikacja dok." na "Złożenie wniosku"', authorId: "U-01", at: "2026-04-30 09:45" },
+    { id: "FA-07", type: "email",         caseId: "GMP-2026-00231", clientName: "Mohammad Nazari",  content: "Wysłano ponaglenie o brakujące dokumenty",  authorId: "U-03", at: "2026-04-30 09:14" },
+    { id: "FA-08", type: "escalation",    caseId: "GMP-2026-00184", clientName: "Mariia Petrenko",  content: "System wykrył brak ruchu 8 dni — auto-alert",     authorId: null,    at: "2026-04-30 09:00" },
+    { id: "FA-09", type: "whatsapp",      caseId: "GMP-2026-00218", clientName: "Davit Sargsyan",   content: "Potwierdzenie odbioru zaproszenia na spotkanie", authorId: "U-01", at: "2026-04-30 08:42" },
+    { id: "FA-10", type: "appointment",   caseId: "GMP-2026-00224", clientName: "Iryna Bondarenko", content: "Zaplanowano odbiór karty pobytu na 12 maja",   authorId: "U-04", at: "2026-04-29 17:12" },
+    { id: "FA-11", type: "note",          caseId: "GMP-2026-00263", clientName: "Phan Thi Lan",     content: "Notatka: czekamy na uzasadnienie odwołania ze strony klientki", authorId: "U-02", at: "2026-04-29 16:30" },
+    { id: "FA-12", type: "promise_to_pay",caseId: "GMP-2026-00263", clientName: "Phan Thi Lan",     content: "Klientka obiecała zapłatę 3 800 PLN do 15 maja",  authorId: "U-02", at: "2026-04-29 14:18" },
+    { id: "FA-13", type: "sms",           caseId: "GMP-2026-00210", clientName: "Aslan Berdyev",    content: "SMS przypominający o spotkaniu 6 maja",       authorId: "U-04", at: "2026-04-29 12:00" },
+    { id: "FA-14", type: "meeting",       caseId: "GMP-2026-00250", clientName: "Volodymyr Shevchenko", content: "Spotkanie kończące — odbiór dokumentów",       authorId: "U-01", at: "2026-04-29 11:00" },
+    { id: "FA-15", type: "letter",        caseId: "GMP-2026-00280", clientName: "Oleksandr Kovalenko", content: "Wysłano odwołanie listem priorytetowym",       authorId: "U-02", at: "2026-04-29 10:08" },
+  ],
 };
 
 // helpers exposed for components

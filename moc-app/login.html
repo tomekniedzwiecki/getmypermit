@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Logowanie · Getmypermit Panel pracodawcy</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f46e5'/%3E%3Ctext x='16' y='22' font-family='Inter, sans-serif' font-weight='700' font-size='18' fill='white' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e0e7ff 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f172a;
+  }
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+    margin: 16px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+  }
+  .brand-mark {
+    width: 36px; height: 36px; background: #4f46e5; color: white;
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 18px;
+  }
+  h1 { font-size: 22px; margin: 24px 0 6px; }
+  p.lead { color: #64748b; margin: 0 0 24px; font-size: 14px; line-height: 1.5; }
+  label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #334155; }
+  input[type=email], input[type=password] {
+    width: 100%; padding: 11px 14px; border: 1px solid #e2e8f0; border-radius: 9px;
+    font-size: 14px; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus {
+    border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  }
+  .row { margin-bottom: 14px; }
+  button.primary {
+    width: 100%; padding: 12px; background: #4f46e5; color: white; border: none;
+    border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s;
+  }
+  button.primary:hover { background: #4338ca; }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .divider {
+    display: flex; align-items: center; gap: 12px; margin: 20px 0;
+    color: #94a3b8; font-size: 12px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: #e2e8f0;
+  }
+  .secondary-link {
+    background: none; border: none; color: #4f46e5; cursor: pointer;
+    font-size: 13px; padding: 4px 0;
+  }
+  .footer {
+    text-align: center; margin-top: 22px; font-size: 12px; color: #94a3b8;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="card">
+  <div class="brand">
+    <div class="brand-mark">G</div>
+    <div>
+      <strong style="font-size: 14px">Getmypermit</strong>
+      <div style="font-size: 11px; color: #94a3b8">Panel pracodawcy</div>
+    </div>
+  </div>
+  <h1>Zaloguj się</h1>
+  <p class="lead">Wpisz służbowy adres email — wyślemy link do zalogowania.</p>
+
+  <form id="login-form">
+    <div class="row">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" required placeholder="anna@firma.pl" />
+    </div>
+    <div class="row" id="password-row" style="display:none">
+      <label for="password">Hasło</label>
+      <input id="password" type="password" autocomplete="current-password" />
+    </div>
+    <button type="submit" class="primary" id="submit-btn">Wyślij link logowania</button>
+  </form>
+
+  <div class="divider">lub</div>
+  <button type="button" class="secondary-link" id="toggle-mode">Zaloguj się hasłem</button>
+
+  <div class="footer">
+    Pomoc: <a href="mailto:wsparcie@getmypermit.pl" style="color: #4f46e5; text-decoration: none">wsparcie@getmypermit.pl</a>
+  </div>
+</div>
+
+<script src="lib/supabase.js"></script>
+<script>
+  let mode = 'magic'; // 'magic' | 'password'
+  const form = document.getElementById('login-form');
+  const passwordRow = document.getElementById('password-row');
+  const submitBtn = document.getElementById('submit-btn');
+  const toggleBtn = document.getElementById('toggle-mode');
+
+  toggleBtn.addEventListener('click', () => {
+    if (mode === 'magic') {
+      mode = 'password';
+      passwordRow.style.display = '';
+      submitBtn.textContent = 'Zaloguj';
+      toggleBtn.textContent = 'Wyślij link logowania zamiast hasła';
+    } else {
+      mode = 'magic';
+      passwordRow.style.display = 'none';
+      submitBtn.textContent = 'Wyślij link logowania';
+      toggleBtn.textContent = 'Zaloguj się hasłem';
+    }
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    const email = document.getElementById('email').value.trim();
+    try {
+      if (mode === 'magic') {
+        const { error } = await window.db.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin + '/index.html' },
+        });
+        if (error) throw error;
+        window.toast.success('Sprawdź skrzynkę — wysłaliśmy link logowania.');
+        submitBtn.textContent = 'Link wysłany ✓';
+      } else {
+        const password = document.getElementById('password').value;
+        const { error } = await window.db.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        window.location.href = '/index.html';
+      }
+    } catch (err) {
+      window.toast.error(err.message || 'Błąd logowania');
+      submitBtn.disabled = false;
+    }
+  });
+
+  // Jeśli już zalogowany — przekieruj
+  (async () => {
+    const { data: { user } } = await window.db.auth.getUser();
+    if (user) window.location.href = '/index.html';
+  })();
+</script>
+</body>
+</html>

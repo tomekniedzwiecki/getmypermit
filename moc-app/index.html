@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Getmypermit · Panel pracodawcy</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f46e5'/%3E%3Ctext x='16' y='22' font-family='Inter, sans-serif' font-weight='700' font-size='18' fill='white' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<link rel="stylesheet" href="styles.css" />
+
+<!-- React + Babel (rozwijowe — w prod warto przerzucić na bundle) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="root">
+    <div id="boot-loader" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Inter,system-ui,sans-serif;color:#475569">
+        <div style="width:48px;height:48px;border:3px solid #e2e8f0;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+        <div style="font-size:14px">Ładuję panel…</div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</div>
+
+<!-- Klient + helpers + auth + data layer -->
+<script src="lib/supabase.js"></script>
+<script src="lib/auth.js"></script>
+<script src="lib/data.js"></script>
+
+<!-- Komponenty React (skopiowane z wzorca v2) -->
+<script type="text/babel" src="components/tweaks-panel.jsx"></script>
+<script type="text/babel" src="components/Primitives.jsx"></script>
+<script type="text/babel" src="components/Sidebar.jsx"></script>
+<script type="text/babel" src="components/Dashboard.jsx"></script>
+<script type="text/babel" src="components/ForeignersList.jsx"></script>
+<script type="text/babel" src="components/ForeignerDrawer.jsx"></script>
+<script type="text/babel" src="components/Screens.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "plan": "Pro",
+  "accent": "indigo",
+  "density": "comfortable",
+  "tone": "balanced"
+}/*EDITMODE-END*/;
+
+const ACCENT_PALETTES = {
+  indigo:  { accent: '#4f46e5', hover: '#4338ca', soft: '#eef2ff', soft2: '#e0e7ff', text: '#3730a3', ring: 'rgba(79,70,229,0.35)' },
+  teal:    { accent: '#0d9488', hover: '#0f766e', soft: '#f0fdfa', soft2: '#ccfbf1', text: '#115e59', ring: 'rgba(13,148,136,0.32)' },
+  blue:    { accent: '#2563eb', hover: '#1d4ed8', soft: '#eff6ff', soft2: '#dbeafe', text: '#1e40af', ring: 'rgba(37,99,235,0.32)' },
+  emerald: { accent: '#059669', hover: '#047857', soft: '#ecfdf5', soft2: '#d1fae5', text: '#065f46', ring: 'rgba(5,150,105,0.32)' },
+  rose:    { accent: '#e11d48', hover: '#be123c', soft: '#fff1f2', soft2: '#ffe4e6', text: '#9f1239', ring: 'rgba(225,29,72,0.32)' },
+};
+
+function applyAccent(name) {
+  const p = ACCENT_PALETTES[name] || ACCENT_PALETTES.indigo;
+  const r = document.documentElement.style;
+  r.setProperty('--accent', p.accent);
+  r.setProperty('--accent-hover', p.hover);
+  r.setProperty('--accent-soft', p.soft);
+  r.setProperty('--accent-soft-2', p.soft2);
+  r.setProperty('--accent-text', p.text);
+  r.setProperty('--accent-ring', p.ring);
+}
+
+function planFromSubscription(plan) {
+  if (!plan) return 'Basic';
+  return { basic: 'Basic', medium: 'Medium', pro: 'Pro' }[plan] || 'Basic';
+}
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [route, setRoute] = React.useState('dashboard');
+  const [drawerForeignerId, setDrawerForeignerId] = React.useState(null);
+
+  // DEMO MODE: auth bypass, fixed company_id (Logistyka Wschód).
+  // TODO: po przeniesieniu do osobnego Supabase projektu — przywrócić auth flow.
+  const DEMO_COMPANY_ID = '11111111-1111-1111-1111-111111111111';
+  const DEMO_PROFILE = {
+    company_id: DEMO_COMPANY_ID,
+    full_name: 'Demo Owner',
+    role: 'owner',
+    company: { id: DEMO_COMPANY_ID, name: 'Logistyka Wschód Sp. z o.o.' },
+  };
+
+  const [authState, setAuthState] = React.useState({ status: 'loading', user: null, profile: null });
+  const [data, setData] = React.useState(null);
+  const [subscription, setSubscription] = React.useState(null);
+
+  const refreshData = React.useCallback(async () => {
+    const d = await window.mocData.loadCompanyData(DEMO_COMPANY_ID);
+    setData(d);
+  }, []);
+
+  React.useEffect(() => {
+    (async () => {
+      setAuthState({ status: 'ready', user: { email: 'demo@getmypermit.pl' }, profile: DEMO_PROFILE });
+
+      const { data: subs } = await window.db
+        .from('moc_subscriptions')
+        .select('plan, status, current_period_end')
+        .eq('company_id', DEMO_COMPANY_ID)
+        .in('status', ['trial', 'active'])
+        .maybeSingle();
+      if (subs) setSubscription(subs);
+
+      await refreshData();
+
+      const loader = document.getElementById('boot-loader');
+      if (loader) loader.remove();
+    })();
+  }, [refreshData]);
+
+  React.useEffect(() => { applyAccent(tweaks.accent); }, [tweaks.accent]);
+  React.useEffect(() => {
+    document.body.classList.toggle('density-compact', tweaks.density === 'compact');
+  }, [tweaks.density]);
+
+  if (authState.status !== 'ready' || !data) {
+    return null;  // boot-loader z DOM-a pokazuje
+  }
+
+  const drawerForeigner = data.foreigners.find(f => f.id === drawerForeignerId);
+  const planLabel = subscription ? planFromSubscription(subscription.plan) : tweaks.plan;
+  const companyName = authState.profile.company?.name || 'Firma';
+
+  const breadcrumbs = {
+    dashboard: ['Pulpit', 'Dashboard'],
+    foreigners: ['Cudzoziemcy', 'Lista'],
+    documents: ['Cudzoziemcy', 'Dokumenty'],
+    events: ['Cudzoziemcy', 'Zdarzenia'],
+    calendar: ['Cudzoziemcy', 'Kalendarz'],
+    onboarding: ['Cudzoziemcy', 'Dodaj cudzoziemca'],
+    alerts: ['Pulpit', 'Alerty'],
+    subcontractors: ['Łańcuch dostawców', 'Podwykonawcy'],
+    cases: ['Kancelaria', 'Sprawy zlecone'],
+    reports: ['Kancelaria', 'Raporty compliance'],
+    settings: ['System', 'Ustawienia'],
+  };
+  const crumbs = breadcrumbs[route] || ['Panel'];
+
+  return (
+    <div className="app">
+      <Sidebar active={route} onNav={(id) => { setRoute(id); window.scrollTo(0, 0); }} plan={planLabel} userName={authState.profile.full_name} userRole={authState.profile.role} companyName={companyName} onSignOut={() => window.mocAuth.signOut()} />
+      <main className="main">
+        <div className="topbar">
+          <div className="breadcrumbs">
+            <i className="ph ph-buildings" style={{ fontSize: 14 }}></i>
+            <span>{companyName}</span>
+            <i className="ph ph-caret-right" style={{ fontSize: 10, color: 'var(--fg-faint)' }}></i>
+            <span>{crumbs[0]}</span>
+            <i className="ph ph-caret-right" style={{ fontSize: 10, color: 'var(--fg-faint)' }}></i>
+            <strong>{crumbs[1]}</strong>
+          </div>
+          <div className="topbar-search">
+            <i className="ph ph-magnifying-glass"></i>
+            <input placeholder="Szukaj cudzoziemca, dokumentu, sprawy…" />
+          </div>
+          <button className="icon-btn" title="Pomoc"><i className="ph ph-question"></i></button>
+          <button className="icon-btn" title="Powiadomienia"><i className="ph ph-bell"></i><span className="dot"></span></button>
+        </div>
+
+        {route === 'dashboard'      && <Dashboard data={data} onOpenForeigner={setDrawerForeignerId} plan={planLabel} />}
+        {route === 'foreigners'     && <ForeignersList data={data} onOpenForeigner={setDrawerForeignerId} />}
+        {route === 'documents'      && <DocumentsScreen data={data} onOpenForeigner={setDrawerForeignerId} />}
+        {route === 'events'         && <EventsScreen data={data} onOpenForeigner={setDrawerForeignerId} />}
+        {route === 'calendar'       && <CalendarScreen data={data} />}
+        {route === 'onboarding'     && <OnboardingScreen companyId={DEMO_COMPANY_ID} onCreated={refreshData} onNav={(id) => { setRoute(id); window.scrollTo(0, 0); }} />}
+        {route === 'alerts'         && <AlertsScreen data={data} onOpenForeigner={setDrawerForeignerId} onChanged={refreshData} />}
+        {route === 'subcontractors' && <SubcontractorsScreen data={data} />}
+        {route === 'cases'          && <CasesScreen data={data} plan={planLabel} />}
+        {route === 'reports'        && <ReportsScreen plan={planLabel} />}
+        {route === 'settings'       && <SettingsScreen />}
+      </main>
+
+      {drawerForeigner && (
+        <ForeignerDrawer foreigner={drawerForeigner} data={data} companyId={DEMO_COMPANY_ID} onClose={() => setDrawerForeignerId(null)} onChanged={refreshData} />
+      )}
+
+      <TweaksPanel title="Tweaks (dev)" defaultOpen={false}>
+        <TweakSection title="Akcent" subtitle="Kolor brandowy panelu">
+          <TweakSelect
+            value={tweaks.accent}
+            onChange={(v) => setTweak('accent', v)}
+            options={[
+              { value: 'indigo', label: 'Indigo (domyślnie)' },
+              { value: 'teal', label: 'Teal — compliance' },
+              { value: 'blue', label: 'Niebieski — legal' },
+              { value: 'emerald', label: 'Emerald — TN' },
+              { value: 'rose', label: 'Rose — warning' },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection title="Gęstość" subtitle="Wysokość wierszy w listach">
+          <TweakRadio
+            value={tweaks.density}
+            onChange={(v) => setTweak('density', v)}
+            options={[
+              { value: 'comfortable', label: 'Komfort' },
+              { value: 'compact', label: 'Zwarty' },
+            ]}
+          />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
