@@ -2097,6 +2097,246 @@ section { position: relative; }
 }
 
 /* ============================================================
+   AUDIT DEMO — dowód działania (karta audytu cudzoziemca)
+   ============================================================ */
+.audit-demo {
+  background: var(--bg-2);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.audit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 56px;
+  align-items: start;
+  margin-top: 48px;
+}
+
+/* MOCKUP — audit card */
+.audit-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 24px 56px -20px rgba(10,10,10,0.16),
+    0 8px 16px -8px rgba(10,10,10,0.08);
+}
+
+.audit-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 0 0 22px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--hairline);
+}
+.audit-person { display: flex; gap: 14px; align-items: center; }
+.audit-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  color: white;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.audit-person strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.012em;
+}
+.audit-meta {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+
+.audit-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.audit-verdict.warn {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.32);
+}
+.audit-verdict i { font-size: 14px; }
+
+/* CHECKS list */
+.audit-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.check {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  align-items: flex-start;
+}
+.check-icon {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.check-ok      .check-icon { background: rgba(16, 185, 129, 0.15); color: #047857; }
+.check-warn    .check-icon { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+.check-danger  .check-icon { background: rgba(220, 38, 38, 0.15);  color: #b91c1c; }
+.check-unknown .check-icon { background: rgba(148, 163, 184, 0.20); color: #475569; }
+
+.check-content {
+  min-width: 0;
+}
+.check-content strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.005em;
+}
+.check-content > span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--fg-2);
+  margin-top: 3px;
+  font-feature-settings: 'tnum' 1;
+}
+.check-content .audit-mono {
+  font-family: var(--font-mono);
+  color: var(--fg-1);
+  font-weight: 500;
+}
+.check-danger .check-content > span,
+.check-content .check-danger-val {
+  color: #b91c1c !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* MESSAGE box */
+.audit-message {
+  margin-top: 22px;
+  padding: 14px 16px;
+  background: rgba(245, 158, 11, 0.08);
+  border-left: 3px solid #f59e0b;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-1);
+  text-wrap: pretty;
+}
+
+/* ACTIONS */
+.audit-actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 10px;
+}
+.audit-actions .btn { flex: 1; height: 44px; }
+
+/* RIGHT — 3 tezy */
+.audit-thesis {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 96px;
+}
+.thesis-item {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+.thesis-item:hover {
+  border-color: var(--border);
+  transform: translateX(2px);
+}
+.thesis-icon {
+  width: 36px; height: 36px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.thesis-item p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--fg-1);
+  font-weight: 500;
+  text-wrap: pretty;
+}
+
+/* CTA */
+.audit-cta {
+  text-align: center;
+  margin-top: 56px;
+}
+
+@media (max-width: 1024px) {
+  .audit-grid { grid-template-columns: 1fr; gap: 32px; margin-top: 40px; }
+  .audit-thesis {
+    position: static;
+    flex-direction: row;
+    gap: 12px;
+  }
+  .thesis-item { flex: 1; }
+}
+
+@media (max-width: 768px) {
+  .audit-thesis { flex-direction: column; }
+}
+
+@media (max-width: 640px) {
+  .audit-card { padding: 22px; border-radius: 14px; }
+  .audit-card-head { flex-direction: column; align-items: stretch; }
+  .audit-person strong { font-size: 15px; }
+  .check-content strong { font-size: 13.5px; }
+  .check-content > span { font-size: 12px; }
+  .audit-message { font-size: 13px; padding: 12px 14px; }
+  .audit-actions { flex-direction: column; }
+  .audit-cta { margin-top: 40px; }
+}
+
+/* ============================================================
    CASE STUDY HERO
    ============================================================ */
 .case {
