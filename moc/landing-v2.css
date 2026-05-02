@@ -2102,7 +2102,6 @@ section { position: relative; }
 .audit-demo {
   background: var(--bg-2);
   border-top: 1px solid var(--hairline);
-  border-bottom: 1px solid var(--hairline);
 }
 
 .audit-grid {
@@ -2568,7 +2567,6 @@ section { position: relative; }
 .calc {
   padding: 120px 0;
   background: var(--bg-2);
-  border-top: 1px solid var(--hairline);
   border-bottom: 1px solid var(--hairline);
 }
 .calc-grid {
