@@ -3642,8 +3642,14 @@ body.drawer-open { overflow: hidden; }
 
 /* ============================================================
    PREVENT HORIZONTAL SCROLL
+   `overflow-x: hidden` na html/body czyni je scroll containerem
+   i łamie position:sticky (przykleja się do body, nie viewport).
+   `overflow-x: clip` ukrywa nadwyżkę BEZ tworzenia scroll containera.
    ============================================================ */
-html, body { overflow-x: hidden; }
+html, body { overflow-x: hidden; } /* fallback dla < Chrome 90 / Safari 16 */
+@supports (overflow-x: clip) {
+  html, body { overflow-x: clip; }
+}
 
 @media print {
   .topbar, .nav, .mobile-drawer, .nav-burger, .float-card { display: none !important; }
