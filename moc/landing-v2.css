@@ -121,7 +121,8 @@ a { color: inherit; text-decoration: none; }
 
 .h-hero {
   font-family: var(--font-display);
-  font-size: clamp(28px, 7vw, 92px);
+  /* Skalowanie per breakpoint przez clamp() — defaultowo dla najmniejszych */
+  font-size: clamp(30px, 9vw, 92px);
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.04;
@@ -132,6 +133,18 @@ a { color: inherit; text-decoration: none; }
   word-break: keep-all;
   overflow-wrap: break-word;
   hyphens: manual;
+}
+/* Większe ekrany mobile (414+, np. iPhone Pro Max) — większy font */
+@media (min-width: 414px) {
+  .h-hero { font-size: clamp(36px, 9.5vw, 92px); }
+}
+/* Tablet portrait + (640+) — kolejny skok */
+@media (min-width: 640px) {
+  .h-hero { font-size: clamp(48px, 8vw, 92px); letter-spacing: -0.038em; }
+}
+/* Desktop (1024+) — płynne dochodzenie do max */
+@media (min-width: 1024px) {
+  .h-hero { font-size: clamp(72px, 7vw, 96px); line-height: 1.02; }
 }
 .h-hero .serif-em {
   font-size: 1em;
