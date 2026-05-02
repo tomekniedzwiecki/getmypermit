@@ -121,19 +121,35 @@ a { color: inherit; text-decoration: none; }
 
 .h-hero {
   font-family: var(--font-display);
-  font-size: clamp(48px, 7vw, 92px);
+  font-size: clamp(28px, 7vw, 92px);
   font-weight: 600;
   letter-spacing: -0.035em;
-  line-height: 1.06;
+  line-height: 1.04;
   margin: 0 0 26px;
   color: var(--fg);
   text-wrap: balance;
+  /* Długie słowo "cudzoziemców" nie ma się łamać w środku */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  hyphens: manual;
 }
 .h-hero .serif-em {
   font-size: 1em;
   letter-spacing: -0.015em;
+  /* Gradient finish: ciemny emerald → indigo accent */
+  background: linear-gradient(110deg, var(--emerald) 0%, #047857 35%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  /* fallback dla starych browserów */
+  display: inline-block;
 }
 .h-hero .line { display: block; }
+/* Hero pierwszy <br/> może wpaść w środek na bardzo wąskim - ukryjmy decoracyjne br */
+@media (max-width: 380px) {
+  .h-hero br { display: none; }
+}
 
 .h-section {
   font-family: var(--font-display);
@@ -3146,7 +3162,7 @@ body.drawer-open { overflow: hidden; }
 
   .hero { padding: 56px 0 48px; }
   .hero-inner { padding: 0 20px; gap: 40px; }
-  .h-hero { font-size: 48px; line-height: 1.05; }
+  .h-hero { line-height: 1.05; }
   .hero-sub { font-size: 17px; margin-bottom: 28px; }
   .hero-trust { grid-template-columns: 1fr; max-width: 100%; }
 
@@ -3254,7 +3270,7 @@ body.drawer-open { overflow: hidden; }
     margin-bottom: 20px;
   }
   .hero-pill .badge-new { font-size: 9.5px; padding: 2px 6px; }
-  .h-hero { font-size: 36px; letter-spacing: -0.02em; }
+  .h-hero { letter-spacing: -0.025em; }
   .hero-sub { font-size: 16px; line-height: 1.5; margin-bottom: 24px; }
   .hero-ctas { flex-direction: column; gap: 10px; margin-bottom: 28px; }
   .hero-ctas .btn { width: 100%; justify-content: center; }
@@ -3563,7 +3579,7 @@ body.drawer-open { overflow: hidden; }
   /* HERO */
   .hero { padding: 28px 0 20px; }
   .hero-inner { padding: 0 14px; gap: 24px; }
-  .h-hero { font-size: 30px; }
+  /* h-hero używa clamp() — minimum 28px na <400px viewport */
   .hero-sub { font-size: 15.5px; }
   .hero-pill > span:nth-of-type(2) { font-size: 11px; }
 

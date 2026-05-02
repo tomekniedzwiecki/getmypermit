@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Getmypermit · Panel pracodawcy (v2)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f46e5'/%3E%3Ctext x='16' y='22' font-family='Inter, sans-serif' font-weight='700' font-size='18' fill='white' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+@font-face {
+  font-family: 'Phosphor';
+  src: url('https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/Phosphor.woff2') format('woff2');
+  font-display: block;
+}
+@font-face {
+  font-family: 'Phosphor-Bold';
+  src: url('https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/Phosphor-Bold.woff2') format('woff2');
+  font-display: block;
+}
+@font-face {
+  font-family: 'Phosphor-Fill';
+  src: url('https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/Phosphor-Fill.woff2') format('woff2');
+  font-display: block;
+}
+</style>
+<link rel="stylesheet" href="styles-v2.css" />
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="data.js"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="components-v2/Primitives.jsx"></script>
+<script type="text/babel" src="components-v2/Sidebar.jsx"></script>
+<script type="text/babel" src="components-v2/Dashboard.jsx"></script>
+<script type="text/babel" src="components-v2/ForeignersList.jsx"></script>
+<script type="text/babel" src="components-v2/ForeignerDrawer.jsx"></script>
+<script type="text/babel" src="components-v2/Screens.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "plan": "Medium",
+  "accent": "emerald",
+  "density": "comfortable",
+  "tone": "balanced"
+}/*EDITMODE-END*/;
+
+const ACCENT_PALETTES = {
+  indigo:  { accent: '#4f46e5', hover: '#4338ca', soft: '#eef2ff', soft2: '#e0e7ff', text: '#3730a3', ring: 'rgba(79,70,229,0.35)' },
+  teal:    { accent: '#0d9488', hover: '#0f766e', soft: '#f0fdfa', soft2: '#ccfbf1', text: '#115e59', ring: 'rgba(13,148,136,0.32)' },
+  blue:    { accent: '#2563eb', hover: '#1d4ed8', soft: '#eff6ff', soft2: '#dbeafe', text: '#1e40af', ring: 'rgba(37,99,235,0.32)' },
+  emerald: { accent: '#059669', hover: '#047857', soft: '#ecfdf5', soft2: '#d1fae5', text: '#065f46', ring: 'rgba(5,150,105,0.32)' },
+  rose:    { accent: '#e11d48', hover: '#be123c', soft: '#fff1f2', soft2: '#ffe4e6', text: '#9f1239', ring: 'rgba(225,29,72,0.32)' },
+};
+
+function applyAccent(name) {
+  const p = ACCENT_PALETTES[name] || ACCENT_PALETTES.indigo;
+  const r = document.documentElement.style;
+  r.setProperty('--accent', p.accent);
+  r.setProperty('--accent-hover', p.hover);
+  r.setProperty('--accent-soft', p.soft);
+  r.setProperty('--accent-soft-2', p.soft2);
+  r.setProperty('--accent-text', p.text);
+  r.setProperty('--accent-ring', p.ring);
+}
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [route, setRoute] = React.useState('dashboard');
+  const [drawerForeignerId, setDrawerForeignerId] = React.useState(null);
+  const data = window.GMP_DATA;
+
+  React.useEffect(() => { applyAccent(tweaks.accent); }, [tweaks.accent]);
+  React.useEffect(() => {
+    document.body.classList.toggle('density-compact', tweaks.density === 'compact');
+  }, [tweaks.density]);
+
+  const drawerForeigner = data.foreigners.find(f => f.id === drawerForeignerId);
+
+  const breadcrumbs = {
+    dashboard: ['Pulpit', 'Dashboard'],
+    foreigners: ['Cudzoziemcy', 'Lista'],
+    documents: ['Cudzoziemcy', 'Dokumenty'],
+    events: ['Cudzoziemcy', 'Zdarzenia'],
+    calendar: ['Cudzoziemcy', 'Kalendarz'],
+    onboarding: ['Cudzoziemcy', 'Dodaj cudzoziemca'],
+    alerts: ['Pulpit', 'Alerty'],
+    subcontractors: ['Łańcuch dostawców', 'Podwykonawcy'],
+    cases: ['Kancelaria', 'Sprawy zlecone'],
+    reports: ['Kancelaria', 'Raporty compliance'],
+    settings: ['System', 'Ustawienia'],
+  };
+  const crumbs = breadcrumbs[route] || ['Panel'];
+
+  return (
+    <div className="app">
+      <Sidebar active={route} onNav={(id) => { setRoute(id); window.scrollTo(0, 0); }} plan={tweaks.plan} />
+      <main className="main">
+        <div className="topbar">
+          <div className="breadcrumbs">
+            <i className="ph ph-buildings" style={{ fontSize: 14 }}></i>
+            <span>Logistyka Wschód</span>
+            <i className="ph ph-caret-right" style={{ fontSize: 10, color: 'var(--fg-faint)' }}></i>
+            <span>{crumbs[0]}</span>
+            <i className="ph ph-caret-right" style={{ fontSize: 10, color: 'var(--fg-faint)' }}></i>
+            <strong>{crumbs[1]}</strong>
+          </div>
+          <div className="topbar-search">
+            <i className="ph ph-magnifying-glass"></i>
+            <input placeholder="Szukaj cudzoziemca, dokumentu, sprawy…  ⌘K" />
+          </div>
+          <button className="icon-btn" title="Pomoc"><i className="ph ph-question"></i></button>
+          <button className="icon-btn" title="Powiadomienia"><i className="ph ph-bell"></i><span className="dot"></span></button>
+        </div>
+
+        {route === 'dashboard'      && <Dashboard data={data} onOpenForeigner={setDrawerForeignerId} plan={tweaks.plan} />}
+        {route === 'foreigners'     && <ForeignersList data={data} onOpenForeigner={setDrawerForeignerId} />}
+        {route === 'documents'      && <DocumentsScreen data={data} onOpenForeigner={setDrawerForeignerId} />}
+        {route === 'events'         && <EventsScreen data={data} onOpenForeigner={setDrawerForeignerId} />}
+        {route === 'calendar'       && <CalendarScreen data={data} />}
+        {route === 'onboarding'     && <OnboardingScreen />}
+        {route === 'alerts'         && <AlertsScreen data={data} onOpenForeigner={setDrawerForeignerId} />}
+        {route === 'subcontractors' && <SubcontractorsScreen data={data} />}
+        {route === 'cases'          && <CasesScreen data={data} plan={tweaks.plan} />}
+        {route === 'reports'        && <ReportsScreen plan={tweaks.plan} />}
+        {route === 'settings'       && <SettingsScreen />}
+      </main>
+
+      {drawerForeigner && (
+        <ForeignerDrawer foreigner={drawerForeigner} data={data} onClose={() => setDrawerForeignerId(null)} />
+      )}
+
+      <TweaksPanel title="Tweaks" defaultOpen={false}>
+        <TweakSection title="Plan" subtitle="Symuluj różne pakiety produktu — Basic, Medium, Pro">
+          <TweakRadio
+            value={tweaks.plan}
+            onChange={(v) => setTweak('plan', v)}
+            options={[
+              { value: 'Basic', label: 'Basic' },
+              { value: 'Medium', label: 'Medium' },
+              { value: 'Pro', label: 'Pro' },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection title="Akcent" subtitle="Kolor brandowy panelu">
+          <TweakSelect
+            value={tweaks.accent}
+            onChange={(v) => setTweak('accent', v)}
+            options={[
+              { value: 'indigo', label: 'Indigo (domyślnie)' },
+              { value: 'teal', label: 'Teal — compliance' },
+              { value: 'blue', label: 'Niebieski — legal' },
+              { value: 'emerald', label: 'Emerald — TN' },
+              { value: 'rose', label: 'Rose — warning' },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection title="Gęstość" subtitle="Wysokość wierszy w listach">
+          <TweakRadio
+            value={tweaks.density}
+            onChange={(v) => setTweak('density', v)}
+            options={[
+              { value: 'comfortable', label: 'Komfort' },
+              { value: 'compact', label: 'Zwarty' },
+            ]}
+          />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
