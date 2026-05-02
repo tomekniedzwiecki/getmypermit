@@ -196,8 +196,13 @@ a { color: inherit; text-decoration: none; }
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  /* fallback dla starych browserów */
+  /* inline-block + bg-clip-text obcina descender 'ą'/'ę' przy ciasnym
+     line-height. Zwiększamy line-height + padding żeby ogonek się
+     zmieścił. */
   display: inline-block;
+  line-height: 1.18;
+  padding-bottom: 0.1em;
+  margin-bottom: -0.1em;
 }
 .h-hero .line { display: block; }
 .h-hero .nobreak {
