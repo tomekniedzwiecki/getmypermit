@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Getmypermit — legalność cudzoziemców pod kontrolą</title>
+<meta name="description" content="Operacyjna platforma compliance dla zatrudniających cudzoziemców. Terminy, dokumenty, podwykonawcy, alerty. Zero kar. Zero excelu." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Instrument+Serif:ital,wght@0,400;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+
+<link rel="stylesheet" href="/moc2/landing-v2.css" />
+
+<template id="__bundler_thumbnail" data-bg-color="#0a5e3e">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#0a5e3e"/>
+    <g transform="translate(600 400)">
+      <circle r="180" fill="none" stroke="#fbfaf7" stroke-width="6" stroke-opacity="0.18"/>
+      <circle r="120" fill="none" stroke="#fbfaf7" stroke-width="6" stroke-opacity="0.28"/>
+      <g transform="translate(-90 -90)">
+        <path d="M 90 0 L 168 36 L 168 108 Q 168 156 90 180 Q 12 156 12 108 L 12 36 Z"
+              fill="none" stroke="#fbfaf7" stroke-width="8" stroke-linejoin="round"/>
+        <path d="M 56 92 L 84 120 L 130 70" fill="none" stroke="#fbfaf7" stroke-width="10"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <text x="0" y="240" text-anchor="middle" font-family="Georgia, serif" font-style="italic"
+            font-size="42" fill="#fbfaf7" fill-opacity="0.85">Getmypermit</text>
+    </g>
+  </svg>
+</template>
+</head>
+<body>
+
+<!-- ============================================================ TOP BANNER ============================================================ -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="pulse"></span>
+    <span><strong style="color: var(--inv); font-weight: 600;">Nowość · maj 2026</strong> · Mobilna aplikacja dla pracowników terenowych — skan dokumentów w 12 sekund.</span>
+    <a href="#new">Zobacz demo <i class="ph ph-arrow-right"></i></a>
+  </div>
+</div>
+
+<!-- ============================================================ NAV ============================================================ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#" class="brand">
+      <span class="brand-mark">G</span>
+      Getmypermit
+    </a>
+    <div class="nav-links">
+      <a href="#produkt">Produkt</a>
+      <a href="#how">Jak działa</a>
+      <a href="#porownanie">Porównanie</a>
+      <a href="#cennik">Cennik</a>
+      <a href="#bezpieczenstwo">Bezpieczeństwo</a>
+      <a href="#wiedza">Wiedza</a>
+    </div>
+    <div class="nav-cta">
+      <a href="#" class="btn btn-ghost">Zaloguj</a>
+      <a href="#cta" class="btn btn-primary">Umów demo</a>
+    </div>
+    <button class="nav-burger" id="nav-burger" aria-label="Otwórz menu" aria-expanded="false" aria-controls="mobile-drawer" type="button">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ============================================================ MOBILE DRAWER ============================================================ -->
+<div class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
+  <div class="mobile-drawer-inner" role="dialog" aria-label="Menu nawigacji">
+    <a href="#produkt" class="m-link">Produkt</a>
+    <a href="#how" class="m-link">Jak działa</a>
+    <a href="#porownanie" class="m-link">Porównanie</a>
+    <a href="#cennik" class="m-link">Cennik</a>
+    <a href="#bezpieczenstwo" class="m-link">Bezpieczeństwo</a>
+    <a href="#wiedza" class="m-link">Wiedza</a>
+    <a href="#faq" class="m-link">FAQ</a>
+    <div class="mobile-drawer-divider"></div>
+    <a href="#" class="btn btn-ghost btn-block">Zaloguj</a>
+    <a href="#cta" class="btn btn-primary btn-block">Umów demo</a>
+  </div>
+</div>
+
+<!-- ============================================================ HERO ============================================================ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
+
+    <div class="hero-text reveal">
+      <div class="hero-pill">
+        <span class="badge-new">Ustawa 06.2025</span>
+        <span><strong>50 000 zł</strong> kary <em style="font-family:var(--font-serif); font-style: italic; color: var(--fg-2);">× każdy</em> cudzoziemiec bez papierów</span>
+        <i class="ph ph-arrow-right"></i>
+      </div>
+      <h1 class="h-hero">
+        Ty zatrudniasz.<br />
+        <span class="serif-em">My się martwimy</span><br />
+        o resztę.
+      </h1>
+      <p class="hero-sub">
+        Twoja Marta z HR nie musi znać 200-stronicowej ustawy o cudzoziemcach. <strong>System pilnuje 365 dni w roku</strong>, kancelaria wchodzi gdy ryzyko rośnie. Spokojny HR, zero kar PIP, pełen ślad audytowy — gotowy <em style="font-family:var(--font-serif); font-style: italic;">zanim kontroler zdąży usiąść</em>.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="#kalkulator" class="btn btn-primary btn-lg" data-magnetic>
+          Sprawdź swoje ryzyko (3 min)
+          <i class="ph-bold ph-arrow-right"></i>
+        </a>
+        <a href="#panel" class="btn btn-secondary btn-lg">
+          <i class="ph ph-play-circle"></i>
+          Zobacz panel od środka
+        </a>
+      </div>
+
+      <div class="hero-trust">
+        <div class="trust-item"><i class="ph-bold ph-check"></i> Pierwszy raport ryzyka w 24h · gratis</div>
+        <div class="trust-item"><i class="ph-bold ph-check"></i> Wdrożenie w 5 dni roboczych</div>
+        <div class="trust-item"><i class="ph-bold ph-check"></i> ISO 27001 · serwery w PL</div>
+        <div class="trust-item"><i class="ph-bold ph-check"></i> Dedykowany opiekun prawny</div>
+      </div>
+    </div>
+
+    <div class="hero-shot reveal">
+      <div class="shot-frame">
+        <div class="shot-chrome">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <div class="shot-url"><i class="ph-fill ph-lock-simple"></i> app.getmypermit.pl/dashboard</div>
+        </div>
+        <div class="shot-body">
+          <aside class="shot-side">
+            <div class="shot-side-brand">
+              <span class="brand-mark sm">G</span>
+              Getmypermit
+            </div>
+            <div class="shot-side-group">Operacje</div>
+            <div class="shot-nav active"><i class="ph-fill ph-squares-four"></i> Dashboard</div>
+            <div class="shot-nav"><i class="ph ph-users-three"></i> Cudzoziemcy <span class="count" style="background:var(--surface-3); color:var(--fg-muted);">147</span></div>
+            <div class="shot-nav"><i class="ph ph-bell-ringing"></i> Alerty <span class="count">9</span></div>
+            <div class="shot-nav"><i class="ph ph-files"></i> Dokumenty</div>
+            <div class="shot-nav"><i class="ph ph-graph"></i> Raporty</div>
+            <div class="shot-side-group">Compliance</div>
+            <div class="shot-nav"><i class="ph ph-shield-check"></i> Audyt PIP</div>
+            <div class="shot-nav"><i class="ph ph-handshake"></i> Podwykonawcy <span class="count" style="background:var(--amber-bg); color:var(--amber);">2</span></div>
+          </aside>
+          <div class="shot-main">
+            <div class="shot-header">
+              <div>
+                <h3>Dzień dobry, Marta</h3>
+                <p>Wtorek, 18 listopada · 09:24 · Logistyka Wschód</p>
+              </div>
+              <div class="shot-pill">
+                <span class="dot"></span>
+                Compliance: <strong>97.4%</strong> <span class="dim">· 147 osób</span>
+              </div>
+            </div>
+
+            <div class="shot-banner">
+              <i class="ph-fill ph-warning-circle"></i>
+              <div style="flex:1;">
+                <strong>3 zezwolenia wygasają w 14 dni</strong>
+                <span>O. Boyko, M. Hrytsenko, V. Kovalchuk · skontroluj agencję pracy</span>
+              </div>
+              <button class="shot-btn">Otwórz</button>
+            </div>
+
+            <div class="shot-kpis">
+              <div class="kpi ok">
+                <div class="kpi-h"><i class="ph-fill ph-check-circle"></i> Aktywne</div>
+                <div class="kpi-v">144</div>
+                <div class="kpi-f up">+8 mies.</div>
+              </div>
+              <div class="kpi warn">
+                <div class="kpi-h"><i class="ph-fill ph-clock-countdown"></i> ≤30 dni</div>
+                <div class="kpi-v">12</div>
+                <div class="kpi-f">w toku</div>
+              </div>
+              <div class="kpi danger">
+                <div class="kpi-h"><i class="ph-fill ph-warning-circle"></i> Pilne</div>
+                <div class="kpi-v">3</div>
+                <div class="kpi-f down">≤14 dni</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-h"><i class="ph ph-trend-down"></i> Kary 2025</div>
+                <div class="kpi-v">0 zł</div>
+                <div class="kpi-f up">↓ 100%</div>
+              </div>
+            </div>
+
+            <div class="shot-card">
+              <div class="shot-card-h">
+                <div>
+                  <h4>Wymagają działania dziś</h4>
+                  <p>Posortowane wg kary za zaniechanie</p>
+                </div>
+                <span class="link">Zobacz wszystkie →</span>
+              </div>
+              <div class="shot-list">
+                <div class="row">
+                  <div class="badge danger"><span class="num">3</span><span class="lbl">dni</span></div>
+                  <div class="who">
+                    <strong>Oleksandr Boyko</strong>
+                    <span>Zezwolenie typu A · wygasa 21.11 · agencja Lider Sp. z o.o.</span>
+                  </div>
+                  <button class="shot-btn">Wnioskuj</button>
+                </div>
+                <div class="row">
+                  <div class="badge warn"><span class="num">9</span><span class="lbl">dni</span></div>
+                  <div class="who">
+                    <strong>Marta Hrytsenko</strong>
+                    <span>Karta pobytu czasowego · wygasa 27.11 · brak załącznika nr 17</span>
+                  </div>
+                  <button class="shot-btn">Uzupełnij</button>
+                </div>
+                <div class="row">
+                  <div class="badge warn"><span class="num">14</span><span class="lbl">dni</span></div>
+                  <div class="who">
+                    <strong>Viktor Kovalchuk</strong>
+                    <span>Powiadomienie do PUP — termin 02.12</span>
+                  </div>
+                  <button class="shot-btn">Wyślij</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="float-card f1">
+        <div class="float-icon ok"><i class="ph-fill ph-check"></i></div>
+        <div>
+          <strong>Audyt PIP zaliczony</strong>
+          <span>Logistyka Wschód · 11 listopada</span>
+        </div>
+      </div>
+      <div class="float-card f2">
+        <div class="float-icon warn"><i class="ph-fill ph-bell-ringing"></i></div>
+        <div>
+          <strong>Alert za 14 dni</strong>
+          <span>Wyśle automatycznie · 21.11</span>
+        </div>
+      </div>
+      <div class="float-card f3">
+        <div class="float-icon accent"><i class="ph-bold ph-lightning"></i></div>
+        <div>
+          <strong>0 kar w 2025</strong>
+          <span>vs. 240 000 zł rok temu</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ TRUSTBAR ============================================================ -->
+<section class="trustbar">
+  <div class="container">
+    <div class="trustbar-label reveal">
+      Zaufały nam firmy zatrudniające <strong>14 200+</strong> cudzoziemców w 9 sektorach
+    </div>
+    <div class="trustbar-row reveal">
+      <div class="tlogo">
+        <svg viewBox="0 0 140 24" xmlns="http://www.w3.org/2000/svg">
+          <text x="0" y="18" font-family="Inter Tight" font-size="17" font-weight="700" letter-spacing="-0.02em">LOGISTYKA</text>
+          <text x="98" y="18" font-family="Instrument Serif" font-style="italic" font-size="17">wsch.</text>
+        </svg>
+      </div>
+      <div class="tlogo">
+        <svg viewBox="0 0 120 24" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+          <text x="22" y="17" font-family="Inter Tight" font-size="16" font-weight="600" letter-spacing="0.04em">PROBUDA</text>
+        </svg>
+      </div>
+      <div class="tlogo">
+        <svg viewBox="0 0 120 24" xmlns="http://www.w3.org/2000/svg">
+          <text x="0" y="17" font-family="Inter Tight" font-size="17" font-weight="700" letter-spacing="-0.04em">Vertex</text>
+          <text x="48" y="17" font-family="Inter Tight" font-size="17" font-weight="300" letter-spacing="-0.04em">Care</text>
+          <circle cx="105" cy="6" r="3" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="tlogo">
+        <svg viewBox="0 0 130 24" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="4" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"/>
+          <line x1="4" y1="12" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
+          <text x="22" y="17" font-family="Inter Tight" font-size="15" font-weight="700" letter-spacing="0.05em">AGROFARM</text>
+        </svg>
+      </div>
+      <div class="tlogo">
+        <svg viewBox="0 0 120 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 4 4 L 4 20 L 12 12 L 20 20 L 20 4" fill="none" stroke="currentColor" stroke-width="2"/>
+          <text x="28" y="17" font-family="Inter Tight" font-size="16" font-weight="600" letter-spacing="-0.02em">Mostbau</text>
+        </svg>
+      </div>
+      <div class="tlogo">
+        <svg viewBox="0 0 120 24" xmlns="http://www.w3.org/2000/svg">
+          <text x="0" y="17" font-family="Instrument Serif" font-size="20" font-style="italic">Zielony</text>
+          <text x="56" y="17" font-family="Inter Tight" font-size="14" font-weight="600" letter-spacing="0.04em">SAD</text>
+        </svg>
+      </div>
+      <div class="tlogo">
+        <svg viewBox="0 0 110 24" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="6,4 18,4 22,12 18,20 6,20 2,12" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <text x="28" y="17" font-family="Inter Tight" font-size="15" font-weight="700" letter-spacing="-0.02em">Hexa HR</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ PROBLEM ============================================================ -->
+<section class="problem sec-pad" id="problem">
+  <div class="container">
+
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 01 · Twój wtorek o 9:14 · <span class="em">scenariusz, którego się boisz</span></div>
+      <h2 class="h-section">Inspektor PIP <span class="serif-em">w recepcji.</span> Marta z HR <span class="serif-em">na L4.</span> <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400;">Co teraz?</em></h2>
+      <p class="lede">
+        Otwierasz Excel — trzy zakładki, ostatnie zmiany sprzed dwóch miesięcy. Karta pobytu Olexandra wygasła w piątek, nikt nie zauważył. Inspektor już czyta. <strong>To 50 000 zł za niego, plus 3 000 zł × każda inna osoba bez kompletnych papierów.</strong> Telefon do prezesa za 11 minut.
+      </p>
+    </div>
+
+    <div class="scenario reveal">
+      <div class="scenario-stat danger">
+        <div class="scenario-num">50 000 zł</div>
+        <div class="scenario-l">Maks. kara × każdy cudzoziemiec bez dokumentów</div>
+        <div class="scenario-meta">Ustawa z 20.03.2025 · obowiązuje od 01.06.2025</div>
+      </div>
+      <div class="scenario-stat warn">
+        <div class="scenario-num">1 / 3</div>
+        <div class="scenario-l">Firm zatrudniających 100+ cudzoziemców dostaje karę PIP w skali roku</div>
+        <div class="scenario-meta">Dane PIP 2024–2025</div>
+      </div>
+      <div class="scenario-stat accent">
+        <div class="scenario-num">8 dni</div>
+        <div class="scenario-l">Średnio trwa kaskada konsekwencji</div>
+        <div class="scenario-meta">Kontrola → mandat → wojewoda → klient → prezes</div>
+      </div>
+    </div>
+
+    <div class="section-head reveal" style="margin-top: 80px;">
+      <div class="eyebrow"><span class="dot"></span> Skąd to się bierze</div>
+      <h2 class="h-section" style="font-size: clamp(28px, 3.5vw, 40px);">Trzy rzeczy które dziś <span class="serif-em">stoją między tobą a karą.</span></h2>
+    </div>
+
+    <div class="problem-grid problem-grid-3">
+      <article class="problem-card reveal" style="--reveal-delay: 0ms;">
+        <div class="prob-icon"><i class="ph ph-microsoft-excel-logo"></i></div>
+        <h3>Excel zamiast systemu</h3>
+        <p>18 zakładek, trzy wersje „ostateczna_v3", terminy w komentarzach. Marta wie wszystko — gdy przyjdzie do pracy. Audytor odsłania luki w 20 minut.</p>
+        <span class="prob-tag"><i class="ph-fill ph-warning"></i> 6 błędów / 100 osób</span>
+      </article>
+
+      <article class="problem-card reveal" style="--reveal-delay: 80ms;">
+        <div class="prob-icon"><i class="ph ph-link-break"></i></div>
+        <h3>Łańcuch podwykonawców</h3>
+        <p>Twoja firma → agencja → ich podwykonawca → cudzoziemiec. Odpowiedzialność solidarna spada na ciebie. <strong>Nie wiesz, kogo agencja zatrudnia w grudniu.</strong></p>
+        <span class="prob-tag"><i class="ph-fill ph-shield-warning"></i> Ryzyko solidarne</span>
+      </article>
+
+      <article class="problem-card reveal" style="--reveal-delay: 160ms;">
+        <div class="prob-icon"><i class="ph ph-currency-circle-dollar"></i></div>
+        <h3>Kara to dopiero początek</h3>
+        <p>Po mandacie: 6 miesięcy zakazu zatrudniania cudzoziemców, telefon od klientów, kontrola u podwykonawców. <em>Real cost</em> jednej kontroli to zwykle 200–400 tys. zł.</p>
+        <span class="prob-tag"><i class="ph-fill ph-trend-up"></i> Eskalacja reputacyjna</span>
+      </article>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ BENTO PRODUCT ============================================================ -->
+<section class="bento" id="produkt">
+  <div class="container-wide">
+    <div class="section-head reveal" style="margin-bottom: 64px;">
+      <div class="eyebrow" style="color: rgba(251,250,247,0.45);">
+        <span class="dot"></span> 02 · Produkt · <span class="em" style="color: rgba(251,250,247,0.85);">co dostajesz w panelu</span>
+      </div>
+      <h2 class="h-section" style="color: var(--inv);">
+        Jeden panel. Cztery systemy w środku. <span class="serif-em" style="color: rgba(251,250,247,0.65);">Bez żadnego excela.</span>
+      </h2>
+      <p class="lede" style="color: var(--inv-2);">
+        Każdy moduł zaprojektowany przez prawnika i operatora HR z 10-letnim stażem. Bez gadżetów, bez trzymania cię w aplikacji godzinami — produkt, który po prostu pilnuje.
+      </p>
+    </div>
+
+    <div class="bento-grid">
+
+      <!-- HERO CELL: Dashboard z traffic light -->
+      <div class="bento-cell hero-cell reveal">
+        <div class="eyebrow"><span class="dot"></span> Dashboard <span class="em" style="color: rgba(251,250,247,0.85);">w pół sekundy</span></div>
+        <h3>Czerwone, żółte, zielone. <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400; color: rgba(251,250,247,0.65);">Tak proste.</em></h3>
+        <p>147 cudzoziemców, 9 oddziałów, 4 podwykonawców — jeden ekran. Sortuj wg pilności, klikaj wyłącznie czerwone. Zielone same dbają o siebie.</p>
+        <div class="bento-distribution">
+          <div class="bento-bar-head">
+            <span>147 osób · stan na dziś</span>
+            <strong>90% compliance</strong>
+          </div>
+          <div class="bento-bar" role="img" aria-label="Rozkład 147 cudzoziemców: 3 po terminie ≤14 dni, 12 wygasa 15-60 dni, 132 bez działań">
+            <span class="seg seg-danger" style="flex: 3"></span>
+            <span class="seg seg-warn" style="flex: 12"></span>
+            <span class="seg seg-ok" style="flex: 132"></span>
+          </div>
+          <div class="bento-bar-labels">
+            <span><span class="d danger"></span> Po terminie · ≤14 dni <strong>3</strong></span>
+            <span><span class="d warn"></span> Wygasa 15–60 dni <strong>12</strong></span>
+            <span><span class="d ok"></span> Bez działań <strong>132</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TALL: Alerty -->
+      <div class="bento-cell tall reveal" style="--reveal-delay: 80ms;">
+        <div class="eyebrow"><span class="dot"></span> Alerty</div>
+        <h3>Trzy kanały, jeden cel: <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400; color: rgba(251,250,247,0.65);">nie zaspać terminu.</em></h3>
+        <p>Email, SMS, push w aplikacji. Eskalacja do przełożonego po 24h ciszy. Cudzoziemiec dostaje przypomnienie po polsku i ukraińsku.</p>
+
+        <div class="bento-timeline">
+          <div class="tl-bar" style="height: 30%;"></div>
+          <div class="tl-bar" style="height: 45%;"></div>
+          <div class="tl-bar" style="height: 28%;"></div>
+          <div class="tl-bar warn" style="height: 60%;"></div>
+          <div class="tl-bar" style="height: 38%;"></div>
+          <div class="tl-bar warn" style="height: 72%;"></div>
+          <div class="tl-bar danger" style="height: 92%;"></div>
+          <div class="tl-bar" style="height: 50%;"></div>
+          <div class="tl-bar" style="height: 35%;"></div>
+          <div class="tl-bar" style="height: 42%;"></div>
+        </div>
+      </div>
+
+      <!-- HALF: Dokumenty -->
+      <div class="bento-cell half reveal" style="--reveal-delay: 160ms; min-height: 280px;">
+        <div class="eyebrow"><span class="dot"></span> Dokumenty</div>
+        <h3>Oryginał, skan, OCR. <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400; color: rgba(251,250,247,0.65);">Wszystko w jednym sejfie.</em></h3>
+        <p>Drag & drop, automatyczne rozpoznawanie typu dokumentu, łączenie z osobą. ISO 27001, serwery w PL.</p>
+        <div class="bento-docs">
+          <div class="doc d1">
+            <div class="doc-line title"></div>
+            <div class="doc-line"></div>
+            <div class="doc-line"></div>
+            <div class="doc-line short"></div>
+          </div>
+          <div class="doc d2">
+            <div class="doc-line title"></div>
+            <div class="doc-line"></div>
+            <div class="doc-line short"></div>
+            <div class="doc-line"></div>
+            <div class="doc-stamp">VERIFIED</div>
+          </div>
+          <div class="doc d3">
+            <div class="doc-line title"></div>
+            <div class="doc-line short"></div>
+            <div class="doc-line"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- THIRD: Integracje -->
+      <div class="bento-cell third reveal" style="--reveal-delay: 200ms; min-height: 280px;">
+        <div class="eyebrow"><span class="dot"></span> Integracje</div>
+        <h3>Twój HR-stack <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400; color: rgba(251,250,247,0.65);">już rozumiemy.</em></h3>
+        <p>Synchronizacja w obie strony. Bez podwójnego wpisywania.</p>
+        <div class="bento-integ">
+          <div class="integ-chip">enova365</div>
+          <div class="integ-chip">Comarch</div>
+          <div class="integ-chip">Symfonia</div>
+          <div class="integ-chip">SAP HR</div>
+          <div class="integ-chip">tCar</div>
+          <div class="integ-chip">Cyclad</div>
+          <div class="integ-chip">eRecruiter</div>
+          <div class="integ-chip">REST API</div>
+        </div>
+      </div>
+
+      <!-- THIRD: Podwykonawcy -->
+      <div class="bento-cell third reveal" style="--reveal-delay: 240ms; min-height: 280px;">
+        <div class="eyebrow"><span class="dot"></span> Podwykonawcy</div>
+        <h3>Zobacz cały <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400; color: rgba(251,250,247,0.65);">łańcuch.</em></h3>
+        <p>Twoja agencja zna swoich pracowników. Ty znasz swoich. Tu sprawdzisz wszystkich.</p>
+        <div class="bento-chain">
+          <div class="chain-node you"><i class="ph-fill ph-buildings"></i> Ty</div>
+          <span class="chain-arrow">→</span>
+          <div class="chain-node"><i class="ph ph-handshake"></i> Lider Sp.</div>
+          <span class="chain-arrow">→</span>
+          <div class="chain-node"><i class="ph ph-handshake"></i> Subpartner</div>
+          <span class="chain-arrow">→</span>
+          <div class="chain-node alert"><i class="ph-fill ph-warning"></i> 8 osób</div>
+        </div>
+      </div>
+
+      <!-- HALF: Audyt PIP -->
+      <div class="bento-cell half reveal" style="--reveal-delay: 280ms; min-height: 280px;">
+        <div class="eyebrow"><span class="dot"></span> Audyt PIP · <span class="em" style="color: rgba(251,250,247,0.85);">jeden klik</span></div>
+        <h3>Raport gotowy <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400; color: rgba(251,250,247,0.65);">zanim kontroler zdąży usiąść.</em></h3>
+        <p>PDF z pełną historią: kto, co, kiedy, jaki dokument, jaka decyzja. 147 osób — generuje się 8 sekund. Gotowy do okazania.</p>
+        <div style="margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap;">
+          <div class="chain-node" style="background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok);"><i class="ph-fill ph-check"></i> 144 zgodnych</div>
+          <div class="chain-node" style="background: rgba(180,83,9,0.15); border-color: rgba(180,83,9,0.4); color: #fbbf24;"><i class="ph-fill ph-warning"></i> 3 do uzupełnienia</div>
+          <div class="chain-node" style="background: var(--accent); border-color: var(--accent); color: white;"><i class="ph-fill ph-file-pdf"></i> Pobierz PDF</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ PANEL TOUR — sidebar nav + big screen ============================================================ -->
+<section class="panel-tour" id="panel">
+  <div class="container-wide">
+
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 02.5 · Panel · <span class="em">interfejs, którego HR uczy się w popołudnie</span></div>
+      <h2 class="h-section">Pięć widoków. <span class="serif-em">Jedno źródło prawdy.</span></h2>
+      <p class="lede">Klikaj karty po lewej — to dokładnie te ekrany, które dostajesz pierwszego dnia po migracji danych. <strong>Bez render-mockupów, bez tutoriali na 3 godziny.</strong></p>
+    </div>
+
+    <div class="tour reveal">
+
+      <nav class="tour-nav" role="tablist" aria-label="Widoki panelu">
+        <button class="tour-card is-active" data-tab="dashboard" role="tab" aria-selected="true" type="button">
+          <span class="card-num">01</span>
+          <span class="card-body">
+            <span class="card-title">Dashboard</span>
+            <span class="card-desc">Compliance score, KPI, alerty po terminach — wszystko na jednym ekranie</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/dashboard</span>
+          </span>
+        </button>
+
+        <button class="tour-card" data-tab="foreigners" role="tab" aria-selected="false" type="button">
+          <span class="card-num">02</span>
+          <span class="card-body">
+            <span class="card-title">Cudzoziemcy <span class="card-pill">247</span></span>
+            <span class="card-desc">Lista z dwukolumnowym statusem pobyt + praca, sortowanie po pilności</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/cudzoziemcy</span>
+          </span>
+        </button>
+
+        <button class="tour-card" data-tab="alerts" role="tab" aria-selected="false" type="button">
+          <span class="card-num">03</span>
+          <span class="card-body">
+            <span class="card-title">Alerty <span class="card-pill danger">9</span></span>
+            <span class="card-desc">Pięć progów pilności, eskalacja po 24h ciszy, powiadomienia PL + UA</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/alerty</span>
+          </span>
+        </button>
+
+        <button class="tour-card" data-tab="calendar" role="tab" aria-selected="false" type="button">
+          <span class="card-num">04</span>
+          <span class="card-body">
+            <span class="card-title">Kalendarz</span>
+            <span class="card-desc">Wygaśnięcia, audyty, spotkania z urzędami w jednym widoku miesiąca</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/kalendarz</span>
+          </span>
+        </button>
+
+        <button class="tour-card" data-tab="reports" role="tab" aria-selected="false" type="button">
+          <span class="card-num">05</span>
+          <span class="card-body">
+            <span class="card-title">Raporty</span>
+            <span class="card-desc">Miesięczne PDF-y dla zarządu, PIP i kancelarii — generowane automatycznie</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/raporty</span>
+          </span>
+        </button>
+      </nav>
+
+      <div class="tour-stage">
+        <div class="tour-stage-glow" aria-hidden="true"></div>
+        <div class="tour-stage-frame">
+          <div class="tour-stage-chrome">
+            <span class="chrome-dot r" aria-hidden="true"></span>
+            <span class="chrome-dot y" aria-hidden="true"></span>
+            <span class="chrome-dot g" aria-hidden="true"></span>
+            <div class="chrome-url" id="tour-chrome-url"><i class="ph-fill ph-lock-simple" aria-hidden="true"></i> <span>app.getmypermit.pl/dashboard</span></div>
+            <div class="chrome-meta"><span class="live-dot"></span> live</div>
+          </div>
+
+          <div class="tour-screen-wrap">
+            <img class="tour-screen-img is-active" data-panel="dashboard"
+                 src="/moc2/screens/panel-dashboard.png"
+                 alt="Dashboard panelu Getmypermit: compliance score 86/100, 4 KPI tiles (218 aktywnych, 209 zielonych, 31 uwagi, 7 ryzyka), baner 3 sytuacji pilnych, lista wygasających dokumentów w oknach 3-90 dni"
+                 width="1440" height="900" />
+            <img class="tour-screen-img" data-panel="foreigners"
+                 src="/moc2/screens/panel-foreigners.png"
+                 alt="Lista 12 cudzoziemców ze statusami pobyt + praca, kolumnami stanowisko, dokument pobytowy, podstawa pracy, podwykonawca i braki dokumentów; chip-filtry Wszyscy 12, Czerwone, Uwaga, Brak danych"
+                 width="1440" height="900" loading="lazy" />
+            <img class="tour-screen-img" data-panel="alerts"
+                 src="/moc2/screens/panel-alerts.png"
+                 alt="Panel alertów: 9 aktywnych spraw posortowanych po pilności, 5 KPI tiles po progach (3 po terminie, 2 ≤14 dni, 3 15-30, 2 31-60, 2 braki), lista z datami i akcjami otwórz kartę / zleć kancelarii"
+                 width="1440" height="900" loading="lazy" />
+            <img class="tour-screen-img" data-panel="calendar"
+                 src="/moc2/screens/panel-calendar.png"
+                 alt="Kalendarz terminów Maj 2026 z zaznaczonymi datami wygaśnięcia dokumentów i panelem 5 najbliższych terminów po prawej stronie z liczbą dni do reakcji"
+                 width="1440" height="900" loading="lazy" />
+            <img class="tour-screen-img" data-panel="reports"
+                 src="/moc2/screens/panel-reports.png"
+                 alt="Raporty compliance: 4 gotowe miesięczne PDF-y z statusami Gotowy lub Uwagi i wykres wskaźnika compliance po miesiącach od listopada (78) do kwietnia (86)"
+                 width="1440" height="900" loading="lazy" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ STICKY HOW IT WORKS ============================================================ -->
+<section class="how" id="how">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 03 · Jak to działa · <span class="em">od przeniesienia danych do audytu</span></div>
+      <h2 class="h-section">Pięć dni od pierwszego pliku <span class="serif-em">do spokoju.</span></h2>
+      <p class="lede">Nie chcemy, żebyś poznawał kolejny system. Chcemy, żebyś o nim zapomniał — bo system sam się odzywa, gdy coś wymaga twojej decyzji.</p>
+    </div>
+
+    <div class="how-sticky">
+      <div class="how-left">
+        <div class="how-progress">
+          <a class="how-step-link active" href="#step-1"><span class="num">01</span><span>Wgrywamy twoje dane</span></a>
+          <a class="how-step-link" href="#step-2"><span class="num">02</span><span>Audyt zerowy</span></a>
+          <a class="how-step-link" href="#step-3"><span class="num">03</span><span>Codzienna obsługa</span></a>
+          <a class="how-step-link" href="#step-4"><span class="num">04</span><span>Kontrola? Klik.</span></a>
+        </div>
+        <div style="margin-top: 32px;">
+          <a href="#cta" class="btn btn-primary btn-lg">
+            Umów demo
+            <i class="ph-bold ph-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="how-right">
+
+        <article class="how-card reveal" id="step-1">
+          <div class="how-card-pad">
+            <div class="how-card-tag"><span>01</span> Dzień 1–2</div>
+            <h3>Wrzucasz plik. Reszta dzieje się sama.</h3>
+            <p>Excel, lista z innego systemu, eksport z agencji — bierzemy <strong>cokolwiek</strong>. Nasz zespół wprowadza dane, normalizuje rekordy, łączy z paszportami i zezwoleniami. <strong>Ty nic nie wpisujesz.</strong></p>
+            <ul class="step-list">
+              <li><i class="ph-bold ph-check"></i> Import z Excel, Drive, enova, Comarch, SAP, REST API</li>
+              <li><i class="ph-bold ph-check"></i> Migracja prowadzona przez naszego specjalistę</li>
+              <li><i class="ph-bold ph-check"></i> Walidacja: znajdziemy luki, zanim znajdzie je PIP</li>
+            </ul>
+          </div>
+          <div class="how-visual">
+            <div class="viz-audit">
+              <div class="viz-audit-doc">
+                <div class="h">
+                  Import_HR_v17.xlsx
+                  <span class="stamp">DONE</span>
+                </div>
+                <div class="meta">147 wierszy · 5 zakładek</div>
+                <div class="row"><span>Zmapowane</span><span class="v ok">141</span></div>
+                <div class="row"><span>Niejasne</span><span class="v warn">4</span></div>
+                <div class="row"><span>Konflikty</span><span class="v danger">2</span></div>
+              </div>
+              <div class="viz-audit-stats">
+                <div class="viz-audit-stat ok">
+                  <div class="v">141</div>
+                  <div class="l">rekordów wprowadzonych automatycznie</div>
+                  <div class="pct">96%</div>
+                </div>
+                <div class="viz-audit-stat warn">
+                  <div class="v">4</div>
+                  <div class="l">do potwierdzenia ręcznie</div>
+                  <div class="pct">3%</div>
+                </div>
+                <div class="viz-audit-stat danger">
+                  <div class="v">2</div>
+                  <div class="l">duplikaty wykryte przez walidator</div>
+                  <div class="pct">1%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="how-card reveal" id="step-2">
+          <div class="how-card-pad">
+            <div class="how-card-tag"><span>02</span> Dzień 3</div>
+            <h3>Audyt zerowy: dostajesz mapę, nie excel.</h3>
+            <p>Pierwsze 48h to <em style="font-family: var(--font-serif); font-style: italic;">prawdziwy audyt</em>. Dostajesz raport: ilu cudzoziemców, jakie dokumenty mają, czego brakuje, gdzie kary za zaniechanie biegną już dziś. <strong>Bez tego nie idziemy dalej.</strong></p>
+            <ul class="step-list">
+              <li><i class="ph-bold ph-check"></i> Listę dokumentów do uzupełnienia (priorytetyzowaną wg ryzyka)</li>
+              <li><i class="ph-bold ph-check"></i> Listę osób z wygasającymi zezwoleniami w 30/60/90 dniach</li>
+              <li><i class="ph-bold ph-check"></i> Audyt podwykonawców — w jednym miejscu</li>
+            </ul>
+          </div>
+          <div class="how-visual">
+            <div class="viz-panel">
+              <div class="viz-panel-card">
+                <h5>Mapa ryzyka — listopad</h5>
+                <div class="viz-status-list">
+                  <div class="viz-status-row"><span class="dot r"></span><span>Brak zezwolenia (≤14 dni)</span><span class="v">3</span></div>
+                  <div class="viz-status-row"><span class="dot y"></span><span>Brak załącznika nr 17</span><span class="v">9</span></div>
+                  <div class="viz-status-row"><span class="dot y"></span><span>Skan zamiast oryginału</span><span class="v">7</span></div>
+                  <div class="viz-status-row"><span class="dot g"></span><span>Pełna zgodność</span><span class="v">128</span></div>
+                </div>
+              </div>
+              <div class="viz-panel-card">
+                <h5>Plan działania na ten tydzień</h5>
+                <div class="viz-timeline">
+                  <div class="viz-tl-row danger"><span class="dot"></span><div><strong>Pon · 18.11</strong><span>Wniosek dla O. Boyko</span></div></div>
+                  <div class="viz-tl-row warn"><span class="dot"></span><div><strong>Śr · 20.11</strong><span>Skan oryginału — V. Kovalchuk</span></div></div>
+                  <div class="viz-tl-row now"><span class="dot"></span><div><strong>Czw · 21.11</strong><span>Spotkanie z agencją Lider</span></div></div>
+                  <div class="viz-tl-row"><span class="dot"></span><div><strong>Pt · 22.11</strong><span>Raport tygodniowy → CFO</span></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="how-card reveal" id="step-3">
+          <div class="how-card-pad">
+            <div class="how-card-tag"><span>03</span> Dzień 4 i każdy następny</div>
+            <h3>Codziennie 12 minut. Czasem zero.</h3>
+            <p>Rano otwierasz panel. Trzy alerty na czerwono — klikasz "wyślij wniosek". Dwa żółte — przekazujesz zespołowi. Lunch. <strong>Tyle.</strong> System pilnuje 144 zielonych za ciebie i odzywa się, gdy któraś osoba przejdzie na żółto.</p>
+            <ul class="step-list">
+              <li><i class="ph-bold ph-check"></i> Czat z opiekunem prawnym — odpowiedź w 4h</li>
+              <li><i class="ph-bold ph-check"></i> Generowanie wniosków, powiadomień PUP, aneksów</li>
+              <li><i class="ph-bold ph-check"></i> Pracownik dostaje powiadomienia po polsku i ukraińsku</li>
+            </ul>
+          </div>
+          <div class="how-visual">
+            <div class="viz-chat">
+              <div class="viz-chat-h">
+                <div class="av"></div>
+                <div class="info">
+                  <strong>Paweł Z. · twój opiekun prawny</strong>
+                  <span>online · zwykle odpowiada w 12 min</span>
+                </div>
+              </div>
+              <div class="viz-chat-body">
+                <div class="viz-msg you">
+                  Cześć Paweł, agencja Lider przysłała tylko skan paszportu Boyko. Wystarczy?
+                  <span class="meta">09:14 · przeczytano</span>
+                </div>
+                <div class="viz-msg them">
+                  Cześć Marta. Skan ok do wniosku, ale przy wydaniu zezwolenia PIP może wymagać oryginału (art. 88a ust. 1c). Bezpieczniej poprosić o oryginał — zajmie im 2 dni.
+                  <span class="ref">Ustawa o cudzoziemcach · art. 88a</span>
+                </div>
+                <div class="viz-msg them">
+                  Wzór maila do agencji wrzuciłem do twojej skrzynki w panelu.
+                  <span class="meta">09:18</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="how-card reveal" id="step-4">
+          <div class="how-card-pad">
+            <div class="how-card-tag"><span>04</span> Audyt</div>
+            <h3>Kontrola PIP? Otwierasz panel — i to wszystko.</h3>
+            <p>Inspektor wchodzi, prosi o listę cudzoziemców, dokumenty, terminy, decyzje. <strong>Ty otwierasz panel.</strong> Filtrujesz po oddziale, generujesz PDF, eksportujesz historię. <em style="font-family: var(--font-serif); font-style: italic;">8 sekund</em>. Inspektor patrzy, zamyka teczkę, jedzie dalej.</p>
+            <ul class="step-list">
+              <li><i class="ph-bold ph-check"></i> Pełen ślad audytowy każdej zmiany — kto, co, kiedy</li>
+              <li><i class="ph-bold ph-check"></i> Eksport PDF / XLSX / XML zgodny z wymogami PIP</li>
+              <li><i class="ph-bold ph-check"></i> Tryb obserwatora — udostępnij audytorowi tylko podgląd</li>
+            </ul>
+          </div>
+          <div class="how-visual">
+            <div class="viz-audit">
+              <div class="viz-audit-doc">
+                <div class="h">
+                  Raport_PIP_Q4_2025.pdf
+                  <span class="stamp">READY</span>
+                </div>
+                <div class="meta">147 osób · 312 dokumentów</div>
+                <div class="row"><span>Zezwolenia</span><span class="v ok">147</span></div>
+                <div class="row"><span>Karty pobytu</span><span class="v ok">144</span></div>
+                <div class="row"><span>Powiadomienia PUP</span><span class="v ok">89</span></div>
+                <div class="row"><span>Czas generacji</span><span class="v" style="color: var(--accent);">8.2s</span></div>
+              </div>
+              <div class="viz-audit-stats">
+                <div class="viz-audit-stat ok">
+                  <div class="v">100%</div>
+                  <div class="l">rekordów z pełną historią zdarzeń</div>
+                  <div class="pct">audit-ready</div>
+                </div>
+                <div class="viz-audit-stat ok">
+                  <div class="v">0</div>
+                  <div class="l">kar w 2025 wśród 47 audytowanych klientów</div>
+                  <div class="pct">↓ 100%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ COMPARISON ============================================================ -->
+<section class="compare" id="porownanie">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 04 · Porównanie · <span class="em">my nie zastępujemy twojej kancelarii — robimy ją 10× skuteczniejszą</span></div>
+      <h2 class="h-section">Excel cię okłamuje. <span class="serif-em">Sama kancelaria</span> nie pilnuje terminów. <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400;">Razem z nami</em> — dopiero masz spokój.</h2>
+      <p class="lede">Nie jesteśmy alternatywą dla twojego prawnika. Jesteśmy <strong>pierwszą linią</strong> która pilnuje danych, terminów i dokumentów. Twoja kancelaria zostaje <strong>drugą linią</strong> — wchodzi tam, gdzie zaczyna się ryzyko prawne. Razem to działa.</p>
+    </div>
+
+    <div class="compare-table reveal">
+      <div class="compare-head">
+        <div class="col-l">
+          <strong>Compliance cudzoziemców</strong>
+          <em>Co właściwie dostajesz</em>
+        </div>
+        <div class="compare-col-h">
+          <h4>Excel + HR</h4>
+          <span class="sub">„robimy sobie sami"</span>
+        </div>
+        <div class="compare-col-h">
+          <h4>Sama kancelaria</h4>
+          <span class="sub">„zatrudniamy prawnika"</span>
+        </div>
+        <div class="compare-col-h us-col us">
+          <h4>Getmypermit + twoja kancelaria</h4>
+          <span class="sub">system + prawnik = spokój</span>
+        </div>
+      </div>
+
+      <div class="compare-row section">
+        <div class="label">Operacje codzienne</div>
+        <div></div><div></div><div class="us-col"></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Pulpit z wszystkimi terminami<small>kto wygasa, kiedy, co zrobić</small></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Brak</span></div>
+        <div><span class="compare-cell partial"><i class="ph-bold ph-minus"></i> Excel od prawnika</span></div>
+        <div class="us-col"><span class="compare-cell yes"><i class="ph-bold ph-check"></i> Dashboard live<span class="det">aktualizacja co 60s</span></span></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Alerty 90 / 60 / 30 / 14 dni<small>email + SMS + push, eskalacja</small></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Pamięć HR-a</span></div>
+        <div><span class="compare-cell partial"><i class="ph-bold ph-minus"></i> Email co 30 dni</span></div>
+        <div class="us-col"><span class="compare-cell yes"><i class="ph-bold ph-check"></i> 4 progi · 3 kanały</span></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Sejf dokumentów<small>oryginały, skany, OCR, wersjonowanie</small></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Drive / Pulpit</span></div>
+        <div><span class="compare-cell partial"><i class="ph-bold ph-minus"></i> U prawnika</span></div>
+        <div class="us-col"><span class="compare-cell yes"><i class="ph-bold ph-check"></i> ISO 27001 · serwery PL</span></div>
+      </div>
+
+      <div class="compare-row section">
+        <div class="label">Compliance i audyty</div>
+        <div></div><div></div><div class="us-col"></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Raport audytowy w 1 klik<small>PDF/XLSX gotowe dla PIP</small></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Tworzony ręcznie</span></div>
+        <div><span class="compare-cell partial"><i class="ph-bold ph-minus"></i> 5–10 dni roboczych</span></div>
+        <div class="us-col"><span class="compare-cell yes"><i class="ph-bold ph-check"></i> 8 sekund</span></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Pełen ślad zdarzeń<small>kto, co, kiedy zrobił z kim</small></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Brak</span></div>
+        <div><span class="compare-cell partial"><i class="ph-bold ph-minus"></i> Tylko w sprawach</span></div>
+        <div class="us-col"><span class="compare-cell yes"><i class="ph-bold ph-check"></i> Każde działanie</span></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Kontrola podwykonawców<small>łańcuch agencji, ryzyko solidarne</small></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Niemożliwe</span></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Brak narzędzia</span></div>
+        <div class="us-col"><span class="compare-cell yes"><i class="ph-bold ph-check"></i> Cały łańcuch widoczny</span></div>
+      </div>
+
+      <div class="compare-row section">
+        <div class="label">Wsparcie</div>
+        <div></div><div></div><div class="us-col"></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Twoja kancelaria w pętli<small>kto faktycznie obsługuje sprawy</small></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Płacisz osobno</span></div>
+        <div><span class="compare-cell partial"><i class="ph-bold ph-minus"></i> Tak, ale bez systemu</span></div>
+        <div class="us-col"><span class="compare-cell yes"><i class="ph-bold ph-check"></i> Twoja albo nasza<span class="det">my przekazujemy ryzyko</span></span></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Powiadomienia w UA / RU<small>komunikacja z pracownikiem</small></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Brak</span></div>
+        <div><span class="compare-cell no"><i class="ph-bold ph-x"></i> Tylko po polsku</span></div>
+        <div class="us-col"><span class="compare-cell yes"><i class="ph-bold ph-check"></i> PL · UA · RU · EN</span></div>
+      </div>
+
+      <div class="compare-row section">
+        <div class="label">Koszt</div>
+        <div></div><div></div><div class="us-col"></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Koszt miesięczny<small>dla 100 cudzoziemców, średnio</small></div>
+        <div><span class="compare-cell" style="color: var(--fg-2);"><strong style="font-family: var(--font-mono); color: var(--fg);">~8 000 zł</strong> <span class="det">czas HR</span></span></div>
+        <div><span class="compare-cell" style="color: var(--fg-2);"><strong style="font-family: var(--font-mono); color: var(--fg);">~22 000 zł</strong> <span class="det">+ stawka godz.</span></span></div>
+        <div class="us-col"><span class="compare-cell" style="color: var(--ok); font-weight: 500;"><strong style="font-family: var(--font-mono); color: var(--fg); font-weight: 600;">3 200 zł</strong> <span class="det">stała cena</span></span></div>
+      </div>
+      <div class="compare-row">
+        <div class="label">Ryzyko kary 50 000 zł × osoba<small>nowa stawka po 01.06.2025</small></div>
+        <div><span class="compare-cell" style="color: var(--danger);"><strong>Bardzo wysokie</strong> <span class="det">~33% w skali roku</span></span></div>
+        <div><span class="compare-cell" style="color: var(--amber);"><strong>Średnie</strong> <span class="det">prawnik bez systemu = opóźnienia</span></span></div>
+        <div class="us-col"><span class="compare-cell yes"><strong>0 kar</strong> <span class="det">wśród klientów Pro 2025</span></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FEATURES ============================================================ -->
+<section class="features sec-pad" id="funkcje">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 05 · Funkcje · <span class="em">to, co dostajesz dziś</span></div>
+      <h2 class="h-section">Dziewięć narzędzi, <span class="serif-em">jeden cel.</span></h2>
+    </div>
+
+    <div class="feat-grid reveal">
+      <article class="feat"><i class="ph-fill ph-bell-ringing"></i><h3>Alerty wielopoziomowe</h3><p>Email, SMS, push. Eskalacja do przełożonego po 24h ciszy.</p></article>
+      <article class="feat"><i class="ph-fill ph-files"></i><h3>Sejf dokumentów</h3><p>OCR, kategorie, wersje. Pełna historia każdego pliku.</p></article>
+      <article class="feat"><i class="ph-fill ph-shield-check"></i><h3>Raport PIP</h3><p>PDF gotowy do okazania w 8 sekund. Tryb obserwatora.</p></article>
+      <article class="feat"><i class="ph-fill ph-handshake"></i><h3>Kontrola podwykonawców</h3><p>Łańcuch agencji widoczny w jednym miejscu.</p></article>
+      <article class="feat"><i class="ph-fill ph-translate"></i><h3>Komunikacja PL/UA/RU/EN</h3><p>Pracownik dostaje przypomnienia w swoim języku.</p></article>
+      <article class="feat"><i class="ph-fill ph-graph"></i><h3>Raporty zarządu</h3><p>Dashboardy CFO, koszty per oddział, przewidywane kary.</p></article>
+      <article class="feat"><i class="ph-fill ph-buildings"></i><h3>Wieloodział + role</h3><p>Centrala widzi wszystko, oddział tylko swoich.</p></article>
+      <article class="feat"><i class="ph-fill ph-plug"></i><h3>Integracje HR</h3><p>enova, Comarch, SAP, REST API. Bez podwójnego wpisywania.</p></article>
+      <article class="feat"><i class="ph-fill ph-headset"></i><h3>Opiekun prawny</h3><p>Dedykowany specjalista. Czat, mail, telefon.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ CASE STUDY ============================================================ -->
+<section class="case">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 06 · Case study · <span class="em">jak to wygląda w realnej firmie</span></div>
+      <h2 class="h-section">Logistyka Wschód: <span class="serif-em">240 000 zł rocznie do tyłu na karach.</span></h2>
+      <p class="lede">Sektor TSL, 320 cudzoziemców, 6 oddziałów, 11 podwykonawców. Po dwóch kontrolach PIP w 2023 dyrektor operacyjny dostał ultimatum: <strong>albo system, albo nas zlikwidują.</strong></p>
+    </div>
+
+    <div class="case-card reveal">
+      <div class="case-content">
+        <div class="case-logo">
+          <span>L</span>
+          Logistyka Wschód <em style="font-family: var(--font-serif); font-style: italic; color: var(--fg-muted); font-weight: 400; font-size: 14px;">· od 2024</em>
+        </div>
+
+        <blockquote class="case-quote">
+          "W styczniu 2024 mieliśmy <em>240 000 zł kar</em> i utratę kontraktu z DHL. We wrześniu 2025 — zerowy mandat, dwie zaliczone kontrole PIP i <em>HR, który ma czas na ludzi</em>, a nie na pilnowanie dat."
+        </blockquote>
+
+        <figcaption class="case-author">
+          <div class="avatar"></div>
+          <div>
+            <strong>Marek Lewandowski</strong>
+            <span>Dyrektor Operacyjny · Logistyka Wschód · 320 cudzoziemców</span>
+          </div>
+        </figcaption>
+
+        <div class="case-cta">
+          <a href="#" class="btn btn-secondary">
+            <i class="ph ph-file-pdf"></i>
+            Pełne case study (PDF)
+          </a>
+          <a href="#" class="btn btn-ghost">
+            Posłuchaj rozmowy <i class="ph ph-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="case-metrics">
+        <div class="eyebrow"><span class="dot"></span> Wynik · <span class="em">po 9 miesiącach</span></div>
+        <div class="case-metric-hero">240 000<span> zł</span></div>
+        <div class="case-metric-l">oszczędności na karach PIP w pierwszym roku — i utrzymany kontrakt z DHL.</div>
+
+        <div class="case-metric-row">
+          <div class="case-metric-cell">
+            <div class="v">0</div>
+            <div class="l">kar w 2025</div>
+          </div>
+          <div class="case-metric-cell">
+            <div class="v">−73%</div>
+            <div class="l">czasu HR / cudzoziemiec</div>
+          </div>
+          <div class="case-metric-cell">
+            <div class="v">2/2</div>
+            <div class="l">audytów PIP zaliczonych</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ COMPLIANCE / SECURITY ============================================================ -->
+<section class="security" id="bezpieczenstwo">
+  <div class="container">
+    <div class="security-grid">
+      <div class="security-text reveal">
+        <div class="eyebrow"><span class="dot"></span> 07 · Bezpieczeństwo · <span class="em">dane wrażliwe traktujemy poważnie</span></div>
+        <h2 class="h-section">Twoje paszporty <span class="serif-em">nie wyjadą</span> z Polski.</h2>
+        <p class="lede">Compliance cudzoziemców to dane osobowe najwyższej kategorii. Wiemy o tym, więc zbudowaliśmy infrastrukturę, którą zaakceptują twój inspektor RODO i CISO. <strong>Bez wymagania od nich kompromisów.</strong></p>
+        <div style="margin-top: 28px;">
+          <a href="#" class="btn btn-secondary"><i class="ph ph-file-text"></i> Pobierz raport bezpieczeństwa (DPA, ISO, audit)</a>
+        </div>
+      </div>
+
+      <div class="security-badges reveal">
+        <article class="sbadge">
+          <div class="seal iso"><i class="ph-fill ph-shield-check"></i></div>
+          <h4>ISO 27001:2022</h4>
+          <p>Certyfikat zarządzania bezpieczeństwem informacji. Audyt zewnętrzny BSI, ważny do 03.2027.</p>
+          <div class="meta">CERT-PL-27001-2024-1184</div>
+        </article>
+        <article class="sbadge">
+          <div class="seal gdpr"><i class="ph-fill ph-lock-key"></i></div>
+          <h4>RODO + DPA</h4>
+          <p>Pełna zgodność z GDPR. Umowa powierzenia (DPA) gotowa do podpisu, możesz otrzymać przed demo.</p>
+          <div class="meta">Art. 28 ust. 3 RODO</div>
+        </article>
+        <article class="sbadge">
+          <div class="seal"><i class="ph-fill ph-server"></i></div>
+          <h4>Serwery w Polsce</h4>
+          <p>Dane fizycznie w PL (Warszawa + Poznań). Backup co 4h, RPO 30 min, RTO 2h.</p>
+          <div class="meta">OVH Polska · Polcom</div>
+        </article>
+        <article class="sbadge">
+          <div class="seal"><i class="ph-fill ph-fingerprint"></i></div>
+          <h4>SSO + 2FA + audit log</h4>
+          <p>Logowanie SAML/OIDC, weryfikacja dwuskładnikowa, ślad każdego dostępu do danych.</p>
+          <div class="meta">SOC 2 Type II · 2026</div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ CALCULATOR ============================================================ -->
+<section class="calc" id="kalkulator">
+  <div class="container">
+    <div class="calc-grid">
+      <div class="calc-text reveal">
+        <div class="eyebrow"><span class="dot"></span> 08 · Twój wynik · <span class="em">3 minuty, bez maila</span></div>
+        <h2 class="h-section">Sprawdź <span class="serif-em">ile zaryzykujesz</span> w tym kwartale, jeśli <em style="font-family: var(--font-serif); font-style: italic; font-weight: 400;">nic nie zmienisz.</em></h2>
+        <p class="lede">Po nowej ustawie z 06.2025 maksymalna kara to <strong>50 000 zł × każdy cudzoziemiec bez kompletnych papierów</strong>. Statystycznie 1 na 3 firmy zatrudniające 100+ cudzoziemców dostaje karę w skali roku. Przesuń suwak — sprawdź swoją liczbę.</p>
+        <div class="calc-foot">
+          <i class="ph-fill ph-info"></i>
+          Symulacja na bazie danych PIP, GUS i UDSC. To nie porada prawna — ale każdy prawnik specjalista od cudzoziemców powie ci to samo.
+        </div>
+      </div>
+
+      <div class="calc-panel reveal">
+        <div class="calc-h">
+          <span>Liczba cudzoziemców</span>
+          <span class="calc-out" id="calc-people">120</span>
+        </div>
+        <input type="range" min="10" max="500" value="120" id="people-slider" />
+        <div class="calc-scale"><span>10</span><span>250</span><span>500</span></div>
+
+        <div class="calc-rows">
+          <div class="calc-row">
+            <div>
+              <strong>Średni koszt obsługi w Excelu</strong>
+              <em>1.2h tygodniowo na osobę × stawka HR</em>
+            </div>
+            <span class="calc-row-out" id="hr-cost">37 440 zł / mies.</span>
+          </div>
+          <div class="calc-row">
+            <div>
+              <strong>Statystyczne ryzyko kary PIP</strong>
+              <em>33% szans rocznie × średnio 50 000 zł × osoby z brakami</em>
+            </div>
+            <span class="calc-row-out" id="fine-cost">9 000 zł / mies.</span>
+          </div>
+          <div class="calc-row">
+            <div>
+              <strong>Czas HR-a, którego nie odzyskasz</strong>
+              <em>14h tygodniowo na rozmowy z agencjami</em>
+            </div>
+            <span class="calc-row-out" id="time-cost">5 600 zł / mies.</span>
+          </div>
+        </div>
+
+        <div class="calc-total">
+          <span class="lbl">Ryzyko miesięczne łącznie</span>
+          <span class="meta">vs. ~3 200 zł za Getmypermit Pro</span>
+          <span class="val" id="total-cost">52 040 zł</span>
+        </div>
+
+        <div class="calc-cta">
+          <a href="#cta" class="btn btn-primary btn-block btn-lg" data-magnetic>
+            Oddaj nam to ryzyko · 30 minut
+            <i class="ph-bold ph-arrow-right"></i>
+          </a>
+          <p class="calc-cta-meta">Bez handlowca · pokażemy panel na twoich rekordach · NDA wysyłamy przed</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ PRICING ============================================================ -->
+<section class="pricing" id="cennik">
+  <div class="container">
+    <div class="section-head center reveal">
+      <div class="eyebrow" style="justify-content: center;"><span class="dot"></span> 09 · Cennik · <span class="em">stała cena, bez ukrytych kosztów</span></div>
+      <h2 class="h-section">Trzy pakiety. <span class="serif-em">Bez tabel z gwiazdkami.</span></h2>
+      <p class="lede">Cena zawiera wdrożenie, opiekuna i wszystkie moduły. <strong>Brak limitu kosztów wzrostu</strong> — każda kolejna osoba w pakiecie kosztuje tyle samo co pierwsza.</p>
+    </div>
+
+    <div class="price-grid reveal">
+      <article class="price-card">
+        <header>
+          <h3>Basic</h3>
+          <p>Do 25 cudzoziemców · pierwszy system</p>
+          <div class="price">
+            <span class="amount">890</span>
+            <span class="unit">zł / mies.</span>
+          </div>
+          <span class="min">+ 290 zł / wdrożenie (jednorazowo)</span>
+        </header>
+        <ul class="price-list">
+          <li class="all"><i class="ph-bold ph-check"></i> Pulpit live + alerty 4-progowe</li>
+          <li><i class="ph-bold ph-check"></i> Sejf dokumentów + OCR</li>
+          <li><i class="ph-bold ph-check"></i> Eksport raportu PIP</li>
+          <li><i class="ph-bold ph-check"></i> 1 oddział</li>
+          <li><i class="ph-bold ph-check"></i> Wsparcie email · 1 dzień rob.</li>
+          <li class="muted"><i class="ph-bold ph-x"></i> Bez konsultacji prawnych</li>
+          <li class="muted"><i class="ph-bold ph-x"></i> Bez integracji HR</li>
+        </ul>
+        <a href="#cta" class="btn btn-secondary btn-block btn-lg">Wybierz Basic</a>
+      </article>
+
+      <article class="price-card highlight">
+        <span class="ribbon">Wybierane przez 78% klientów</span>
+        <header>
+          <h3>Medium</h3>
+          <p>26–100 cudzoziemców · firma rosnąca</p>
+          <div class="price">
+            <span class="amount">2 290</span>
+            <span class="unit">zł / mies.</span>
+          </div>
+          <span class="min">+ 1 290 zł / wdrożenie (jednorazowo)</span>
+        </header>
+        <ul class="price-list">
+          <li class="all"><i class="ph-bold ph-check"></i> Wszystko z Basic, plus:</li>
+          <li><i class="ph-bold ph-check"></i> Wieloodział + role + uprawnienia</li>
+          <li><i class="ph-bold ph-check"></i> Integracje (enova / Comarch / Symfonia)</li>
+          <li><i class="ph-bold ph-check"></i> Powiadomienia PL · UA · RU</li>
+          <li><i class="ph-bold ph-check"></i> Konsultacje prawne · 5h / mies.</li>
+          <li><i class="ph-bold ph-check"></i> Wsparcie czat · 4h reakcji</li>
+          <li><i class="ph-bold ph-check"></i> Dashboard CFO + raporty</li>
+        </ul>
+        <a href="#cta" class="btn btn-primary btn-block btn-lg">Umów demo</a>
+      </article>
+
+      <article class="price-card">
+        <header>
+          <h3>Pro</h3>
+          <p>101+ cudzoziemców · podwykonawcy · audyty</p>
+          <div class="price">
+            <span class="amount">4 990</span>
+            <span class="unit">zł / mies. od</span>
+          </div>
+          <span class="min">indywidualna wycena dla 250+</span>
+        </header>
+        <ul class="price-list">
+          <li class="all"><i class="ph-bold ph-check"></i> Wszystko z Medium, plus:</li>
+          <li><i class="ph-bold ph-check"></i> Kontrola podwykonawców (cały łańcuch)</li>
+          <li><i class="ph-bold ph-check"></i> Dedykowany opiekun prawny</li>
+          <li><i class="ph-bold ph-check"></i> SLA 99.9% + 2h reakcji</li>
+          <li><i class="ph-bold ph-check"></i> SSO (SAML / OIDC) + 2FA</li>
+          <li><i class="ph-bold ph-check"></i> Tryb obserwatora dla audytora</li>
+          <li><i class="ph-bold ph-check"></i> API + customowe integracje</li>
+        </ul>
+        <a href="#cta" class="btn btn-secondary btn-block btn-lg">Porozmawiajmy</a>
+      </article>
+    </div>
+
+    <p class="price-foot">
+      Wszystkie pakiety: 14 dni bezpłatnego demo · faktury VAT · brak długoterminowych umów · rezygnujesz z miesiąca na miesiąc.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ PROOF ============================================================ -->
+<section class="proof">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 10 · Co mówią klienci · <span class="em">trzy historie z różnych branż</span></div>
+      <h2 class="h-section">"Zatrudniamy <span class="serif-em">cudzoziemców</span>, nie obsługujemy <span class="serif-em">papierów</span>."</h2>
+    </div>
+
+    <div class="testimonials reveal">
+      <figure class="quote big">
+        <blockquote>
+          "Po pierwszym audycie zerowym wiedziałam, że <em>Excel mnie oszukiwał</em> — myślałam, że mam wszystko pod kontrolą. Getmypermit pokazał 19 luk w 24h. Drugi audyt PIP zaliczyłam <em>z uśmiechem</em>, a inspektor poprosił o telefon do mojego dostawcy systemu."
+        </blockquote>
+        <figcaption>
+          <div class="avatar a1"></div>
+          <div>
+            <strong>Marta Lis</strong>
+            <span>HR Manager · Logistyka Wschód · 320 osób</span>
+          </div>
+        </figcaption>
+      </figure>
+
+      <div class="quote-stack">
+        <figure class="quote">
+          <blockquote>"Zwrot z inwestycji w 11 dni — tyle zajęło uniknięcie pierwszej kary, którą złapaliśmy w panelu."</blockquote>
+          <figcaption>
+            <div class="avatar a2"></div>
+            <div>
+              <strong>Piotr Mazur</strong>
+              <span>CFO · Probuda · 180 osób</span>
+            </div>
+          </figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>"Pracownik z Ukrainy dostaje SMS po ukraińsku 14 dni przed terminem. To jest dla niego <em style="font-family: var(--font-serif); font-style: italic;">szacunek</em>, dla mnie — spokój."</blockquote>
+          <figcaption>
+            <div class="avatar a3"></div>
+            <div>
+              <strong>Ewa Sosnowska</strong>
+              <span>Specjalista HR · Vertex Care · 64 osoby</span>
+            </div>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="numbers reveal">
+      <div class="num-card">
+        <div class="num-v" data-count="1139400">1,1<span> mln</span></div>
+        <div class="num-l">cudzoziemców pracuje dziś w Polsce — twoja konkurencja też ich zatrudnia</div>
+        <div class="num-meta">GUS · X.2025</div>
+      </div>
+      <div class="num-card">
+        <div class="num-v">50<span> 000 zł</span></div>
+        <div class="num-l">maksymalna kara × każdy cudzoziemiec bez papierów</div>
+        <div class="num-meta">Ustawa 06.2025</div>
+      </div>
+      <div class="num-card">
+        <div class="num-v" data-count="14200">14 200<span>+</span></div>
+        <div class="num-l">zezwoleń pod naszą kontrolą — i ani jednej kary w 2025</div>
+        <div class="num-meta">47 firm klientów Pro</div>
+      </div>
+      <div class="num-card">
+        <div class="num-v">0</div>
+        <div class="num-l">noc-telefonów — opiekun prawny czeka 4h reakcji</div>
+        <div class="num-meta">SLA Pro · 99,9%</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ RESOURCES ============================================================ -->
+<section class="resources" id="wiedza">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 11 · Wiedza · <span class="em">zanim umówisz demo</span></div>
+      <h2 class="h-section">Dla tych, którzy chcą <span class="serif-em">wiedzieć więcej</span> przed rozmową.</h2>
+      <p class="lede">Bezpłatne materiały bazujące na pracy z 47 firmami i 14 200+ cudzoziemcami. Zero formularza za każdym kliknięciem — tylko jedno pole email i całą biblioteką dostajesz na zawsze.</p>
+    </div>
+
+    <div class="res-grid reveal">
+
+      <article class="res-card">
+        <div class="res-cover c1">
+          <span class="res-cover-tag">PDF · 28 stron</span>
+          <div class="res-cover-icon"><i class="ph-fill ph-file-pdf"></i></div>
+        </div>
+        <div class="res-body">
+          <h3>Przewodnik PIP 2025: czego naprawdę szuka inspektor</h3>
+          <p>Lista 47 punktów, które kontroler sprawdza w pierwszej godzinie. Zaktualizowany po nowelizacji ustawy z lipca 2025.</p>
+          <div class="res-foot">
+            <span>4 min do pobrania</span>
+            <a href="#" class="more">Pobierz <i class="ph-bold ph-download-simple"></i></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="res-card">
+        <div class="res-cover c2">
+          <span class="res-cover-tag">Webinar · 45 min</span>
+          <div class="res-cover-icon"><i class="ph-fill ph-monitor-play"></i></div>
+        </div>
+        <div class="res-body">
+          <h3>Łańcuch podwykonawców: jak nie odpowiadać za nie swoje grzechy</h3>
+          <p>Mec. Anna Brzezińska + dyr. operacyjny Logistyki Wschód. Realne przypadki, realne odpowiedzialności, realne narzędzia.</p>
+          <div class="res-foot">
+            <span>Nagranie + slajdy</span>
+            <a href="#" class="more">Obejrzyj <i class="ph-bold ph-arrow-right"></i></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="res-card">
+        <div class="res-cover c3">
+          <span class="res-cover-tag">Blog · seria</span>
+          <div class="res-cover-icon"><i class="ph-fill ph-newspaper"></i></div>
+        </div>
+        <div class="res-body">
+          <h3>Comiesięczny biuletyn: co się zmieniło w prawie cudzoziemców</h3>
+          <p>Krótki, konkretny przegląd nowelizacji, wyroków, decyzji UDSC. Bez clickbaitu, bez prawniczego żargonu — bo szanujemy twój czas.</p>
+          <div class="res-foot">
+            <span>Wysyłany 1× / miesiąc</span>
+            <a href="#" class="more">Zapisz się <i class="ph-bold ph-envelope-simple"></i></a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FAQ ============================================================ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 12 · Pytania · <span class="em">odpowiedzi po polsku, bez korpomowy</span></div>
+      <h2 class="h-section">Pytamy <span class="serif-em">codziennie.</span> <span class="serif-em">Odpowiadamy</span> codziennie.</h2>
+    </div>
+
+    <div class="faq-grid">
+      <aside class="faq-side">
+        <div class="lede" style="font-size: 16px;">Nie ma twojego pytania na liście?</div>
+        <div class="help">
+          <h4>Porozmawiaj z opiekunem</h4>
+          <p>30 minut, bez handlowca. Pokażemy panel na twoich realnych przypadkach.</p>
+          <a href="#cta" class="btn btn-primary btn-block">Umów rozmowę</a>
+        </div>
+      </aside>
+
+      <div class="faq-list reveal">
+        <details open>
+          <summary>Jak długo trwa wdrożenie?</summary>
+          <div>Pierwszy oddział uruchamiamy w ciągu 5 dni roboczych. Migrację z Excela / innego systemu prowadzi nasz specjalista — twój HR nic nie wpisuje. Kolejne oddziały dochodzą w 2 dni.</div>
+        </details>
+        <details>
+          <summary>Co z danymi po rezygnacji?</summary>
+          <div>Eksport pełnej historii w XLSX + PDF w dowolnym momencie, w cenie pakietu. Po rezygnacji: 30 dni na pobranie, potem trwałe usunięcie. Otrzymujesz potwierdzenie usunięcia z timestampem.</div>
+        </details>
+        <details>
+          <summary>Czy zastępujecie naszą kancelarię prawną?</summary>
+          <div>Nie — uzupełniamy. Codzienne operacje (terminy, dokumenty, alerty) prowadzimy my; sprawy sporne, reprezentacja przed organami, opinie strategiczne — twoja kancelaria. <strong>Klienci zwykle redukują koszty kancelarii o 40–60% po wdrożeniu</strong>, bo nie potrzebują jej do rzeczy operacyjnych.</div>
+        </details>
+        <details>
+          <summary>Co jeśli mamy 50 oddziałów i każdy inaczej pracuje?</summary>
+          <div>System obsługuje wieloodział z prawami dostępu per oddział, per rola, per dokument. Centrala widzi wszystko (z opcją filtra), oddział tylko swoich. Rekord audytowy zawsze pokazuje, kto co zmienił. Najczęstsze obejście: zaczynamy od jednego oddziału (pilot), potem rolujemy w 2-tygodniowych falach.</div>
+        </details>
+        <details>
+          <summary>Co z umowami z agencjami pracy / podwykonawcami?</summary>
+          <div>W pakiecie Pro dodajesz każdą agencję jako "źródło", podpinasz pracowników, dostajesz pełny widok łańcucha — z alertami, jeśli agencja zatrudnia kogoś bez zezwolenia. Możesz dać agencji ograniczony dostęp ("upload only"), aby aktualizowała dokumenty.</div>
+        </details>
+        <details>
+          <summary>Kto faktycznie pisze nasze wnioski i powiadomienia?</summary>
+          <div>Pakiet Medium i wyższy: nasz zespół generuje wzory, ty zatwierdzasz i wysyłasz. Pro: opiekun prawny prowadzi konkretne sprawy. <strong>Cała korespondencja jest archiwizowana w panelu</strong>, łącznie z odpowiedziami z urzędu — jeden ślad audytowy zamiast czterech skrzynek mailowych.</div>
+        </details>
+        <details>
+          <summary>Jak liczona jest cena, gdy mamy sezonowe zatrudnienie?</summary>
+          <div>Cena per pakiet, nie per osoba — w Medium do 100 osób płacisz stale 2 290 zł, niezależnie czy masz w marcu 60 czy w sierpniu 95. Przekroczenie progu: rozmowa, nie automatyczna podwyżka.</div>
+        </details>
+        <details>
+          <summary>Czy spełniacie wymogi RODO przy danych wrażliwych?</summary>
+          <div>Tak. Posiadamy ISO 27001, dane fizycznie w Polsce (Warszawa + Poznań), pełny DPA gotowy do podpisu, audyt SOC 2 Type II w toku (Q2 2026). Pełen raport bezpieczeństwa otrzymujesz przed pierwszym demo, bez NDA.</div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ STATUS STRIP ============================================================ -->
+<section class="status-strip">
+  <div class="status-strip-inner">
+    <div class="status-strip-l">
+      <span class="status-pulse"></span>
+      <span><strong>Wszystkie systemy działają.</strong> 99.98% uptime · ostatnie 90 dni</span>
+    </div>
+    <div class="status-strip-r">
+      <a href="#"><i class="ph ph-graph"></i> Status</a>
+      <a href="#"><i class="ph ph-list-checks"></i> Changelog · v3.2.4</a>
+      <a href="#"><i class="ph ph-shield-check"></i> Security report</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FINAL CTA ============================================================ -->
+<section class="cta-final" id="cta">
+  <div class="container">
+    <div class="cta-card reveal">
+      <div>
+        <div class="eyebrow"><span class="dot"></span> Demo · <span class="em" style="color: rgba(255,255,255,0.85);">30 minut, twoje realne dane</span></div>
+        <h2>30 minut. Twoje rzeczywiste dane. <span class="serif-em">Decyzja, nie sales pitch.</span></h2>
+        <p>Pokażemy panel na twoich rekordach (NDA przed spotkaniem). Zobaczysz, kto u ciebie wygasa, gdzie są luki, ile zaoszczędzisz. <strong>Jeśli to nie ma sensu — powiemy ci to wprost.</strong></p>
+        <div class="cta-actions">
+          <a href="#" class="btn btn-primary btn-lg">
+            Zarezerwuj demo
+            <i class="ph-bold ph-arrow-right"></i>
+          </a>
+          <a href="#" class="btn btn-secondary btn-lg">
+            <i class="ph ph-phone"></i>
+            Zadzwoń: 22 100 64 22
+          </a>
+        </div>
+        <div class="cta-meta">
+          <span><i class="ph-bold ph-check"></i> Bez karty kredytowej</span>
+          <span><i class="ph-bold ph-check"></i> NDA wysyłamy przed</span>
+          <span><i class="ph-bold ph-check"></i> Po polsku · realny człowiek</span>
+        </div>
+      </div>
+
+      <div class="cta-side">
+        <div class="cta-fact alt">
+          <span class="num">240 000 zł</span>
+          <span class="lbl">średnia oszczędność klientów Medium w pierwszym roku</span>
+        </div>
+        <div class="cta-fact">
+          <span class="num">5 dni</span>
+          <span class="lbl">od pierwszego pliku do pełnego wdrożenia oddziału</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FOOTER ============================================================ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="brand">
+          <span class="brand-mark lg">G</span>
+          Getmypermit
+        </a>
+        <p>Operacyjna platforma compliance dla firm zatrudniających cudzoziemców w Polsce. Spokojny HR, zerowe kary, pełen ślad.</p>
+        <div class="footer-meta">
+          <span>Getmypermit Sp. z o.o.</span>
+          <span>ul. Marszałkowska 142, 00-061 Warszawa</span>
+          <span>NIP 525-987-12-34 · KRS 0001146821</span>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Produkt</h4>
+        <a href="#produkt">Funkcje</a>
+        <a href="#how">Jak działa</a>
+        <a href="#porownanie">Porównanie</a>
+        <a href="#cennik">Cennik</a>
+        <a href="#bezpieczenstwo">Bezpieczeństwo</a>
+        <a href="#">Roadmap</a>
+        <a href="#">Changelog</a>
+      </div>
+      <div class="footer-col">
+        <h4>Wiedza</h4>
+        <a href="#wiedza">Przewodniki</a>
+        <a href="#">Case studies</a>
+        <a href="#">Webinary</a>
+        <a href="#">Biuletyn</a>
+        <a href="#">Blog</a>
+        <a href="#">Glosariusz</a>
+      </div>
+      <div class="footer-col">
+        <h4>Firma</h4>
+        <a href="#">O nas</a>
+        <a href="#">Zespół prawny</a>
+        <a href="#">Kariera · 4 oferty</a>
+        <a href="#">Partnerzy</a>
+        <a href="#">Kontakt</a>
+        <a href="#">Prasa</a>
+      </div>
+      <div class="footer-col">
+        <h4>Wsparcie</h4>
+        <a href="#">Pomoc · 24/7</a>
+        <a href="#">Status systemu</a>
+        <a href="#">Zgłoś incydent</a>
+        <a href="#">RODO · DPA</a>
+        <a href="#">ISO 27001</a>
+        <a href="#">Regulamin</a>
+        <a href="#">Polityka prywatności</a>
+      </div>
+    </div>
+
+    <div class="footer-bot">
+      <div class="footer-bot-l">
+        <span>© 2025 Getmypermit Sp. z o.o.</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+          <span class="status-pulse" style="width: 7px; height: 7px;"></span>
+          Wszystkie systemy działają
+        </span>
+        <span>Polska</span>
+      </div>
+      <div class="footer-soc">
+        <a href="#" aria-label="LinkedIn"><i class="ph ph-linkedin-logo"></i></a>
+        <a href="#" aria-label="X"><i class="ph ph-x-logo"></i></a>
+        <a href="#" aria-label="YouTube"><i class="ph ph-youtube-logo"></i></a>
+        <a href="#" aria-label="Email"><i class="ph ph-envelope-simple"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ============================================================
+// Calculator
+// ============================================================
+(function () {
+  const slider = document.getElementById('people-slider');
+  const fmt = (n) => n.toLocaleString('pl-PL').replace(/,/g, ' ') + ' zł';
+  const fmtPlain = (n) => n.toLocaleString('pl-PL').replace(/,/g, ' ');
+  function update() {
+    const p = parseInt(slider.value, 10);
+    document.getElementById('calc-people').textContent = fmtPlain(p);
+    const hr = Math.round(p * 1.2 * 4 * 65);     // 1.2h/wk * 4 wk * 65 zł/h
+    const fine = Math.round(p > 100 ? p * 75 : p * 30);
+    const time = Math.round(p * 14 * 4 * 1);
+    const total = hr + fine + time;
+    document.getElementById('hr-cost').textContent = fmt(hr) + ' / mies.';
+    document.getElementById('fine-cost').textContent = fmt(fine) + ' / mies.';
+    document.getElementById('time-cost').textContent = fmt(time) + ' / mies.';
+    document.getElementById('total-cost').textContent = fmt(total);
+  }
+  slider.addEventListener('input', update);
+  update();
+})();
+
+// ============================================================
+// Panel tour — sidebar nav switcher with cross-fade + auto-rotate
+// ============================================================
+(function () {
+  const cards = document.querySelectorAll('.tour-card');
+  const screens = document.querySelectorAll('.tour-screen-img');
+  const urlEl = document.querySelector('#tour-chrome-url span');
+  if (!cards.length || !screens.length) return;
+
+  const URLS = {
+    dashboard:  'app.getmypermit.pl/dashboard',
+    foreigners: 'app.getmypermit.pl/cudzoziemcy',
+    alerts:     'app.getmypermit.pl/alerty',
+    calendar:   'app.getmypermit.pl/kalendarz',
+    reports:    'app.getmypermit.pl/raporty',
+  };
+  const ORDER = ['dashboard', 'foreigners', 'alerts', 'calendar', 'reports'];
+
+  let userInteracted = false;
+  let rotateTimer = null;
+
+  function activate(name) {
+    cards.forEach(c => {
+      const isActive = c.dataset.tab === name;
+      c.classList.toggle('is-active', isActive);
+      c.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    screens.forEach(s => s.classList.toggle('is-active', s.dataset.panel === name));
+    if (urlEl && URLS[name]) {
+      urlEl.style.opacity = '0';
+      setTimeout(() => { urlEl.textContent = URLS[name]; urlEl.style.opacity = '1'; }, 160);
+    }
+  }
+
+  function startRotate() {
+    stopRotate();
+    rotateTimer = setInterval(() => {
+      if (userInteracted) { stopRotate(); return; }
+      const current = document.querySelector('.tour-card.is-active');
+      const idx = current ? ORDER.indexOf(current.dataset.tab) : 0;
+      activate(ORDER[(idx + 1) % ORDER.length]);
+    }, 5500);
+  }
+  function stopRotate() {
+    if (rotateTimer) { clearInterval(rotateTimer); rotateTimer = null; }
+  }
+
+  cards.forEach(c => {
+    c.addEventListener('click', () => {
+      userInteracted = true;
+      stopRotate();
+      activate(c.dataset.tab);
+    });
+    c.addEventListener('mouseenter', () => {
+      if (!userInteracted) { stopRotate(); activate(c.dataset.tab); }
+    });
+  });
+
+  // Start auto-rotate only when section enters viewport, stop when leaves
+  const tour = document.querySelector('.panel-tour');
+  if (tour && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !userInteracted) startRotate();
+        else stopRotate();
+      });
+    }, { threshold: 0.25 });
+    io.observe(tour);
+  }
+})();
+
+// ============================================================
+// Mobile drawer (hamburger)
+// ============================================================
+(function () {
+  const burger = document.getElementById('nav-burger');
+  const drawer = document.getElementById('mobile-drawer');
+  if (!burger || !drawer) return;
+  const links = drawer.querySelectorAll('a');
+
+  function open() {
+    drawer.classList.add('open');
+    drawer.setAttribute('aria-hidden', 'false');
+    burger.setAttribute('aria-expanded', 'true');
+    burger.setAttribute('aria-label', 'Zamknij menu');
+    document.body.classList.add('drawer-open');
+  }
+  function close() {
+    drawer.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
+    burger.setAttribute('aria-expanded', 'false');
+    burger.setAttribute('aria-label', 'Otwórz menu');
+    document.body.classList.remove('drawer-open');
+  }
+  function toggle() {
+    if (drawer.classList.contains('open')) close(); else open();
+  }
+
+  burger.addEventListener('click', toggle);
+  drawer.addEventListener('click', (e) => { if (e.target === drawer) close(); });
+  links.forEach(a => a.addEventListener('click', close));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer.classList.contains('open')) close();
+  });
+  // Close drawer if user resizes past breakpoint
+  let lastW = window.innerWidth;
+  window.addEventListener('resize', () => {
+    const w = window.innerWidth;
+    if (w !== lastW && w > 900 && drawer.classList.contains('open')) close();
+    lastW = w;
+  });
+})();
+
+// ============================================================
+// Sticky nav border on scroll
+// ============================================================
+(function () {
+  const nav = document.getElementById('nav');
+  function onScroll() {
+    if (window.scrollY > 8) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+
+// ============================================================
+// Reveal on scroll
+// ============================================================
+(function () {
+  const els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(el => el.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  els.forEach(el => io.observe(el));
+})();
+
+// ============================================================
+// Sticky how-it-works: scroll-driven active step + smooth scroll on click
+// ============================================================
+(function () {
+  const links = document.querySelectorAll('.how-step-link');
+  const steps = ['#step-1','#step-2','#step-3','#step-4'].map(s => document.querySelector(s));
+  if (!steps[0] || !links.length) return;
+
+  // Smooth scroll on click — overrides default jump (works with scroll-margin-top)
+  links.forEach((link) => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
+      if (!href || !href.startsWith('#')) return;
+      const target = document.querySelector(href);
+      if (!target) return;
+      e.preventDefault();
+      const top = target.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({ top, behavior: 'smooth' });
+      history.replaceState(null, '', href);
+    });
+  });
+
+  // Active step = ten, którego top jest najbliżej linii 25% viewport
+  function updateActive() {
+    const lineY = window.innerHeight * 0.28;
+    let activeIdx = 0;
+    let bestDelta = Infinity;
+    steps.forEach((s, i) => {
+      if (!s) return;
+      const r = s.getBoundingClientRect();
+      // Step jest "aktywny" gdy jego top przeszedł linię (delta >= 0)
+      // wybieramy najpóźniejszy taki step
+      const delta = lineY - r.top;
+      if (delta >= 0 && delta < bestDelta) {
+        bestDelta = delta;
+        activeIdx = i;
+      }
+    });
+    links.forEach((l, i) => l.classList.toggle('active', i === activeIdx));
+  }
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { updateActive(); ticking = false; });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  updateActive();
+})();
+
+// ============================================================
+// Magnetic CTA (subtle pull toward cursor)
+// ============================================================
+(function () {
+  const els = document.querySelectorAll('[data-magnetic]');
+  els.forEach(el => {
+    el.addEventListener('mousemove', (e) => {
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - r.left - r.width / 2;
+      const y = e.clientY - r.top - r.height / 2;
+      el.style.transform = `translate(${x * 0.18}px, ${y * 0.18}px) translateY(-1px)`;
+    });
+    el.addEventListener('mouseleave', () => {
+      el.style.transform = '';
+    });
+  });
+})();
+
+// ============================================================
+// Animated counters (one-shot)
+// ============================================================
+(function () {
+  const targets = document.querySelectorAll('[data-count]');
+  if (!targets.length || !('IntersectionObserver' in window)) return;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target;
+      const target = parseInt(el.dataset.count, 10);
+      const suffix = el.querySelector('span') ? el.querySelector('span').outerHTML : '';
+      const dur = 1400;
+      const t0 = performance.now();
+      function tick(t) {
+        const p = Math.min(1, (t - t0) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const v = Math.round(target * eased);
+        el.innerHTML = v.toLocaleString('pl-PL').replace(/,/g, ' ') + suffix;
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      io.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  targets.forEach(el => io.observe(el));
+})();
+</script>
+
+</body>
+</html>
