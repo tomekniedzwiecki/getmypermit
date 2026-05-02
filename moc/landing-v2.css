@@ -1498,6 +1498,279 @@ section { position: relative; }
 }
 
 /* ============================================================
+   PANEL TOUR — sidebar nav + big screen with chrome
+   ============================================================ */
+.panel-tour {
+  padding: 120px 0;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+.panel-tour::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(50% 50% at 30% 30%, rgba(79,70,229,0.06), transparent 60%),
+    radial-gradient(50% 50% at 80% 70%, rgba(4,120,87,0.05), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.panel-tour > .container-wide { position: relative; z-index: 1; }
+
+.tour {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) 1fr;
+  gap: 40px;
+  align-items: start;
+  margin-top: 56px;
+}
+
+/* SIDEBAR NAV — 5 numbered cards */
+.tour-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 96px;
+}
+
+.tour-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 18px 18px 18px 22px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 14px;
+  align-items: flex-start;
+  position: relative;
+  overflow: hidden;
+  transition: all 240ms cubic-bezier(.2,.7,.2,1);
+  -webkit-tap-highlight-color: transparent;
+}
+.tour-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--surface-3);
+  transition: background 240ms ease, box-shadow 240ms ease;
+}
+.tour-card:hover {
+  border-color: var(--border);
+  transform: translateX(2px);
+  box-shadow: 0 12px 28px -12px rgba(10,10,10,0.10);
+}
+.tour-card:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.tour-card.is-active {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 16px 40px -16px rgba(10,10,10,0.14);
+  transform: translateX(0);
+}
+.tour-card.is-active::before {
+  background: var(--accent);
+  box-shadow: 0 0 24px rgba(79,70,229,0.5);
+}
+
+.tour-card .card-num {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-faint);
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+  transition: color 240ms ease;
+}
+.tour-card.is-active .card-num { color: var(--accent); }
+
+.tour-card .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.tour-card .card-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  color: var(--fg);
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tour-card .card-pill {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  background: var(--surface-3);
+  color: var(--fg-muted);
+  padding: 2px 7px;
+  border-radius: 100px;
+  letter-spacing: 0.04em;
+}
+.tour-card .card-pill.danger {
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+}
+.tour-card .card-desc {
+  font-size: 13.5px;
+  color: var(--fg-2);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+.tour-card .card-url {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--fg-faint);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  transition: color 240ms ease;
+}
+.tour-card .card-url i { font-size: 12px; }
+.tour-card.is-active .card-url { color: var(--accent); }
+
+/* STAGE — big browser frame with screen */
+.tour-stage {
+  position: relative;
+  perspective: 2000px;
+}
+.tour-stage-glow {
+  position: absolute;
+  inset: -40px -20px -20px -20px;
+  background:
+    radial-gradient(60% 60% at 50% 30%, rgba(79,70,229,0.14), transparent 60%),
+    radial-gradient(40% 40% at 80% 80%, rgba(4,120,87,0.10), transparent 60%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+.tour-stage-frame {
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.7) inset,
+    0 40px 80px -24px rgba(10,10,10,0.22),
+    0 16px 32px -12px rgba(10,10,10,0.10),
+    0 4px 8px -4px rgba(10,10,10,0.06);
+}
+
+/* Browser chrome */
+.tour-stage-chrome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--hairline);
+}
+.chrome-dot {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.chrome-dot.r { background: #ef4444; }
+.chrome-dot.y { background: #f59e0b; }
+.chrome-dot.g { background: #10b981; }
+
+.chrome-url {
+  flex: 1;
+  margin: 0 12px 0 16px;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 480px;
+  transition: color 240ms ease;
+}
+.chrome-url i { font-size: 11px; color: var(--ok); }
+.chrome-url span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 220ms ease;
+}
+
+.chrome-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--emerald-bright);
+  position: relative;
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: var(--emerald-bright);
+  opacity: 0.4;
+  animation: pulse 2s ease-out infinite;
+}
+
+/* Screen image swap with cross-fade */
+.tour-screen-wrap {
+  position: relative;
+  background: var(--bg);
+  overflow: hidden;
+  aspect-ratio: 1440 / 900;
+}
+.tour-screen-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  opacity: 0;
+  transform: scale(1.015);
+  filter: blur(2px);
+  transition: opacity 360ms cubic-bezier(.2,.7,.2,1),
+              transform 480ms cubic-bezier(.2,.7,.2,1),
+              filter 360ms ease;
+  pointer-events: none;
+}
+.tour-screen-img.is-active {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+  position: relative; /* podtrzymuje wysokość kontenera */
+}
+
+/* ============================================================
    COMPARISON TABLE
    ============================================================ */
 .compare {
@@ -2878,6 +3151,47 @@ body.drawer-open { overflow: hidden; }
   /* Status strip tightens */
   .status-strip-r { gap: 16px; }
 
+  /* Panel tour: stack column, nav nad screen */
+  .panel-tour { padding: 80px 0; }
+  .tour {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    margin-top: 40px;
+  }
+  .tour-nav {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .tour-nav::-webkit-scrollbar { display: none; }
+  .tour-card {
+    flex: 0 0 240px;
+    scroll-snap-align: start;
+    padding: 14px 14px 14px 18px;
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+  }
+  .tour-card .card-num { font-size: 12px; padding-top: 1px; }
+  .tour-card .card-title { font-size: 15px; }
+  .tour-card .card-desc {
+    font-size: 12.5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .tour-card .card-url { font-size: 11px; }
+  .chrome-url { max-width: 240px; font-size: 11.5px; }
+  .chrome-meta { display: none; }
+
 
   /* Security: tighter gap when stacking */
   .security-grid { gap: 32px; }
@@ -3029,6 +3343,15 @@ body.drawer-open { overflow: hidden; }
   .case-metric-cell .v { font-size: 24px; }
   .case-cta { flex-direction: column; align-items: stretch; gap: 8px; }
   .case-cta .btn { justify-content: center; }
+
+  /* PANEL TOUR — small mobile */
+  .panel-tour { padding: 56px 0; }
+  .tour { margin-top: 32px; gap: 20px; }
+  .tour-card { flex-basis: 220px; padding: 12px 12px 12px 16px; }
+  .tour-stage-frame { border-radius: 12px; }
+  .tour-stage-chrome { padding: 8px 10px; gap: 6px; }
+  .chrome-dot { width: 9px; height: 9px; }
+  .chrome-url { font-size: 11px; padding: 4px 10px; max-width: none; margin: 0 0 0 8px; }
 
   /* SECURITY */
   .security { padding: 56px 0; }

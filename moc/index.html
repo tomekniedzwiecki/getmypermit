@@ -500,6 +500,105 @@
   </div>
 </section>
 
+<!-- ============================================================ PANEL TOUR — sidebar nav + big screen ============================================================ -->
+<section class="panel-tour" id="panel">
+  <div class="container-wide">
+
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> 02.5 · Panel · <span class="em">interfejs, którego HR uczy się w popołudnie</span></div>
+      <h2 class="h-section">Pięć widoków. <span class="serif-em">Jedno źródło prawdy.</span></h2>
+      <p class="lede">Klikaj karty po lewej — to dokładnie te ekrany, które dostajesz pierwszego dnia po migracji danych. <strong>Bez render-mockupów, bez tutoriali na 3 godziny.</strong></p>
+    </div>
+
+    <div class="tour reveal">
+
+      <nav class="tour-nav" role="tablist" aria-label="Widoki panelu">
+        <button class="tour-card is-active" data-tab="dashboard" role="tab" aria-selected="true" type="button">
+          <span class="card-num">01</span>
+          <span class="card-body">
+            <span class="card-title">Dashboard</span>
+            <span class="card-desc">Compliance score, KPI, alerty po terminach — wszystko na jednym ekranie</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/dashboard</span>
+          </span>
+        </button>
+
+        <button class="tour-card" data-tab="foreigners" role="tab" aria-selected="false" type="button">
+          <span class="card-num">02</span>
+          <span class="card-body">
+            <span class="card-title">Cudzoziemcy <span class="card-pill">247</span></span>
+            <span class="card-desc">Lista z dwukolumnowym statusem pobyt + praca, sortowanie po pilności</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/cudzoziemcy</span>
+          </span>
+        </button>
+
+        <button class="tour-card" data-tab="alerts" role="tab" aria-selected="false" type="button">
+          <span class="card-num">03</span>
+          <span class="card-body">
+            <span class="card-title">Alerty <span class="card-pill danger">9</span></span>
+            <span class="card-desc">Pięć progów pilności, eskalacja po 24h ciszy, powiadomienia PL + UA</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/alerty</span>
+          </span>
+        </button>
+
+        <button class="tour-card" data-tab="calendar" role="tab" aria-selected="false" type="button">
+          <span class="card-num">04</span>
+          <span class="card-body">
+            <span class="card-title">Kalendarz</span>
+            <span class="card-desc">Wygaśnięcia, audyty, spotkania z urzędami w jednym widoku miesiąca</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/kalendarz</span>
+          </span>
+        </button>
+
+        <button class="tour-card" data-tab="reports" role="tab" aria-selected="false" type="button">
+          <span class="card-num">05</span>
+          <span class="card-body">
+            <span class="card-title">Raporty</span>
+            <span class="card-desc">Miesięczne PDF-y dla zarządu, PIP i kancelarii — generowane automatycznie</span>
+            <span class="card-url"><i class="ph ph-link-simple" aria-hidden="true"></i> app.getmypermit.pl/raporty</span>
+          </span>
+        </button>
+      </nav>
+
+      <div class="tour-stage">
+        <div class="tour-stage-glow" aria-hidden="true"></div>
+        <div class="tour-stage-frame">
+          <div class="tour-stage-chrome">
+            <span class="chrome-dot r" aria-hidden="true"></span>
+            <span class="chrome-dot y" aria-hidden="true"></span>
+            <span class="chrome-dot g" aria-hidden="true"></span>
+            <div class="chrome-url" id="tour-chrome-url"><i class="ph-fill ph-lock-simple" aria-hidden="true"></i> <span>app.getmypermit.pl/dashboard</span></div>
+            <div class="chrome-meta"><span class="live-dot"></span> live</div>
+          </div>
+
+          <div class="tour-screen-wrap">
+            <img class="tour-screen-img is-active" data-panel="dashboard"
+                 src="/moc/screens/panel-dashboard.png"
+                 alt="Dashboard panelu Getmypermit: compliance score 86/100, 4 KPI tiles (218 aktywnych, 209 zielonych, 31 uwagi, 7 ryzyka), baner 3 sytuacji pilnych, lista wygasających dokumentów w oknach 3-90 dni"
+                 width="1440" height="900" />
+            <img class="tour-screen-img" data-panel="foreigners"
+                 src="/moc/screens/panel-foreigners.png"
+                 alt="Lista 12 cudzoziemców ze statusami pobyt + praca, kolumnami stanowisko, dokument pobytowy, podstawa pracy, podwykonawca i braki dokumentów; chip-filtry Wszyscy 12, Czerwone, Uwaga, Brak danych"
+                 width="1440" height="900" loading="lazy" />
+            <img class="tour-screen-img" data-panel="alerts"
+                 src="/moc/screens/panel-alerts.png"
+                 alt="Panel alertów: 9 aktywnych spraw posortowanych po pilności, 5 KPI tiles po progach (3 po terminie, 2 ≤14 dni, 3 15-30, 2 31-60, 2 braki), lista z datami i akcjami otwórz kartę / zleć kancelarii"
+                 width="1440" height="900" loading="lazy" />
+            <img class="tour-screen-img" data-panel="calendar"
+                 src="/moc/screens/panel-calendar.png"
+                 alt="Kalendarz terminów Maj 2026 z zaznaczonymi datami wygaśnięcia dokumentów i panelem 5 najbliższych terminów po prawej stronie z liczbą dni do reakcji"
+                 width="1440" height="900" loading="lazy" />
+            <img class="tour-screen-img" data-panel="reports"
+                 src="/moc/screens/panel-reports.png"
+                 alt="Raporty compliance: 4 gotowe miesięczne PDF-y z statusami Gotowy lub Uwagi i wykres wskaźnika compliance po miesiącach od listopada (78) do kwietnia (86)"
+                 width="1440" height="900" loading="lazy" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- ============================================================ STICKY HOW IT WORKS ============================================================ -->
 <section class="how" id="how">
   <div class="container">
@@ -1410,6 +1509,77 @@
   }
   slider.addEventListener('input', update);
   update();
+})();
+
+// ============================================================
+// Panel tour — sidebar nav switcher with cross-fade + auto-rotate
+// ============================================================
+(function () {
+  const cards = document.querySelectorAll('.tour-card');
+  const screens = document.querySelectorAll('.tour-screen-img');
+  const urlEl = document.querySelector('#tour-chrome-url span');
+  if (!cards.length || !screens.length) return;
+
+  const URLS = {
+    dashboard:  'app.getmypermit.pl/dashboard',
+    foreigners: 'app.getmypermit.pl/cudzoziemcy',
+    alerts:     'app.getmypermit.pl/alerty',
+    calendar:   'app.getmypermit.pl/kalendarz',
+    reports:    'app.getmypermit.pl/raporty',
+  };
+  const ORDER = ['dashboard', 'foreigners', 'alerts', 'calendar', 'reports'];
+
+  let userInteracted = false;
+  let rotateTimer = null;
+
+  function activate(name) {
+    cards.forEach(c => {
+      const isActive = c.dataset.tab === name;
+      c.classList.toggle('is-active', isActive);
+      c.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    screens.forEach(s => s.classList.toggle('is-active', s.dataset.panel === name));
+    if (urlEl && URLS[name]) {
+      urlEl.style.opacity = '0';
+      setTimeout(() => { urlEl.textContent = URLS[name]; urlEl.style.opacity = '1'; }, 160);
+    }
+  }
+
+  function startRotate() {
+    stopRotate();
+    rotateTimer = setInterval(() => {
+      if (userInteracted) { stopRotate(); return; }
+      const current = document.querySelector('.tour-card.is-active');
+      const idx = current ? ORDER.indexOf(current.dataset.tab) : 0;
+      activate(ORDER[(idx + 1) % ORDER.length]);
+    }, 5500);
+  }
+  function stopRotate() {
+    if (rotateTimer) { clearInterval(rotateTimer); rotateTimer = null; }
+  }
+
+  cards.forEach(c => {
+    c.addEventListener('click', () => {
+      userInteracted = true;
+      stopRotate();
+      activate(c.dataset.tab);
+    });
+    c.addEventListener('mouseenter', () => {
+      if (!userInteracted) { stopRotate(); activate(c.dataset.tab); }
+    });
+  });
+
+  // Start auto-rotate only when section enters viewport, stop when leaves
+  const tour = document.querySelector('.panel-tour');
+  if (tour && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !userInteracted) startRotate();
+        else stopRotate();
+      });
+    }, { threshold: 0.25 });
+    io.observe(tour);
+  }
 })();
 
 // ============================================================
