@@ -184,6 +184,39 @@
     } catch (e) { /* silent */ }
   }
 
+  // Healthcheck po loginie. Trigger `on_auth_user_link_staff` linkuje automatycznie,
+  // ale gdy admin nie zalozyl jeszcze gmp_staff dla tego email, user dostaje RLS deny
+  // przy kazdej akcji. Banner pokazuje to wprost zamiast kryptycznego bledu.
+  async function checkStaffLink() {
+    try {
+      const { data, error } = await window.db.rpc('gmp_my_staff_status');
+      if (error || !data) return;
+      if (data.is_linked) return; // OK, nic nie robimy
+
+      const orphan = Array.isArray(data.orphaned_staff_for_my_email) && data.orphaned_staff_for_my_email[0];
+      const message = orphan
+        ? `Twoje konto (${data.auth_email}) nie jest powiazane z rekordem pracownika "${orphan.full_name}" — administrator powinien je zlinkowac (auto-link nie zadzialal, prawdopodobnie email rozni sie wielkoscia liter).`
+        : `Twoje konto (${data.auth_email}) nie ma rekordu w gmp_staff. Skontaktuj sie z administratorem zeby dodal Cie do zespolu.`;
+      showStaffLinkBanner(message);
+    } catch (_) { /* silent */ }
+  }
+
+  function showStaffLinkBanner(msg) {
+    if (document.getElementById('gmp-staff-link-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'gmp-staff-link-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#7f1d1d;color:#fee2e2;padding:12px 20px;font-family:Inter,sans-serif;font-size:13px;border-bottom:2px solid #ef4444;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.4)';
+    banner.innerHTML = `
+      <span style="font-size:18px">&#9888;</span>
+      <div style="flex:1">
+        <div style="font-weight:600;margin-bottom:2px">Konto nie jest zlinkowane z gmp_staff</div>
+        <div style="opacity:.9;font-size:12px">${msg.replace(/</g,'&lt;')}</div>
+      </div>
+      <button onclick="this.parentElement.remove()" style="background:transparent;border:1px solid #fca5a5;color:#fee2e2;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px">Zamknij</button>
+    `;
+    document.body.appendChild(banner);
+  }
+
   // Export
   window.gmpAuth = {
     getSession, getCurrentUser, getCurrentStaff,
@@ -203,6 +236,8 @@
         window.currentStaff = await getCurrentStaff();
         // Touch login (1h debounce)
         touchLoginIfNeeded();
+        // Healthcheck linkowania gmp_staff.user_id (banner gdy brak linku)
+        checkStaffLink();
         document.dispatchEvent(new CustomEvent('gmp-auth-ready', {
           detail: { user: window.currentUser, staff: window.currentStaff }
         }));
